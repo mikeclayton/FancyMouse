@@ -11,7 +11,7 @@ On a modern laptop that uses an Ultra-Wide external monitor you could easily hav
 
 What tends to happen is you end up swiping the physical mouse as far as it will go, then lifting, moving back to the start and swping again - sometimes half a dozen times just to get to the other side of the screen. During this process you quite often lose track of where the mouse is and spend precious seconds trying to find it again.
 
-FancyMouse helps by letting to click a scaled-down preview of your entire desktop and "teleport" the mouse there in an instant.
+FancyMouse helps by letting you click a scaled-down preview of your entire desktop and "teleport" the mouse there in an instant.
 
 ## Swiping
 
