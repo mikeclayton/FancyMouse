@@ -17,7 +17,7 @@ FancyMouse helps by letting to click a scaled-down preview of your entire deskto
 
 Here's an animation showing the old slow way of swiping the mouse multiple times.
 
-Imageine you're happily working on a spreadsheet on your ultra-wise external monitor you get a notification of a new email arriving on your laptop-s screen. They're opposite ends of the desktop and several thousand pixels away so you start swiping the mouse repeatedly...
+Imageine you're happily working on a spreadsheet on your ultra-wise external monitor you get a notification of a new email arriving on your laptop's screen. They're opposite ends of the desktop and several thousand pixels away so you start swiping the mouse repeatedly...
 
 ![Swiping a mouse multiple times to move across a large monitor setup](wiki/images/swipe.gif)
 
