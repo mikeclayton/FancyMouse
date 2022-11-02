@@ -26,6 +26,6 @@ Imageine you're happily working on a spreadsheet on your ultra-wise external mon
 
 And here's the same thing using FancyMouse. A hotkey or spare mouse button can be configured to activate the FancyMouse popup, and the pointer only needs to be moved a tiny amount on the preview thumbnail. A single mouse click then teleports the pointer to that locatio on the full-size desktop.
 
-The visual cue tells you exactly where th epointer will end up so you can find it easily without needing to search for it.
+The visual cue tells you exactly where the pointer will end up so you can find it easily without needing to search for it.
 
 ![Using FancyMouse to instantly teleport across a large monitor setup](wiki/images/fancy.gif)
