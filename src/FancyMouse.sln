@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.4.33015.44
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FancyMouse", "FancyMouse\FancyMouse.csproj", "{EFE2A257-6979-4067-99A7-0C762492A8C7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KeyboardWatcher", "KeyboardWatcher\KeyboardWatcher.csproj", "{02B516BE-52B2-42B2-89FA-2E7E6F605B47}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EFE2A257-6979-4067-99A7-0C762492A8C7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EFE2A257-6979-4067-99A7-0C762492A8C7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EFE2A257-6979-4067-99A7-0C762492A8C7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EFE2A257-6979-4067-99A7-0C762492A8C7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{02B516BE-52B2-42B2-89FA-2E7E6F605B47}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{02B516BE-52B2-42B2-89FA-2E7E6F605B47}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{02B516BE-52B2-42B2-89FA-2E7E6F605B47}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{02B516BE-52B2-42B2-89FA-2E7E6F605B47}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {3D14D3DA-D261-4E05-A448-4AACF57F15D5}
+	EndGlobalSection
+EndGlobal
