@@ -1,11 +1,11 @@
 ﻿namespace FancyMouse.UI;
 
-public partial class FancyMouseOptions : Form
+public partial class FancyMouseSettings : Form
 {
 
     #region Contructors
 
-    public FancyMouseOptions()
+    public FancyMouseSettings()
     {
         InitializeComponent();
     }

@@ -18,9 +18,24 @@ public partial class FancyMouseNotify : Form
     {
     }
 
-    private void FancyMouseNotify_FormClosed(object sender, FormClosedEventArgs e)
+    private void FancyMouseNotify_FormClosing(object sender, FormClosingEventArgs e)
+    {
+    }
+
+    #endregion
+
+    #region Context Menu Methods
+
+    private void settingsToolStripMenuItem_Click(object sender, EventArgs e)
+    {
+
+    }
+
+    private void exitToolStripMenuItem_Click(object sender, EventArgs e)
     {
         notifyIcon1.Visible = false;
+        Application.DoEvents();
+        Application.Exit();
     }
 
     #endregion

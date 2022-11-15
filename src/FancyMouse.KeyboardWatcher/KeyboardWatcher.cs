@@ -78,6 +78,8 @@ public sealed class KeyboardWatcher
     public void Start()
     {
 
+        // see https://learn.microsoft.com/en-us/windows/win32/winmsg/using-hooks
+
         if (this.HookProc != null)
         {
             throw new InvalidOperationException("watcher already started");
@@ -87,7 +89,6 @@ public sealed class KeyboardWatcher
         using var module = process.MainModule ?? throw new InvalidOperationException();
 
         var moduleHandle = Kernel32.GetModuleHandle(module.ModuleName);
-
         if (moduleHandle == 0)
         {
             var lastWin32Error = Marshal.GetLastWin32Error();
@@ -97,23 +98,47 @@ public sealed class KeyboardWatcher
             );
         }
 
-        var hookProc = Winuser.SetWindowsHookEx(
+        var apiResult = Winuser.SetWindowsHookEx(
             idHook: Winuser.WH_KEYBOARD_LL,
             lpfn: this.Callback,
             hmod: moduleHandle,
             dwThreadId: 0
         );
-
-        if (hookProc == 0)
+        if (apiResult == 0)
         {
             var lastWin32Error = Marshal.GetLastWin32Error();
             throw new InvalidOperationException
-                ($"{nameof(Winuser.SetWindowsHookEx)} failed with result {hookProc}. GetLastWin32Error returned '{lastWin32Error}'.",
+                ($"{nameof(Winuser.SetWindowsHookEx)} failed with result {apiResult}. GetLastWin32Error returned '{lastWin32Error}'.",
+                new Win32Exception(lastWin32Error)
+            );
+        }
+        this.HookProc = apiResult;
+
+    }
+
+    public void Stop()
+    {
+
+        // see https://learn.microsoft.com/en-us/windows/win32/winmsg/using-hooks
+
+        if (this.HookProc == null)
+        {
+            throw new InvalidOperationException("watcher not started");
+        }
+
+        var apiResult = Winuser.UnhookWindowsHookEx(
+            this.HookProc.Value
+        );
+        if (apiResult == 0)
+        {
+            var lastWin32Error = Marshal.GetLastWin32Error();
+            throw new InvalidOperationException
+                ($"{nameof(Winuser.UnhookWindowsHookEx)} failed with result {apiResult}. GetLastWin32Error returned '{lastWin32Error}'.",
                 new Win32Exception(lastWin32Error)
             );
         }
 
-        this.HookProc = hookProc;
+        this.HookProc = null;
 
     }
 
@@ -122,24 +147,20 @@ public sealed class KeyboardWatcher
 
         // see https://learn.microsoft.com/en-us/previous-versions/windows/desktop/legacy/ms644985(v=vs.85)
 
+        var hhk = this.HookProc ?? -1;
+
         // If nCode is less than zero, the hook procedure must pass the message to the
         // CallNextHookEx function without further processing and should return the
         // value returned by CallNextHookEx. 
         if (nCode < 0)
         {
-            throw new InvalidOperationException();
+            return Winuser.CallNextHookEx(hhk, nCode, wParam, lParam);
         }
 
         if (nCode != Winuser.HC_ACTION)
         {
-            throw new InvalidOperationException();
+            return Winuser.CallNextHookEx(hhk, nCode, wParam, lParam);
         }
-
-        //case Keys.LShiftKey:
-        //case Keys.RShiftKey:
-        //case Keys.LControlKey:
-        //case Keys.RControlKey:
-        //case Keys.LMenu: // ALT
 
         var virtualKey = (Keys)lParam.vkCode;
         switch (wParam)
@@ -208,7 +229,7 @@ public sealed class KeyboardWatcher
                 break;
         }
 
-        return 0;
+        return Winuser.CallNextHookEx(hhk, nCode, wParam, lParam);
 
     }
 

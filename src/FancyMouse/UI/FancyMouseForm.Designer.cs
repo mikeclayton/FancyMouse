@@ -1,4 +1,4 @@
-﻿namespace FancyMouse;
+﻿namespace FancyMouse.UI;
 
 partial class FancyMouseForm
 {

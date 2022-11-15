@@ -1,6 +1,6 @@
 ﻿namespace FancyMouse.UI;
 
-partial class FancyMouseOptions
+partial class FancyMouseSettings
 {
 
     /// <summary>
@@ -29,7 +29,7 @@ partial class FancyMouseOptions
     /// </summary>
     private void InitializeComponent()
     {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FancyMouseOptions));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FancyMouseSettings));
             this.udnPreviewMaxWidth = new System.Windows.Forms.NumericUpDown();
             this.udnPreviewMaxHeight = new System.Windows.Forms.NumericUpDown();
             this.lblPreviewImageX = new System.Windows.Forms.Label();
@@ -100,7 +100,7 @@ partial class FancyMouseOptions
             this.button2.Text = "button2";
             this.button2.UseVisualStyleBackColor = true;
             // 
-            // FancyMouseOptions
+            // FancyMouseSettings
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -113,9 +113,9 @@ partial class FancyMouseOptions
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MaximizeBox = false;
             this.MinimizeBox = false;
-            this.Name = "FancyMouseOptions";
+            this.Name = "FancyMouseSettings";
             this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
-            this.Text = "FancyMouse Options";
+            this.Text = "FancyMouse Settings";
             this.Load += new System.EventHandler(this.FancyMouseOptions_Load);
             ((System.ComponentModel.ISupportInitialize)(this.udnPreviewMaxWidth)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.udnPreviewMaxHeight)).EndInit();

@@ -12,9 +12,9 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
   </PropertyGroup>
-  
+
   <ItemGroup>
-    <ProjectReference Include="..\KeyboardWatcher\KeyboardWatcher.csproj" />
+    <ProjectReference Include="..\FancyMouse.HotKeyManager\FancyMouse.HotKeyManager.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,7 +1,6 @@
 using FancyMouse.Extensions;
-using FancyMouse.UI;
 
-namespace FancyMouse;
+namespace FancyMouse.UI;
 
 internal partial class FancyMouseForm : Form
 {
@@ -52,28 +51,39 @@ internal partial class FancyMouseForm : Form
 
     private void pbxPreview_Click(object sender, EventArgs e)
     {
+
         var mouseEventArgs = (MouseEventArgs)e;
+
         if (mouseEventArgs.Button == MouseButtons.Left)
         {
             if (Control.ModifierKeys == Keys.Control)
             {
                 // ctrl click - show settings dialog
-                var options = new FancyMouseOptions();
+                var options = new FancyMouseSettings();
                 options.Location = this.GetCenteredChildLocation(options);
                 options.ShowDialog();
             }
             else
             {
                 // plain click - move mouse pointer
-                var scale = (double)panel1.Width / this.Screenshot.Width;
+                var scale = (double)pbxPreview.Width / this.Screenshot.Width;
                 var mouseEvent = (MouseEventArgs)e;
                 var cursorPosition = new Point(
                     (int)(mouseEvent.X / scale),
                     (int)(mouseEvent.Y / scale)
                 );
+                //MessageBox.Show(
+                //    $"screen = {this.Screenshot!.Size}\r\n" +
+                //    $"preview = {this.pbxPreview.Size}\r\n" +
+                //    $"scale = {scale}\r\n" +
+                //    $"click = {mouseEventArgs.Location}\r\n" +
+                //    $"position = {cursorPosition}",
+                //    "FancyMouse - Debug"
+                //);
                 Cursor.Position = cursorPosition;
             }
         }
+
         this.Hide();
     }
 
