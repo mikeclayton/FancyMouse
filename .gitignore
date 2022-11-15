@@ -2,4 +2,6 @@
 bin
 obj
 
+releases
+
 *.csproj.user
