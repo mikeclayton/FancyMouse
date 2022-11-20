@@ -1,6 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace FancyMouse.KeyboardWatcher.Win32Api;
+namespace FancyMouse.WindowsHotKeys.Win32Api;
 
 internal static class Kernel32
 {

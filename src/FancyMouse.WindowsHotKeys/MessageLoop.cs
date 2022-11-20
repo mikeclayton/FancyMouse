@@ -1,10 +1,10 @@
-﻿using FancyMouse.MessageLoop.Win32Api;
+﻿using FancyMouse.WindowsHotKeys.Win32Api;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 
-namespace FancyMouse.MessageLoop;
+namespace FancyMouse.WindowsHotKeys;
 
-public static class MessageLoop
+internal static class MessageLoop
 {
 
     public static void Run(IntPtr hWnd)

@@ -14,7 +14,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\FancyMouse.HotKeyManager\FancyMouse.HotKeyManager.csproj" />
+    <ProjectReference Include="..\FancyMouse.WindowsHotKeys\FancyMouse.WindowsHotKeys.csproj" />
   </ItemGroup>
 
   <ItemGroup>

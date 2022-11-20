@@ -5,11 +5,9 @@ VisualStudioVersion = 17.4.33015.44
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FancyMouse", "FancyMouse\FancyMouse.csproj", "{EFE2A257-6979-4067-99A7-0C762492A8C7}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FancyMouse.HotKeyManager", "FancyMouse.HotKeyManager\FancyMouse.HotKeyManager.csproj", "{6B589580-BE40-4A55-9CC4-00D1FD312184}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FancyMouse.WindowsHotKeys", "FancyMouse.WindowsHotKeys\FancyMouse.WindowsHotKeys.csproj", "{E050CB83-ED43-4576-B388-DA91AACEE09C}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FancyMouse.KeyboardWatcher", "FancyMouse.KeyboardWatcher\FancyMouse.KeyboardWatcher.csproj", "{2DD37CBC-1A34-4777-BE7B-1FC422552AB5}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FancyMouse.MessageLoop", "FancyMouse.MessageLoop\FancyMouse.MessageLoop.csproj", "{3FD07CA5-D5F9-452C-89A1-931A2D4571C1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FancyMouse.WindowsHotKeys.Tests", "FancyMouse.WindowsHotKeys.Tests\FancyMouse.WindowsHotKeys.Tests.csproj", "{B1E0AB75-3E85-4BD3-AC65-3E2F6DC90AF9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,18 +19,14 @@ Global
 		{EFE2A257-6979-4067-99A7-0C762492A8C7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EFE2A257-6979-4067-99A7-0C762492A8C7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EFE2A257-6979-4067-99A7-0C762492A8C7}.Release|Any CPU.Build.0 = Release|Any CPU
-		{6B589580-BE40-4A55-9CC4-00D1FD312184}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6B589580-BE40-4A55-9CC4-00D1FD312184}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6B589580-BE40-4A55-9CC4-00D1FD312184}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6B589580-BE40-4A55-9CC4-00D1FD312184}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2DD37CBC-1A34-4777-BE7B-1FC422552AB5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2DD37CBC-1A34-4777-BE7B-1FC422552AB5}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2DD37CBC-1A34-4777-BE7B-1FC422552AB5}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2DD37CBC-1A34-4777-BE7B-1FC422552AB5}.Release|Any CPU.Build.0 = Release|Any CPU
-		{3FD07CA5-D5F9-452C-89A1-931A2D4571C1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3FD07CA5-D5F9-452C-89A1-931A2D4571C1}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3FD07CA5-D5F9-452C-89A1-931A2D4571C1}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3FD07CA5-D5F9-452C-89A1-931A2D4571C1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E050CB83-ED43-4576-B388-DA91AACEE09C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E050CB83-ED43-4576-B388-DA91AACEE09C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E050CB83-ED43-4576-B388-DA91AACEE09C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E050CB83-ED43-4576-B388-DA91AACEE09C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B1E0AB75-3E85-4BD3-AC65-3E2F6DC90AF9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B1E0AB75-3E85-4BD3-AC65-3E2F6DC90AF9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B1E0AB75-3E85-4BD3-AC65-3E2F6DC90AF9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B1E0AB75-3E85-4BD3-AC65-3E2F6DC90AF9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

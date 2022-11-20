@@ -1,6 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace KeyboardWatcher.Win32Api;
+namespace FancyMouse.KeyboardWatcher.Win32Api;
 
 internal static class Winuser
 {

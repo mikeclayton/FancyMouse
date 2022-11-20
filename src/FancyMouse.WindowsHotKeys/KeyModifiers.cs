@@ -1,6 +1,6 @@
-﻿using FancyMouse.HotKeyManager.Win32Api;
+﻿using FancyMouse.WindowsHotKeys.Win32Api;
 
-namespace FancyMouse.HotKeyManager;
+namespace FancyMouse.WindowsHotKeys;
 
 [Flags]
 public enum KeyModifiers

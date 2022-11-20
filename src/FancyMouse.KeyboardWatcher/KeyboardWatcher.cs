@@ -1,9 +1,9 @@
-﻿using KeyboardWatcher.Win32Api;
+﻿using FancyMouse.KeyboardWatcher.Win32Api;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
-namespace KeyboardWatcher;
+namespace FancyMouse.KeyboardWatcher;
 
 public sealed class KeyboardWatcher
 {

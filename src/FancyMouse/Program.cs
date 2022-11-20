@@ -1,5 +1,5 @@
 using FancyMouse.Helpers;
-using FancyMouse.HotKeyManager;
+using FancyMouse.WindowsHotKeys;
 using FancyMouse.UI;
 using System.Diagnostics;
 
@@ -15,8 +15,6 @@ internal static class Program
     static void Main()
     {
 
-
-        // replaced keyboardwatcher with hotkeymanager
 
         // run Logitech SetPoint as admin for Office to work with custom mouse bindings.
         // (keyboard bindings work fine as normal user in Office, just mouse bindings don't...)
@@ -43,17 +41,18 @@ internal static class Program
             )
         );
 
-        var keys = HotKeyManager.HotKeyManager.Parse(
+        var hotkey = Keystroke.Parse(
             "CTRL + ALT + SHIFT + F"
         );
 
-        var hotKeyManager = new HotKeyManager.HotKeyManager();
-        hotKeyManager.RegisterHotKey(keys.Keys, keys.Modifiers);
+        var hotKeyManager = new HotKeyManager(hotkey);
+        //hotKeyManager.RegisterHotKey(hotkey);
         hotKeyManager.HotKeyPressed += new EventHandler<HotKeyEventArgs>(
             (s, e) => {
                 dialog.Show();
             }
         );
+        hotKeyManager.Start();
 
         Application.Run();
 
