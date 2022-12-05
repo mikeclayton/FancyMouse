@@ -1,0 +1,54 @@
+name: "01 - Build, Test, Publish"
+
+on:
+  push:
+    # run on all commits
+  pull_request:
+    # run on all pull requests
+  workflow_dispatch:
+    # allows you to run this workflow manually from the Actions tab
+
+jobs:
+  build_test_publish:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: bash
+
+    env:
+
+      BUILD_PATH:  ./src
+      CONFIG_NAME:  Debug
+      PUBLISH_PATH: ../.build/app
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          # needed for gitversion to work
+          fetch-depth: 0
+
+      - name: setup
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 7.0.x
+
+      - name: dotnet version
+        working-directory: ${{ env.BUILD_PATH }}
+        run: dotnet --version
+
+      - name: dotnet restore
+        working-directory: ${{ env.BUILD_PATH }}
+        run: dotnet restore
+
+      - name: dotnet build
+        working-directory: ${{ env.BUILD_PATH }}
+        run: dotnet build -c "$CONFIG_NAME" --no-restore
+
+      - name: dotnet test
+        working-directory: ${{ env.BUILD_PATH }}
+        run: dotnet test -c "$CONFIG_NAME" --no-build
+
+      - name: dotnet publish
+        working-directory: ${{ env.BUILD_PATH }}
+        run: dotnet publish -c "$CONFIG_NAME" -o "$PUBLISH_PATH"
