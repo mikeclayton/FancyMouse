@@ -1,4 +1,6 @@
-﻿namespace FancyMouse.UI;
+﻿using FancyMouse.Helpers;
+
+namespace FancyMouse.UI;
 
 internal class FancyMouseDialog
 {
@@ -7,18 +9,14 @@ internal class FancyMouseDialog
 
     public FancyMouseDialog(FancyMouseDialogOptions options)
     {
-        this.Options = options ?? throw new ArgumentNullException(nameof(options));
-        this.Form = new FancyMouseForm(this.Options);
+        this.Form = new FancyMouseForm(
+            options ?? throw new ArgumentNullException(nameof(options))
+        );
     }
 
     #endregion
 
     #region Properties
-
-    private FancyMouseDialogOptions Options
-    {
-        get;
-    }
 
     private FancyMouseForm Form
     {
@@ -33,13 +31,10 @@ internal class FancyMouseDialog
         var form = this.Form;
 
         form.Visible = false;
-        form.Screenshot = Helpers.ScreenHelper.GetDesktopImage();
 
-        form.InitForm();
-        form.InitPreview();
-        form.PositionForm();
-
-        form.Show();
+        form.ShowPreview(
+            ScreenHelper.GetDesktopImage()
+        );
 
     }
 

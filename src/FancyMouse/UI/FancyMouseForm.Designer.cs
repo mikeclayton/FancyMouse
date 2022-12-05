@@ -65,11 +65,13 @@ partial class FancyMouseForm
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
             this.Controls.Add(this.panel1);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.KeyPreview = true;
             this.Name = "FancyMouseForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
             this.Text = "FancyMouse";
+            this.TopMost = true;
             this.Deactivate += new System.EventHandler(this.FancyMouseForm_Deactivate);
             this.Load += new System.EventHandler(this.FancyMouseForm_Load);
             this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.FancyMouseForm_KeyDown);

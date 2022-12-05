@@ -1,9 +1,9 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+﻿// copied from https://github.com/dotnet/winforms/blob/main/src/System.Windows.Forms/src/System/Windows/Forms/Keys.cs
+// se we don't need a reference to System.Windows.Forms in thie project
+
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
-
-// copied from https://github.com/dotnet/winforms/blob/main/src/System.Windows.Forms/src/System/Windows/Forms/Keys.cs
-// se we don't need a reference to System.Windows.Forms in thie project
 
 namespace FancyMouse.WindowsHotKeys;
 

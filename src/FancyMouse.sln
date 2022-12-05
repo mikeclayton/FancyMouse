@@ -9,6 +9,17 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FancyMouse.WindowsHotKeys",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FancyMouse.WindowsHotKeys.Tests", "FancyMouse.WindowsHotKeys.Tests\FancyMouse.WindowsHotKeys.Tests.csproj", "{B1E0AB75-3E85-4BD3-AC65-3E2F6DC90AF9}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FancyMouse.Lib", "FancyMouse.Lib\FancyMouse.Lib.csproj", "{37437225-DC5E-4F4D-86A4-A39EEE37F139}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FancyMouse.Lib.Tests", "FancyMouse.Lib.Tests\FancyMouse.Lib.Tests.csproj", "{9A9E15AF-3E85-4F20-AA23-A14ACA4805B5}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{49E13F75-3D64-4529-B0AA-55DFE69795FB}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{C92998B2-2E21-4DA8-A73D-ADE970C87F25}"
+	ProjectSection(SolutionItems) = preProject
+		..\.github\workflows\01_build_test_pack.yaml = ..\.github\workflows\01_build_test_pack.yaml
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,9 +38,20 @@ Global
 		{B1E0AB75-3E85-4BD3-AC65-3E2F6DC90AF9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B1E0AB75-3E85-4BD3-AC65-3E2F6DC90AF9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B1E0AB75-3E85-4BD3-AC65-3E2F6DC90AF9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{37437225-DC5E-4F4D-86A4-A39EEE37F139}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{37437225-DC5E-4F4D-86A4-A39EEE37F139}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{37437225-DC5E-4F4D-86A4-A39EEE37F139}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{37437225-DC5E-4F4D-86A4-A39EEE37F139}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9A9E15AF-3E85-4F20-AA23-A14ACA4805B5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9A9E15AF-3E85-4F20-AA23-A14ACA4805B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9A9E15AF-3E85-4F20-AA23-A14ACA4805B5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9A9E15AF-3E85-4F20-AA23-A14ACA4805B5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{C92998B2-2E21-4DA8-A73D-ADE970C87F25} = {49E13F75-3D64-4529-B0AA-55DFE69795FB}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {3D14D3DA-D261-4E05-A448-4AACF57F15D5}
