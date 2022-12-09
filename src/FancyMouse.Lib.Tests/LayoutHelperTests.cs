@@ -26,13 +26,23 @@ public static class LayoutHelperTests
                 Rectangle.Empty
             );
             // single region
+            //
+            // +---+
+            // | 0 |
+            // +---+
             yield return (
                 new List<Rectangle> {
                     new Rectangle(100,100,100,100)
                 },
                 new Rectangle(100, 100, 100, 100)
             );
-            // multi-screen monitor
+            // multi-monitor desktop
+            //
+            // +----------------+
+            // |                |
+            // |       1        +-------+
+            // |                |   0   |
+            // +----------------+-------+
             yield return (
                 new List<Rectangle> {
                     new Rectangle(5120, 0, 1920, 1080),
@@ -40,13 +50,56 @@ public static class LayoutHelperTests
                 },
                 new Rectangle(0, 0, 7040, 1440)
             );
+            // multi-monitor desktop
+            //
+            // note - windows puts the *primary* monitor at the origin (0,0),
+            // so screens positioned *above* or *left* will have negative coordinates
+            //
+            // +-------+
+            // |   0   |
+            // +-------+--------+
+            // |                |
+            // |       1        |
+            // |                |
+            // +----------------+
+            yield return (
+                new List<Rectangle> {
+                    new Rectangle(0, -1000, 1920, 1080),
+                    new Rectangle(0, 0, 5120, 1440),
+                },
+                new Rectangle(0, -1000, 5120, 2440)
+            );
+            // multi-monitor desktop
+            //
+            // note - windows puts the *primary* monitor at the origin (0,0),
+            // so screens positioned *above* or *left* will have negative coordinates
+            //
+            // +-------+----------------+
+            // |   0   |                |
+            // +-------+       1        |
+            //         |                |
+            //         +----------------+
+            yield return (
+                new List<Rectangle> {
+                    new Rectangle(-1920, 0, 1920, 1080),
+                    new Rectangle(0, 0, 5120, 1440),
+                },
+                new Rectangle(-1920, 0, 7040, 1440)
+            );
             // non-contiguous regions
+            //
+            // +---+
+            // | 0 |    +-------+
+            // +---+    |       |
+            //          |   1   |
+            //          |       |
+            //          +-------+
             yield return (
                 new List<Rectangle> {
                     new Rectangle(0, 0, 100, 100),
-                    new Rectangle(1000, 1000, 200, 200),
+                    new Rectangle(200, 150, 200, 200),
                 },
-                new Rectangle(0, 0, 1200, 1200)
+                new Rectangle(0, 0, 400, 350)
             );
         }
 

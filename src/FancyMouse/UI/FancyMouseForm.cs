@@ -1,6 +1,5 @@
-using FancyMouse.Extensions;
+using FancyMouse.Helpers;
 using FancyMouse.Lib;
-using System.Windows.Forms;
 
 namespace FancyMouse.UI;
 
@@ -24,7 +23,7 @@ internal partial class FancyMouseForm : Form
         get;
     }
 
-    private Size DesktopSize
+    private Rectangle ScreenshotBounds
     {
         get;
         set;
@@ -54,7 +53,7 @@ internal partial class FancyMouseForm : Form
         {
             pbxPreview.Image.Dispose();
             pbxPreview.Image = null;
-            this.DesktopSize = Size.Empty;
+            this.DesktopBounds = Rectangle.Empty;
         }
 
         this.Hide();
@@ -72,17 +71,20 @@ internal partial class FancyMouseForm : Form
             {
                 // ctrl click - show settings dialog
                 var options = new FancyMouseSettings();
-                options.Location = this.GetCenteredChildLocation(options);
+                options.Location = LayoutHelper.Center(
+                    obj: options.Size,
+                    midpoint: LayoutHelper.Midpoint(this.Bounds)
+                );
                 options.ShowDialog();
             }
             else
             {
                 // plain click - move mouse pointer
-                var scale = (double)pbxPreview.Width / this.DesktopSize.Width;
                 var mouseEvent = (MouseEventArgs)e;
-                var cursorPosition = new Point(
-                    (int)(mouseEvent.X / scale),
-                    (int)(mouseEvent.Y / scale)
+                var cursorPosition = LayoutHelper.ScaleLocation(
+                    originalBounds: pbxPreview.Bounds,
+                    originalLocation: new Point(mouseEvent.X, mouseEvent.Y),
+                    scaledBounds: this.ScreenshotBounds
                 );
                 //MessageBox.Show(
                 //    $"screen = {this.Screenshot!.Size}\r\n" +
@@ -97,33 +99,31 @@ internal partial class FancyMouseForm : Form
         }
 
         this.Hide();
+
     }
 
     #endregion
 
     #region Form Management
 
-    public void ShowPreview(
-        Bitmap screenshot
-    )
+    public void ShowPreview()
     {
-
-        if (screenshot == null)
-        {
-            throw new ArgumentNullException(nameof(screenshot));
-        }
 
         // dispose the existing image if there is one
         if (pbxPreview.Image != null)
         {
             pbxPreview.Image.Dispose();
             pbxPreview.Image = null;
-            this.DesktopSize = Size.Empty;
+            this.ScreenshotBounds = Rectangle.Empty;
         }
 
+        this.ScreenshotBounds = LayoutHelper.CombineBounds(
+            Screen.AllScreens.Select(screen => screen.Bounds)
+        );
+
         // update the image
+        var screenshot = ScreenHelper.GetDesktopImage(this.ScreenshotBounds);
         pbxPreview.Image = screenshot;
-        this.DesktopSize = screenshot.Size;
 
         // resize the form
         var padding = new Size(

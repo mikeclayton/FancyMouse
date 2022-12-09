@@ -32,9 +32,7 @@ internal class FancyMouseDialog
 
         form.Visible = false;
 
-        form.ShowPreview(
-            ScreenHelper.GetDesktopImage()
-        );
+        form.ShowPreview();
 
     }
 

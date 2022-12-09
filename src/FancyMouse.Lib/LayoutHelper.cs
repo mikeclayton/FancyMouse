@@ -1,5 +1,4 @@
 ﻿using System.Drawing;
-using System.Threading.Tasks.Dataflow;
 
 namespace FancyMouse.Lib
 {
@@ -58,6 +57,14 @@ namespace FancyMouse.Lib
             return scaledSize;
         }
 
+        public static Point ScaleLocation(Rectangle originalBounds, Point originalLocation, Rectangle scaledBounds)
+        {
+             return new Point(
+                (int)(originalLocation.X / (double)originalBounds.Width * scaledBounds.Width) + scaledBounds.Left,
+                (int)(originalLocation.Y / (double)originalBounds.Height * scaledBounds.Height) + scaledBounds.Top
+            );
+        }
+
         /// <summary>
         /// Calculate the new region of an object so that it's centered on the given midpoint.
         /// </summary>
@@ -69,6 +76,14 @@ namespace FancyMouse.Lib
             return new Point(
                 x: (int)(midpoint.X - (float)obj.Width / 2),
                 y: (int)(midpoint.Y - (float)obj.Height / 2)
+            );
+        }
+
+        public static Point Midpoint(Rectangle bounds)
+        {
+            return new Point(
+                (bounds.Left + bounds.Right) / 2,
+                (bounds.Top + bounds.Bottom) / 2
             );
         }
 

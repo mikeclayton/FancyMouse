@@ -15,7 +15,6 @@ internal static class Program
     static void Main()
     {
 
-
         // run Logitech SetPoint as admin for Office to work with custom mouse bindings.
         // (keyboard bindings work fine as normal user in Office, just mouse bindings don't...)
         // https://social.msdn.microsoft.com/Forums/en-US/09a7ebee-9567-4704-be88-de54a16ca99e/logitech-mouse-button-assignments-ignored-by-vs?forum=csharpide

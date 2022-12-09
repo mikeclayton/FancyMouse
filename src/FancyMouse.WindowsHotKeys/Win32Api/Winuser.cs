@@ -1,5 +1,4 @@
 ﻿using System.Runtime.InteropServices;
-using FancyMouse.WindowsHotKeys.Win32Api;
 
 namespace FancyMouse.WindowsHotKeys.Win32Api;
 

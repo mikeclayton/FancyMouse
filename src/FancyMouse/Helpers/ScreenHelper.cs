@@ -7,15 +7,12 @@ namespace FancyMouse.Helpers
     internal static class ScreenHelper
     {
 
-        public static Bitmap GetDesktopImage()
+        public static Bitmap GetDesktopImage(Rectangle bounds)
         {
-            var desktopBounds = LayoutHelper.CombineBounds(
-                Screen.AllScreens.Select(screen => screen.Bounds)
-            );
-            var desktopImage = new Bitmap(desktopBounds.Width, desktopBounds.Height, PixelFormat.Format32bppArgb);
-            using var graphics = Graphics.FromImage(desktopImage);
-            graphics.CopyFromScreen(desktopBounds.Left, desktopBounds.Top, 0, 0, desktopBounds.Size);
-            return desktopImage;
+            var image = new Bitmap(bounds.Width, bounds.Height, PixelFormat.Format32bppArgb);
+            using var graphics = Graphics.FromImage(image);
+            graphics.CopyFromScreen(bounds.Left, bounds.Top, 0, 0, bounds.Size);
+            return image;
         }
 
     }
