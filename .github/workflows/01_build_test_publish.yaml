@@ -54,7 +54,7 @@ jobs:
 
       - name: dotnet publish
         working-directory: ${{ env.BUILD_PATH }}
-        run: dotnet publish --configuration "$CONFIG_NAME" --no-build -output "$PUBLISH_PATH"
+        run: dotnet publish --configuration "$CONFIG_NAME" --no-build --output "$PUBLISH_PATH"
 
       - name: zip
         working-directory: ${{ env.BUILD_PATH }}
