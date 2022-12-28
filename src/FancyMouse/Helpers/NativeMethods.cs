@@ -1,8 +1,11 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Runtime.InteropServices;
 
 namespace FancyMouse.Helpers;
 
-internal static partial class NativeMethods
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+[SuppressMessage("ReSharper", "UnusedMember.Global")]
+internal static class NativeMethods
 {
 
     public const int S_OK = 0x00000000;

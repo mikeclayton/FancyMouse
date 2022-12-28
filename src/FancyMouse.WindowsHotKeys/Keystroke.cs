@@ -65,7 +65,7 @@ public sealed class Keystroke
                     keystroke.Keys = Enum.Parse<Keys>(part);
                     break;
             }
-        };
+        }
         return new Keystroke(keystroke.Keys, keystroke.Modifiers);
     }
 

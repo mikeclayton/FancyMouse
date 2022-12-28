@@ -1,5 +1,9 @@
-﻿namespace FancyMouse.WindowsHotKeys.Win32Api;
+﻿using System.Diagnostics.CodeAnalysis;
 
+namespace FancyMouse.WindowsHotKeys.Win32Api;
+
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+[SuppressMessage("ReSharper", "UnusedField.Compiler")]
 internal static class Windef
 {
 

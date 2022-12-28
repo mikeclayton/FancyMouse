@@ -1,8 +1,10 @@
 ﻿using FancyMouse.WindowsHotKeys.Win32Api;
+using System.Diagnostics.CodeAnalysis;
 
 namespace FancyMouse.WindowsHotKeys;
 
 [Flags]
+[SuppressMessage("ReSharper", "UnusedMember.Global")]
 public enum KeyModifiers
 {
 

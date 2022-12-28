@@ -18,7 +18,7 @@ internal partial class FancyMouseForm : Form
 
     #region Properties
 
-    public FancyMouseDialogOptions Options
+    private FancyMouseDialogOptions Options
     {
         get;
     }

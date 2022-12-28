@@ -1,6 +1,4 @@
-﻿using FancyMouse.Helpers;
-
-namespace FancyMouse.UI;
+﻿namespace FancyMouse.UI;
 
 internal class FancyMouseDialog
 {

@@ -11,16 +11,16 @@ public static class LayoutHelperTests
     public static class CombineBoundsTests
     {
 
-        private static IEnumerable<(IEnumerable<Rectangle> Bounds, Rectangle ExpectedResult)> GetTestCases()
+        private static IEnumerable<(List<Rectangle> Bounds, Rectangle ExpectedResult)> GetTestCases()
         {
             // empty list
             yield return (
-                new List<Rectangle> { },
+                new(),
                 Rectangle.Empty
             );
             // empty bounds
             yield return (
-                new List<Rectangle> {
+                new() {
                     Rectangle.Empty
                 },
                 Rectangle.Empty
@@ -31,10 +31,10 @@ public static class LayoutHelperTests
             // | 0 |
             // +---+
             yield return (
-                new List<Rectangle> {
-                    new Rectangle(100,100,100,100)
+                new() {
+                    new(100, 100, 100, 100)
                 },
-                new Rectangle(100, 100, 100, 100)
+                new(100, 100, 100, 100)
             );
             // multi-monitor desktop
             //
@@ -44,11 +44,11 @@ public static class LayoutHelperTests
             // |                |   0   |
             // +----------------+-------+
             yield return (
-                new List<Rectangle> {
-                    new Rectangle(5120, 0, 1920, 1080),
-                    new Rectangle(0, 0, 5120, 1440),
+                new() {
+                    new(5120, 0, 1920, 1080),
+                    new(0, 0, 5120, 1440),
                 },
-                new Rectangle(0, 0, 7040, 1440)
+                new(0, 0, 7040, 1440)
             );
             // multi-monitor desktop
             //
@@ -63,11 +63,11 @@ public static class LayoutHelperTests
             // |                |
             // +----------------+
             yield return (
-                new List<Rectangle> {
-                    new Rectangle(0, -1000, 1920, 1080),
-                    new Rectangle(0, 0, 5120, 1440),
+                new() {
+                    new(0, -1000, 1920, 1080),
+                    new(0, 0, 5120, 1440),
                 },
-                new Rectangle(0, -1000, 5120, 2440)
+                new(0, -1000, 5120, 2440)
             );
             // multi-monitor desktop
             //
@@ -80,11 +80,11 @@ public static class LayoutHelperTests
             //         |                |
             //         +----------------+
             yield return (
-                new List<Rectangle> {
-                    new Rectangle(-1920, 0, 1920, 1080),
-                    new Rectangle(0, 0, 5120, 1440),
+                new() {
+                    new(-1920, 0, 1920, 1080),
+                    new(0, 0, 5120, 1440),
                 },
-                new Rectangle(-1920, 0, 7040, 1440)
+                new(-1920, 0, 7040, 1440)
             );
             // non-contiguous regions
             //
@@ -95,11 +95,11 @@ public static class LayoutHelperTests
             //          |       |
             //          +-------+
             yield return (
-                new List<Rectangle> {
-                    new Rectangle(0, 0, 100, 100),
-                    new Rectangle(200, 150, 200, 200),
+                new() {
+                    new(0, 0, 100, 100),
+                    new(200, 150, 200, 200),
                 },
-                new Rectangle(0, 0, 400, 350)
+                new(0, 0, 400, 350)
             );
         }
 
@@ -119,16 +119,16 @@ public static class LayoutHelperTests
         private static IEnumerable<(Size Obj, Size Bounds, Size ExpectedResult)> GetTestCases()
         {
             // identity tests
-            yield return (new Size(0, 0), new Size(0, 0), new Size(0, 0));
-            yield return (new Size(512, 384), new Size(512, 384), new Size(512, 384));
-            yield return (new Size(1024, 768), new Size(1024, 768), new Size(1024, 768));
+            yield return (new(0, 0), new(0, 0), new(0, 0));
+            yield return (new(512, 384), new(512, 384), new(512, 384));
+            yield return (new(1024, 768), new(1024, 768), new(1024, 768));
             // integer scaling factor tests
-            yield return (new Size(512, 384), new Size(2048, 1536), new Size(2048, 1536));
-            yield return (new Size(2048, 1536), new Size(1024, 768), new Size(1024, 768));
+            yield return (new(512, 384), new(2048, 1536), new(2048, 1536));
+            yield return (new(2048, 1536), new(1024, 768), new(1024, 768));
             // scale to fit width
-            yield return (new Size(512, 384), new Size(2048, 3072), new Size(2048, 1536));
+            yield return (new(512, 384), new(2048, 3072), new(2048, 1536));
             // scale to fit height
-            yield return (new Size(512, 384), new Size(4096, 1536), new Size(2048, 1536));
+            yield return (new(512, 384), new(4096, 1536), new(2048, 1536));
         }
 
         [TestCaseSource(nameof(GetTestCases))]
@@ -147,16 +147,16 @@ public static class LayoutHelperTests
         private static IEnumerable<(Size Obj, Point Midpoint, Point ExpectedResult)> GetTestCases()
         {
             // zero-sized object should centre exactly on the midpoint
-            yield return (new Size(0, 0), new Point(0, 0), new Point(0, 0));
+            yield return (new(0, 0), new(0, 0), new(0, 0));
             // odd-sized objects should centre above/left of the midpoint
-            yield return (new Size(1, 1), new Point(1, 1), new Point(0, 0));
-            yield return (new Size(1, 1), new Point(5, 5), new Point(4, 4));
+            yield return (new(1, 1), new(1, 1), new(0, 0));
+            yield return (new(1, 1), new(5, 5), new(4, 4));
             // even-sized objects should centre exactly on the midpoint
-            yield return (new Size(2, 2), new Point(1, 1), new Point(0, 0));
-            yield return (new Size(2, 2), new Point(5, 5), new Point(4, 4));
-            yield return (new Size(800, 600), new Point(1000, 1000), new Point(600, 700));
+            yield return (new(2, 2), new(1, 1), new(0, 0));
+            yield return (new(2, 2), new(5, 5), new(4, 4));
+            yield return (new(800, 600), new(1000, 1000), new(600, 700));
             // negative result position
-            yield return (new Size(1000, 1200), new Point(300, 300), new Point(-200, -300));
+            yield return (new(1000, 1200), new(300, 300), new(-200, -300));
         }
 
         [TestCaseSource(nameof(GetTestCases))]
@@ -175,17 +175,17 @@ public static class LayoutHelperTests
         private static IEnumerable<(Rectangle Obj, Rectangle Bounds, Rectangle ExpectedResult)> GetTestCases()
         {
             // already inside - obj fills bounds
-            yield return (new Rectangle(0, 0, 100, 100), new Rectangle(0, 0, 100, 100), new Rectangle(0, 0, 100, 100));
+            yield return (new(0, 0, 100, 100), new(0, 0, 100, 100), new(0, 0, 100, 100));
             // already inside - obj exactly in each corner
-            yield return (new Rectangle(0, 0, 100, 100), new Rectangle(0, 0, 200, 200), new Rectangle(0, 0, 100, 100));
-            yield return (new Rectangle(100, 0, 100, 100), new Rectangle(0, 0, 200, 200), new Rectangle(100, 0, 100, 100));
-            yield return (new Rectangle(0, 100, 100, 100), new Rectangle(0, 0, 200, 200), new Rectangle(0, 100, 100, 100));
-            yield return (new Rectangle(100, 100, 100, 100), new Rectangle(0, 0, 200, 200), new Rectangle(100, 100, 100, 100));
+            yield return (new(0, 0, 100, 100), new(0, 0, 200, 200), new(0, 0, 100, 100));
+            yield return (new(100, 0, 100, 100), new(0, 0, 200, 200), new(100, 0, 100, 100));
+            yield return (new(0, 100, 100, 100), new(0, 0, 200, 200), new(0, 100, 100, 100));
+            yield return (new(100, 100, 100, 100), new(0, 0, 200, 200), new(100, 100, 100, 100));
             // move inside - obj outside each corner
-            yield return (new Rectangle(-50, -50, 100, 100), new Rectangle(0, 0, 200, 200), new Rectangle(0, 0, 100, 100));
-            yield return (new Rectangle(250, -50, 100, 100), new Rectangle(0, 0, 200, 200), new Rectangle(100, 0, 100, 100));
-            yield return (new Rectangle(-50, 250, 100, 100), new Rectangle(0, 0, 200, 200), new Rectangle(0, 100, 100, 100));
-            yield return (new Rectangle(150, 150, 100, 100), new Rectangle(0, 0, 200, 200), new Rectangle(100, 100, 100, 100));
+            yield return (new(-50, -50, 100, 100), new(0, 0, 200, 200), new(0, 0, 100, 100));
+            yield return (new(250, -50, 100, 100), new(0, 0, 200, 200), new(100, 0, 100, 100));
+            yield return (new(-50, 250, 100, 100), new(0, 0, 200, 200), new(0, 100, 100, 100));
+            yield return (new(150, 150, 100, 100), new(0, 0, 200, 200), new(100, 100, 100, 100));
         }
 
         [TestCaseSource(nameof(GetTestCases))]
@@ -223,8 +223,8 @@ public static class LayoutHelperTests
 
     #endregion
 
-    public static class GetPreviewPositionTests
-    {
-    }
+    //public static class GetPreviewPositionTests
+    //{
+    //}
 
 }

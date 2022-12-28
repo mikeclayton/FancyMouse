@@ -26,7 +26,7 @@ namespace FancyMouse.Lib
             }
             var combined = regionList.Aggregate(
                 seed: regionList[0],
-                func: (total, next) => Rectangle.Union(total, next)
+                func: Rectangle.Union
             );
             return combined;
         }
@@ -46,14 +46,12 @@ namespace FancyMouse.Lib
             var widthRatio = (double)obj.Width / bounds.Width;
             var heightRatio = (double)obj.Height / bounds.Height;
             var scaledSize = (widthRatio > heightRatio)
-                ? new Size(
-                    width: bounds.Width,
-                    height: (int)(obj.Height / widthRatio)
-                )
-                : new Size(
-                    width: (int)(obj.Width / heightRatio),
-                    height: bounds.Height
-                );
+                ? bounds with {
+                    Height = (int)(obj.Height / widthRatio)
+                }
+                : bounds with {
+                    Width = (int)(obj.Width / heightRatio)
+                };
             return scaledSize;
         }
 
@@ -116,22 +114,20 @@ namespace FancyMouse.Lib
         /// the outer rectangle. Returns the inner rectangle's current position if it is
         /// already inside the outer rectangle.
         /// </summary>
-        /// <param name="obj"></param>
-        /// <param name="bounds"></param>
+        /// <param name="inner"></param>
+        /// <param name="outer"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
-        public static Rectangle MoveInside(Rectangle obj, Rectangle bounds)
+        public static Rectangle MoveInside(Rectangle inner, Rectangle outer)
         {
-            if ((obj.Width > bounds.Width) || (obj.Height > bounds.Height))
+            if ((inner.Width > outer.Width) || (inner.Height > outer.Height))
             {
-                throw new ArgumentException($"{nameof(obj)} cannot be larger than {nameof(bounds)}.");
+                throw new ArgumentException($"{nameof(inner)} cannot be larger than {nameof(outer)}.");
             }
-            return new Rectangle(
-                LayoutHelper.Between(bounds.X, obj.X, bounds.Right - obj.Width),
-                LayoutHelper.Between(bounds.Y, obj.Y, bounds.Bottom - obj.Height),
-                obj.Width,
-                obj.Height
-            );
+            return inner with {
+                X = LayoutHelper.Between(outer.X, inner.X, outer.Right - inner.Width),
+                Y = LayoutHelper.Between(outer.Y, inner.Y, outer.Bottom - inner.Height)
+            };
         }
 
         #endregion
@@ -148,11 +144,11 @@ namespace FancyMouse.Lib
 
             // centre the preview on the cursor position
             return LayoutHelper.MoveInside(
-                obj: new Rectangle(
+                inner: new Rectangle(
                     LayoutHelper.Center(scaledSize, cursorPosition),
                     scaledSize
                 ),
-                bounds: screenBounds
+                outer: screenBounds
             );
 
             //// the preview image and the desktop are aligned at current mouse position

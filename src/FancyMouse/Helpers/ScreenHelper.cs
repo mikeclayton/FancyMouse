@@ -1,5 +1,4 @@
-﻿using FancyMouse.Lib;
-using System.Drawing.Imaging;
+﻿using System.Drawing.Imaging;
 
 namespace FancyMouse.Helpers
 {

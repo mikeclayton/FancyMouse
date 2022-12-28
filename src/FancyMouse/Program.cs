@@ -32,7 +32,7 @@ internal static class Program
         Console.WriteLine("Hello, World!");
 
         // create the notify icon for the application
-        var notifyForm = new FancyMouseNotify();
+        //var notifyForm = new FancyMouseNotify();
 
         var dialog = new FancyMouseDialog(
             new FancyMouseDialogOptions(
@@ -45,12 +45,10 @@ internal static class Program
         );
 
         var hotKeyManager = new HotKeyManager(hotkey);
-        //hotKeyManager.RegisterHotKey(hotkey);
-        hotKeyManager.HotKeyPressed += new EventHandler<HotKeyEventArgs>(
-            (s, e) => {
+        hotKeyManager.HotKeyPressed +=
+            (_, _) => {
                 dialog.Show();
-            }
-        );
+            };
         hotKeyManager.Start();
 
         Application.Run();
@@ -84,7 +82,7 @@ internal static class Program
         // display resolution (1920 x 1080) instead of the scaled resolution (1280 x 720)
 
         // Windows 10 Creators Update
-        var osMinVersion = new Version(10, 0, 15063, 0);
+        //var osMinVersion = new Version(10, 0, 15063, 0);
 
         // get the current process's dpi awareness mode
         // see https://learn.microsoft.com/en-us/dotnet/desktop/winforms/high-dpi-support-in-windows-forms?view=netframeworkdesktop-4.8

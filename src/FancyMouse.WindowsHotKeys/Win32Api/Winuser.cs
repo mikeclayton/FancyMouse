@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Runtime.InteropServices;
 
 namespace FancyMouse.WindowsHotKeys.Win32Api;
 
@@ -8,6 +9,10 @@ namespace FancyMouse.WindowsHotKeys.Win32Api;
 /// <remarks>
 /// See https://learn.microsoft.com/en-us/windows/win32/api/winuser/
 /// </remarks>
+[SuppressMessage("ReSharper", "FieldCanBeMadeReadOnly.Global")]
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+[SuppressMessage("ReSharper", "MemberCanBePrivate.Global")]
+[SuppressMessage("ReSharper", "UnusedMember.Global")]
 internal static class Winuser
 {
 

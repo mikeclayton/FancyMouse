@@ -2,6 +2,7 @@
 using System.Runtime.InteropServices;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 
 namespace FancyMouse.WindowsHotKeys;
 
@@ -24,9 +25,9 @@ public sealed class HotKeyManager
 
     #region Events
 
-    delegate bool RegisterHotKeyDelegate(IntPtr hWnd, int id, uint fsModifiers, uint vk);
+    //private delegate bool RegisterHotKeyDelegate(IntPtr hWnd, int id, uint fsModifiers, uint vk);
 
-    delegate bool UnregisterHotKeyDelegate(IntPtr hWnd, int id);
+    //private delegate bool UnregisterHotKeyDelegate(IntPtr hWnd, int id);
 
     public event EventHandler<HotKeyEventArgs>? HotKeyPressed;
 
@@ -46,6 +47,7 @@ public sealed class HotKeyManager
 
     #region Properties
 
+    [SuppressMessage("ReSharper", "MemberCanBePrivate.Global")]
     public Keystroke HotKey
     {
         get;
@@ -54,7 +56,6 @@ public sealed class HotKeyManager
     private Winuser.WNDPROC WndProc
     {
         get;
-        set;
     }
 
     private IntPtr HWnd
@@ -84,8 +85,6 @@ public sealed class HotKeyManager
             //    //If you want to shutdown the application, call the next function instead of DestroyWindow
             //    PostQuitMessage(0);
             //    break;
-            default:
-                break;
         }
         return Winuser.DefWindowProc(hWnd, msg, wParam, lParam);
     }
@@ -165,7 +164,7 @@ public sealed class HotKeyManager
         return id;
     }
 
-    public void UnregisterHotKey(int id)
+    private void UnregisterHotKey(int id)
     {
         var result = Winuser.UnregisterHotKey(this.HWnd, id);
         if (result == 0)
@@ -182,6 +181,7 @@ public sealed class HotKeyManager
 
     #region Methods
 
+    [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public void Start()
     {
 
@@ -212,16 +212,18 @@ public sealed class HotKeyManager
 
         messageLoop.Start();
 
-        this.RegisterHotKey();
+        _ = this.RegisterHotKey();
 
     }
 
+    [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public void Stop()
     {
         throw new NotImplementedException();
     }
 
-    internal void OnHotKeyPressed(HotKeyEventArgs e)
+    [SuppressMessage("ReSharper", "UnusedMember.Global")]
+    private void OnHotKeyPressed(HotKeyEventArgs e)
     {
         this.HotKeyPressed?.Invoke(null, e);
     }
