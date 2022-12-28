@@ -56,10 +56,10 @@ jobs:
         working-directory: ${{ env.BUILD_PATH }}
         run: dotnet publish --configuration "$CONFIG_NAME" --no-build --output "$PUBLISH_PATH"
 
-      - name: zip
-        working-directory: ${{ env.BUILD_PATH }}
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y zip
-          echo "version = ${{ github.ref_name }}"
-          zip -r "$PUBLISH_PATH" FancyMouse-${{ github.ref_name }}.zip
+      #- name: zip
+      #  working-directory: ${{ env.BUILD_PATH }}
+      #  run: |
+      #    sudo apt-get update
+      #    sudo apt-get install -y zip
+      #    echo "version = ${{ github.ref_name }}"
+      #    zip -r "$PUBLISH_PATH" FancyMouse-${{ github.ref_name }}.zip
