@@ -31,6 +31,10 @@ public sealed class Keystroke
 
     public static Keystroke Parse(string s)
     {
+
+        // see https://github.com/microsoft/terminal/blob/14919073a12fc0ecb4a9805cc183fdd68d30c4b6/src/cascadia/TerminalSettingsModel/KeyChordSerialization.cpp#L124
+        // for an alternate implementation
+
         // e.g. "CTRL + ALT + SHIFT + F"
         if (s == null)
         {

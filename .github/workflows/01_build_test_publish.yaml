@@ -18,8 +18,11 @@ jobs:
 
     env:
 
-      BUILD_PATH:  ./src
-      CONFIG_NAME:  Debug
+      BUILD_PATH: ./src
+
+      CONFIG_NAME: Release
+
+      # relative to BUILD_PATH
       PUBLISH_PATH: ../.build/app
 
     steps:
@@ -43,12 +46,18 @@ jobs:
 
       - name: dotnet build
         working-directory: ${{ env.BUILD_PATH }}
-        run: dotnet build -c "$CONFIG_NAME" --no-restore
+        run: dotnet build --configuration "$CONFIG_NAME" --no-restore
 
       - name: dotnet test
         working-directory: ${{ env.BUILD_PATH }}
-        run: dotnet test -c "$CONFIG_NAME" --no-build
+        run: dotnet test --configuration "$CONFIG_NAME" --no-build
 
       - name: dotnet publish
         working-directory: ${{ env.BUILD_PATH }}
-        run: dotnet publish -c "$CONFIG_NAME" -o "$PUBLISH_PATH"
+        run: dotnet publish --configuration "$CONFIG_NAME" --no-build -output "$PUBLISH_PATH"
+
+      - name: zip
+        working-directory: ${{ env.BUILD_PATH }}
+        run: |
+          echo "version = ${{ github.ref_name }}"
+          zip -r "$PUBLISH_PATH" FancyMouse-${{ github.ref_name }}.zip
