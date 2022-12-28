@@ -1,6 +1,7 @@
 using FancyMouse.Helpers;
-using FancyMouse.WindowsHotKeys;
 using FancyMouse.UI;
+using FancyMouse.WindowsHotKeys;
+using Microsoft.Extensions.Configuration;
 using System.Diagnostics;
 
 namespace FancyMouse;
@@ -16,7 +17,7 @@ internal static class Program
     {
 
         // run Logitech SetPoint as admin for Office to work with custom mouse bindings.
-        // (keyboard bindings work fine as normal user in Office, just mouse bindings don't...)
+        // (SetPoint keyboard bindings work fine when running as a normal user in Office, but mouse bindings don't...)
         // https://social.msdn.microsoft.com/Forums/en-US/09a7ebee-9567-4704-be88-de54a16ca99e/logitech-mouse-button-assignments-ignored-by-vs?forum=csharpide
 
         // scheduled task to start app at logon
@@ -34,16 +35,24 @@ internal static class Program
         // create the notify icon for the application
         //var notifyForm = new FancyMouseNotify();
 
+        var config = new ConfigurationBuilder()
+            .AddJsonFile("appsettings.json")
+            .Build()
+            .GetSection("FancyMouse");
+
+        var preview = (config["Preview"] ?? throw new InvalidOperationException("Missing config value 'Preview'"))
+            .Split("x").Select(s => int.Parse(s.Trim())).ToList();
         var dialog = new FancyMouseDialog(
             new FancyMouseDialogOptions(
-                maximumSize: new Size(1600, 1200)
+                maximumSize: new Size(
+                    preview[0], preview[1]
+                )
             )
         );
 
         var hotkey = Keystroke.Parse(
-            "CTRL + ALT + SHIFT + F"
+            config["HotKey"] ?? throw new InvalidOperationException("Missing config value 'HotKey'")
         );
-
         var hotKeyManager = new HotKeyManager(hotkey);
         hotKeyManager.HotKeyPressed +=
             (_, _) => {
@@ -105,14 +114,11 @@ internal static class Program
             // see https://stackoverflow.com/a/28923832/3156906
             //     https://learn.microsoft.com/en-us/dotnet/desktop/winforms/high-dpi-support-in-windows-forms?view=netframeworkdesktop-4.8
             apiResult = NativeMethods.SetProcessDpiAwareness(desiredDpiAwareness);
-            switch (apiResult)
+            if (apiResult != NativeMethods.S_OK)
             {
-                case NativeMethods.S_OK:
-                    break;
-                default:
-                    throw new InvalidOperationException(
-                        $"{nameof(NativeMethods.SetProcessDpiAwareness)} returned {apiResult}"
-                    );
+                throw new InvalidOperationException(
+                    $"{nameof(NativeMethods.SetProcessDpiAwareness)} returned {apiResult}"
+                );
             }
         }
 

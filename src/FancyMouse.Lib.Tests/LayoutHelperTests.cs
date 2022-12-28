@@ -104,7 +104,7 @@ public static class LayoutHelperTests
         }
 
         [TestCaseSource(nameof(GetTestCases))]
-        public static void RunTestCases((IEnumerable<Rectangle> Bounds, Rectangle ExpectedResult) data)
+        public static void RunTestCases((List<Rectangle> Bounds, Rectangle ExpectedResult) data)
         {
             var actual = LayoutHelper.CombineBounds(data.Bounds);
             var expected = data.ExpectedResult;
@@ -174,7 +174,7 @@ public static class LayoutHelperTests
 
         private static IEnumerable<(Rectangle Obj, Rectangle Bounds, Rectangle ExpectedResult)> GetTestCases()
         {
-            // already inside - obj fills bounds
+            // already inside - obj fills bounds exactly
             yield return (new(0, 0, 100, 100), new(0, 0, 100, 100), new(0, 0, 100, 100));
             // already inside - obj exactly in each corner
             yield return (new(0, 0, 100, 100), new(0, 0, 200, 200), new(0, 0, 100, 100));

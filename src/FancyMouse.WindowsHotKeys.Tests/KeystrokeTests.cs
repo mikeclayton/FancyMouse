@@ -19,9 +19,9 @@ public static class KeystrokeTests
         [TestCase("CTRL + ALT + SHIFT + WIN + F", KeyModifiers.Control | KeyModifiers.Alt | KeyModifiers.Shift | KeyModifiers.Windows, Keys.F)]
         public static void ValidStringsShouldParse(string s, KeyModifiers modifier, Keys key)
         {
+            var expected = new Keystroke(key, modifier);
+            var actual = Keystroke.Parse(s);
             Assert.Multiple(() => {
-                var expected = new Keystroke(key, modifier);
-                var actual = Keystroke.Parse(s);
                 Assert.AreEqual(expected.Key, actual.Key);
                 Assert.AreEqual(expected.Modifiers, actual.Modifiers);
             });

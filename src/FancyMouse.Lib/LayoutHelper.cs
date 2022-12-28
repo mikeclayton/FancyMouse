@@ -64,7 +64,7 @@ namespace FancyMouse.Lib
         }
 
         /// <summary>
-        /// Calculate the new region of an object so that it's centered on the given midpoint.
+        /// Calculate the new location for an object so that it's centered on the given midpoint.
         /// </summary>
         /// <param name="obj"></param>
         /// <param name="midpoint"></param>
@@ -77,6 +77,11 @@ namespace FancyMouse.Lib
             );
         }
 
+        /// <summary>
+        /// Returns the midpoint of the given bounds..
+        /// </summary>
+        /// <param name="bounds"></param>
+        /// <returns></returns>
         public static Point Midpoint(Rectangle bounds)
         {
             return new Point(
