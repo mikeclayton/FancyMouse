@@ -59,5 +59,6 @@ jobs:
       - name: zip
         working-directory: ${{ env.BUILD_PATH }}
         run: |
+          apt-get install zip
           echo "version = ${{ github.ref_name }}"
           zip -r "$PUBLISH_PATH" FancyMouse-${{ github.ref_name }}.zip
