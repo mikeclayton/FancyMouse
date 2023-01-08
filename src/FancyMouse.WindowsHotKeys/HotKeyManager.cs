@@ -1,8 +1,8 @@
-﻿using FancyMouse.WindowsHotKeys.Win32Api;
-using System.Runtime.InteropServices;
-using System.ComponentModel;
+﻿using FancyMouse.WindowsHotKeys.Internal;
+using FancyMouse.WindowsHotKeys.Win32Api;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.InteropServices;
 
 namespace FancyMouse.WindowsHotKeys;
 
@@ -24,10 +24,6 @@ public sealed class HotKeyManager
     #endregion
 
     #region Events
-
-    //private delegate bool RegisterHotKeyDelegate(IntPtr hWnd, int id, uint fsModifiers, uint vk);
-
-    //private delegate bool UnregisterHotKeyDelegate(IntPtr hWnd, int id);
 
     public event EventHandler<HotKeyEventArgs>? HotKeyPressed;
 
@@ -64,9 +60,15 @@ public sealed class HotKeyManager
         set;
     }
 
+    private MessageLoop? MessageLoop
+    {
+        get;
+        set;
+    }
+
     #endregion
 
-    #region Win32Api Methods
+    #region Methods
 
     private IntPtr WindowProc(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam)
     {
@@ -80,46 +82,42 @@ public sealed class HotKeyManager
                 var e = new HotKeyEventArgs(key, modifiers);
                 this.OnHotKeyPressed(e);
                 break;
-            //case Winuser.WM_DESTROY:
-            //    DestroyWindow(hWnd);
-            //    //If you want to shutdown the application, call the next function instead of DestroyWindow
-            //    PostQuitMessage(0);
-            //    break;
+                //case Winuser.WM_DESTROY:
+                //    break;
+                //case Winuser.WM_QUIT:
+                //    break;
         }
         return Winuser.DefWindowProc(hWnd, msg, wParam, lParam);
     }
 
-    private static ushort RegisterClass(IntPtr hInstance, string className, Winuser.WNDPROC wndProc)
+    [SuppressMessage("ReSharper", "UnusedMember.Global")]
+    public void Start()
     {
+
+        // see https://learn.microsoft.com/en-us/windows/win32/winmsg/using-messages-and-message-queues
+
+        var hInstance = Process.GetCurrentProcess().Handle;
+
         // see https://stackoverflow.com/a/30992796/3156906
         var wndClass = new Winuser.WNDCLASSEX
         {
             cbSize = Marshal.SizeOf(typeof(Winuser.WNDCLASSEX)),
             hInstance = hInstance,
-            lpszClassName = className,
-            lpfnWndProc = Marshal.GetFunctionPointerForDelegate(wndProc),
+            lpszClassName = "FancyMouseMessageClass",
+            lpfnWndProc = Marshal.GetFunctionPointerForDelegate(this.WndProc),
         };
-        var wndClassAtom = Winuser.RegisterClassEx(ref wndClass);
-        if (wndClassAtom == 0)
-        {
-            var lastWin32Error = Marshal.GetLastWin32Error();
-            throw new InvalidOperationException
-                ($"{nameof(Winuser.RegisterClassEx)} failed with result {wndClassAtom}. GetLastWin32Error returned '{lastWin32Error}'.",
-                new Win32Exception(lastWin32Error)
-            );
-        }
-        return wndClassAtom;
-    }
 
-    private static IntPtr CreateWindow(IntPtr hInstance, ushort wndClassAtom, string windowName)
-    {
+        var wndClassAtom = Win32Wrappers.RegisterClassEx(
+            lpwcx: ref wndClass
+        );
+
         // see https://learn.microsoft.com/en-us/windows/win32/winmsg/window-features#message-only-windows
         //     https://devblogs.microsoft.com/oldnewthing/20171218-00/?p=97595
         //     https://stackoverflow.com/a/30992796/3156906
-        var hwnd = Winuser.CreateWindowEx(
+        this.HWnd = Win32Wrappers.CreateWindowEx(
             dwExStyle: 0,
             lpClassName: wndClassAtom,
-            lpWindowName: windowName,
+            lpWindowName: "FancyMouseMessageWindow",
             dwStyle: 0,
             x: 0,
             y: 0,
@@ -130,96 +128,35 @@ public sealed class HotKeyManager
             hInstance: hInstance,
             lpParam: IntPtr.Zero
         );
-        if (hwnd == 0)
-        {
-            var lastWin32Error = Marshal.GetLastWin32Error();
-            throw new InvalidOperationException
-                ($"{nameof(Winuser.CreateWindowEx)} failed with result {hwnd}. GetLastWin32Error returned '{lastWin32Error}'.",
-                new Win32Exception(lastWin32Error)
-            );
-        }
+
         //var visible = Winuser.ShowWindow(
         //    hwnd, Winuser.SW_SHOW
         //);
-        return hwnd;
-    }
 
-    private int RegisterHotKey()
-    {
-        var id = Interlocked.Increment(ref _id);
-        var result = Winuser.RegisterHotKey(
-            this.HWnd,
-            id,
-            (uint)this.HotKey.Modifiers,
-            (uint)this.HotKey.Key
-        );
-        if (result == 0)
-        {
-            var lastWin32Error = Marshal.GetLastWin32Error();
-            throw new InvalidOperationException
-                ($"{nameof(Winuser.RegisterHotKey)} failed with result {result}. GetLastWin32Error returned '{lastWin32Error}'.",
-                new Win32Exception(lastWin32Error)
-            );
-        }
-        return id;
-    }
-
-    private void UnregisterHotKey(int id)
-    {
-        var result = Winuser.UnregisterHotKey(this.HWnd, id);
-        if (result == 0)
-        {
-            var lastWin32Error = Marshal.GetLastWin32Error();
-            throw new InvalidOperationException
-                ($"{nameof(Winuser.UnregisterHotKey)} failed with result {result}. GetLastWin32Error returned '{lastWin32Error}'.",
-                new Win32Exception(lastWin32Error)
-            );
-        }
-    }
-
-    #endregion
-
-    #region Methods
-
-    [SuppressMessage("ReSharper", "UnusedMember.Global")]
-    public void Start()
-    {
-
-        // see https://learn.microsoft.com/en-us/windows/win32/winmsg/using-messages-and-message-queues
-
-        var hInstance = Process.GetCurrentProcess().Handle;
-
-        var wndClassAtom = HotKeyManager.RegisterClass(
-            hInstance: hInstance,
-            className: "FancyMouseMessageClass",
-            wndProc: this.WndProc
+        this.MessageLoop = new MessageLoop(
+            name: "FancyMouseMessageLoop",
+            isBackground: true
         );
 
-        this.HWnd = HotKeyManager.CreateWindow(
-            hInstance: hInstance,
-            wndClassAtom: wndClassAtom,
-            windowName: "FancyMouseMessageWindow"
+        this.MessageLoop.Run();
+
+        _ = Win32Wrappers.RegisterHotKey(
+            hWnd: this.HWnd,
+            id: Interlocked.Increment(ref _id),
+            fsModifiers: (uint)this.HotKey.Modifiers,
+            vk: (uint)this.HotKey.Key
         );
-
-        var messageLoop = new Thread(delegate ()
-        {
-            MessageLoop.Run(this.HWnd);
-        })
-        {
-            Name = "FancyMouseMessageLoop",
-            IsBackground = true
-        };
-
-        messageLoop.Start();
-
-        _ = this.RegisterHotKey();
 
     }
 
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public void Stop()
     {
-        throw new NotImplementedException();
+        _ = Win32Wrappers.UnregisterHotKey(
+            hWnd: this.HWnd,
+            id: this._id
+        );
+        this.MessageLoop?.Exit();
     }
 
     [SuppressMessage("ReSharper", "UnusedMember.Global")]

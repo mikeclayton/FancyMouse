@@ -8,13 +8,16 @@ public static class KeystrokeTests
     public static class ParseTests
     {
 
+        // individual modifiers / keys
         [TestCase("CTRL", KeyModifiers.Control, Keys.None)]
         [TestCase("ALT", KeyModifiers.Alt, Keys.None)]
         [TestCase("SHIFT", KeyModifiers.Shift, Keys.None)]
         [TestCase("WIN", KeyModifiers.Windows, Keys.None)]
         [TestCase("F", KeyModifiers.None, Keys.F)]
+        // multiple modifiers
         [TestCase("CTRL + ALT + SHIFT", KeyModifiers.Control | KeyModifiers.Alt | KeyModifiers.Shift, Keys.None)]
         [TestCase("SHIFT + ALT + CTRL", KeyModifiers.Control | KeyModifiers.Alt | KeyModifiers.Shift, Keys.None)]
+        // modifiers and keys
         [TestCase("CTRL + ALT + SHIFT + F", KeyModifiers.Control | KeyModifiers.Alt | KeyModifiers.Shift, Keys.F)]
         [TestCase("CTRL + ALT + SHIFT + WIN + F", KeyModifiers.Control | KeyModifiers.Alt | KeyModifiers.Shift | KeyModifiers.Windows, Keys.F)]
         public static void ValidStringsShouldParse(string s, KeyModifiers modifier, Keys key)

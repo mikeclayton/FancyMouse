@@ -30,10 +30,8 @@ internal static class Program
 
         Program.ConfigureProcessDpiAwareness();
 
-        Console.WriteLine("Hello, World!");
-
         // create the notify icon for the application
-        //var notifyForm = new FancyMouseNotify();
+        var notifyForm = new FancyMouseNotify();
 
         var config = new ConfigurationBuilder()
             .AddJsonFile("appsettings.json")
@@ -62,10 +60,7 @@ internal static class Program
 
         Application.Run();
 
-        // message loop
-        //MessageLoop.Run();
-
-        //keyboardWatcher.Stop();
+        hotKeyManager.Stop();
 
     }
 
@@ -97,8 +92,8 @@ internal static class Program
         // see https://learn.microsoft.com/en-us/dotnet/desktop/winforms/high-dpi-support-in-windows-forms?view=netframeworkdesktop-4.8
         var process = Process.GetCurrentProcess();
         var apiResult = NativeMethods.GetProcessDpiAwareness(
-            process.Handle,
-            out var currentDpiAwareness
+            hProcess: process.Handle,
+            value: out var currentDpiAwareness
         );
         if (apiResult != NativeMethods.S_OK)
         {

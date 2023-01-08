@@ -78,7 +78,7 @@ namespace FancyMouse.Lib
         }
 
         /// <summary>
-        /// Returns the midpoint of the given bounds..
+        /// Returns the midpoint of the given bounds.
         /// </summary>
         /// <param name="bounds"></param>
         /// <returns></returns>

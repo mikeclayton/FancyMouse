@@ -8,7 +8,16 @@ namespace FancyMouse.Helpers;
 internal static class NativeMethods
 {
 
+    #region Constants
+
     public const int S_OK = 0x00000000;
+
+    #endregion
+
+    #region Learn / Windows / Apps / Win32 / Desktop Technologies / Desktop App User Interface / High DPI
+    // see https://learn.microsoft.com/en-us/windows/win32/hidpi/high-dpi-desktop-application-development-on-windows
+
+    #region High DPI Reference / Types
 
     /// <summary>
     /// Identifies dots per inch (dpi) awareness values. DPI awareness indicates how much
@@ -44,29 +53,48 @@ internal static class NativeMethods
 
     }
 
-    /// <summary>
-    /// Sets the process-default DPI awareness level.
-    /// </summary>
-    /// <param name="value"></param>
-    /// <returns></returns>
-    [DllImport("shcore.dll")]
-    public static extern int SetProcessDpiAwareness(
-        PROCESS_DPI_AWARENESS value
-    );
+    #endregion
+
+    #region High DPI Reference / Functions
 
     /// <summary>
-    /// 
+    /// Retrieves the dots per inch (dpi) awareness of the specified process.
     /// </summary>
-    /// <param name="hProcess"></param>
-    /// <param name="value"></param>
+    /// <param name="hProcess">Handle of the process that is being queried. If this parameter is NULL, the current process is queried.</param>
+    /// <param name="value">The DPI awareness of the specified process. Possible values are from the PROCESS_DPI_AWARENESS enumeration.</param>
     /// <returns></returns>
     /// <remarks>
     /// See https://learn.microsoft.com/en-us/windows/win32/api/shellscalingapi/nf-shellscalingapi-getprocessdpiawareness
     /// </remarks>
+    /// <returns>
+    /// This function returns one of the following values.
+    ///
+    /// Return code    Description
+    /// S_OK           The function successfully retrieved the DPI awareness of the specified process.
+    /// E_INVALIDARG   The handle or pointer passed in is not valid.
+    /// E_ACCESSDENIED The application does not have sufficient privileges.
+    /// </returns>
     [DllImport("shcore.dll")]
     public static extern int GetProcessDpiAwareness(
         IntPtr hProcess,
         out PROCESS_DPI_AWARENESS value
     );
+
+    /// <summary>
+    /// Sets the process-default DPI awareness level.
+    /// </summary>
+    /// <param name="value">The DPI awareness value to set. Possible values are from the PROCESS_DPI_AWARENESS enumeration.</param>
+    /// <returns></returns>
+    /// <remarks>
+    /// See https://learn.microsoft.com/en-us/windows/win32/api/shellscalingapi/nf-shellscalingapi-setprocessdpiawareness
+    /// </remarks>
+    [DllImport("shcore.dll")]
+    public static extern int SetProcessDpiAwareness(
+        PROCESS_DPI_AWARENESS value
+    );
+
+    #endregion
+
+    #endregion
 
 }
