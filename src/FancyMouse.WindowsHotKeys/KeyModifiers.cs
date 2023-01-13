@@ -1,4 +1,4 @@
-﻿using FancyMouse.WindowsHotKeys.Win32Api;
+﻿using FancyMouse.WindowsHotKeys.Interop;
 using System.Diagnostics.CodeAnalysis;
 
 namespace FancyMouse.WindowsHotKeys;
@@ -9,10 +9,10 @@ public enum KeyModifiers
 {
 
     None = 0,
-    Alt = (int)Winuser.MOD_ALT,
-    Control = (int)Winuser.MOD_CONTROL,
-    Shift = (int)Winuser.MOD_SHIFT,
-    Windows = (int)Winuser.MOD_WIN,
-    NoRepeat = (int)Winuser.MOD_NOREPEAT
+    Alt = (int)User32.RegisterHotKeyModifiers.MOD_ALT,
+    Control = (int)User32.RegisterHotKeyModifiers.MOD_CONTROL,
+    Shift = (int)User32.RegisterHotKeyModifiers.MOD_SHIFT,
+    Windows = (int)User32.RegisterHotKeyModifiers.MOD_WIN,
+    NoRepeat = (int)User32.RegisterHotKeyModifiers.MOD_NOREPEAT
 
 }

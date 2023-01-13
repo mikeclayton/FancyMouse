@@ -1,5 +1,6 @@
-﻿using FancyMouse.WindowsHotKeys.Win32Api;
+﻿using FancyMouse.WindowsHotKeys.Interop;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 
 namespace FancyMouse.WindowsHotKeys.Internal;
@@ -7,41 +8,41 @@ namespace FancyMouse.WindowsHotKeys.Internal;
 internal static class Win32Wrappers
 {
 
-    /// <summary>
-    /// Retrieves a message from the calling thread's message queue.
-    /// The function dispatches incoming sent messages until a posted message is available for retrieval.
-    /// </summary>
-    /// <param name="lpMsg">A pointer to an MSG structure that receives message information from the thread's message queue.</param>
-    /// <param name="hWnd">A handle to the window whose messages are to be retrieved. The window must belong to the current thread.</param>
-    /// <param name="wMsgFilterMin">The integer value of the lowest message value to be retrieved.</param>
-    /// <param name="wMsgFilterMax">The integer value of the highest message value to be retrieved.</param>
-    /// <returns>
-    /// If the function retrieves a message other than WM_QUIT, the return value is nonzero.
-    /// If the function retrieves the WM_QUIT message, the return value is zero.
-    /// If there is an error, the return value is -1.
-    /// For example, the function fails if hWnd is an invalid window handle or lpMsg is an invalid pointer.
-    /// To get extended error information, call GetLastError.
-    /// </returns>
-    /// <remarks>
-    /// See https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getmessage
-    /// </remarks>
-    public static int GetMessage(
-        out Winuser.MSG lpMsg, IntPtr hWnd, uint wMsgFilterMin, uint wMsgFilterMax
-    )
-    {
-        var result = Winuser.GetMessage(
-            out lpMsg, hWnd, wMsgFilterMin, wMsgFilterMax
-        );
-        if (result == -1)
-        {
-            var lastWin32Error = Marshal.GetLastWin32Error();
-            throw new InvalidOperationException(
-                $"{nameof(Winuser.WaitMessage)} failed with result {result}. GetLastWin32Error returned '{lastWin32Error}'.",
-                new Win32Exception(lastWin32Error)
-            );
-        }
-        return result;
-    }
+    ///// <summary>
+    ///// Retrieves a message from the calling thread's message queue.
+    ///// The function dispatches incoming sent messages until a posted message is available for retrieval.
+    ///// </summary>
+    ///// <param name="lpMsg">A pointer to an MSG structure that receives message information from the thread's message queue.</param>
+    ///// <param name="hWnd">A handle to the window whose messages are to be retrieved. The window must belong to the current thread.</param>
+    ///// <param name="wMsgFilterMin">The integer value of the lowest message value to be retrieved.</param>
+    ///// <param name="wMsgFilterMax">The integer value of the highest message value to be retrieved.</param>
+    ///// <returns>
+    ///// If the function retrieves a message other than WM_QUIT, the return value is nonzero.
+    ///// If the function retrieves the WM_QUIT message, the return value is zero.
+    ///// If there is an error, the return value is -1.
+    ///// For example, the function fails if hWnd is an invalid window handle or lpMsg is an invalid pointer.
+    ///// To get extended error information, call GetLastError.
+    ///// </returns>
+    ///// <remarks>
+    ///// See https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getmessage
+    ///// </remarks>
+    //public static int GetMessage(
+    //    out Winuser.MSG lpMsg, IntPtr hWnd, uint wMsgFilterMin, uint wMsgFilterMax
+    //)
+    //{
+    //    var result = User32.GetMessage(
+    //        out lpMsg, hWnd, wMsgFilterMin, wMsgFilterMax
+    //    );
+    //    if (result == -1)
+    //    {
+    //        var lastWin32Error = Marshal.GetLastWin32Error();
+    //        throw new InvalidOperationException(
+    //            $"{nameof(User32.GetMessage)} failed with result {result}. GetLastWin32Error returned '{lastWin32Error}'.",
+    //            new Win32Exception(lastWin32Error)
+    //        );
+    //    }
+    //    return result;
+    //}
 
     /// <summary>
     /// Posts a message to the message queue of the specified thread. It returns without waiting for the thread to process the message.
@@ -60,18 +61,22 @@ internal static class Win32Wrappers
     /// <remarks>
     /// See https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-postmessagew
     /// </remarks>
-    public static int PostThreadMessage(
-        int idThread, uint Msg, IntPtr wParam, IntPtr lParam
+    public static int PostThreadMessageW(
+        int idThread,
+        [SuppressMessage("ReSharper", "InconsistentNaming")]
+        User32.WindowMessages Msg,
+        IntPtr wParam,
+        IntPtr lParam
     )
     {
-        var result = Winuser.PostThreadMessage(
+        var result = User32.PostThreadMessageW(
             idThread, Msg, wParam, lParam
         );
         if (result == 0)
         {
             var lastWin32Error = Marshal.GetLastWin32Error();
             throw new InvalidOperationException(
-                $"{nameof(Winuser.PostThreadMessage)} failed with result {result}. GetLastWin32Error returned '{lastWin32Error}'.",
+                $"{nameof(User32.PostThreadMessageW)} failed with result {result}. GetLastWin32Error returned '{lastWin32Error}'.",
                 new Win32Exception(lastWin32Error)
             );
         }
@@ -95,16 +100,16 @@ internal static class Win32Wrappers
     /// <remarks>
     /// See https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-registerclassexa
     /// </remarks>
-    public static ushort RegisterClassEx(
-        [In] ref Winuser.WNDCLASSEX lpwcx
+    public static ushort RegisterClassExW(
+        ref User32.WNDCLASSEXW lpwcx
     )
     {
-        var result = Winuser.RegisterClassEx(ref lpwcx);
+        var result = User32.RegisterClassExW(ref lpwcx);
         if (result == 0)
         {
             var lastWin32Error = Marshal.GetLastWin32Error();
             throw new InvalidOperationException(
-                $"{nameof(Winuser.RegisterClassEx)} failed with result {result}. GetLastWin32Error returned '{lastWin32Error}'.",
+                $"{nameof(User32.RegisterClassExW)} failed with result {result}. GetLastWin32Error returned '{lastWin32Error}'.",
                 new Win32Exception(lastWin32Error)
             );
         }
@@ -211,7 +216,7 @@ internal static class Win32Wrappers
     /// </remarks>
     public static IntPtr CreateWindowEx(
         int dwExStyle,
-        ushort lpClassName,
+        string lpClassName,
         string lpWindowName,
         uint dwStyle,
         int x,
@@ -224,14 +229,14 @@ internal static class Win32Wrappers
         IntPtr lpParam
     )
     {
-        var result = Winuser.CreateWindowEx(
+        var result = User32.CreateWindowExW(
             dwExStyle, lpClassName, lpWindowName, dwStyle, x, y, nWidth, nHeight, hWndParent, hMenu, hInstance, lpParam
         );
         if (result == 0)
         {
             var lastWin32Error = Marshal.GetLastWin32Error();
             throw new InvalidOperationException
-                ($"{nameof(Winuser.CreateWindowEx)} failed with result {result}. GetLastWin32Error returned '{lastWin32Error}'.",
+                ($"{nameof(User32.CreateWindowExW)} failed with result {result}. GetLastWin32Error returned '{lastWin32Error}'.",
                 new Win32Exception(lastWin32Error)
             );
         }
@@ -270,18 +275,18 @@ internal static class Win32Wrappers
     public static int RegisterHotKey(
         IntPtr hWnd,
         int id,
-        uint fsModifiers,
+        User32.RegisterHotKeyModifiers fsModifiers,
         uint vk
     )
     {
-        var result = Winuser.RegisterHotKey(
+        var result = User32.RegisterHotKey(
             hWnd, id, fsModifiers, vk
         );
         if (result == 0)
         {
             var lastWin32Error = Marshal.GetLastWin32Error();
             throw new InvalidOperationException(
-                $"{nameof(Winuser.RegisterHotKey)} failed with result {result}. GetLastWin32Error returned '{lastWin32Error}'.",
+                $"{nameof(User32.RegisterHotKey)} failed with result {result}. GetLastWin32Error returned '{lastWin32Error}'.",
                 new Win32Exception(lastWin32Error)
             );
         }
@@ -311,14 +316,14 @@ internal static class Win32Wrappers
         int id
     )
     {
-        var result = Winuser.UnregisterHotKey(
+        var result = User32.UnregisterHotKey(
             hWnd, id
         );
         if (result == 0)
         {
             var lastWin32Error = Marshal.GetLastWin32Error();
             throw new InvalidOperationException(
-                $"{nameof(Winuser.UnregisterHotKey)} failed with result {result}. GetLastWin32Error returned '{lastWin32Error}'.",
+                $"{nameof(User32.UnregisterHotKey)} failed with result {result}. GetLastWin32Error returned '{lastWin32Error}'.",
                 new Win32Exception(lastWin32Error)
             );
         }

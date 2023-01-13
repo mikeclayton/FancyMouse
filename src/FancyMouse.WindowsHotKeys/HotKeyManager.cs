@@ -1,4 +1,5 @@
 ﻿using FancyMouse.WindowsHotKeys.Internal;
+using FancyMouse.WindowsHotKeys.Interop;
 using FancyMouse.WindowsHotKeys.Win32Api;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -19,7 +20,7 @@ public sealed class HotKeyManager
 
     #region Fields
 
-    private int _id = 0;
+    private int _id;
 
     #endregion
 
@@ -49,7 +50,7 @@ public sealed class HotKeyManager
         get;
     }
 
-    private Winuser.WNDPROC WndProc
+    private User32.WNDPROC WndProc
     {
         get;
     }
@@ -70,11 +71,11 @@ public sealed class HotKeyManager
 
     #region Methods
 
-    private IntPtr WindowProc(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam)
+    private IntPtr WindowProc(IntPtr hWnd, User32.WindowMessages msg, IntPtr wParam, IntPtr lParam)
     {
         switch (msg)
         {
-            case Winuser.WM_HOTKEY:
+            case User32.WindowMessages.WM_HOTKEY:
                 // https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-hotkey
                 var param = (uint)lParam.ToInt64();
                 var key = (Keys)((param & 0xffff0000) >> 16);
@@ -87,10 +88,9 @@ public sealed class HotKeyManager
                 //case Winuser.WM_QUIT:
                 //    break;
         }
-        return Winuser.DefWindowProc(hWnd, msg, wParam, lParam);
+        return User32.DefWindowProcW(hWnd, msg, wParam, lParam);
     }
 
-    [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public void Start()
     {
 
@@ -99,15 +99,16 @@ public sealed class HotKeyManager
         var hInstance = Process.GetCurrentProcess().Handle;
 
         // see https://stackoverflow.com/a/30992796/3156906
-        var wndClass = new Winuser.WNDCLASSEX
+        var wndClass = new User32.WNDCLASSEXW
         {
-            cbSize = Marshal.SizeOf(typeof(Winuser.WNDCLASSEX)),
+            cbSize = (uint)Marshal.SizeOf(typeof(User32.WNDCLASSEXW)),
             hInstance = hInstance,
             lpszClassName = "FancyMouseMessageClass",
             lpfnWndProc = Marshal.GetFunctionPointerForDelegate(this.WndProc),
         };
 
-        var wndClassAtom = Win32Wrappers.RegisterClassEx(
+        // wndClassAtom
+        _ = Win32Wrappers.RegisterClassExW(
             lpwcx: ref wndClass
         );
 
@@ -116,7 +117,7 @@ public sealed class HotKeyManager
         //     https://stackoverflow.com/a/30992796/3156906
         this.HWnd = Win32Wrappers.CreateWindowEx(
             dwExStyle: 0,
-            lpClassName: wndClassAtom,
+            lpClassName: "FancyMouseMessageClass",
             lpWindowName: "FancyMouseMessageWindow",
             dwStyle: 0,
             x: 0,
@@ -143,13 +144,12 @@ public sealed class HotKeyManager
         _ = Win32Wrappers.RegisterHotKey(
             hWnd: this.HWnd,
             id: Interlocked.Increment(ref _id),
-            fsModifiers: (uint)this.HotKey.Modifiers,
+            fsModifiers: (User32.RegisterHotKeyModifiers)this.HotKey.Modifiers,
             vk: (uint)this.HotKey.Key
         );
 
     }
 
-    [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public void Stop()
     {
         _ = Win32Wrappers.UnregisterHotKey(
@@ -159,7 +159,6 @@ public sealed class HotKeyManager
         this.MessageLoop?.Exit();
     }
 
-    [SuppressMessage("ReSharper", "UnusedMember.Global")]
     private void OnHotKeyPressed(HotKeyEventArgs e)
     {
         this.HotKeyPressed?.Invoke(null, e);

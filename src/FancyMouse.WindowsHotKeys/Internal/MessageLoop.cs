@@ -1,4 +1,4 @@
-﻿using FancyMouse.WindowsHotKeys.Win32Api;
+﻿using FancyMouse.WindowsHotKeys.Interop;
 
 namespace FancyMouse.WindowsHotKeys.Internal;
 
@@ -71,7 +71,7 @@ internal sealed class MessageLoop
     private void RunInternal()
     {
 
-        var msg = default(Winuser.MSG);
+        User32.MSG msg;
 
         var quitMessagePosted = false;
 
@@ -82,24 +82,24 @@ internal sealed class MessageLoop
         while (true)
         {
 
-            _ = Winuser.GetMessage(
+            _ = User32.GetMessageW(
                 lpMsg: out msg,
                 hWnd: IntPtr.Zero,
                 wMsgFilterMin: 0,
                 wMsgFilterMax: 0
             );
 
-            if (msg.message == Winuser.WM_QUIT)
+            if (msg.message == User32.WindowMessages.WM_QUIT)
             {
                 break;
             }
 
-            _ = Winuser.TranslateMessage(ref msg);
-            _ = Winuser.DispatchMessage(ref msg);
+            _ = User32.TranslateMessage(ref msg);
+            _ = User32.DispatchMessage(ref msg);
 
             if ((this.CancellationTokenSource?.IsCancellationRequested ?? false) && !quitMessagePosted)
             {
-                Winuser.PostQuitMessage(0);
+                User32.PostQuitMessage(0);
                 quitMessagePosted = true;
             }
 
@@ -127,9 +127,9 @@ internal sealed class MessageLoop
         // post a null message just to nudge the message loop and pump it - it'll notice that we've
         // set the cancellation token, then post a quit message to itself and exit the loop
         // see https://devblogs.microsoft.com/oldnewthing/20050405-46/?p=35973
-        _ = Win32Wrappers.PostThreadMessage(
+        _ = Win32Wrappers.PostThreadMessageW(
             idThread: (this.NativeThreadId ?? throw new NullReferenceException()),
-            Msg: Winuser.WM_NULL,
+            Msg: User32.WindowMessages.WM_NULL,
             wParam: IntPtr.Zero,
             lParam: IntPtr.Zero
         );
