@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Runtime.InteropServices;
 
 // ReSharper disable CheckNamespace
 namespace FancyMouse.WindowsHotKeys.Interop;
