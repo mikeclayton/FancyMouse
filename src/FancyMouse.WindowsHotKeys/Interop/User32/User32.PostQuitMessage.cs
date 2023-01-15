@@ -16,6 +16,7 @@ internal static partial class User32
     /// See https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-postquitmessage
     ///     https://github.com/dotnet/runtime/blob/main/src/libraries/Common/src/Interop/Windows/User32/Interop.PostQuitMessage.cs
     /// </remarks>
+    [SuppressMessage("ReSharper", "UnusedMember.Global")]
     [LibraryImport(Libraries.User32)]
     public static partial void PostQuitMessage(
         int nExitCode

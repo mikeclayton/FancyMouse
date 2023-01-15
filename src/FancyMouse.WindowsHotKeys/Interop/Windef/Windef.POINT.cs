@@ -1,8 +1,10 @@
 ﻿// ReSharper disable CheckNamespace
+using System.Diagnostics.CodeAnalysis;
+
 namespace FancyMouse.WindowsHotKeys.Interop;
 // ReSharper restore CheckNamespace
 
-internal static partial class Windef
+internal static class Windef
 {
 
     /// <summary>
@@ -11,6 +13,8 @@ internal static partial class Windef
     /// <remarks>
     /// See https://learn.microsoft.com/en-us/windows/win32/api/windef/ns-windef-point
     /// </remarks>
+    [SuppressMessage("ReSharper", "InconsistentNaming")]
+    [SuppressMessage("ReSharper", "UnusedField.Compiler")]
     public struct POINT
     {
 
