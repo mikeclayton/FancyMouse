@@ -9,14 +9,14 @@ internal sealed class FancyMouseDialogOptions
         Size maximumSize
     )
     {
-        this.MaximumSize = maximumSize;
+        this.MaximumPreviewImageSize = maximumSize;
     }
 
     #endregion
 
     #region Properties
 
-    public Size MaximumSize
+    public Size MaximumPreviewImageSize
     {
         get;
     }

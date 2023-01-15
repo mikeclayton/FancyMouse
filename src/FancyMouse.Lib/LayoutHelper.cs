@@ -46,10 +46,12 @@ namespace FancyMouse.Lib
             var widthRatio = (double)obj.Width / bounds.Width;
             var heightRatio = (double)obj.Height / bounds.Height;
             var scaledSize = (widthRatio > heightRatio)
-                ? bounds with {
+                ? bounds with
+                {
                     Height = (int)(obj.Height / widthRatio)
                 }
-                : bounds with {
+                : bounds with
+                {
                     Width = (int)(obj.Width / heightRatio)
                 };
             return scaledSize;
@@ -57,10 +59,10 @@ namespace FancyMouse.Lib
 
         public static Point ScaleLocation(Rectangle originalBounds, Point originalLocation, Rectangle scaledBounds)
         {
-             return new Point(
-                (int)(originalLocation.X / (double)originalBounds.Width * scaledBounds.Width) + scaledBounds.Left,
-                (int)(originalLocation.Y / (double)originalBounds.Height * scaledBounds.Height) + scaledBounds.Top
-            );
+            return new Point(
+               (int)(originalLocation.X / (double)originalBounds.Width * scaledBounds.Width) + scaledBounds.Left,
+               (int)(originalLocation.Y / (double)originalBounds.Height * scaledBounds.Height) + scaledBounds.Top
+           );
         }
 
         /// <summary>
@@ -115,6 +117,19 @@ namespace FancyMouse.Lib
         }
 
         /// <summary>
+        /// Returns the smallest width and height from the given sizes.
+        /// </summary>
+        /// <param name="sizes"></param>
+        /// <returns></returns>
+        public static Size Minimum(IList<Size> sizes)
+        {
+            return new Size(
+                sizes.Min(s => s.Width),
+                sizes.Min(s => s.Height)
+            );
+        }
+
+        /// <summary>
         /// Returns the location to move the inner rectangle so that it sits entirely inside
         /// the outer rectangle. Returns the inner rectangle's current position if it is
         /// already inside the outer rectangle.
@@ -129,7 +144,8 @@ namespace FancyMouse.Lib
             {
                 throw new ArgumentException($"{nameof(inner)} cannot be larger than {nameof(outer)}.");
             }
-            return inner with {
+            return inner with
+            {
                 X = LayoutHelper.Between(outer.X, inner.X, outer.Right - inner.Width),
                 Y = LayoutHelper.Between(outer.Y, inner.Y, outer.Bottom - inner.Height)
             };
@@ -137,32 +153,80 @@ namespace FancyMouse.Lib
 
         #endregion
 
-        public static Rectangle GetPreviewBounds(
-            Rectangle screenBounds, Point cursorPosition, Size desiredSize
+        /// <summary>
+        /// Calculates the position to show the preview form based on a number of factors.
+        /// </summary>
+        /// <param name="desktopBounds">
+        /// The bounds of the entire desktop / virtual screen. Might start at a negative
+        /// x, y if a non-primary screen is located left of or above the primary screen.
+        /// </param>
+        /// <param name="cursorPosition">
+        /// The current position of the cursor on the virtual desktop.
+        /// </param>
+        /// <param name="currentMonitorBounds">
+        /// The bounds of the screen the cursor is currently on. Might start at a negative
+        /// x, y if a non-primary screen is located left of or above the primary screen.
+        /// </param>
+        /// <param name="maximumPreviewImageSize">
+        /// The largest allowable size of the preview image. This is literally the just
+        /// image itself, not including padding around the image.
+        /// </param>
+        /// <param name="previewImagePadding">
+        /// The total width and height of padding around the preview image.
+        /// </param>
+        /// <returns>
+        /// The size and location to use when showing the preview image form.
+        /// </returns>
+        public static Rectangle GetPreviewFormBounds(
+            Rectangle desktopBounds,
+            Point cursorPosition,
+            Rectangle currentMonitorBounds,
+            Size maximumPreviewImageSize,
+            Size previewImagePadding
         )
         {
 
-            // scale the preview form down if it's bigger than the screen
-            var scaledSize = (desiredSize.Width > screenBounds.Width) || (desiredSize.Height > screenBounds.Height)
-                ? LayoutHelper.ScaleToFit(desiredSize, screenBounds.Size)
-                : desiredSize;
+            // see https://learn.microsoft.com/en-gb/windows/win32/gdi/the-virtual-screen
 
-            // centre the preview on the cursor position
-            return LayoutHelper.MoveInside(
+            // calculate the maximum size the form is allowed to be
+            var maxFormSize = LayoutHelper.Minimum(
+                new List<Size> {
+                    // can't be bigger than the current screen
+                    currentMonitorBounds.Size,
+                    // can't be bigger than the max preview image
+                    // *plus* the padding around the preview image
+                    // (max preview image size doesn't include the padding)
+                    maximumPreviewImageSize + previewImagePadding
+                }
+            );
+
+            // calculate the actual form size by scaling the entire
+            // desktop bounds into the max form size while accounting
+            // for the size of the padding around the preview
+            var previewImageSize = LayoutHelper.ScaleToFit(
+                obj: desktopBounds.Size,
+                bounds: maxFormSize - previewImagePadding
+            );
+            var formSize = previewImageSize + previewImagePadding;
+
+            // centre the form to the cursor's position, but nudge it back
+            // inside the visible area of the screen if it falls outside
+            var formBounds = LayoutHelper.MoveInside(
                 inner: new Rectangle(
-                    LayoutHelper.Center(scaledSize, cursorPosition),
-                    scaledSize
+                    LayoutHelper.Center(formSize, cursorPosition),
+                    formSize
                 ),
-                outer: screenBounds
+                outer: currentMonitorBounds
             );
 
             //// the preview image and the desktop are aligned at current mouse position
-            //var desktopBounds = ScreenHelper.GetDesktopBounds();
             //var aligned = FancyMouseForm.ClipLocation(
             //    bounds: screenBounds,
             //    location: FancyMouseForm.AlignScaled(desktopBounds.Size, cursorPosition, pbxPreview.Size),
             //    size: this.Size
             //);
+
+            return formBounds;
 
         }
 

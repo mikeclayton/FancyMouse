@@ -1,5 +1,4 @@
-﻿using FancyMouse.WindowsHotKeys.Win32Api;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 
 // ReSharper disable CheckNamespace

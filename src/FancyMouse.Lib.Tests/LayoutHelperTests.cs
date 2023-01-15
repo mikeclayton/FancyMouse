@@ -1,5 +1,6 @@
 ﻿using NUnit.Framework;
 using System.Drawing;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace FancyMouse.Lib.Tests;
 
@@ -134,7 +135,7 @@ public static class LayoutHelperTests
         [TestCaseSource(nameof(GetTestCases))]
         public static void RunTestCases((Size Obj, Size Bounds, Size ExpectedResult) data)
         {
-            var actual = LayoutHelper.ScaleToFit(data.Obj,data.Bounds);
+            var actual = LayoutHelper.ScaleToFit(data.Obj, data.Bounds);
             var expected = data.ExpectedResult;
             Assert.AreEqual(expected, actual);
         }
@@ -212,10 +213,10 @@ public static class LayoutHelperTests
         }
 
         [TestCaseSource(nameof(GetTestCases))]
-        public static void RunTestCases((int Min, int Value, int Max, int Expected) data)
+        public static void RunTestCases((int Min, int Value, int Max, int ExpectedResult) data)
         {
             var actual = LayoutHelper.Between(data.Min, data.Value, data.Max);
-            var expected = data.Expected;
+            var expected = data.ExpectedResult;
             Assert.AreEqual(expected, actual);
         }
 
@@ -223,8 +224,137 @@ public static class LayoutHelperTests
 
     #endregion
 
-    //public static class GetPreviewPositionTests
-    //{
-    //}
+    public static class GetPreviewFormBoundsTests
+    {
+
+        private static IEnumerable<(
+            Rectangle DesktopBounds,
+            Point CursorPosition,
+            Rectangle CurrentMonitorBounds,
+            Size MaximumPreviewImageSize,
+            Size PreviewImagePadding,
+            Rectangle ExpectedResult)> GetTestCases()
+        {
+            // multi-monitor desktop
+            //
+            // +----------------+
+            // |                |
+            // |       1        +-------+
+            // |                |   0   |
+            // +----------------+-------+
+            //
+            // clicked near top left corner so that the
+            // preview box overhangs the top and left
+            //
+            // +----------------+
+            // | *              |
+            // |       1        +-------+
+            // |                |   0   |
+            // +----------------+-------+
+            //
+            // form iscentred on mouse cursor and then
+            // nudged back into the top left corner
+            //
+            // +-----+----------+
+            // | *   |          |
+            // +-----+ 1        +-------+
+            // |                |   0   |
+            // +----------------+-------+
+            yield return (
+                DesktopBounds: new(-5120, -359, 7040, 1440),
+                CursorPosition: new(-5020, -259),
+                CurrentMonitorBounds: new(-5120, -359, 5120, 1440),
+                MaximumPreviewImageSize: new(1600, 1200),
+                PreviewImagePadding: new(10, 10),
+                ExpectedResult: new(-5120, -359, 1610, 337)
+            );
+            // multi-monitor desktop
+            //
+            // +----------------+
+            // |                |
+            // |       1        +-------+
+            // |                |   0   |
+            // +----------------+-------+
+            //
+            // clicked in the centre of the second monitor
+            //
+            // +----------------+
+            // |                |
+            // |       *        +-------+
+            // |                |   0   |
+            // +----------------+-------+
+            //
+            // form is centered on the mouse cursor
+            //
+            // +----------------+
+            // |    +-----+     |
+            // |    |  *  |     +-------+
+            // |    +-----+     |   0   |
+            // +----------------+-------+
+            yield return (
+                DesktopBounds: new(-5120, -359, 7040, 1440),
+                CursorPosition: new(-2560, 361),
+                CurrentMonitorBounds: new(-5120, -359, 5120, 1440),
+                MaximumPreviewImageSize: new(1600, 1200),
+                PreviewImagePadding: new(10, 10),
+                ExpectedResult: new(-3365, 192, 1610, 337)
+            );
+            // multi-monitor desktop
+            //
+            // +----------------+
+            // |                |
+            // |       1        +-------+
+            // |                |   0   |
+            // +----------------+-------+
+            //
+            // clicked in the centre of the monitor
+            //
+            // +----------------+
+            // |                |
+            // |       *        +-------+
+            // |                |   0   |
+            // +----------------+-------+
+            //
+            // max preview is larger than monitor,
+            // form is scaled to monitor size, with
+            // consideration for image padding
+            //
+            // *----------------*
+            // |+--------------+|
+            // ||      *       |+-------+
+            // |+--------------+|   0   |
+            // +----------------+-------+
+            yield return (
+                DesktopBounds: new(-5120, -359, 7040, 1440),
+                CursorPosition: new(-2560, 361),
+                CurrentMonitorBounds: new(-5120, -359, 5120, 1440),
+                MaximumPreviewImageSize: new(160000, 120000),
+                PreviewImagePadding: new(10, 10),
+                ExpectedResult: new(-5120, -166, 5120, 1055)
+            );
+        }
+
+        [TestCaseSource(nameof(GetTestCases))]
+        public static void RunTestCases((
+            Rectangle DesktopBounds,
+            Point CursorPosition,
+            Rectangle CurrentMonitorBounds,
+            Size MaximumPreviewImageSize,
+            Size PreviewImagePadding,
+            Rectangle ExpectedResult) data
+        )
+        {
+            var actual = LayoutHelper.GetPreviewFormBounds(
+                desktopBounds: data.DesktopBounds,
+                cursorPosition: data.CursorPosition,
+                currentMonitorBounds: data.CurrentMonitorBounds,
+                maximumPreviewImageSize: data.MaximumPreviewImageSize,
+                previewImagePadding: data.PreviewImagePadding
+            );
+            var expected = data.ExpectedResult;
+            Assert.AreEqual(expected, actual);
+        }
+
+    }
 
 }

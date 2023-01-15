@@ -1,6 +1,5 @@
 ﻿using FancyMouse.WindowsHotKeys.Internal;
 using FancyMouse.WindowsHotKeys.Interop;
-using FancyMouse.WindowsHotKeys.Win32Api;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
@@ -124,7 +123,7 @@ public sealed class HotKeyManager
             y: 0,
             nWidth: 300,
             nHeight: 400,
-            hWndParent: Winuser.HWND_MESSAGE, // message-only window
+            hWndParent: User32.HWND_MESSAGE, // message-only window
             hMenu: IntPtr.Zero,
             hInstance: hInstance,
             lpParam: IntPtr.Zero
