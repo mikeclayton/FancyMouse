@@ -76,6 +76,7 @@ public sealed class HotKeyManager
         {
             case User32.WindowMessages.WM_HOTKEY:
                 // https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-hotkey
+                // https://stackoverflow.com/a/47831305/3156906
                 var param = (uint)lParam.ToInt64();
                 var key = (Keys)((param & 0xffff0000) >> 16);
                 var modifiers = (KeyModifiers)(param & 0x0000ffff);

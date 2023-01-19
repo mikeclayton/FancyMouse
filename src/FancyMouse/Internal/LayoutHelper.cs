@@ -1,6 +1,4 @@
-﻿using System.Drawing;
-
-namespace FancyMouse.Lib
+﻿namespace FancyMouse.Internal
 {
 
     public static class LayoutHelper
@@ -13,7 +11,7 @@ namespace FancyMouse.Lib
         /// </summary>
         /// <param name="regions"></param>
         /// <returns></returns>
-        public static Rectangle CombineBounds(IEnumerable<Rectangle> regions)
+        public static Rectangle Combine(IEnumerable<Rectangle> regions)
         {
             if (regions == null)
             {
@@ -57,7 +55,15 @@ namespace FancyMouse.Lib
             return scaledSize;
         }
 
-        public static Point ScaleLocation(Rectangle originalBounds, Point originalLocation, Rectangle scaledBounds)
+        /// <summary>
+        /// Maps a location within a reference region onto a new region
+        /// so that it's proportionally in the same position in the new region.
+        /// </summary>
+        /// <param name="originalBounds"></param>
+        /// <param name="originalLocation"></param>
+        /// <param name="scaledBounds"></param>
+        /// <returns></returns>
+        public static Point MapLocation(Rectangle originalBounds, Point originalLocation, Rectangle scaledBounds)
         {
             return new Point(
                (int)(originalLocation.X / (double)originalBounds.Width * scaledBounds.Width) + scaledBounds.Left,
@@ -106,7 +112,6 @@ namespace FancyMouse.Lib
         //        (int)(originalLocation.Y - (float)scaledSize.Height * originalLocation.Y / originalSize.Height)
         //    );
         //}
-
         public static int Between(int min, int value, int max)
         {
             if (min > max)
@@ -138,7 +143,7 @@ namespace FancyMouse.Lib
         /// <param name="outer"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
-        public static Rectangle MoveInside(Rectangle inner, Rectangle outer)
+        public static Rectangle Inside(Rectangle inner, Rectangle outer)
         {
             if ((inner.Width > outer.Width) || (inner.Height > outer.Height))
             {
@@ -211,7 +216,7 @@ namespace FancyMouse.Lib
 
             // centre the form to the cursor's position, but nudge it back
             // inside the visible area of the screen if it falls outside
-            var formBounds = LayoutHelper.MoveInside(
+            var formBounds = LayoutHelper.Inside(
                 inner: new Rectangle(
                     LayoutHelper.Center(formSize, cursorPosition),
                     formSize

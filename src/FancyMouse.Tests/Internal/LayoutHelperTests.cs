@@ -1,14 +1,14 @@
 ﻿using NUnit.Framework;
 using System.Drawing;
 
-namespace FancyMouse.Lib.Tests;
+namespace FancyMouse.Internal.Tests;
 
 public static class LayoutHelperTests
 {
 
     #region General Helpers
 
-    public static class CombineBoundsTests
+    public static class CombineTests
     {
 
         private static IEnumerable<(List<Rectangle> Bounds, Rectangle ExpectedResult)> GetTestCases()
@@ -106,7 +106,7 @@ public static class LayoutHelperTests
         [TestCaseSource(nameof(GetTestCases))]
         public static void RunTestCases((List<Rectangle> Bounds, Rectangle ExpectedResult) data)
         {
-            var actual = LayoutHelper.CombineBounds(data.Bounds);
+            var actual = LayoutHelper.Combine(data.Bounds);
             var expected = data.ExpectedResult;
             Assert.AreEqual(expected, actual);
         }
@@ -141,6 +141,11 @@ public static class LayoutHelperTests
 
     }
 
+    public static class MapLocationTests
+    {
+
+    }
+
     public static class CenterTests
     {
 
@@ -169,7 +174,40 @@ public static class LayoutHelperTests
 
     }
 
-    public static class MoveInsideTests
+    public static class MidpointTests
+    {
+
+    }
+
+    public static class BetweenTests
+    {
+
+        private static IEnumerable<(int Min, int Value, int Max, int ExpectedResult)> GetTestCases()
+        {
+            yield return (0, 0, 0, 0);
+            yield return (0, -100, 100, 0);
+            yield return (0, 0, 100, 0);
+            yield return (0, 50, 100, 50);
+            yield return (0, 100, 100, 100);
+            yield return (0, 200, 100, 100);
+        }
+
+        [TestCaseSource(nameof(GetTestCases))]
+        public static void RunTestCases((int Min, int Value, int Max, int ExpectedResult) data)
+        {
+            var actual = LayoutHelper.Between(data.Min, data.Value, data.Max);
+            var expected = data.ExpectedResult;
+            Assert.AreEqual(expected, actual);
+        }
+
+    }
+
+    public static class MinimumTests
+    {
+
+    }
+
+    public static class InsideTests
     {
 
         private static IEnumerable<(Rectangle Obj, Rectangle Bounds, Rectangle ExpectedResult)> GetTestCases()
@@ -191,30 +229,7 @@ public static class LayoutHelperTests
         [TestCaseSource(nameof(GetTestCases))]
         public static void RunTestCases((Rectangle Obj, Rectangle Bounds, Rectangle ExpectedResult) data)
         {
-            var actual = LayoutHelper.MoveInside(data.Obj, data.Bounds);
-            var expected = data.ExpectedResult;
-            Assert.AreEqual(expected, actual);
-        }
-
-    }
-
-    public static class BetweenTests
-    {
-
-        private static IEnumerable<(int Min, int Value, int Max, int ExpectedResult)> GetTestCases()
-        {
-            yield return (0, 0, 0, 0);
-            yield return (0, -100, 100, 0);
-            yield return (0, 0, 100, 0);
-            yield return (0, 50, 100, 50);
-            yield return (0, 100, 100, 100);
-            yield return (0, 200, 100, 100);
-        }
-
-        [TestCaseSource(nameof(GetTestCases))]
-        public static void RunTestCases((int Min, int Value, int Max, int ExpectedResult) data)
-        {
-            var actual = LayoutHelper.Between(data.Min, data.Value, data.Max);
+            var actual = LayoutHelper.Inside(data.Obj, data.Bounds);
             var expected = data.ExpectedResult;
             Assert.AreEqual(expected, actual);
         }

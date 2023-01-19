@@ -827,6 +827,6 @@ internal static partial class User32
 
         #endregion
 
-}
+    }
 
 }

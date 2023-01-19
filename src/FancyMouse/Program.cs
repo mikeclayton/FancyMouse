@@ -1,7 +1,10 @@
-using FancyMouse.Helpers;
+using FancyMouse.Internal;
+using FancyMouse.Interop;
 using FancyMouse.UI;
 using FancyMouse.WindowsHotKeys;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using Serilog;
 using System.Diagnostics;
 
 namespace FancyMouse;
@@ -16,11 +19,24 @@ internal static class Program
     static void Main()
     {
 
-        // run Logitech SetPoint as admin for Office to work with custom mouse bindings.
-        // (SetPoint keyboard bindings work fine when running as a normal user in Office, but mouse bindings don't...)
+        // run Logitech SetPoint as admin for hotkeys to get activated from custom mouse bindings
+        // when an Office application or Visual Stusio is the active window. (SetPoint *keyboard*
+        // bindings work fine when running as a normal user in Office, but *mouse* bindings only
+        // work when SetPoint is run as an admin...)
         // https://social.msdn.microsoft.com/Forums/en-US/09a7ebee-9567-4704-be88-de54a16ca99e/logitech-mouse-button-assignments-ignored-by-vs?forum=csharpide
 
         // scheduled task to start app at logon
+
+        // initialise a file logger in the current directory
+        var serilog = new LoggerConfiguration()
+            .MinimumLevel.Debug()
+            .WriteTo.File(
+                $".\\{DateTime.Now:yyyy-mm-dd-HH-MM-ss}.log"
+            )
+            .CreateLogger();
+        var factory = new LoggerFactory()
+            .AddSerilog(serilog);
+        var logger = factory.CreateLogger("logger");
 
         Application.EnableVisualStyles();
 
@@ -34,7 +50,7 @@ internal static class Program
         var notifyForm = new FancyMouseNotify();
 
         var config = new ConfigurationBuilder()
-            .AddJsonFile("appsettings.json")
+            .AddJsonFile("FancyMouse.json")
             .Build()
             .GetSection("FancyMouse");
 
@@ -42,6 +58,7 @@ internal static class Program
             .Split("x").Select(s => int.Parse(s.Trim())).ToList();
         var dialog = new FancyMouseDialog(
             new FancyMouseDialogOptions(
+                logger: logger,
                 maximumSize: new Size(
                     preview[0], preview[1]
                 )
@@ -91,30 +108,18 @@ internal static class Program
         // get the current process's dpi awareness mode
         // see https://learn.microsoft.com/en-us/dotnet/desktop/winforms/high-dpi-support-in-windows-forms?view=netframeworkdesktop-4.8
         var process = Process.GetCurrentProcess();
-        var apiResult = NativeMethods.GetProcessDpiAwareness(
+        _ = Win32Wrappers.GetProcessDpiAwareness(
             hProcess: process.Handle,
             value: out var currentDpiAwareness
         );
-        if (apiResult != NativeMethods.S_OK)
-        {
-            throw new InvalidOperationException(
-                $"{nameof(NativeMethods.GetProcessDpiAwareness)} returned {apiResult}"
-            );
-        }
 
-        var desiredDpiAwareness = NativeMethods.PROCESS_DPI_AWARENESS.PROCESS_PER_MONITOR_DPI_AWARE;
+        var desiredDpiAwareness = Shcore.PROCESS_DPI_AWARENESS.PROCESS_PER_MONITOR_DPI_AWARE;
         if (currentDpiAwareness != desiredDpiAwareness)
         {
             // try to set the current process's dpi awarenees mode.
             // see https://stackoverflow.com/a/28923832/3156906
             //     https://learn.microsoft.com/en-us/dotnet/desktop/winforms/high-dpi-support-in-windows-forms?view=netframeworkdesktop-4.8
-            apiResult = NativeMethods.SetProcessDpiAwareness(desiredDpiAwareness);
-            if (apiResult != NativeMethods.S_OK)
-            {
-                throw new InvalidOperationException(
-                    $"{nameof(NativeMethods.SetProcessDpiAwareness)} returned {apiResult}"
-                );
-            }
+            _ = Win32Wrappers.SetProcessDpiAwareness(desiredDpiAwareness);
         }
 
     }

@@ -1,6 +1,6 @@
-﻿// ReSharper disable CheckNamespace
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 
+// ReSharper disable CheckNamespace
 namespace FancyMouse.WindowsHotKeys.Interop;
 // ReSharper restore CheckNamespace
 

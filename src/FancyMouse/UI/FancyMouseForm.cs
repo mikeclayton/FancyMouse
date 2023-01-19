@@ -1,6 +1,8 @@
-using FancyMouse.Lib;
+using FancyMouse.Internal;
+using Microsoft.Extensions.Logging;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
+using System.Windows.Forms;
 
 namespace FancyMouse.UI;
 
@@ -58,7 +60,14 @@ internal partial class FancyMouseForm : Form
     private void pbxPreview_Click(object sender, EventArgs e)
     {
 
+        this.Options.Logger.LogDebug("-----------");
+        this.Options.Logger.LogDebug(nameof(FancyMouseForm.pbxPreview_Click));
+        this.Options.Logger.LogDebug("-----------");
+
         var mouseEventArgs = (MouseEventArgs)e;
+        this.Options.Logger.LogDebug($"mouse event args = ");
+        this.Options.Logger.LogDebug($"    button   = {mouseEventArgs.Button} ");
+        this.Options.Logger.LogDebug($"    location = {mouseEventArgs.Location} ");
 
         if (mouseEventArgs.Button == MouseButtons.Left)
         {
@@ -74,16 +83,28 @@ internal partial class FancyMouseForm : Form
             }
             else
             {
+
                 // plain click - move mouse pointer
-                var desktopBounds = LayoutHelper.CombineBounds(
-                    Screen.AllScreens.Select(screen => screen.Bounds)
+                var desktopBounds = LayoutHelper.Combine(
+                    Screen.AllScreens.Select(
+                        screen => screen.Bounds
+                    )
                 );
+                this.Options.Logger.LogDebug(
+                    $"desktop bounds  = {desktopBounds}"
+                );
+
                 var mouseEvent = (MouseEventArgs)e;
-                var cursorPosition = LayoutHelper.ScaleLocation(
+
+                var cursorPosition = LayoutHelper.MapLocation(
                     originalBounds: pbxPreview.Bounds,
                     originalLocation: new Point(mouseEvent.X, mouseEvent.Y),
                     scaledBounds: desktopBounds
                 );
+                this.Options.Logger.LogDebug(
+                    $"cursor position = {cursorPosition}"
+                );
+
                 //MessageBox.Show(
                 //    $"screen = {this.Screenshot!.Size}\r\n" +
                 //    $"preview = {this.pbxPreview.Size}\r\n" +
@@ -92,7 +113,9 @@ internal partial class FancyMouseForm : Form
                 //    $"position = {cursorPosition}",
                 //    "FancyMouse - Debug"
                 //);
+
                 Cursor.Position = cursorPosition;
+
             }
         }
 
@@ -107,6 +130,10 @@ internal partial class FancyMouseForm : Form
     public void ShowPreview()
     {
 
+        this.Options.Logger.LogDebug("-----------");
+        this.Options.Logger.LogDebug(nameof(FancyMouseForm.ShowPreview));
+        this.Options.Logger.LogDebug("-----------");
+
         if (pbxPreview.Image != null)
         {
             var tmp = pbxPreview.Image;
@@ -114,14 +141,36 @@ internal partial class FancyMouseForm : Form
             tmp.Dispose();
         }
 
-        var desktopBounds = LayoutHelper.CombineBounds(
-            Screen.AllScreens.Select(screen => screen.Bounds)
+        var screens = Screen.AllScreens;
+        foreach (var i in Enumerable.Range(0, screens.Length - 1))
+        {
+            var screen = screens[i];
+            this.Options.Logger.LogDebug($"screen[{i}] = \"{screen.DeviceName}\"");
+            this.Options.Logger.LogDebug($"    primary      = {screen.Primary}");
+            this.Options.Logger.LogDebug($"    bounds       = {screen.Bounds}");
+            this.Options.Logger.LogDebug($"    working area = {screen.WorkingArea}");
+        }
+
+        var desktopBounds = LayoutHelper.Combine(
+            screens.Select(screen => screen.Bounds)
         );
+        this.Options.Logger.LogDebug(
+            $"desktop bounds  = {desktopBounds}"
+        );
+
         var cursorPosition = Cursor.Position;
+        this.Options.Logger.LogDebug(
+            $"cursor position = {cursorPosition}"
+        );
+
         var previewImagePadding = new Size(
             panel1.Padding.Left + panel1.Padding.Right,
             panel1.Padding.Top + panel1.Padding.Bottom
         );
+        this.Options.Logger.LogDebug(
+            $"image padding   = {previewImagePadding}"
+        );
+
         var formBounds = LayoutHelper.GetPreviewFormBounds(
             desktopBounds: desktopBounds,
             cursorPosition: cursorPosition,
@@ -129,12 +178,31 @@ internal partial class FancyMouseForm : Form
             maximumPreviewImageSize: this.Options.MaximumPreviewImageSize,
             previewImagePadding: previewImagePadding
         );
+        this.Options.Logger.LogDebug(
+            $"form bounds     = {formBounds}"
+        );
 
         // take a screenshot of the entire desktop
         // see https://learn.microsoft.com/en-gb/windows/win32/gdi/the-virtual-screen
         using var screenshot = new Bitmap(desktopBounds.Width, desktopBounds.Height, PixelFormat.Format32bppArgb);
         using (var graphics = Graphics.FromImage(screenshot))
         {
+            // note - it *might* be faster to capture each monitor individually and assemble them into
+            // a single image ourselves as we *may* not have to transfer all of the blank pixels
+            // that are outside the desktop bounds - e.g. the *** in the ascii art below
+            //
+            // +----------------+********
+            // |                |********
+            // |       1        +-------+
+            // |                |       |
+            // +----------------+   0   |
+            // *****************|       |
+            // *****************+-------+
+            //
+            // for very irregular monitor layouts this *might* be a big percentage of the rectangle
+            // containing the desktop bounds.
+            //
+            // then again, it might not make much difference at all - we'd need to do some perf tests
             graphics.CopyFromScreen(desktopBounds.Top, desktopBounds.Left, 0, 0, desktopBounds.Size);
         }
 
