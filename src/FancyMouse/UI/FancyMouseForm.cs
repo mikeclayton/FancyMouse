@@ -203,7 +203,7 @@ internal partial class FancyMouseForm : Form
             // containing the desktop bounds.
             //
             // then again, it might not make much difference at all - we'd need to do some perf tests
-            graphics.CopyFromScreen(desktopBounds.Top, desktopBounds.Left, 0, 0, desktopBounds.Size);
+            graphics.CopyFromScreen(desktopBounds.Left, desktopBounds.Top, 0, 0, desktopBounds.Size);
         }
 
         // scale the screenshot to fit the preview image. not *strictly* necessary as the
