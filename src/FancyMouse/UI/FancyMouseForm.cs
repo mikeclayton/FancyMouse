@@ -114,6 +114,8 @@ internal partial class FancyMouseForm : Form
                 //    "FancyMouse - Debug"
                 //);
 
+                //This needs to be set twice sometimes because of a bug in Windows, at least on my environment. Otherwise the cursor will intermittently move to the edge of the main screen instead of other screens.
+                Cursor.Position = cursorPosition;
                 Cursor.Position = cursorPosition;
 
             }
