@@ -1,9 +1,17 @@
 ![](wiki/images/fancymouse-banner.png)
 
+----
+## 2023-02-05 Update
+
+I'm currently working on a PR to integrate this utility into Microsoft PowerToys as a new "Mouse Jump" feature - see https://github.com/microsoft/PowerToys/pull/23566.
+
+It's a bit of a work-in-progress so I'll continue to keep this repo up to date for the time being so that FancyMouse can be used as a stand-alone tool, but if you want to contribute it might be better to do it over there instead...
+
+----
+
 ## Overview
 
-FancyMouse is a Windows power-toy for quickly moving the mouse large distances on high-res desktops.
-
+FancyMouse is a Windows utility for quickly moving the mouse large distances on high-res desktops.
 
 ## The Problem
 
@@ -19,8 +27,7 @@ Here's an animation showing the old slow way of swiping the mouse multiple times
 
 Imagine you're happily working on a spreadsheet on your ultra-wide external monitor you get a notification of a new email arriving on your laptop's screen. They're opposite ends of the desktop and several thousand pixels away so you start swiping the mouse repeatedly...
 
-![Swiping a mouse multiple times to move across a large monitor setup](wiki/images/swipe.gif)
-
+![Animation of swiping a mouse multiple times to move across a large monitor setup](wiki/images/swipe.gif)
 
 ## FancyMouse
 
@@ -28,4 +35,8 @@ And here's the same thing using FancyMouse. A hotkey or spare mouse button can b
 
 The visual cue tells you exactly where the pointer will end up so you can find it easily without needing to search for it.
 
-![Using FancyMouse to instantly teleport across a large monitor setup](wiki/images/fancy.gif)
+![Animation of using FancyMouse to instantly teleport across a large monitor setup](wiki/images/fancymouse.gif)
+
+and here's a video of it in action:
+
+![Screen-capture video of using FancyMouse to instantly teleport across a large monitor setup](wiki/images/fancymouse.mp4)
