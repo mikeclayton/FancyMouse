@@ -2,6 +2,7 @@ using FancyMouse.Internal;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Windows.Forms;
+using System.Windows.Forms.VisualStyles;
 
 namespace FancyMouse.UI;
 
@@ -45,22 +46,21 @@ internal partial class FancyMouseForm : Form
     {
 
         // dispose the existing image if there is one
-        if (pbxPreview.Image != null)
+        if (Thumbnail.Image != null)
         {
-            pbxPreview.Image.Dispose();
-            pbxPreview.Image = null;
-            this.DesktopBounds = Rectangle.Empty;
+            Thumbnail.Image.Dispose();
+            Thumbnail.Image = null;
         }
 
         this.Hide();
 
     }
 
-    private void pbxPreview_Click(object sender, EventArgs e)
+    private void Thumbnail_Click(object sender, EventArgs e)
     {
 
         this.Options.Logger.Debug("-----------");
-        this.Options.Logger.Debug(nameof(FancyMouseForm.pbxPreview_Click));
+        this.Options.Logger.Debug(nameof(FancyMouseForm.Thumbnail_Click));
         this.Options.Logger.Debug("-----------");
 
         var mouseEventArgs = (MouseEventArgs)e;
@@ -96,7 +96,7 @@ internal partial class FancyMouseForm : Form
                 var mouseEvent = (MouseEventArgs)e;
 
                 var cursorPosition = LayoutHelper.MapLocation(
-                    originalBounds: pbxPreview.Bounds,
+                    originalBounds: this.Thumbnail.Bounds,
                     originalLocation: new Point(mouseEvent.X, mouseEvent.Y),
                     scaledBounds: desktopBounds
                 );
@@ -151,10 +151,10 @@ internal partial class FancyMouseForm : Form
         this.Options.Logger.Debug(nameof(FancyMouseForm.ShowPreview));
         this.Options.Logger.Debug("-----------");
 
-        if (pbxPreview.Image != null)
+        if (this.Thumbnail.Image != null)
         {
-            var tmp = pbxPreview.Image;
-            pbxPreview.Image = null;
+            var tmp = this.Thumbnail.Image;
+            this.Thumbnail.Image = null;
             tmp.Dispose();
         }
 
@@ -201,7 +201,7 @@ internal partial class FancyMouseForm : Form
 
         // take a screenshot of the entire desktop
         // see https://learn.microsoft.com/en-gb/windows/win32/gdi/the-virtual-screen
-        var screenshot = new Bitmap(desktopBounds.Width, desktopBounds.Height, PixelFormat.Format32bppArgb);
+        using var screenshot = new Bitmap(desktopBounds.Width, desktopBounds.Height, PixelFormat.Format32bppArgb);
         using (var graphics = Graphics.FromImage(screenshot))
         {
             // note - it *might* be faster to capture each monitor individually and assemble them into
@@ -227,7 +227,7 @@ internal partial class FancyMouseForm : Form
         // preview image box is set to "SizeMode = StretchImage" at design time, *but* we
         // use less memory holding a smaller image in memory. the trade-off is our memory
         // usage spikes a little bit higher while we generate the thumbnail.
-        //pbxPreview.SizeMode = PictureBoxSizeMode.Normal;
+        this.Thumbnail.SizeMode = PictureBoxSizeMode.Normal;
         var preview = FancyMouseForm.ResizeImage(
             screenshot,
             formBounds.Size - previewImagePadding
@@ -245,7 +245,7 @@ internal partial class FancyMouseForm : Form
         this.Size = formBounds.Size;
 
         // update the preview image
-        pbxPreview.Image = preview;
+        this.Thumbnail.Image = preview;
 
         this.Show();
 
