@@ -202,7 +202,7 @@ internal partial class FancyMouseForm : Form
 
         // take a screenshot of the entire desktop
         // see https://learn.microsoft.com/en-gb/windows/win32/gdi/the-virtual-screen
-        using var screenshot = new Bitmap(desktopBounds.Width, desktopBounds.Height, PixelFormat.Format32bppArgb);
+        var screenshot = new Bitmap(desktopBounds.Width, desktopBounds.Height, PixelFormat.Format32bppArgb);
         using (var graphics = Graphics.FromImage(screenshot))
         {
             // note - it *might* be faster to capture each monitor individually and assemble them into
@@ -228,14 +228,24 @@ internal partial class FancyMouseForm : Form
         // preview image box is set to "SizeMode = StretchImage" at design time, *but* we
         // use less memory holding a smaller image in memory. the trade-off is our memory
         // usage spikes a little bit higher while we generate the thumbnail.
-        pbxPreview.SizeMode = PictureBoxSizeMode.Normal;
+        //pbxPreview.SizeMode = PictureBoxSizeMode.Normal;
         var preview = FancyMouseForm.ResizeImage(
             screenshot,
             formBounds.Size - previewImagePadding
         );
 
-        // resize and position the form, and update the preview image
-        this.Bounds = formBounds;
+        // resize and position the form
+        // note - do this in two steps rather than "this.Bounds = formBounds" as there
+        // appears to be an issue in WinForms with dpi scaling even when using PerMonitorV2,
+        // where the form scaling uses either the *primary* screen scaling or the *previous*
+        // screen's scaling when the form is moved to a different screen. i've got no idea
+        // *why*, but the exact sequence of calls below seems to be a workaround...
+        // see https://github.com/mikeclayton/FancyMouse/issues/2
+        this.Location = formBounds.Location;
+        _ = this.PointToScreen(Point.Empty);
+        this.Size = formBounds.Size;
+
+        // update the preview image
         pbxPreview.Image = preview;
 
         this.Show();
