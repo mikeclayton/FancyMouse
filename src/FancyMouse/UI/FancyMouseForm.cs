@@ -115,6 +115,7 @@ internal partial class FancyMouseForm : Form
                 //);
 
                 Cursor.Position = cursorPosition;
+                Cursor.Position = cursorPosition;
 
             }
         }
