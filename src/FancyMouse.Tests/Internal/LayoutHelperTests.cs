@@ -106,7 +106,7 @@ public static class LayoutHelperTests
         [TestCaseSource(nameof(GetTestCases))]
         public static void RunTestCases((List<Rectangle> Bounds, Rectangle ExpectedResult) data)
         {
-            var actual = LayoutHelper.Combine(data.Bounds);
+            var actual = LayoutHelper.CombineRegions(data.Bounds);
             var expected = data.ExpectedResult;
             Assert.AreEqual(expected, actual);
         }
@@ -167,7 +167,7 @@ public static class LayoutHelperTests
         [TestCaseSource(nameof(GetTestCases))]
         public static void RunTestCases((Size Obj, Point Midpoint, Point ExpectedResult) data)
         {
-            var actual = LayoutHelper.Center(data.Obj, data.Midpoint);
+            var actual = LayoutHelper.CenterObject(data.Obj, data.Midpoint);
             var expected = data.ExpectedResult;
             Assert.AreEqual(expected, actual);
         }
@@ -176,29 +176,6 @@ public static class LayoutHelperTests
 
     public static class MidpointTests
     {
-
-    }
-
-    public static class BetweenTests
-    {
-
-        private static IEnumerable<(int Min, int Value, int Max, int ExpectedResult)> GetTestCases()
-        {
-            yield return (0, 0, 0, 0);
-            yield return (0, -100, 100, 0);
-            yield return (0, 0, 100, 0);
-            yield return (0, 50, 100, 50);
-            yield return (0, 100, 100, 100);
-            yield return (0, 200, 100, 100);
-        }
-
-        [TestCaseSource(nameof(GetTestCases))]
-        public static void RunTestCases((int Min, int Value, int Max, int ExpectedResult) data)
-        {
-            var actual = LayoutHelper.Between(data.Min, data.Value, data.Max);
-            var expected = data.ExpectedResult;
-            Assert.AreEqual(expected, actual);
-        }
 
     }
 
@@ -229,7 +206,7 @@ public static class LayoutHelperTests
         [TestCaseSource(nameof(GetTestCases))]
         public static void RunTestCases((Rectangle Obj, Rectangle Bounds, Rectangle ExpectedResult) data)
         {
-            var actual = LayoutHelper.Inside(data.Obj, data.Bounds);
+            var actual = LayoutHelper.MoveInside(data.Obj, data.Bounds);
             var expected = data.ExpectedResult;
             Assert.AreEqual(expected, actual);
         }
@@ -363,7 +340,7 @@ public static class LayoutHelperTests
                 cursorPosition: data.CursorPosition,
                 currentMonitorBounds: data.CurrentMonitorBounds,
                 maximumPreviewImageSize: data.MaximumPreviewImageSize,
-                previewImagePadding: data.PreviewImagePadding
+                thumbnailImagePadding: data.PreviewImagePadding
             );
             var expected = data.ExpectedResult;
             Assert.AreEqual(expected, actual);

@@ -74,9 +74,9 @@ internal partial class FancyMouseForm : Form
             {
                 // ctrl click - show settings dialog
                 var options = new FancyMouseSettings();
-                options.Location = LayoutHelper.Center(
+                options.Location = LayoutHelper.CenterObject(
                     obj: options.Size,
-                    midpoint: LayoutHelper.Midpoint(this.Bounds)
+                    origin: LayoutHelper.GetMidpoint(this.Bounds)
                 );
                 options.ShowDialog();
             }
@@ -84,10 +84,10 @@ internal partial class FancyMouseForm : Form
             {
 
                 // plain click - move mouse pointer
-                var desktopBounds = LayoutHelper.Combine(
+                var desktopBounds = LayoutHelper.CombineRegions(
                     Screen.AllScreens.Select(
                         screen => screen.Bounds
-                    )
+                    ).ToList()
                 );
                 this.Options.Logger.Debug(
                     $"desktop bounds  = {desktopBounds}"
@@ -95,7 +95,7 @@ internal partial class FancyMouseForm : Form
 
                 var mouseEvent = (MouseEventArgs)e;
 
-                var cursorPosition = LayoutHelper.MapLocation(
+                var cursorPosition = LayoutHelper.ScaleLocation(
                     originalBounds: this.Thumbnail.Bounds,
                     originalLocation: new Point(mouseEvent.X, mouseEvent.Y),
                     scaledBounds: desktopBounds
@@ -168,8 +168,8 @@ internal partial class FancyMouseForm : Form
             this.Options.Logger.Debug($"    working area = {screen.WorkingArea}");
         }
 
-        var desktopBounds = LayoutHelper.Combine(
-            screens.Select(screen => screen.Bounds)
+        var desktopBounds = LayoutHelper.CombineRegions(
+            screens.Select(screen => screen.Bounds).ToList()
         );
         this.Options.Logger.Debug(
             $"desktop bounds  = {desktopBounds}"
@@ -193,7 +193,7 @@ internal partial class FancyMouseForm : Form
             cursorPosition: cursorPosition,
             currentMonitorBounds: Screen.FromPoint(cursorPosition).Bounds,
             maximumPreviewImageSize: this.Options.MaximumPreviewImageSize,
-            previewImagePadding: previewImagePadding
+            thumbnailImagePadding: previewImagePadding
         );
         this.Options.Logger.Debug(
             $"form bounds     = {formBounds}"
