@@ -39,4 +39,4 @@ The visual cue tells you exactly where the pointer will end up so you can find i
 
 and here's a video of it in action:
 
-![Screen-capture video of using FancyMouse to instantly teleport across a large monitor setup](wiki/images/fancymouse.mp4)
+https://user-images.githubusercontent.com/1193763/217108881-5e8a983a-2058-43e4-a3f4-655281ef7d68.mp4
