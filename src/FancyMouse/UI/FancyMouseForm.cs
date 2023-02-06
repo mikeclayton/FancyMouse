@@ -114,6 +114,23 @@ internal partial class FancyMouseForm : Form
                 //    "FancyMouse - Debug"
                 //);
 
+                // set the new cursor position *twice* - the cursor sometimes end up in
+                // the wrong place if we try to cross the dead space between non-aligned
+                // monitors - e.g. when trying to move the cursor from (a) to (b) we can
+                // *sometimes* - for no clear reason - end up at (c) instead.
+                //
+                //           +----------------+
+                //           |(c)    (b)      |
+                //           |                |
+                //           |                |
+                //           |                |
+                // +---------+                |
+                // |  (a)    |                |
+                // +---------+----------------+
+                //
+                // setting the position a second time seems to fix this and moves the
+                // cursor to the expected location (b) - for more details see
+                // https://github.com/mikeclayton/FancyMouse/pull/3
                 Cursor.Position = cursorPosition;
                 Cursor.Position = cursorPosition;
 
