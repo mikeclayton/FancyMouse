@@ -1,7 +1,7 @@
 ﻿using System.Drawing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace FancyMouse.Internal.Tests;
+namespace FancyMouse.Helpers.Tests;
 
 [TestClass]
 public static class LayoutHelperTests
@@ -356,15 +356,15 @@ public static class LayoutHelperTests
         {
             public TestCase(
                 Rectangle desktopBounds,
-                Point cursorPosition,
-                Rectangle currentMonitorBounds,
+                Point activatedPosition,
+                Rectangle activatedMonitorBounds,
                 Size maximumThumbnailImageSize,
                 Size thumbnailImagePadding,
                 Rectangle expectedResult)
             {
                 this.DesktopBounds = desktopBounds;
-                this.CursorPosition = cursorPosition;
-                this.CurrentMonitorBounds = currentMonitorBounds;
+                this.ActivatedPosition = activatedPosition;
+                this.ActivatedMonitorBounds = activatedMonitorBounds;
                 this.MaximumThumbnailImageSize = maximumThumbnailImageSize;
                 this.ThumbnailImagePadding = thumbnailImagePadding;
                 this.ExpectedResult = expectedResult;
@@ -372,9 +372,9 @@ public static class LayoutHelperTests
 
             public Rectangle DesktopBounds { get; set; }
 
-            public Point CursorPosition { get; set; }
+            public Point ActivatedPosition { get; set; }
 
-            public Rectangle CurrentMonitorBounds { get; set; }
+            public Rectangle ActivatedMonitorBounds { get; set; }
 
             public Size MaximumThumbnailImageSize { get; set; }
 
@@ -414,8 +414,8 @@ public static class LayoutHelperTests
             {
                 new TestCase(
                     desktopBounds: new(-5120, -359, 7040, 1440),
-                    cursorPosition: new(-5020, -259),
-                    currentMonitorBounds: new(-5120, -359, 5120, 1440),
+                    activatedPosition: new(-5020, -259),
+                    activatedMonitorBounds: new(-5120, -359, 5120, 1440),
                     maximumThumbnailImageSize: new(1600, 1200),
                     thumbnailImagePadding: new(10, 10),
                     expectedResult: new(-5120, -359, 1610, 337)),
@@ -448,8 +448,8 @@ public static class LayoutHelperTests
             {
                 new TestCase(
                     desktopBounds: new(-5120, -359, 7040, 1440),
-                    cursorPosition: new(-2560, 361),
-                    currentMonitorBounds: new(-5120, -359, 5120, 1440),
+                    activatedPosition: new(-2560, 361),
+                    activatedMonitorBounds: new(-5120, -359, 5120, 1440),
                     maximumThumbnailImageSize: new(1600, 1200),
                     thumbnailImagePadding: new(10, 10),
                     expectedResult: new(-3365, 192, 1610, 337)),
@@ -484,8 +484,8 @@ public static class LayoutHelperTests
             {
                 new TestCase(
                     desktopBounds: new(-5120, -359, 7040, 1440),
-                    cursorPosition: new(-2560, 361),
-                    currentMonitorBounds: new(-5120, -359, 5120, 1440),
+                    activatedPosition: new(-2560, 361),
+                    activatedMonitorBounds: new(-5120, -359, 5120, 1440),
                     maximumThumbnailImageSize: new(160000, 120000),
                     thumbnailImagePadding: new(10, 10),
                     expectedResult: new(-5120, -166, 5120, 1055)),
@@ -498,8 +498,8 @@ public static class LayoutHelperTests
         {
             var actual = LayoutHelper.GetPreviewFormBounds(
                 desktopBounds: data.DesktopBounds,
-                cursorPosition: data.CursorPosition,
-                currentMonitorBounds: data.CurrentMonitorBounds,
+                activatedPosition: data.ActivatedPosition,
+                activatedMonitorBounds: data.ActivatedMonitorBounds,
                 maximumThumbnailImageSize: data.MaximumThumbnailImageSize,
                 thumbnailImagePadding: data.ThumbnailImagePadding);
             var expected = data.ExpectedResult;

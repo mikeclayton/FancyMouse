@@ -1,8 +1,6 @@
-using FancyMouse.Internal;
+using FancyMouse.Helpers;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
-using System.Windows.Forms;
-using System.Windows.Forms.VisualStyles;
 
 namespace FancyMouse.UI;
 
@@ -44,7 +42,6 @@ internal partial class FancyMouseForm : Form
 
     private void FancyMouseForm_Deactivate(object sender, EventArgs e)
     {
-
         // dispose the existing image if there is one
         if (Thumbnail.Image != null)
         {
@@ -90,28 +87,17 @@ internal partial class FancyMouseForm : Form
                     ).ToList()
                 );
                 this.Options.Logger.Debug(
-                    $"desktop bounds  = {desktopBounds}"
-                );
+                    $"desktop bounds  = {desktopBounds}");
 
                 var mouseEvent = (MouseEventArgs)e;
 
-                var cursorPosition = LayoutHelper.ScaleLocation(
+                var scaledLocation = LayoutHelper.ScaleLocation(
                     originalBounds: this.Thumbnail.Bounds,
                     originalLocation: new Point(mouseEvent.X, mouseEvent.Y),
                     scaledBounds: desktopBounds
                 );
                 this.Options.Logger.Debug(
-                    $"cursor position = {cursorPosition}"
-                );
-
-                //MessageBox.Show(
-                //    $"screen = {this.Screenshot!.Size}\r\n" +
-                //    $"preview = {this.pbxPreview.Size}\r\n" +
-                //    $"scale = {scale}\r\n" +
-                //    $"click = {mouseEventArgs.Location}\r\n" +
-                //    $"position = {cursorPosition}",
-                //    "FancyMouse - Debug"
-                //);
+                    $"scaled location = {scaledLocation}");
 
                 // set the new cursor position *twice* - the cursor sometimes end up in
                 // the wrong place if we try to cross the dead space between non-aligned
@@ -130,8 +116,8 @@ internal partial class FancyMouseForm : Form
                 // setting the position a second time seems to fix this and moves the
                 // cursor to the expected location (b) - for more details see
                 // https://github.com/mikeclayton/FancyMouse/pull/3
-                Cursor.Position = cursorPosition;
-                Cursor.Position = cursorPosition;
+                Cursor.Position = scaledLocation;
+                Cursor.Position = scaledLocation;
 
             }
         }
@@ -159,7 +145,7 @@ internal partial class FancyMouseForm : Form
         }
 
         var screens = Screen.AllScreens;
-        foreach (var i in Enumerable.Range(0, screens.Length - 1))
+        foreach (var i in Enumerable.Range(0, screens.Length))
         {
             var screen = screens[i];
             this.Options.Logger.Debug($"screen[{i}] = \"{screen.DeviceName}\"");
@@ -169,35 +155,28 @@ internal partial class FancyMouseForm : Form
         }
 
         var desktopBounds = LayoutHelper.CombineRegions(
-            screens.Select(screen => screen.Bounds).ToList()
-        );
+            screens.Select(screen => screen.Bounds).ToList());
         this.Options.Logger.Debug(
-            $"desktop bounds  = {desktopBounds}"
-        );
+            $"desktop bounds  = {desktopBounds}");
 
-        var cursorPosition = Cursor.Position;
+        var activatedPosition = Cursor.Position;
         this.Options.Logger.Debug(
-            $"cursor position = {cursorPosition}"
-        );
+            $"activated position = {activatedPosition}");
 
         var previewImagePadding = new Size(
             panel1.Padding.Left + panel1.Padding.Right,
-            panel1.Padding.Top + panel1.Padding.Bottom
-        );
+            panel1.Padding.Top + panel1.Padding.Bottom);
         this.Options.Logger.Debug(
-            $"image padding   = {previewImagePadding}"
-        );
+            $"image padding   = {previewImagePadding}");
 
         var formBounds = LayoutHelper.GetPreviewFormBounds(
             desktopBounds: desktopBounds,
-            cursorPosition: cursorPosition,
-            currentMonitorBounds: Screen.FromPoint(cursorPosition).Bounds,
+            activatedPosition: activatedPosition,
+            activatedMonitorBounds: Screen.FromPoint(activatedPosition).Bounds,
             maximumThumbnailImageSize: this.Options.MaximumThumbnailImageSize,
-            thumbnailImagePadding: previewImagePadding
-        );
+            thumbnailImagePadding: previewImagePadding);
         this.Options.Logger.Debug(
-            $"form bounds     = {formBounds}"
-        );
+            $"form bounds     = {formBounds}");
 
         // take a screenshot of the entire desktop
         // see https://learn.microsoft.com/en-gb/windows/win32/gdi/the-virtual-screen

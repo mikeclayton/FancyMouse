@@ -1,4 +1,4 @@
-﻿namespace FancyMouse.Internal;
+﻿namespace FancyMouse.Helpers;
 
 internal static class LayoutHelper
 {
@@ -117,18 +117,18 @@ internal static class LayoutHelper
     /// The bounds of the entire desktop / virtual screen. Might start at a negative
     /// x, y if a non-primary screen is located left of or above the primary screen.
     /// </param>
-    /// <param name="cursorPosition">
+    /// <param name="activatedPosition">
     /// The current position of the cursor on the virtual desktop.
     /// </param>
-    /// <param name="currentMonitorBounds">
+    /// <param name="activatedMonitorBounds">
     /// The bounds of the screen the cursor is currently on. Might start at a negative
     /// x, y if a non-primary screen is located left of or above the primary screen.
     /// </param>
-    /// <param name="maximumPreviewImageSize">
+    /// <param name="maximumThumbnailImageSize">
     /// The largest allowable size of the preview image. This is literally the just
     /// image itself, not including padding around the image.
     /// </param>
-    /// <param name="previewImagePadding">
+    /// <param name="thumbnailImagePadding">
     /// The total width and height of padding around the preview image.
     /// </param>
     /// <returns>
@@ -136,8 +136,8 @@ internal static class LayoutHelper
     /// </returns>
     public static Rectangle GetPreviewFormBounds(
         Rectangle desktopBounds,
-        Point cursorPosition,
-        Rectangle currentMonitorBounds,
+        Point activatedPosition,
+        Rectangle activatedMonitorBounds,
         Size maximumThumbnailImageSize,
         Size thumbnailImagePadding)
     {
@@ -147,7 +147,7 @@ internal static class LayoutHelper
             new[]
             {
                 // can't be bigger than the current screen
-                currentMonitorBounds.Size,
+                activatedMonitorBounds.Size,
 
                 // can't be bigger than the max preview image
                 // *plus* the padding around the preview image
@@ -163,15 +163,15 @@ internal static class LayoutHelper
             bounds: maxFormSize - thumbnailImagePadding);
         var formSize = thumbnailImageSize + thumbnailImagePadding;
 
-        // center the form to the cursor's position, but nudge it back
+        // center the form to the activated position, but nudge it back
         // inside the visible area of the screen if it falls outside
         var formBounds = LayoutHelper.MoveInside(
             inner: new Rectangle(
                 LayoutHelper.CenterObject(
                     obj: formSize,
-                    origin: cursorPosition),
+                    origin: activatedPosition),
                 formSize),
-            outer: currentMonitorBounds);
+            outer: activatedMonitorBounds);
 
         return formBounds;
     }

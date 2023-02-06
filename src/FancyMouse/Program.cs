@@ -1,24 +1,21 @@
-using FancyMouse.Internal;
 using FancyMouse.UI;
 using FancyMouse.WindowsHotKeys;
 using Microsoft.Extensions.Configuration;
 using NLog;
-using System.Diagnostics;
 
 namespace FancyMouse;
 
 internal static class Program
 {
-
     /// <summary>
-    /// The main entry point for the application.
+    ///  The main entry point for the application.
     /// </summary>
     [STAThread]
-    static void Main()
+    private static void Main()
     {
 
         // run Logitech SetPoint as admin for hotkeys to get activated from custom mouse bindings
-        // when an Office application or Visual Stusio is the active window. (SetPoint *keyboard*
+        // when an Office application or Visual Studio is the active window. (SetPoint *keyboard*
         // bindings work fine when running as a normal user in Office, but *mouse* bindings only
         // work when SetPoint is run as an admin...)
         // https://social.msdn.microsoft.com/Forums/en-US/09a7ebee-9567-4704-be88-de54a16ca99e/logitech-mouse-button-assignments-ignored-by-vs?forum=csharpide
