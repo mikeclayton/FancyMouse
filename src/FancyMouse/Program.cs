@@ -48,7 +48,7 @@ internal static class Program
             new FancyMouseDialogOptions(
                 //logger: LogManager.LoadConfiguration(".\\NLog.config").GetCurrentClassLogger(),
                 logger: LogManager.CreateNullLogger(),
-                maximumSize: new Size(
+                maximumThumbnailSize: new Size(
                     preview[0], preview[1]
                 )
             )

@@ -9,11 +9,11 @@ internal sealed class FancyMouseDialogOptions
 
     public FancyMouseDialogOptions(
         ILogger logger,
-        Size maximumSize
+        Size maximumThumbnailSize
     )
     {
         this.Logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        this.MaximumPreviewImageSize = maximumSize;
+        this.MaximumThumbnailImageSize = maximumThumbnailSize;
     }
 
     #endregion
@@ -25,7 +25,7 @@ internal sealed class FancyMouseDialogOptions
         get;
     }
 
-    public Size MaximumPreviewImageSize
+    public Size MaximumThumbnailImageSize
     {
         get;
     }

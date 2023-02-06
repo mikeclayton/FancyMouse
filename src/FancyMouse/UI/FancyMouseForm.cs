@@ -192,7 +192,7 @@ internal partial class FancyMouseForm : Form
             desktopBounds: desktopBounds,
             cursorPosition: cursorPosition,
             currentMonitorBounds: Screen.FromPoint(cursorPosition).Bounds,
-            maximumPreviewImageSize: this.Options.MaximumPreviewImageSize,
+            maximumThumbnailImageSize: this.Options.MaximumThumbnailImageSize,
             thumbnailImagePadding: previewImagePadding
         );
         this.Options.Logger.Debug(

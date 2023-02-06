@@ -1,41 +1,110 @@
-﻿using NUnit.Framework;
-using System.Drawing;
+﻿using System.Drawing;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace FancyMouse.Internal.Tests;
 
+[TestClass]
 public static class LayoutHelperTests
 {
-
-    #region General Helpers
-
-    public static class CombineTests
+    [TestClass]
+    public class CenterObjectTests
     {
+        public class TestCase
+        {
+            public TestCase(Size obj, Point midpoint, Point expectedResult)
+            {
+                this.Obj = obj;
+                this.Midpoint = midpoint;
+                this.ExpectedResult = expectedResult;
+            }
 
-        private static IEnumerable<(List<Rectangle> Bounds, Rectangle ExpectedResult)> GetTestCases()
+            public Size Obj { get; set; }
+
+            public Point Midpoint { get; set; }
+
+            public Point ExpectedResult { get; set; }
+        }
+
+        public static IEnumerable<object[]> GetTestCases()
+        {
+            // zero-sized object should center exactly on the midpoint
+            yield return new[] { new TestCase(new(0, 0), new(0, 0), new(0, 0)), };
+
+            // odd-sized objects should center above/left of the midpoint
+            yield return new[] { new TestCase(new(1, 1), new(1, 1), new(0, 0)), };
+            yield return new[] { new TestCase(new(1, 1), new(5, 5), new(4, 4)), };
+
+            // even-sized objects should center exactly on the midpoint
+            yield return new[] { new TestCase(new(2, 2), new(1, 1), new(0, 0)), };
+            yield return new[] { new TestCase(new(2, 2), new(5, 5), new(4, 4)), };
+            yield return new[] { new TestCase(new(800, 600), new(1000, 1000), new(600, 700)), };
+
+            // negative result position
+            yield return new[] { new TestCase(new(1000, 1200), new(300, 300), new(-200, -300)), };
+        }
+
+        [TestMethod]
+        [DynamicData(nameof(GetTestCases), DynamicDataSourceType.Method)]
+        public void RunTestCases(TestCase data)
+        {
+            var actual = LayoutHelper.CenterObject(data.Obj, data.Midpoint);
+            var expected = data.ExpectedResult;
+            Assert.AreEqual(expected, actual);
+        }
+    }
+
+    [TestClass]
+    public class CombineRegionsTests
+    {
+        public class TestCase
+        {
+            public TestCase(List<Rectangle> bounds, Rectangle expectedResult)
+            {
+                this.Bounds = bounds;
+                this.ExpectedResult = expectedResult;
+            }
+
+            public List<Rectangle> Bounds { get; set; }
+
+            public Rectangle ExpectedResult { get; set; }
+        }
+
+        public static IEnumerable<object[]> GetTestCases()
         {
             // empty list
-            yield return (
-                new(),
-                Rectangle.Empty
-            );
+            yield return new[]
+            {
+                new TestCase(
+                    new(),
+                    Rectangle.Empty),
+            };
+
             // empty bounds
-            yield return (
-                new() {
-                    Rectangle.Empty
-                },
-                Rectangle.Empty
-            );
+            yield return new[]
+            {
+                new TestCase(
+                    new()
+                    {
+                        Rectangle.Empty,
+                    },
+                    Rectangle.Empty),
+            };
+
             // single region
             //
             // +---+
             // | 0 |
             // +---+
-            yield return (
-                new() {
-                    new(100, 100, 100, 100)
-                },
-                new(100, 100, 100, 100)
-            );
+            yield return new[]
+            {
+                new TestCase(
+                    new()
+                    {
+                        new(100, 100, 100, 100),
+                    },
+                    new(100, 100, 100, 100)),
+            };
+
             // multi-monitor desktop
             //
             // +----------------+
@@ -43,13 +112,17 @@ public static class LayoutHelperTests
             // |       1        +-------+
             // |                |   0   |
             // +----------------+-------+
-            yield return (
-                new() {
-                    new(5120, 0, 1920, 1080),
-                    new(0, 0, 5120, 1440),
-                },
-                new(0, 0, 7040, 1440)
-            );
+            yield return new[]
+            {
+                new TestCase(
+                    new()
+                    {
+                        new(5120, 0, 1920, 1080),
+                        new(0, 0, 5120, 1440),
+                    },
+                    new(0, 0, 7040, 1440)),
+            };
+
             // multi-monitor desktop
             //
             // note - windows puts the *primary* monitor at the origin (0,0),
@@ -62,13 +135,17 @@ public static class LayoutHelperTests
             // |       1        |
             // |                |
             // +----------------+
-            yield return (
-                new() {
-                    new(0, -1000, 1920, 1080),
-                    new(0, 0, 5120, 1440),
-                },
-                new(0, -1000, 5120, 2440)
-            );
+            yield return new[]
+            {
+                new TestCase(
+                    new()
+                    {
+                        new(0, -1000, 1920, 1080),
+                        new(0, 0, 5120, 1440),
+                    },
+                    new(0, -1000, 5120, 2440)),
+            };
+
             // multi-monitor desktop
             //
             // note - windows puts the *primary* monitor at the origin (0,0),
@@ -79,13 +156,17 @@ public static class LayoutHelperTests
             // +-------+       1        |
             //         |                |
             //         +----------------+
-            yield return (
-                new() {
-                    new(-1920, 0, 1920, 1080),
-                    new(0, 0, 5120, 1440),
-                },
-                new(-1920, 0, 7040, 1440)
-            );
+            yield return new[]
+            {
+                new TestCase(
+                    new()
+                    {
+                        new(-1920, 0, 1920, 1080),
+                        new(0, 0, 5120, 1440),
+                    },
+                    new(-1920, 0, 7040, 1440)),
+            };
+
             // non-contiguous regions
             //
             // +---+
@@ -94,137 +175,215 @@ public static class LayoutHelperTests
             //          |   1   |
             //          |       |
             //          +-------+
-            yield return (
-                new() {
-                    new(0, 0, 100, 100),
-                    new(200, 150, 200, 200),
-                },
-                new(0, 0, 400, 350)
-            );
+            yield return new[]
+            {
+                new TestCase(
+                    new()
+                    {
+                        new(0, 0, 100, 100),
+                        new(200, 150, 200, 200),
+                    },
+                    new(0, 0, 400, 350)),
+            };
         }
 
-        [TestCaseSource(nameof(GetTestCases))]
-        public static void RunTestCases((List<Rectangle> Bounds, Rectangle ExpectedResult) data)
+        [TestMethod]
+        [DynamicData(nameof(GetTestCases), DynamicDataSourceType.Method)]
+        public void RunTestCases(TestCase data)
         {
             var actual = LayoutHelper.CombineRegions(data.Bounds);
             var expected = data.ExpectedResult;
             Assert.AreEqual(expected, actual);
         }
-
     }
 
-    public static class ScaleToFitTests
+    [TestClass]
+    public class GetMidpointTests
     {
+    }
 
-        private static IEnumerable<(Size Obj, Size Bounds, Size ExpectedResult)> GetTestCases()
+    [TestClass]
+    public class MoveInsideTests
+    {
+        public class TestCase
         {
-            // identity tests
-            yield return (new(0, 0), new(0, 0), new(0, 0));
-            yield return (new(512, 384), new(512, 384), new(512, 384));
-            yield return (new(1024, 768), new(1024, 768), new(1024, 768));
-            // integer scaling factor tests
-            yield return (new(512, 384), new(2048, 1536), new(2048, 1536));
-            yield return (new(2048, 1536), new(1024, 768), new(1024, 768));
-            // scale to fit width
-            yield return (new(512, 384), new(2048, 3072), new(2048, 1536));
-            // scale to fit height
-            yield return (new(512, 384), new(4096, 1536), new(2048, 1536));
+            public TestCase(Rectangle obj, Rectangle bounds, Rectangle expectedResult)
+            {
+                this.Obj = obj;
+                this.Bounds = bounds;
+                this.ExpectedResult = expectedResult;
+            }
+
+            public Rectangle Obj { get; set; }
+
+            public Rectangle Bounds { get; set; }
+
+            public Rectangle ExpectedResult { get; set; }
         }
 
-        [TestCaseSource(nameof(GetTestCases))]
-        public static void RunTestCases((Size Obj, Size Bounds, Size ExpectedResult) data)
-        {
-            var actual = LayoutHelper.ScaleToFit(data.Obj, data.Bounds);
-            var expected = data.ExpectedResult;
-            Assert.AreEqual(expected, actual);
-        }
-
-    }
-
-    public static class MapLocationTests
-    {
-
-    }
-
-    public static class CenterTests
-    {
-
-        private static IEnumerable<(Size Obj, Point Midpoint, Point ExpectedResult)> GetTestCases()
-        {
-            // zero-sized object should centre exactly on the midpoint
-            yield return (new(0, 0), new(0, 0), new(0, 0));
-            // odd-sized objects should centre above/left of the midpoint
-            yield return (new(1, 1), new(1, 1), new(0, 0));
-            yield return (new(1, 1), new(5, 5), new(4, 4));
-            // even-sized objects should centre exactly on the midpoint
-            yield return (new(2, 2), new(1, 1), new(0, 0));
-            yield return (new(2, 2), new(5, 5), new(4, 4));
-            yield return (new(800, 600), new(1000, 1000), new(600, 700));
-            // negative result position
-            yield return (new(1000, 1200), new(300, 300), new(-200, -300));
-        }
-
-        [TestCaseSource(nameof(GetTestCases))]
-        public static void RunTestCases((Size Obj, Point Midpoint, Point ExpectedResult) data)
-        {
-            var actual = LayoutHelper.CenterObject(data.Obj, data.Midpoint);
-            var expected = data.ExpectedResult;
-            Assert.AreEqual(expected, actual);
-        }
-
-    }
-
-    public static class MidpointTests
-    {
-
-    }
-
-    public static class MinimumTests
-    {
-
-    }
-
-    public static class InsideTests
-    {
-
-        private static IEnumerable<(Rectangle Obj, Rectangle Bounds, Rectangle ExpectedResult)> GetTestCases()
+        public static IEnumerable<object[]> GetTestCases()
         {
             // already inside - obj fills bounds exactly
-            yield return (new(0, 0, 100, 100), new(0, 0, 100, 100), new(0, 0, 100, 100));
+            yield return new[]
+            {
+                new TestCase(new(0, 0, 100, 100), new(0, 0, 100, 100), new(0, 0, 100, 100)),
+            };
+
             // already inside - obj exactly in each corner
-            yield return (new(0, 0, 100, 100), new(0, 0, 200, 200), new(0, 0, 100, 100));
-            yield return (new(100, 0, 100, 100), new(0, 0, 200, 200), new(100, 0, 100, 100));
-            yield return (new(0, 100, 100, 100), new(0, 0, 200, 200), new(0, 100, 100, 100));
-            yield return (new(100, 100, 100, 100), new(0, 0, 200, 200), new(100, 100, 100, 100));
+            yield return new[]
+            {
+                new TestCase(new(0, 0, 100, 100), new(0, 0, 200, 200), new(0, 0, 100, 100)),
+            };
+            yield return new[]
+            {
+                new TestCase(new(100, 0, 100, 100), new(0, 0, 200, 200), new(100, 0, 100, 100)),
+            };
+            yield return new[]
+            {
+                new TestCase(new(0, 100, 100, 100), new(0, 0, 200, 200), new(0, 100, 100, 100)),
+            };
+            yield return new[]
+            {
+                new TestCase(new(100, 100, 100, 100), new(0, 0, 200, 200), new(100, 100, 100, 100)),
+            };
+
             // move inside - obj outside each corner
-            yield return (new(-50, -50, 100, 100), new(0, 0, 200, 200), new(0, 0, 100, 100));
-            yield return (new(250, -50, 100, 100), new(0, 0, 200, 200), new(100, 0, 100, 100));
-            yield return (new(-50, 250, 100, 100), new(0, 0, 200, 200), new(0, 100, 100, 100));
-            yield return (new(150, 150, 100, 100), new(0, 0, 200, 200), new(100, 100, 100, 100));
+            yield return new[]
+            {
+                new TestCase(new(-50, -50, 100, 100), new(0, 0, 200, 200), new(0, 0, 100, 100)),
+            };
+            yield return new[]
+            {
+                new TestCase(new(250, -50, 100, 100), new(0, 0, 200, 200), new(100, 0, 100, 100)),
+            };
+            yield return new[]
+            {
+                new TestCase(new(-50, 250, 100, 100), new(0, 0, 200, 200), new(0, 100, 100, 100)),
+            };
+            yield return new[]
+            {
+                new TestCase(new(150, 150, 100, 100), new(0, 0, 200, 200), new(100, 100, 100, 100)),
+            };
         }
 
-        [TestCaseSource(nameof(GetTestCases))]
-        public static void RunTestCases((Rectangle Obj, Rectangle Bounds, Rectangle ExpectedResult) data)
+        [TestMethod]
+        [DynamicData(nameof(GetTestCases), DynamicDataSourceType.Method)]
+        public void RunTestCases(TestCase data)
         {
             var actual = LayoutHelper.MoveInside(data.Obj, data.Bounds);
             var expected = data.ExpectedResult;
             Assert.AreEqual(expected, actual);
         }
-
     }
 
-    #endregion
-
-    public static class GetPreviewFormBoundsTests
+    [TestClass]
+    public class ScaleLocationTests
     {
+    }
 
-        private static IEnumerable<(
-            Rectangle DesktopBounds,
-            Point CursorPosition,
-            Rectangle CurrentMonitorBounds,
-            Size MaximumPreviewImageSize,
-            Size PreviewImagePadding,
-            Rectangle ExpectedResult)> GetTestCases()
+    [TestClass]
+    public class ScaleToFitTests
+    {
+        public class TestCase
+        {
+            public TestCase(Size obj, Size bounds, Size expectedResult)
+            {
+                this.Obj = obj;
+                this.Bounds = bounds;
+                this.ExpectedResult = expectedResult;
+            }
+
+            public Size Obj { get; set; }
+
+            public Size Bounds { get; set; }
+
+            public Size ExpectedResult { get; set; }
+        }
+
+        public static IEnumerable<object[]> GetTestCases()
+        {
+            // identity tests
+            yield return new[]
+            {
+                new TestCase(new(0, 0), new(0, 0), new(0, 0)),
+            };
+            yield return new[]
+            {
+                new TestCase(new(512, 384), new(512, 384), new(512, 384)),
+            };
+            yield return new[]
+            {
+                new TestCase(new(1024, 768), new(1024, 768), new(1024, 768)),
+            };
+
+            // integer scaling factor tests
+            yield return new[]
+            {
+                new TestCase(new(512, 384), new(2048, 1536), new(2048, 1536)),
+            };
+            yield return new[]
+            {
+                new TestCase(new(2048, 1536), new(1024, 768), new(1024, 768)),
+            };
+
+            // scale to fit width
+            yield return new[]
+            {
+                new TestCase(new(512, 384), new(2048, 3072), new(2048, 1536)),
+            };
+
+            // scale to fit height
+            yield return new[]
+            {
+                new TestCase(new(512, 384), new(4096, 1536), new(2048, 1536)),
+            };
+        }
+
+        [TestMethod]
+        [DynamicData(nameof(GetTestCases), DynamicDataSourceType.Method)]
+        public void RunTestCases(TestCase data)
+        {
+            var actual = LayoutHelper.ScaleToFit(data.Obj, data.Bounds);
+            var expected = data.ExpectedResult;
+            Assert.AreEqual(expected, actual);
+        }
+    }
+
+    [TestClass]
+    public class GetPreviewFormBoundsTests
+    {
+        public class TestCase
+        {
+            public TestCase(
+                Rectangle desktopBounds,
+                Point cursorPosition,
+                Rectangle currentMonitorBounds,
+                Size maximumThumbnailImageSize,
+                Size thumbnailImagePadding,
+                Rectangle expectedResult)
+            {
+                this.DesktopBounds = desktopBounds;
+                this.CursorPosition = cursorPosition;
+                this.CurrentMonitorBounds = currentMonitorBounds;
+                this.MaximumThumbnailImageSize = maximumThumbnailImageSize;
+                this.ThumbnailImagePadding = thumbnailImagePadding;
+                this.ExpectedResult = expectedResult;
+            }
+
+            public Rectangle DesktopBounds { get; set; }
+
+            public Point CursorPosition { get; set; }
+
+            public Rectangle CurrentMonitorBounds { get; set; }
+
+            public Size MaximumThumbnailImageSize { get; set; }
+
+            public Size ThumbnailImagePadding { get; set; }
+
+            public Rectangle ExpectedResult { get; set; }
+        }
+
+        public static IEnumerable<object[]> GetTestCases()
         {
             // multi-monitor desktop
             //
@@ -243,7 +402,7 @@ public static class LayoutHelperTests
             // |                |   0   |
             // +----------------+-------+
             //
-            // form iscentred on mouse cursor and then
+            // form is centered on mouse cursor and then
             // nudged back into the top left corner
             //
             // +-----+----------+
@@ -251,14 +410,17 @@ public static class LayoutHelperTests
             // +-----+ 1        +-------+
             // |                |   0   |
             // +----------------+-------+
-            yield return (
-                DesktopBounds: new(-5120, -359, 7040, 1440),
-                CursorPosition: new(-5020, -259),
-                CurrentMonitorBounds: new(-5120, -359, 5120, 1440),
-                MaximumPreviewImageSize: new(1600, 1200),
-                PreviewImagePadding: new(10, 10),
-                ExpectedResult: new(-5120, -359, 1610, 337)
-            );
+            yield return new[]
+            {
+                new TestCase(
+                    desktopBounds: new(-5120, -359, 7040, 1440),
+                    cursorPosition: new(-5020, -259),
+                    currentMonitorBounds: new(-5120, -359, 5120, 1440),
+                    maximumThumbnailImageSize: new(1600, 1200),
+                    thumbnailImagePadding: new(10, 10),
+                    expectedResult: new(-5120, -359, 1610, 337)),
+            };
+
             // multi-monitor desktop
             //
             // +----------------+
@@ -267,7 +429,7 @@ public static class LayoutHelperTests
             // |                |   0   |
             // +----------------+-------+
             //
-            // clicked in the centre of the second monitor
+            // clicked in the center of the second monitor
             //
             // +----------------+
             // |                |
@@ -282,14 +444,17 @@ public static class LayoutHelperTests
             // |    |  *  |     +-------+
             // |    +-----+     |   0   |
             // +----------------+-------+
-            yield return (
-                DesktopBounds: new(-5120, -359, 7040, 1440),
-                CursorPosition: new(-2560, 361),
-                CurrentMonitorBounds: new(-5120, -359, 5120, 1440),
-                MaximumPreviewImageSize: new(1600, 1200),
-                PreviewImagePadding: new(10, 10),
-                ExpectedResult: new(-3365, 192, 1610, 337)
-            );
+            yield return new[]
+            {
+                new TestCase(
+                    desktopBounds: new(-5120, -359, 7040, 1440),
+                    cursorPosition: new(-2560, 361),
+                    currentMonitorBounds: new(-5120, -359, 5120, 1440),
+                    maximumThumbnailImageSize: new(1600, 1200),
+                    thumbnailImagePadding: new(10, 10),
+                    expectedResult: new(-3365, 192, 1610, 337)),
+            };
+
             // multi-monitor desktop
             //
             // +----------------+
@@ -298,7 +463,7 @@ public static class LayoutHelperTests
             // |                |   0   |
             // +----------------+-------+
             //
-            // clicked in the centre of the monitor
+            // clicked in the center of the monitor
             //
             // +----------------+
             // |                |
@@ -315,37 +480,30 @@ public static class LayoutHelperTests
             // ||      *       |+-------+
             // |+--------------+|   0   |
             // +----------------+-------+
-            yield return (
-                DesktopBounds: new(-5120, -359, 7040, 1440),
-                CursorPosition: new(-2560, 361),
-                CurrentMonitorBounds: new(-5120, -359, 5120, 1440),
-                MaximumPreviewImageSize: new(160000, 120000),
-                PreviewImagePadding: new(10, 10),
-                ExpectedResult: new(-5120, -166, 5120, 1055)
-            );
+            yield return new[]
+            {
+                new TestCase(
+                    desktopBounds: new(-5120, -359, 7040, 1440),
+                    cursorPosition: new(-2560, 361),
+                    currentMonitorBounds: new(-5120, -359, 5120, 1440),
+                    maximumThumbnailImageSize: new(160000, 120000),
+                    thumbnailImagePadding: new(10, 10),
+                    expectedResult: new(-5120, -166, 5120, 1055)),
+            };
         }
 
-        [TestCaseSource(nameof(GetTestCases))]
-        public static void RunTestCases((
-            Rectangle DesktopBounds,
-            Point CursorPosition,
-            Rectangle CurrentMonitorBounds,
-            Size MaximumPreviewImageSize,
-            Size PreviewImagePadding,
-            Rectangle ExpectedResult) data
-        )
+        [TestMethod]
+        [DynamicData(nameof(GetTestCases), DynamicDataSourceType.Method)]
+        public void RunTestCases(TestCase data)
         {
             var actual = LayoutHelper.GetPreviewFormBounds(
                 desktopBounds: data.DesktopBounds,
                 cursorPosition: data.CursorPosition,
                 currentMonitorBounds: data.CurrentMonitorBounds,
-                maximumPreviewImageSize: data.MaximumPreviewImageSize,
-                thumbnailImagePadding: data.PreviewImagePadding
-            );
+                maximumThumbnailImageSize: data.MaximumThumbnailImageSize,
+                thumbnailImagePadding: data.ThumbnailImagePadding);
             var expected = data.ExpectedResult;
             Assert.AreEqual(expected, actual);
         }
-
     }
-
 }

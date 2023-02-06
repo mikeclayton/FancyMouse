@@ -138,7 +138,7 @@ internal static class LayoutHelper
         Rectangle desktopBounds,
         Point cursorPosition,
         Rectangle currentMonitorBounds,
-        Size maximumPreviewImageSize,
+        Size maximumThumbnailImageSize,
         Size thumbnailImagePadding)
     {
         // see https://learn.microsoft.com/en-gb/windows/win32/gdi/the-virtual-screen
@@ -151,8 +151,8 @@ internal static class LayoutHelper
 
                 // can't be bigger than the max preview image
                 // *plus* the padding around the preview image
-                // (max preview image size doesn't include the padding)
-                maximumPreviewImageSize + thumbnailImagePadding,
+                // (max thumbnail image size doesn't include the padding)
+                maximumThumbnailImageSize + thumbnailImagePadding,
             });
 
         // calculate the actual form size by scaling the entire
