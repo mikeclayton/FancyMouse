@@ -2,8 +2,7 @@ using FancyMouse.Internal;
 using FancyMouse.UI;
 using FancyMouse.WindowsHotKeys;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
-using Serilog;
+using NLog;
 using System.Diagnostics;
 
 namespace FancyMouse;
@@ -26,17 +25,6 @@ internal static class Program
 
         // scheduled task to start app at logon
 
-        // initialise a file logger in the current directory
-        var serilog = new LoggerConfiguration()
-            .MinimumLevel.Debug()
-            .WriteTo.File(
-                $".\\{DateTime.Now:yyyy-mm-dd-HH-MM-ss}.log"
-            )
-            .CreateLogger();
-        var factory = new LoggerFactory()
-            .AddSerilog(serilog);
-        var logger = factory.CreateLogger("logger");
-
         // To customize application configuration such as set high DPI settings or default font,
         // see https://aka.ms/applicationconfiguration.
         ApplicationConfiguration.Initialize();
@@ -58,7 +46,8 @@ internal static class Program
             .Split("x").Select(s => int.Parse(s.Trim())).ToList();
         var dialog = new FancyMouseDialog(
             new FancyMouseDialogOptions(
-                logger: logger,
+                //logger: LogManager.LoadConfiguration(".\\NLog.config").GetCurrentClassLogger(),
+                logger: LogManager.CreateNullLogger(),
                 maximumSize: new Size(
                     preview[0], preview[1]
                 )

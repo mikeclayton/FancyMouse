@@ -1,5 +1,4 @@
 using FancyMouse.Internal;
-using Microsoft.Extensions.Logging;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Windows.Forms;
@@ -60,14 +59,14 @@ internal partial class FancyMouseForm : Form
     private void pbxPreview_Click(object sender, EventArgs e)
     {
 
-        this.Options.Logger.LogDebug("-----------");
-        this.Options.Logger.LogDebug(nameof(FancyMouseForm.pbxPreview_Click));
-        this.Options.Logger.LogDebug("-----------");
+        this.Options.Logger.Debug("-----------");
+        this.Options.Logger.Debug(nameof(FancyMouseForm.pbxPreview_Click));
+        this.Options.Logger.Debug("-----------");
 
         var mouseEventArgs = (MouseEventArgs)e;
-        this.Options.Logger.LogDebug($"mouse event args = ");
-        this.Options.Logger.LogDebug($"    button   = {mouseEventArgs.Button} ");
-        this.Options.Logger.LogDebug($"    location = {mouseEventArgs.Location} ");
+        this.Options.Logger.Debug($"mouse event args = ");
+        this.Options.Logger.Debug($"    button   = {mouseEventArgs.Button} ");
+        this.Options.Logger.Debug($"    location = {mouseEventArgs.Location} ");
 
         if (mouseEventArgs.Button == MouseButtons.Left)
         {
@@ -90,7 +89,7 @@ internal partial class FancyMouseForm : Form
                         screen => screen.Bounds
                     )
                 );
-                this.Options.Logger.LogDebug(
+                this.Options.Logger.Debug(
                     $"desktop bounds  = {desktopBounds}"
                 );
 
@@ -101,7 +100,7 @@ internal partial class FancyMouseForm : Form
                     originalLocation: new Point(mouseEvent.X, mouseEvent.Y),
                     scaledBounds: desktopBounds
                 );
-                this.Options.Logger.LogDebug(
+                this.Options.Logger.Debug(
                     $"cursor position = {cursorPosition}"
                 );
 
@@ -148,9 +147,9 @@ internal partial class FancyMouseForm : Form
     public void ShowPreview()
     {
 
-        this.Options.Logger.LogDebug("-----------");
-        this.Options.Logger.LogDebug(nameof(FancyMouseForm.ShowPreview));
-        this.Options.Logger.LogDebug("-----------");
+        this.Options.Logger.Debug("-----------");
+        this.Options.Logger.Debug(nameof(FancyMouseForm.ShowPreview));
+        this.Options.Logger.Debug("-----------");
 
         if (pbxPreview.Image != null)
         {
@@ -163,21 +162,21 @@ internal partial class FancyMouseForm : Form
         foreach (var i in Enumerable.Range(0, screens.Length - 1))
         {
             var screen = screens[i];
-            this.Options.Logger.LogDebug($"screen[{i}] = \"{screen.DeviceName}\"");
-            this.Options.Logger.LogDebug($"    primary      = {screen.Primary}");
-            this.Options.Logger.LogDebug($"    bounds       = {screen.Bounds}");
-            this.Options.Logger.LogDebug($"    working area = {screen.WorkingArea}");
+            this.Options.Logger.Debug($"screen[{i}] = \"{screen.DeviceName}\"");
+            this.Options.Logger.Debug($"    primary      = {screen.Primary}");
+            this.Options.Logger.Debug($"    bounds       = {screen.Bounds}");
+            this.Options.Logger.Debug($"    working area = {screen.WorkingArea}");
         }
 
         var desktopBounds = LayoutHelper.Combine(
             screens.Select(screen => screen.Bounds)
         );
-        this.Options.Logger.LogDebug(
+        this.Options.Logger.Debug(
             $"desktop bounds  = {desktopBounds}"
         );
 
         var cursorPosition = Cursor.Position;
-        this.Options.Logger.LogDebug(
+        this.Options.Logger.Debug(
             $"cursor position = {cursorPosition}"
         );
 
@@ -185,7 +184,7 @@ internal partial class FancyMouseForm : Form
             panel1.Padding.Left + panel1.Padding.Right,
             panel1.Padding.Top + panel1.Padding.Bottom
         );
-        this.Options.Logger.LogDebug(
+        this.Options.Logger.Debug(
             $"image padding   = {previewImagePadding}"
         );
 
@@ -196,7 +195,7 @@ internal partial class FancyMouseForm : Form
             maximumPreviewImageSize: this.Options.MaximumPreviewImageSize,
             previewImagePadding: previewImagePadding
         );
-        this.Options.Logger.LogDebug(
+        this.Options.Logger.Debug(
             $"form bounds     = {formBounds}"
         );
 
