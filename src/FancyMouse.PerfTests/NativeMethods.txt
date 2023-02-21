@@ -1,0 +1,14 @@
+// gdi32
+BitBlt
+CreateCompatibleBitmap
+CreateCompatibleDC
+DeleteDC
+DeleteObject
+ReleaseDC
+SelectObject
+SetStretchBltMode
+StretchBlt
+
+// user32
+GetWindowDC
+GetDesktopWindow
