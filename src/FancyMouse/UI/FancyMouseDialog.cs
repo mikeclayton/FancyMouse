@@ -30,7 +30,7 @@ internal class FancyMouseDialog
 
         form.Visible = false;
 
-        form.ShowPreview();
+        form.ShowThumbnail();
 
     }
 

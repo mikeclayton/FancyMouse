@@ -1,9 +1,10 @@
-﻿using System.Drawing.Drawing2D;
+﻿using FancyMouse.ScreenCopying;
+using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 
 namespace FancyMouse.PerfTests.ScreenCopying;
 
-public sealed class ScalingScreenCopyHelper : IScreenCopyHelper
+public sealed class ScalingScreenCopyHelper : ICopyFromScreen
 {
 
     public Bitmap CopyFromScreen(

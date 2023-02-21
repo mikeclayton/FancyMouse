@@ -1,13 +1,10 @@
 using FancyMouse.Helpers;
-using System.Drawing.Drawing2D;
-using System.Drawing.Imaging;
+using FancyMouse.ScreenCopying;
 
 namespace FancyMouse.UI;
 
 internal partial class FancyMouseForm : Form
 {
-
-    #region Constructors
 
     public FancyMouseForm(FancyMouseDialogOptions options)
     {
@@ -15,18 +12,10 @@ internal partial class FancyMouseForm : Form
         this.InitializeComponent();
     }
 
-    #endregion
-
-    #region Properties
-
     private FancyMouseDialogOptions Options
     {
         get;
     }
-
-    #endregion
-
-    #region Form Events
 
     private void FancyMouseForm_Load(object sender, EventArgs e)
     {
@@ -50,20 +39,21 @@ internal partial class FancyMouseForm : Form
         }
 
         this.Hide();
-
     }
 
     private void Thumbnail_Click(object sender, EventArgs e)
     {
 
-        this.Options.Logger.Debug("-----------");
-        this.Options.Logger.Debug(nameof(FancyMouseForm.Thumbnail_Click));
-        this.Options.Logger.Debug("-----------");
+        var logger = this.Options.Logger;
+
+        logger.Debug("-----------");
+        logger.Debug(nameof(FancyMouseForm.Thumbnail_Click));
+        logger.Debug("-----------");
 
         var mouseEventArgs = (MouseEventArgs)e;
-        this.Options.Logger.Debug($"mouse event args = ");
-        this.Options.Logger.Debug($"    button   = {mouseEventArgs.Button} ");
-        this.Options.Logger.Debug($"    location = {mouseEventArgs.Location} ");
+        logger.Debug($"mouse event args = ");
+        logger.Debug($"    button   = {mouseEventArgs.Button} ");
+        logger.Debug($"    location = {mouseEventArgs.Location} ");
 
         if (mouseEventArgs.Button == MouseButtons.Left)
         {
@@ -83,10 +73,8 @@ internal partial class FancyMouseForm : Form
                 // plain click - move mouse pointer
                 var desktopBounds = LayoutHelper.CombineRegions(
                     Screen.AllScreens.Select(
-                        screen => screen.Bounds
-                    ).ToList()
-                );
-                this.Options.Logger.Debug(
+                        screen => screen.Bounds).ToList());
+                logger.Debug(
                     $"desktop bounds  = {desktopBounds}");
 
                 var mouseEvent = (MouseEventArgs)e;
@@ -94,9 +82,8 @@ internal partial class FancyMouseForm : Form
                 var scaledLocation = LayoutHelper.ScaleLocation(
                     originalBounds: this.Thumbnail.Bounds,
                     originalLocation: new Point(mouseEvent.X, mouseEvent.Y),
-                    scaledBounds: desktopBounds
-                );
-                this.Options.Logger.Debug(
+                    scaledBounds: desktopBounds);
+                logger.Debug(
                     $"scaled location = {scaledLocation}");
 
                 // set the new cursor position *twice* - the cursor sometimes end up in
@@ -118,24 +105,20 @@ internal partial class FancyMouseForm : Form
                 // https://github.com/mikeclayton/FancyMouse/pull/3
                 Cursor.Position = scaledLocation;
                 Cursor.Position = scaledLocation;
-
             }
         }
 
         this.Hide();
-
     }
 
-    #endregion
-
-    #region Form Management
-
-    public void ShowPreview()
+    public void ShowThumbnail()
     {
 
-        this.Options.Logger.Debug("-----------");
-        this.Options.Logger.Debug(nameof(FancyMouseForm.ShowPreview));
-        this.Options.Logger.Debug("-----------");
+        var logger = this.Options.Logger;
+
+        logger.Debug("-----------");
+        logger.Debug(nameof(FancyMouseForm.ShowThumbnail));
+        logger.Debug("-----------");
 
         if (this.Thumbnail.Image != null)
         {
@@ -148,67 +131,42 @@ internal partial class FancyMouseForm : Form
         foreach (var i in Enumerable.Range(0, screens.Length))
         {
             var screen = screens[i];
-            this.Options.Logger.Debug($"screen[{i}] = \"{screen.DeviceName}\"");
-            this.Options.Logger.Debug($"    primary      = {screen.Primary}");
-            this.Options.Logger.Debug($"    bounds       = {screen.Bounds}");
-            this.Options.Logger.Debug($"    working area = {screen.WorkingArea}");
+            logger.Debug($"screen[{i}] = \"{screen.DeviceName}\"");
+            logger.Debug($"    primary      = {screen.Primary}");
+            logger.Debug($"    bounds       = {screen.Bounds}");
+            logger.Debug($"    working area = {screen.WorkingArea}");
         }
 
         var desktopBounds = LayoutHelper.CombineRegions(
             screens.Select(screen => screen.Bounds).ToList());
-        this.Options.Logger.Debug(
+        logger.Debug(
             $"desktop bounds  = {desktopBounds}");
 
         var activatedPosition = Cursor.Position;
-        this.Options.Logger.Debug(
+        logger.Debug(
             $"activated position = {activatedPosition}");
 
         var previewImagePadding = new Size(
             panel1.Padding.Left + panel1.Padding.Right,
             panel1.Padding.Top + panel1.Padding.Bottom);
-        this.Options.Logger.Debug(
+        logger.Debug(
             $"image padding   = {previewImagePadding}");
 
+        var maxThumbnailSize = this.Options.MaximumThumbnailImageSize;
         var formBounds = LayoutHelper.GetPreviewFormBounds(
             desktopBounds: desktopBounds,
             activatedPosition: activatedPosition,
             activatedMonitorBounds: Screen.FromPoint(activatedPosition).Bounds,
-            maximumThumbnailImageSize: this.Options.MaximumThumbnailImageSize,
+            maximumThumbnailImageSize: maxThumbnailSize,
             thumbnailImagePadding: previewImagePadding);
-        this.Options.Logger.Debug(
+        logger.Debug(
             $"form bounds     = {formBounds}");
 
-        // take a screenshot of the entire desktop
-        // see https://learn.microsoft.com/en-gb/windows/win32/gdi/the-virtual-screen
-        using var screenshot = new Bitmap(desktopBounds.Width, desktopBounds.Height, PixelFormat.Format32bppArgb);
-        using (var graphics = Graphics.FromImage(screenshot))
-        {
-            // note - it *might* be faster to capture each monitor individually and assemble them into
-            // a single image ourselves as we *may* not have to transfer all of the blank pixels
-            // that are outside the desktop bounds - e.g. the *** in the ascii art below
-            //
-            // +----------------+********
-            // |                |********
-            // |       1        +-------+
-            // |                |       |
-            // +----------------+   0   |
-            // *****************|       |
-            // *****************+-------+
-            //
-            // for very irregular monitor layouts this *might* be a big percentage of the rectangle
-            // containing the desktop bounds.
-            //
-            // then again, it might not make much difference at all - we'd need to do some perf tests
-            graphics.CopyFromScreen(desktopBounds.Left, desktopBounds.Top, 0, 0, desktopBounds.Size);
-        }
-
-        // scale the screenshot to fit the preview image. not *strictly* necessary as the
-        // preview image box is set to "SizeMode = StretchImage" at design time, *but* we
-        // use less memory holding a smaller image in memory. the trade-off is our memory
-        // usage spikes a little bit higher while we generate the thumbnail.
-        this.Thumbnail.SizeMode = PictureBoxSizeMode.Normal;
-        var preview = FancyMouseForm.ResizeImage(
-            screenshot,
+        //var screenCopyHelper = new JigsawScreenCopyHelper();
+        var screenCopyHelper = new NativeJigsawScreenCopyHelper();
+        var preview = screenCopyHelper.CopyFromScreen(
+            desktopBounds,
+            screens.Select(s => s.Bounds),
             formBounds.Size - previewImagePadding
         );
 
@@ -230,52 +188,7 @@ internal partial class FancyMouseForm : Form
 
         // we have to activate the form to make sure the deactivate event fires
         this.Activate();
-
     }
-
-    private static Bitmap ResizeImage(Image image, Size size)
-    {
-        return FancyMouseForm.ResizeImage(image, size.Width, size.Height);
-    }
-
-    /// <summary>
-    /// Resize the image to the specified width and height.
-    /// </summary>
-    /// <param name="image">The image to resize.</param>
-    /// <param name="width">The width to resize to.</param>
-    /// <param name="height">The height to resize to.</param>
-    /// <returns>The resized image.</returns>
-    /// <remarks>
-    /// See https://stackoverflow.com/questions/1922040/how-to-resize-an-image-c-sharp/24199315#24199315
-    /// </remarks>
-    private static Bitmap ResizeImage(Image image, int width, int height)
-    {
-        var destRect = new Rectangle(0, 0, width, height);
-        var destImage = new Bitmap(width, height);
-        destImage.SetResolution(image.HorizontalResolution, image.VerticalResolution);
-        using (var graphics = Graphics.FromImage(destImage))
-        {
-            //// high quality / slow
-            //graphics.CompositingMode = CompositingMode.SourceCopy;
-            //graphics.CompositingQuality = CompositingQuality.HighQuality;
-            //graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
-            //graphics.SmoothingMode = SmoothingMode.HighQuality;
-            //graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
-            // low quality / fast
-            //graphics.CompositingMode = CompositingMode.SourceCopy;
-            graphics.CompositingQuality = CompositingQuality.HighSpeed;
-            graphics.InterpolationMode = InterpolationMode.Low;
-            graphics.SmoothingMode = SmoothingMode.HighSpeed;
-            graphics.PixelOffsetMode = PixelOffsetMode.HighSpeed;
-            using (var wrapMode = new ImageAttributes())
-            {
-                wrapMode.SetWrapMode(WrapMode.TileFlipXY);
-                graphics.DrawImage(image, destRect, 0, 0, image.Width, image.Height, GraphicsUnit.Pixel, wrapMode);
-            }
-        }
-        return destImage;
-    }
-
-    #endregion
 
 }
+

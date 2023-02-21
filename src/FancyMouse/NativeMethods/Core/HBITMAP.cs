@@ -1,6 +1,4 @@
-﻿using static System.Runtime.InteropServices.JavaScript.JSType;
-
-namespace FancyMouse.PerfTests.NativeMethods.Core;
+﻿namespace FancyMouse.NativeMethods.Core;
 
 internal readonly struct HBITMAP
 {

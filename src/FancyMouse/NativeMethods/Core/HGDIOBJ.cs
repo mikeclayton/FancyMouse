@@ -1,4 +1,4 @@
-﻿namespace FancyMouse.PerfTests.NativeMethods.Core;
+﻿namespace FancyMouse.NativeMethods.Core;
 
 internal readonly struct HGDIOBJ
 {

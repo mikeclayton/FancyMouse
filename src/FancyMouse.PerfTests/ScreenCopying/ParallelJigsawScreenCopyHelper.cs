@@ -1,4 +1,5 @@
 ﻿using FancyMouse.PerfTests.Helpers;
+using FancyMouse.ScreenCopying;
 using System.Drawing.Imaging;
 using Windows.Win32;
 using Windows.Win32.Foundation;
@@ -6,7 +7,7 @@ using Windows.Win32.Graphics.Gdi;
 
 namespace FancyMouse.PerfTests.ScreenCopying;
 
-public sealed class ParallelJigsawScreenCopyHelper : IScreenCopyHelper
+public sealed class ParallelJigsawScreenCopyHelper : ICopyFromScreen
 {
 
     public Bitmap CopyFromScreen(

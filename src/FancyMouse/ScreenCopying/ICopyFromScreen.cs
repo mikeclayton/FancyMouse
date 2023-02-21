@@ -1,6 +1,6 @@
-﻿namespace FancyMouse.PerfTests.ScreenCopying;
+﻿namespace FancyMouse.ScreenCopying;
 
-public interface IScreenCopyHelper
+public interface ICopyFromScreen
 {
 
     Bitmap CopyFromScreen(

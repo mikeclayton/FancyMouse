@@ -1,7 +1,7 @@
-﻿using FancyMouse.PerfTests.NativeMethods.Core;
+﻿using FancyMouse.NativeMethods.Core;
 using System.Runtime.InteropServices;
 
-namespace FancyMouse.PerfTests.NativeMethods;
+namespace FancyMouse.NativeMethods;
 
 internal static partial class Gdi32
 {

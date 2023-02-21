@@ -1,10 +1,11 @@
-﻿using Windows.Win32;
+﻿using FancyMouse.ScreenCopying;
+using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.Graphics.Gdi;
 
 namespace FancyMouse.PerfTests.ScreenCopying;
 
-public sealed class StretchBltScreenCopyHelper : IScreenCopyHelper
+public sealed class StretchBltScreenCopyHelper : ICopyFromScreen
 {
 
     public Bitmap CopyFromScreen(

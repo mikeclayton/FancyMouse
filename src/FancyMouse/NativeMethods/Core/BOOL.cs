@@ -1,7 +1,7 @@
-﻿namespace FancyMouse.PerfTests.NativeMethods.Core
+﻿namespace FancyMouse.NativeMethods.Core
 {
 
-    public readonly struct BOOL
+    internal readonly struct BOOL
     {
 
         public readonly int Value;

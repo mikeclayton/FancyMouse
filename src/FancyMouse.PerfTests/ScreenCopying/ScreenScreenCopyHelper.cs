@@ -1,8 +1,9 @@
-﻿using System.Drawing.Imaging;
+﻿using FancyMouse.ScreenCopying;
+using System.Drawing.Imaging;
 
 namespace FancyMouse.PerfTests.ScreenCopying;
 
-public sealed class ScreenScreenCopyHelper : IScreenCopyHelper
+public sealed class ScreenScreenCopyHelper : ICopyFromScreen
 {
 
     public Bitmap CopyFromScreen(

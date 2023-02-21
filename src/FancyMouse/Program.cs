@@ -25,7 +25,6 @@ internal static class Program
         // To customize application configuration such as set high DPI settings or default font,
         // see https://aka.ms/applicationconfiguration.
         ApplicationConfiguration.Initialize();
-
         if (Application.HighDpiMode != HighDpiMode.PerMonitorV2)
         {
             throw new InvalidOperationException("high dpi mode is not set to PerMonitorV2");

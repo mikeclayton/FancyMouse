@@ -1,5 +1,6 @@
 ﻿using FancyMouse.PerfTests.Helpers;
 using FancyMouse.PerfTests.ScreenCopying;
+using FancyMouse.ScreenCopying;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Diagnostics;
 
@@ -10,7 +11,7 @@ namespace FancyMouse.PerfTests
     public class PerfTests
     {
 
-        private static void RunPerfTest(IScreenCopyHelper copyHelper)
+        private static void RunPerfTest(ICopyFromScreen copyHelper)
         {
             var times = new List<long>();
 
@@ -58,7 +59,7 @@ namespace FancyMouse.PerfTests
         [TestMethod]
         public void NativeJigsawScreenCopyHelper_PerfTest()
         {
-            PerfTests.RunPerfTest(new ScreenCopying.NativeJigsawScreenCopyHelper());
+            PerfTests.RunPerfTest(new NativeJigsawScreenCopyHelper());
         }
 
         [TestMethod]

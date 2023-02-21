@@ -1,10 +1,10 @@
-﻿using FancyMouse.PerfTests.Helpers;
-using FancyMouse.PerfTests.NativeMethods;
-using FancyMouse.PerfTests.NativeMethods.Core;
+﻿using FancyMouse.Helpers;
+using FancyMouse.NativeWrappers;
+using FancyMouse.NativeMethods.Core;
 
-namespace FancyMouse.PerfTests.ScreenCopying;
+namespace FancyMouse.ScreenCopying;
 
-public sealed class NativeJigsawScreenCopyHelper : IScreenCopyHelper
+public sealed class NativeJigsawScreenCopyHelper : ICopyFromScreen
 {
 
     public Bitmap CopyFromScreen(
@@ -13,6 +13,21 @@ public sealed class NativeJigsawScreenCopyHelper : IScreenCopyHelper
     {
 
         // based on https://www.cyotek.com/blog/capturing-screenshots-using-csharp-and-p-invoke
+
+        // note - it's faster to capture each monitor individually and assemble them into
+        // a single image ourselves as we *may* not have to transfer all of the blank pixels
+        // that are outside the desktop bounds - e.g. the *** in the ascii art below
+        //
+        // +----------------+********
+        // |                |********
+        // |       1        +-------+
+        // |                |       |
+        // +----------------+   0   |
+        // *****************|       |
+        // *****************+-------+
+        //
+        // for very irregular monitor layouts this *might* be a big percentage of the rectangle
+        // containing the desktop bounds.
 
         var desktopHwnd = HWND.Null;
         var desktopHdc = HDC.Null;
@@ -26,11 +41,11 @@ public sealed class NativeJigsawScreenCopyHelper : IScreenCopyHelper
         {
 
             desktopHwnd = User32.GetDesktopWindow();
-            desktopHdc = NativeWrappers.GetWindowDC(desktopHwnd);
-            screenshotHdc = NativeWrappers.CreateCompatibleDC(desktopHdc);
-            screenshotHBitmap = NativeWrappers.CreateCompatibleBitmap(desktopHdc, screenshotSize.Width, screenshotSize.Height);
-            originalHBitmap = NativeWrappers.SelectObject(screenshotHdc, screenshotHBitmap);
-            _ = NativeWrappers.SetStretchBltMode(screenshotHdc, Gdi32.STRETCH_BLT_MODE.STRETCH_HALFTONE);
+            desktopHdc = User32.GetWindowDC(desktopHwnd);
+            screenshotHdc = Gdi32.CreateCompatibleDC(desktopHdc);
+            screenshotHBitmap = Gdi32.CreateCompatibleBitmap(desktopHdc, screenshotSize.Width, screenshotSize.Height);
+            originalHBitmap = Gdi32.SelectObject(screenshotHdc, screenshotHBitmap);
+            _ = Gdi32.SetStretchBltMode(screenshotHdc, NativeMethods.Gdi32.STRETCH_BLT_MODE.STRETCH_HALFTONE);
 
             var scalingRatio = LayoutHelper.GetScalingRatio(desktopBounds.Size, screenshotSize);
             foreach (var desktopRegion in desktopRegions)
@@ -41,10 +56,10 @@ public sealed class NativeJigsawScreenCopyHelper : IScreenCopyHelper
                     width: (int)(desktopRegion.Width * scalingRatio),
                     height: (int)(desktopRegion.Height * scalingRatio)
                 );
-                _ = NativeWrappers.StretchBlt(
+                _ = Gdi32.StretchBlt(
                     screenshotHdc, screenshotRegion.X, screenshotRegion.Y, screenshotRegion.Width, screenshotRegion.Height,
                     desktopHdc, desktopRegion.X, desktopRegion.Y, desktopRegion.Width, desktopRegion.Height,
-                    Gdi32.ROP_CODE.SRCCOPY
+                    NativeMethods.Gdi32.ROP_CODE.SRCCOPY
                 );
             }
 
@@ -55,19 +70,19 @@ public sealed class NativeJigsawScreenCopyHelper : IScreenCopyHelper
         {
             if (!screenshotHdc.IsNull && !originalHBitmap.IsNull)
             {
-                _ = NativeWrappers.SelectObject(screenshotHdc, originalHBitmap);
+                _ = Gdi32.SelectObject(screenshotHdc, originalHBitmap);
             }
             if (!screenshotHBitmap.IsNull)
             {
-                _ = NativeWrappers.DeleteObject(screenshotHBitmap);
+                _ = Gdi32.DeleteObject(screenshotHBitmap);
             }
             if (!screenshotHdc.IsNull)
             {
-                _ = NativeWrappers.DeleteDC(screenshotHdc);
+                _ = Gdi32.DeleteDC(screenshotHdc);
             }
             if (!desktopHwnd.IsNull && !desktopHdc.IsNull)
             {
-                _ = NativeWrappers.ReleaseDC(desktopHwnd, desktopHdc);
+                _ = User32.ReleaseDC(desktopHwnd, desktopHdc);
             }
         }
 

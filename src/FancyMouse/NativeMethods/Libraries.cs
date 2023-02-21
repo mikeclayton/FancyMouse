@@ -1,4 +1,4 @@
-﻿namespace FancyMouse.PerfTests.NativeMethods;
+﻿namespace FancyMouse.NativeMethods;
 
 internal static class Libraries
 {

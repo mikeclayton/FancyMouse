@@ -90,24 +90,44 @@ internal static class LayoutHelper
     /// <summary>
     /// Scale an object to fit inside the specified bounds while maintaining aspect ratio.
     /// </summary>
+    public static double GetScalingRatio(Size obj, Size bounds)
+    {
+        if (bounds.Width == 0 || bounds.Height == 0)
+        {
+            return 0;
+        }
+        var widthRatio = (double)bounds.Width / obj.Width;
+        var heightRatio = (double)bounds.Height / obj.Height;
+        var scalingRatio = Math.Min(widthRatio, heightRatio);
+        return scalingRatio;
+    }
+
+    /// <summary>
+    /// Scale an object to fit inside the specified bounds while maintaining aspect ratio.
+    /// </summary>
     public static Size ScaleToFit(Size obj, Size bounds)
     {
         if (bounds.Width == 0 || bounds.Height == 0)
         {
             return Size.Empty;
         }
-        var widthRatio = (double)obj.Width / bounds.Width;
-        var heightRatio = (double)obj.Height / bounds.Height;
-        var scaledSize = (widthRatio > heightRatio)
-            ? bounds with
-            {
-                Height = (int)(obj.Height / widthRatio),
-            }
-            : bounds with
-            {
-                Width = (int)(obj.Width / heightRatio),
-            };
-        return scaledSize;
+
+        var scalingRatio = LayoutHelper.GetScalingRatio(obj, bounds);
+        return new Size(
+            (int)(obj.Width * scalingRatio),
+            (int)(obj.Height * scalingRatio));
+        //var widthRatio = (double)obj.Width / bounds.Width;
+        //var heightRatio = (double)obj.Height / bounds.Height;
+        //var scaledSize = (widthRatio > heightRatio)
+        //    ? bounds with
+        //    {
+        //        Height = (int)(obj.Height / widthRatio),
+        //    }
+        //    : bounds with
+        //    {
+        //        Width = (int)(obj.Width / heightRatio),
+        //    };
+        //return scaledSize;
     }
 
     /// <summary>
