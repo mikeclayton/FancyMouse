@@ -2,7 +2,7 @@
 #pragma warning disable SA1515 // SingleLineCommentMustBePrecededByBlankLine
 #pragma warning disable SA1636 // FileHeaderCopyrightTextMustMatch
 // copied from https://github.com/dotnet/winforms/blob/main/src/System.Windows.Forms/src/System/Windows/Forms/Keys.cs
-// se we don't need a reference to System.Windows.Forms in this project
+// so we don't need a reference to System.Windows.Forms in this project
 
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
