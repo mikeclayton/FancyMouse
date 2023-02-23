@@ -1,24 +1,15 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 
-// ReSharper disable CheckNamespace
 namespace FancyMouse.WindowsHotKeys.Interop;
-// ReSharper restore CheckNamespace
 
 internal static partial class User32
 {
-
-    /// <summary>
-    /// </summary>
     /// <remarks>
     /// See https://learn.microsoft.com/en-us/windows/win32/winmsg/window-styles
     ///     https://github.com/dotnet/pinvoke/blob/main/src/User32/User32+WindowStyles.cs
     /// </remarks>
-    [SuppressMessage("ReSharper", "InconsistentNaming")]
-    [SuppressMessage("ReSharper", "UnusedMember.Global")]
-    [SuppressMessage("ReSharper", "UnusedType.Global")]
     public enum WindowStyles : uint
     {
-
         /// <summary>
         /// The window has a thin-line border
         /// </summary>
@@ -212,8 +203,6 @@ internal static partial class User32
         /// <summary>
         /// The window has a vertical scroll bar.
         /// </summary>
-        WS_VSCROLL = 0x00200000
-
+        WS_VSCROLL = 0x00200000,
     }
-
 }

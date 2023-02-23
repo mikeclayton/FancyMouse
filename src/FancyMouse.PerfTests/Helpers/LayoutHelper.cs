@@ -15,13 +15,16 @@ internal static class LayoutHelper
         {
             throw new ArgumentNullException(nameof(regions));
         }
+
         if (regions.Count == 0)
         {
             return Rectangle.Empty;
         }
+
         var combined = regions.Aggregate(
             seed: regions[0],
             func: Rectangle.Union);
+
         return combined;
     }
 
@@ -34,9 +37,11 @@ internal static class LayoutHelper
         {
             return 0;
         }
+
         var widthRatio = (double)bounds.Width / obj.Width;
         var heightRatio = (double)bounds.Height / obj.Height;
         var scalingRatio = Math.Min(widthRatio, heightRatio);
+
         return scalingRatio;
     }
 }

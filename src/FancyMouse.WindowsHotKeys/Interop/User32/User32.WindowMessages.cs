@@ -1,22 +1,17 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 
-// ReSharper disable CheckNamespace
 namespace FancyMouse.WindowsHotKeys.Interop;
-// ReSharper restore CheckNamespace
 
 internal static partial class User32
 {
-
-    /// <summary>
-    /// </summary>
     /// <remarks>
     /// See https://github.com/dotnet/pinvoke/blob/main/src/User32/User32+WindowMessage.cs
     /// </remarks>
-    [SuppressMessage("ReSharper", "InconsistentNaming")]
-    [SuppressMessage("ReSharper", "UnusedMember.Global")]
-    public enum WindowMessages: uint
+    [SuppressMessage("SA1124", "SA1124:DoNotUseRegions", Justification = "Allow rule here")]
+    [SuppressMessage("SA1512", "SA1512:SingleLineCommentsMustNotBeFollowedByBlankLine", Justification = "Allow rule here")]
+    [SuppressMessage("SA1515", "SA1515:SingleLineCommentMustBePrecededByBlankLine\r\n", Justification = "Allow rule here")]
+    public enum WindowMessages : uint
     {
-
         #region Learn / Windows / Apps / Win32 / Desktop Technologies / Accessibility / Windows Accessibility features
         // see https://learn.microsoft.com/en-us/windows/win32/winauto/about-windows-accessibility-features
 
@@ -821,12 +816,10 @@ internal static partial class User32
         /// or RedrawWindow function is called, or by the DispatchMessage function when the
         /// application obtains a WM_PAINT message by using the GetMessage or PeekMessage function.
         /// </summary>
-        WM_PAINT = 0x000f
+        WM_PAINT = 0x000f,
 
         #endregion
 
         #endregion
-
     }
-
 }

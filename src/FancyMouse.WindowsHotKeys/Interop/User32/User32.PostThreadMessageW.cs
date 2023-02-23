@@ -1,13 +1,10 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 
-// ReSharper disable CheckNamespace
 namespace FancyMouse.WindowsHotKeys.Interop;
-// ReSharper restore CheckNamespace
 
 internal static partial class User32
 {
-
     /// <summary>
     /// Posts a message to the message queue of the specified thread. It returns without waiting for the thread to process the message.
     /// </summary>
@@ -25,7 +22,6 @@ internal static partial class User32
     /// <remarks>
     /// See https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-postmessagew
     /// </remarks>
-    [SuppressMessage("ReSharper", "InconsistentNaming")]
     [LibraryImport(Libraries.User32, StringMarshalling = StringMarshalling.Utf16, SetLastError = true)]
     public static partial int PostThreadMessageW(
         int idThread,
@@ -33,5 +29,4 @@ internal static partial class User32
         IntPtr wParam,
         IntPtr lParam
     );
-
 }

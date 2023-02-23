@@ -1,22 +1,12 @@
-﻿using System.Diagnostics.CodeAnalysis;
-
-// ReSharper disable CheckNamespace
-namespace FancyMouse.WindowsHotKeys.Interop;
-// ReSharper restore CheckNamespace
+﻿namespace FancyMouse.WindowsHotKeys.Interop;
 
 internal static partial class User32
 {
-
-    /// <summary>
-    /// </summary>
     /// <remarks>
     /// See https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-showwindow
     /// </remarks>
-    [SuppressMessage("ReSharper", "InconsistentNaming")]
-    [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public enum ShowWindowCommands
     {
-
         /// <summary>
         /// Hides the window and activates another window.
         /// </summary>
@@ -96,8 +86,6 @@ internal static partial class User32
         /// Minimizes a window, even if the thread that owns the window is not responding.
         /// This flag should only be used when minimizing windows from a different thread.
         /// </summary>
-        SW_FORCEMINIMIZE = 11
-
+        SW_FORCEMINIMIZE = 11,
     }
-
 }

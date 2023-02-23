@@ -25,13 +25,16 @@ internal static class LayoutHelper
         {
             throw new ArgumentNullException(nameof(regions));
         }
+
         if (regions.Count == 0)
         {
             return Rectangle.Empty;
         }
+
         var combined = regions.Aggregate(
             seed: regions[0],
             func: Rectangle.Union);
+
         return combined;
     }
 
@@ -69,6 +72,7 @@ internal static class LayoutHelper
         {
             throw new ArgumentException($"{nameof(inner)} cannot be larger than {nameof(outer)}.");
         }
+
         return inner with
         {
             X = Math.Clamp(inner.X, outer.X, outer.Right - inner.Width),
@@ -96,9 +100,11 @@ internal static class LayoutHelper
         {
             return 0;
         }
+
         var widthRatio = (double)bounds.Width / obj.Width;
         var heightRatio = (double)bounds.Height / obj.Height;
         var scalingRatio = Math.Min(widthRatio, heightRatio);
+
         return scalingRatio;
     }
 
@@ -116,18 +122,6 @@ internal static class LayoutHelper
         return new Size(
             (int)(obj.Width * scalingRatio),
             (int)(obj.Height * scalingRatio));
-        //var widthRatio = (double)obj.Width / bounds.Width;
-        //var heightRatio = (double)obj.Height / bounds.Height;
-        //var scaledSize = (widthRatio > heightRatio)
-        //    ? bounds with
-        //    {
-        //        Height = (int)(obj.Height / widthRatio),
-        //    }
-        //    : bounds with
-        //    {
-        //        Width = (int)(obj.Width / heightRatio),
-        //    };
-        //return scaledSize;
     }
 
     /// <summary>

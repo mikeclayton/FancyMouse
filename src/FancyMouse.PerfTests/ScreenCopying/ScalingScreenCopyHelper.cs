@@ -1,22 +1,18 @@
-﻿using FancyMouse.ScreenCopying;
-using System.Drawing.Drawing2D;
+﻿using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
+using FancyMouse.ScreenCopying;
 
 namespace FancyMouse.PerfTests.ScreenCopying;
 
 public sealed class ScalingScreenCopyHelper : ICopyFromScreen
 {
-
     public Bitmap CopyFromScreen(
-        Rectangle desktopBounds, IEnumerable<Rectangle> desktopRegions, Size screenshotSize
-    )
+        Rectangle desktopBounds, IEnumerable<Rectangle> desktopRegions, Size screenshotSize)
     {
-        using var screenshot = (new ScreenScreenCopyHelper()).CopyFromScreen(
-            desktopBounds, desktopRegions, screenshotSize
-        );
+        using var screenshot = new ScreenScreenCopyHelper().CopyFromScreen(
+            desktopBounds, desktopRegions, screenshotSize);
         return ScalingScreenCopyHelper.ResizeImage(
-            screenshot, screenshotSize
-        );
+            screenshot, screenshotSize);
     }
 
     private static Bitmap ResizeImage(Image image, Size size)
@@ -37,29 +33,22 @@ public sealed class ScalingScreenCopyHelper : ICopyFromScreen
     private static Bitmap ResizeImage(Image image, int width, int height)
     {
         var destRect = new Rectangle(0, 0, width, height);
+
         var destImage = new Bitmap(width, height);
         destImage.SetResolution(image.HorizontalResolution, image.VerticalResolution);
+
         using (var graphics = Graphics.FromImage(destImage))
         {
-            //// high quality / slow
-            //graphics.CompositingMode = CompositingMode.SourceCopy;
-            //graphics.CompositingQuality = CompositingQuality.HighQuality;
-            //graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
-            //graphics.SmoothingMode = SmoothingMode.HighQuality;
-            //graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
             // low quality / fast
-            //graphics.CompositingMode = CompositingMode.SourceCopy;
             graphics.CompositingQuality = CompositingQuality.HighSpeed;
             graphics.InterpolationMode = InterpolationMode.Low;
             graphics.SmoothingMode = SmoothingMode.HighSpeed;
             graphics.PixelOffsetMode = PixelOffsetMode.HighSpeed;
-            using (var wrapMode = new ImageAttributes())
-            {
-                wrapMode.SetWrapMode(WrapMode.TileFlipXY);
-                graphics.DrawImage(image, destRect, 0, 0, image.Width, image.Height, GraphicsUnit.Pixel, wrapMode);
-            }
+            using var wrapMode = new ImageAttributes();
+            wrapMode.SetWrapMode(WrapMode.TileFlipXY);
+            graphics.DrawImage(image, destRect, 0, 0, image.Width, image.Height, GraphicsUnit.Pixel, wrapMode);
         }
+
         return destImage;
     }
-
 }

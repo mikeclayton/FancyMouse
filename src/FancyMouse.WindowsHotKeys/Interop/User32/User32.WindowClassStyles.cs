@@ -1,24 +1,13 @@
-﻿using System.Diagnostics.CodeAnalysis;
-
-// ReSharper disable CheckNamespace
-namespace FancyMouse.WindowsHotKeys.Interop;
-// ReSharper restore CheckNamespace
+﻿namespace FancyMouse.WindowsHotKeys.Interop;
 
 internal static partial class User32
 {
-
-    /// <summary>
-    /// </summary>
     /// <remarks>
     /// See https://learn.microsoft.com/en-us/windows/win32/winmsg/window-class-styles
     ///     https://github.com/dotnet/pinvoke/blob/main/src/User32/User32+ClassStyles.cs
     /// </remarks>
-    [SuppressMessage("ReSharper", "InconsistentNaming")]
-    [SuppressMessage("ReSharper", "UnusedMember.Global")]
-    [SuppressMessage("ReSharper", "UnusedType.Global")]
-    public enum WindowClassStyles: uint
+    public enum WindowClassStyles : uint
     {
-
         /// <summary>
         /// Aligns the window's client area on a byte boundary (in the x direction).
         /// This style affects the width of the window and its horizontal placement on the display.
@@ -102,8 +91,6 @@ internal static partial class User32
         /// Redraws the entire window if a movement or size adjustment changes the height of
         /// the client area.
         /// </summary>
-        CS_VREDRAW = 0x0001
-
+        CS_VREDRAW = 0x0001,
     }
-
 }

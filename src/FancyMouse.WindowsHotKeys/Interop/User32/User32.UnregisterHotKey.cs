@@ -1,12 +1,9 @@
 ﻿using System.Runtime.InteropServices;
 
-// ReSharper disable CheckNamespace
 namespace FancyMouse.WindowsHotKeys.Interop;
-// ReSharper restore CheckNamespace
 
 internal static partial class User32
 {
-
     /// <summary>
     /// Frees a hot key previously registered by the calling thread.
     /// </summary>
@@ -28,7 +25,5 @@ internal static partial class User32
     [LibraryImport(Libraries.User32, SetLastError = true)]
     public static partial int UnregisterHotKey(
         IntPtr hWnd,
-        int id
-    );
-
+        int id);
 }

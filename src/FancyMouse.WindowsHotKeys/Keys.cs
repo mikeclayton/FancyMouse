@@ -1,11 +1,16 @@
-﻿// copied from https://github.com/dotnet/winforms/blob/main/src/System.Windows.Forms/src/System/Windows/Forms/Keys.cs
-// se we don't need a reference to System.Windows.Forms in thie project
+﻿#pragma warning disable SA1512 // SingleLineCommentsMustNotBeFollowedByBlankLine
+#pragma warning disable SA1515 // SingleLineCommentMustBePrecededByBlankLine
+#pragma warning disable SA1636 // FileHeaderCopyrightTextMustMatch
+// copied from https://github.com/dotnet/winforms/blob/main/src/System.Windows.Forms/src/System/Windows/Forms/Keys.cs
+// se we don't need a reference to System.Windows.Forms in this project
 
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using System.Diagnostics.CodeAnalysis;
+#pragma warning disable SA1636 // FileHeaderCopyrightTextMustMatch
+#pragma warning restore SA1515 // SingleLineCommentMustBePrecededByBlankLine
+#pragma warning disable SA1512 // SingleLineCommentsMustNotBeFollowedByBlankLine
 
 namespace FancyMouse.WindowsHotKeys;
 
@@ -13,11 +18,8 @@ namespace FancyMouse.WindowsHotKeys;
 ///  Specifies key codes and modifiers.
 /// </summary>
 [Flags]
-[SuppressMessage("ReSharper", "InconsistentNaming")]
-[SuppressMessage("ReSharper", "UnusedMember.Global")]
 public enum Keys
 {
-
     /// <summary>
     ///  The bit mask to extract a key code from a key value.
     /// </summary>
@@ -986,6 +988,5 @@ public enum Keys
     /// <summary>
     ///  The ALT modifier key.
     /// </summary>
-    Alt = 0x00040000
-
+    Alt = 0x00040000,
 }

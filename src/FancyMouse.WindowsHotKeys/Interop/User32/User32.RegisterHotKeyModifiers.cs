@@ -1,22 +1,13 @@
-﻿using System.Diagnostics.CodeAnalysis;
-
-// ReSharper disable CheckNamespace
-namespace FancyMouse.WindowsHotKeys.Interop;
-// ReSharper restore CheckNamespace
+﻿namespace FancyMouse.WindowsHotKeys.Interop;
 
 internal static partial class User32
 {
-
-    /// <summary>
-    /// </summary>
     /// <remarks>
     /// See https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-registerhotkey
     /// </remarks>
-    [SuppressMessage("ReSharper", "InconsistentNaming")]
     [Flags]
     public enum RegisterHotKeyModifiers : uint
     {
-
         /// <summary>
         /// Either ALT key must be held down.
         /// </summary>
@@ -42,9 +33,6 @@ internal static partial class User32
         /// These keys are labeled with the Windows logo.
         /// Keyboard shortcuts that involve the WINDOWS key are reserved for use by the operating system.
         /// </summary>
-        MOD_WIN = 0x0008
-
-
+        MOD_WIN = 0x0008,
     }
-
 }

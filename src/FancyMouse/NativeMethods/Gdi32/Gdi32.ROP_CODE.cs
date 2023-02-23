@@ -2,12 +2,16 @@
 
 internal static partial class Gdi32
 {
-
+    /// <summary>
+    /// A raster-operation code. These codes define how the color data for the source
+    /// rectangle is to be combined with the color data for the destination rectangle
+    /// to achieve the final color.
+    /// </summary>
+    /// <remarks>
+    /// See https://learn.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-bitblt
+    /// </remarks>
     public enum ROP_CODE : uint
     {
-
-        // see https://learn.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-bitblt
-
         BLACKNESS = 0x00000042,
         CAPTUREBLT = 0x40000000,
         DSTINVERT = 0x00550009,
@@ -24,8 +28,6 @@ internal static partial class Gdi32
         SRCERASE = 0x00440328,
         SRCINVERT = 0x00660046,
         SRCPAINT = 0x00EE0086,
-        WHITENESS = 0x00FF0062
-
+        WHITENESS = 0x00FF0062,
     }
-
 }

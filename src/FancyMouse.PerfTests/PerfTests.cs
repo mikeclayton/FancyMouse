@@ -1,16 +1,14 @@
-﻿using FancyMouse.PerfTests.Helpers;
+﻿using System.Diagnostics;
+using FancyMouse.PerfTests.Helpers;
 using FancyMouse.PerfTests.ScreenCopying;
 using FancyMouse.ScreenCopying;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Diagnostics;
 
 namespace FancyMouse.PerfTests
 {
-
     [TestClass]
     public class PerfTests
     {
-
         private static void RunPerfTest(ICopyFromScreen copyHelper)
         {
             var times = new List<long>();
@@ -35,7 +33,6 @@ namespace FancyMouse.PerfTests
             Console.WriteLine("median = {0}", PerfTests.Median(times));
             Console.WriteLine("mode = {0}", PerfTests.Mode(times, 50));
             Console.WriteLine("times = {0}", string.Join("\r\n", times));
-
         }
 
         [TestMethod]
@@ -78,11 +75,9 @@ namespace FancyMouse.PerfTests
             return values[values.Count / 2];
         }
 
-        private static  long Mode(List<long> values, int bucketSize)
+        private static long Mode(List<long> values, int bucketSize)
         {
             return Bucket(values, bucketSize).OrderByDescending(group => group.Count()).First().Key * bucketSize;
         }
-
     }
-
 }

@@ -1,16 +1,13 @@
-﻿using FancyMouse.ScreenCopying;
-using System.Drawing.Imaging;
+﻿using System.Drawing.Imaging;
+using FancyMouse.ScreenCopying;
 
 namespace FancyMouse.PerfTests.ScreenCopying;
 
 public sealed class ScreenScreenCopyHelper : ICopyFromScreen
 {
-
     public Bitmap CopyFromScreen(
-        Rectangle desktopBounds, IEnumerable<Rectangle> desktopRegions, Size screenshotSize
-    )
+        Rectangle desktopBounds, IEnumerable<Rectangle> desktopRegions, Size screenshotSize)
     {
-
         var screenshot = new Bitmap(desktopBounds.Width, desktopBounds.Height, PixelFormat.Format32bppArgb);
         using (var graphics = Graphics.FromImage(screenshot))
         {
@@ -34,7 +31,5 @@ public sealed class ScreenScreenCopyHelper : ICopyFromScreen
         }
 
         return screenshot;
-
     }
-
 }

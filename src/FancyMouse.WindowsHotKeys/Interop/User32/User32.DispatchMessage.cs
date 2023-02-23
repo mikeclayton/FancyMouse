@@ -1,12 +1,9 @@
 ﻿using System.Runtime.InteropServices;
 
-// ReSharper disable CheckNamespace
 namespace FancyMouse.WindowsHotKeys.Interop;
-// ReSharper restore CheckNamespace
 
 internal static partial class User32
 {
-
     /// <summary>
     /// Dispatches a message to a window procedure. It is typically used to dispatch a message retrieved by the GetMessage function.
     /// </summary>
@@ -21,7 +18,5 @@ internal static partial class User32
     /// </remarks>
     [LibraryImport(Libraries.User32)]
     public static partial int DispatchMessage(
-        ref MSG lpmsg
-    );
-
+        ref MSG lpmsg);
 }

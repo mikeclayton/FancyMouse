@@ -1,13 +1,10 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 
-// ReSharper disable CheckNamespace
 namespace FancyMouse.WindowsHotKeys.Interop;
-// ReSharper restore CheckNamespace
 
 internal static partial class User32
 {
-
     /// <summary>
     /// Dispatches incoming nonqueued messages, checks the thread message queue for a
     /// posted message, and retrieves the message (if any exist).
@@ -24,14 +21,11 @@ internal static partial class User32
     /// <remarks>
     /// See https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-peekmessagew
     /// </remarks>
-    [SuppressMessage("ReSharper", "UnusedMember.Global")]
     [LibraryImport(Libraries.User32, StringMarshalling = StringMarshalling.Utf16)]
     public static partial int PeekMessageW(
         out MSG lpMsg,
         IntPtr hWnd,
         uint wMsgFilterMin,
         uint wMsgFilterMax,
-        PeekMessageRemoveOptions wRemoveMsg
-    );
-
+        PeekMessageRemoveOptions wRemoveMsg);
 }

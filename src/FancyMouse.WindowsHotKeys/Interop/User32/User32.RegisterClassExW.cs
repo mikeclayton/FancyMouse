@@ -1,12 +1,9 @@
 ﻿using System.Runtime.InteropServices;
 
-// ReSharper disable CheckNamespace
 namespace FancyMouse.WindowsHotKeys.Interop;
-// ReSharper restore CheckNamespace
 
 internal static partial class User32
 {
-
     /// <summary>
     /// Registers a window class for subsequent use in calls to the CreateWindow or CreateWindowEx function.
     /// </summary>
@@ -27,7 +24,5 @@ internal static partial class User32
     [DllImport(Libraries.User32, CharSet = CharSet.Unicode, SetLastError = true)]
     [return: MarshalAs(UnmanagedType.U2)]
     public static extern ushort RegisterClassExW(
-        ref WNDCLASSEXW lpwcx
-    );
-
+        ref WNDCLASSEXW lpwcx);
 }

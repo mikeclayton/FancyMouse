@@ -1,11 +1,23 @@
-﻿using FancyMouse.NativeMethods.Core;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
+using FancyMouse.NativeMethods.Core;
 
 namespace FancyMouse.NativeMethods;
 
 internal static partial class Gdi32
 {
-
+    /// <summary>
+    /// The StretchBlt function copies a bitmap from a source rectangle into a destination
+    /// rectangle, stretching or compressing the bitmap to fit the dimensions of the
+    /// destination rectangle, if necessary. The system stretches or compresses the bitmap
+    /// according to the stretching mode currently set in the destination device context.
+    /// </summary>
+    /// <returns>
+    /// If the function succeeds, the return value is nonzero.
+    /// If the function fails, the return value is zero.
+    /// </returns>
+    /// <remarks>
+    /// See https://learn.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-stretchblt
+    /// </remarks>
     [LibraryImport(Libraries.Gdi32)]
     public static partial BOOL StretchBlt(
       HDC hdcDest,
@@ -18,7 +30,5 @@ internal static partial class Gdi32
       int ySrc,
       int wSrc,
       int hSrc,
-      ROP_CODE rop
-    );
-
+      ROP_CODE rop);
 }

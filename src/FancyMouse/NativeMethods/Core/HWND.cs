@@ -1,8 +1,15 @@
 ﻿namespace FancyMouse.NativeMethods.Core;
 
+/// <summary>
+/// A handle to a window.
+/// This type is declared in WinDef.h as follows:
+/// typedef HANDLE HWND;
+/// </summary>
+/// <remarks>
+/// See https://learn.microsoft.com/en-us/windows/win32/winprog/windows-data-types
+/// </remarks>
 internal readonly struct HWND
 {
-
     public static readonly HWND Null = new(IntPtr.Zero);
 
     public readonly IntPtr Value;
@@ -16,8 +23,7 @@ internal readonly struct HWND
     {
         get
         {
-            return (this.Value == HWND.Null.Value);
+            return this.Value == HWND.Null.Value;
         }
     }
-
 }

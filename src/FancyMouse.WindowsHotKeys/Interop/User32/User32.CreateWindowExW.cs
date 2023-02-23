@@ -1,12 +1,9 @@
 ﻿using System.Runtime.InteropServices;
 
-// ReSharper disable CheckNamespace
 namespace FancyMouse.WindowsHotKeys.Interop;
-// ReSharper restore CheckNamespace
 
 internal static partial class User32
 {
-
     /// <summary>
     /// Creates an overlapped, pop-up, or child window with an extended window style
     /// </summary>
@@ -119,7 +116,5 @@ internal static partial class User32
         IntPtr hWndParent,
         IntPtr hMenu,
         IntPtr hInstance,
-        IntPtr lpParam
-    );
-
+        IntPtr lpParam);
 }

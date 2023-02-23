@@ -5,7 +5,6 @@ namespace FancyMouse.UI;
 
 internal partial class FancyMouseForm : Form
 {
-
     public FancyMouseForm(FancyMouseDialogOptions options)
     {
         this.Options = options ?? throw new ArgumentNullException(nameof(options));
@@ -43,7 +42,6 @@ internal partial class FancyMouseForm : Form
 
     private void Thumbnail_Click(object sender, EventArgs e)
     {
-
         var logger = this.Options.Logger;
 
         logger.Debug("-----------");
@@ -63,13 +61,11 @@ internal partial class FancyMouseForm : Form
                 var options = new FancyMouseSettings();
                 options.Location = LayoutHelper.CenterObject(
                     obj: options.Size,
-                    origin: LayoutHelper.GetMidpoint(this.Bounds)
-                );
+                    origin: LayoutHelper.GetMidpoint(this.Bounds));
                 options.ShowDialog();
             }
             else
             {
-
                 // plain click - move mouse pointer
                 var desktopBounds = LayoutHelper.CombineRegions(
                     Screen.AllScreens.Select(
@@ -113,7 +109,6 @@ internal partial class FancyMouseForm : Form
 
     public void ShowThumbnail()
     {
-
         var logger = this.Options.Logger;
 
         logger.Debug("-----------");
@@ -162,13 +157,12 @@ internal partial class FancyMouseForm : Form
         logger.Debug(
             $"form bounds     = {formBounds}");
 
-        //var screenCopyHelper = new JigsawScreenCopyHelper();
+        // var screenCopyHelper = new JigsawScreenCopyHelper();
         var screenCopyHelper = new NativeJigsawScreenCopyHelper();
         var preview = screenCopyHelper.CopyFromScreen(
             desktopBounds,
             screens.Select(s => s.Bounds),
-            formBounds.Size - previewImagePadding
-        );
+            formBounds.Size - previewImagePadding);
 
         // resize and position the form
         // note - do this in two steps rather than "this.Bounds = formBounds" as there
@@ -189,6 +183,4 @@ internal partial class FancyMouseForm : Form
         // we have to activate the form to make sure the deactivate event fires
         this.Activate();
     }
-
 }
-

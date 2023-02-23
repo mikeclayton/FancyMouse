@@ -1,12 +1,7 @@
-﻿using System.Diagnostics.CodeAnalysis;
-
-// ReSharper disable CheckNamespace
-namespace FancyMouse.WindowsHotKeys.Interop;
-// ReSharper restore CheckNamespace
+﻿namespace FancyMouse.WindowsHotKeys.Interop;
 
 internal static partial class User32
 {
-
     /// <summary>
     /// A callback function, which you define in your application, that processes messages sent to a window.
     /// </summary>
@@ -21,12 +16,9 @@ internal static partial class User32
     /// See https://learn.microsoft.com/en-us/windows/win32/api/winuser/nc-winuser-wndproc
     ///     https://github.com/dotnet/runtime/blob/main/src/libraries/Common/src/Interop/Windows/User32/Interop.WndProc.cs
     /// </remarks>
-    [SuppressMessage("ReSharper", "InconsistentNaming")]
     public delegate IntPtr WNDPROC(
         IntPtr hWnd,
         WindowMessages msg,
         IntPtr wParam,
-        IntPtr lParam
-    );
-
+        IntPtr lParam);
 }

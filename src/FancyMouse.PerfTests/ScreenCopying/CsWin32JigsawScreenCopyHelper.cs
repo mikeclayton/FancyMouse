@@ -8,14 +8,10 @@ namespace FancyMouse.PerfTests.ScreenCopying;
 
 public sealed class CsWin32JigsawScreenCopyHelper : ICopyFromScreen
 {
-
     public Bitmap CopyFromScreen(
-        Rectangle desktopBounds, IEnumerable<Rectangle> desktopRegions, Size screenshotSize
-    )
+        Rectangle desktopBounds, IEnumerable<Rectangle> desktopRegions, Size screenshotSize)
     {
-
-        /// based on https://www.cyotek.com/blog/capturing-screenshots-using-csharp-and-p-invoke
-
+        // based on https://www.cyotek.com/blog/capturing-screenshots-using-csharp-and-p-invoke
         var desktopHwnd = HWND.Null;
         var desktopHdc = HDC.Null;
         var screenshotHdc = CreatedHDC.Null;
@@ -28,7 +24,6 @@ public sealed class CsWin32JigsawScreenCopyHelper : ICopyFromScreen
 
         try
         {
-
             desktopHwnd = PInvoke.GetDesktopWindow();
 
             desktopHdc = PInvoke.GetWindowDC(desktopHwnd);
@@ -69,13 +64,19 @@ public sealed class CsWin32JigsawScreenCopyHelper : ICopyFromScreen
                     x: (int)((desktopRegion.X - desktopBounds.X) * scalingRatio),
                     y: (int)((desktopRegion.Y - desktopBounds.Y) * scalingRatio),
                     width: (int)(desktopRegion.Width * scalingRatio),
-                    height: (int)(desktopRegion.Height * scalingRatio)
-                );
+                    height: (int)(desktopRegion.Height * scalingRatio));
                 apiResult = PInvoke.StretchBlt(
-                    new HDC(screenshotHdc.Value), screenshotRegion.X, screenshotRegion.Y, screenshotRegion.Width, screenshotRegion.Height,
-                    new HDC(desktopHdc.Value), desktopRegion.X, desktopRegion.Y, desktopRegion.Width, desktopRegion.Height,
-                    ROP_CODE.SRCCOPY
-                );
+                    new HDC(screenshotHdc.Value),
+                    screenshotRegion.X,
+                    screenshotRegion.Y,
+                    screenshotRegion.Width,
+                    screenshotRegion.Height,
+                    new HDC(desktopHdc.Value),
+                    desktopRegion.X,
+                    desktopRegion.Y,
+                    desktopRegion.Width,
+                    desktopRegion.Height,
+                    ROP_CODE.SRCCOPY);
                 if (apiResult == 0)
                 {
                     throw new InvalidOperationException($"{nameof(PInvoke.StretchBlt)} returned {apiResult}");
@@ -83,11 +84,9 @@ public sealed class CsWin32JigsawScreenCopyHelper : ICopyFromScreen
             }
 
             screenshot = Bitmap.FromHbitmap(screenshotHBitmap.Value);
-
         }
         finally
         {
-
             if (!screenshotHdc.IsNull && !originalHBitmap.IsNull)
             {
                 PInvoke.SelectObject(new HDC(screenshotHdc.Value), originalHBitmap);
@@ -122,7 +121,5 @@ public sealed class CsWin32JigsawScreenCopyHelper : ICopyFromScreen
         }
 
         return screenshot ?? throw new InvalidOperationException();
-
     }
-
 }

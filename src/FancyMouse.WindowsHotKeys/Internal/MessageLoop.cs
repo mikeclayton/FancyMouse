@@ -4,18 +4,11 @@ namespace FancyMouse.WindowsHotKeys.Internal;
 
 internal sealed class MessageLoop
 {
-
-    #region Constructors
-
     public MessageLoop(string name, bool isBackground)
     {
         this.Name = name ?? throw new ArgumentNullException(nameof(name));
         this.IsBackground = isBackground;
     }
-
-    #endregion
-
-    #region Properties
 
     private string Name
     {
@@ -45,32 +38,29 @@ internal sealed class MessageLoop
         set;
     }
 
-    #endregion
-
-    #region Methods
-
     public void Run()
     {
         if (this.ManagedThread != null)
         {
             throw new InvalidOperationException();
         }
+
         this.CancellationTokenSource = new CancellationTokenSource();
-        this.ManagedThread = new Thread(delegate ()
+        this.ManagedThread = new Thread(() =>
         {
             this.NativeThreadId = Kernel32.GetCurrentThreadId();
             this.RunInternal();
         })
         {
             Name = this.Name,
-            IsBackground = this.IsBackground
+            IsBackground = this.IsBackground,
         };
+
         this.ManagedThread.Start();
     }
 
     private void RunInternal()
     {
-
         User32.MSG msg;
 
         var quitMessagePosted = false;
@@ -81,13 +71,11 @@ internal sealed class MessageLoop
         //     https://devblogs.microsoft.com/oldnewthing/20050406-57/?p=35963
         while (true)
         {
-
             _ = User32.GetMessageW(
                 lpMsg: out msg,
                 hWnd: IntPtr.Zero,
                 wMsgFilterMin: 0,
-                wMsgFilterMax: 0
-            );
+                wMsgFilterMax: 0);
 
             if (msg.message == User32.WindowMessages.WM_QUIT)
             {
@@ -102,7 +90,6 @@ internal sealed class MessageLoop
                 User32.PostQuitMessage(0);
                 quitMessagePosted = true;
             }
-
         }
 
         // clean up
@@ -110,12 +97,10 @@ internal sealed class MessageLoop
         this.NativeThreadId = null;
         (this.CancellationTokenSource ?? throw new NullReferenceException())
             .Dispose();
-
     }
 
     public void Exit()
     {
-
         if (this.ManagedThread == null)
         {
             throw new InvalidOperationException();
@@ -128,14 +113,9 @@ internal sealed class MessageLoop
         // set the cancellation token, then post a quit message to itself and exit the loop
         // see https://devblogs.microsoft.com/oldnewthing/20050405-46/?p=35973
         _ = Win32Wrappers.PostThreadMessageW(
-            idThread: (this.NativeThreadId ?? throw new NullReferenceException()),
+            idThread: this.NativeThreadId ?? throw new NullReferenceException(),
             Msg: User32.WindowMessages.WM_NULL,
             wParam: IntPtr.Zero,
-            lParam: IntPtr.Zero
-        );
-
+            lParam: IntPtr.Zero);
     }
-
-    #endregion
-
 }

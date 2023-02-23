@@ -13,7 +13,6 @@ internal static class Program
     [STAThread]
     private static void Main()
     {
-
         // run Logitech SetPoint as admin for hotkeys to get activated from custom mouse bindings
         // when an Office application or Visual Studio is the active window. (SetPoint *keyboard*
         // bindings work fine when running as a normal user in Office, but *mouse* bindings only
@@ -40,22 +39,20 @@ internal static class Program
 
         var preview = (config["Preview"] ?? throw new InvalidOperationException("Missing config value 'Preview'"))
             .Split("x").Select(s => int.Parse(s.Trim())).ToList();
+
+        // logger: LogManager.LoadConfiguration(".\\NLog.config").GetCurrentClassLogger(),
         var dialog = new FancyMouseDialog(
             new FancyMouseDialogOptions(
-                //logger: LogManager.LoadConfiguration(".\\NLog.config").GetCurrentClassLogger(),
                 logger: LogManager.CreateNullLogger(),
                 maximumThumbnailSize: new Size(
-                    preview[0], preview[1]
-                )
-            )
-        );
+                    preview[0], preview[1])));
 
         var hotkey = Keystroke.Parse(
-            config["HotKey"] ?? throw new InvalidOperationException("Missing config value 'HotKey'")
-        );
+            config["HotKey"] ?? throw new InvalidOperationException("Missing config value 'HotKey'"));
         var hotKeyManager = new HotKeyManager(hotkey);
         hotKeyManager.HotKeyPressed +=
-            (_, _) => {
+            (_, _) =>
+            {
                 dialog.Show();
             };
         hotKeyManager.Start();
@@ -63,7 +60,5 @@ internal static class Program
         Application.Run();
 
         hotKeyManager.Stop();
-
     }
-
 }

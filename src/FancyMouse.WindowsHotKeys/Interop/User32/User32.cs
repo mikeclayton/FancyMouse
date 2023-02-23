@@ -1,17 +1,11 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 
-// ReSharper disable CheckNamespace
 namespace FancyMouse.WindowsHotKeys.Interop;
-// ReSharper restore CheckNamespace
 
+[SuppressMessage("SA1310", "SA1310:FieldNamesMustNotContainUnderscore", Justification = "Names match Win32 api")]
 internal static partial class User32
 {
-
-    [SuppressMessage("ReSharper", "InconsistentNaming")]
     public const int HWND_MESSAGE = -3;
 
-    [SuppressMessage("ReSharper", "InconsistentNaming")]
-    [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public const uint CW_USEDEFAULT = 0x80000000;
-
 }

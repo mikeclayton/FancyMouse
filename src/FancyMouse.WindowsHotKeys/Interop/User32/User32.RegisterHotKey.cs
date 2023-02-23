@@ -1,12 +1,9 @@
 ﻿using System.Runtime.InteropServices;
 
-// ReSharper disable CheckNamespace
 namespace FancyMouse.WindowsHotKeys.Interop;
-// ReSharper restore CheckNamespace
 
 internal static partial class User32
 {
-
     /// <summary>
     /// Defines a system-wide hot key.
     /// </summary>
@@ -41,7 +38,5 @@ internal static partial class User32
         IntPtr hWnd,
         int id,
         RegisterHotKeyModifiers fsModifiers,
-        uint vk
-    );
-
+        uint vk);
 }

@@ -1,6 +1,6 @@
-﻿using FancyMouse.PerfTests.Helpers;
+﻿using System.Drawing.Imaging;
+using FancyMouse.PerfTests.Helpers;
 using FancyMouse.ScreenCopying;
-using System.Drawing.Imaging;
 using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.Graphics.Gdi;
@@ -9,32 +9,27 @@ namespace FancyMouse.PerfTests.ScreenCopying;
 
 public sealed class ParallelJigsawScreenCopyHelper : ICopyFromScreen
 {
-
     public Bitmap CopyFromScreen(
-        Rectangle desktopBounds, IEnumerable<Rectangle> desktopRegions, Size screenshotSize
-    )
+        Rectangle desktopBounds, IEnumerable<Rectangle> desktopRegions, Size screenshotSize)
     {
-
-        /// based on https://www.cyotek.com/blog/capturing-screenshots-using-csharp-and-p-invoke
-
+        // based on https://www.cyotek.com/blog/capturing-screenshots-using-csharp-and-p-invoke
         var scalingRatio = LayoutHelper.GetScalingRatio(desktopBounds.Size, screenshotSize);
         var parallelOptions = new ParallelOptions
         {
-            MaxDegreeOfParallelism = 1
+            MaxDegreeOfParallelism = 1,
         };
 
         var screenBoundsList = desktopRegions.ToArray();
 
-        //var scaledRegions = new Rectangle[screenBoundsList.Length];
-        //var scaledImages = new Bitmap[screenBoundsList.Length];
-
         var screenshot = new Bitmap(
-            screenshotSize.Width, screenshotSize.Height, PixelFormat.Format32bppArgb
-        );
+            screenshotSize.Width, screenshotSize.Height, PixelFormat.Format32bppArgb);
 
         using var graphics = Graphics.FromImage(screenshot);
 
-        Parallel.For(0, screenBoundsList.Length, parallelOptions,
+        Parallel.For(
+            0,
+            screenBoundsList.Length,
+            parallelOptions,
             (i, state) =>
             {
                 var screenRegion = screenBoundsList[i];
@@ -42,20 +37,16 @@ public sealed class ParallelJigsawScreenCopyHelper : ICopyFromScreen
                     x: (int)((screenRegion.X - desktopBounds.X) * scalingRatio),
                     y: (int)((screenRegion.Y - desktopBounds.Y) * scalingRatio),
                     width: (int)(screenRegion.Width * scalingRatio),
-                    height: (int)(screenRegion.Height * scalingRatio)
-                );
+                    height: (int)(screenRegion.Height * scalingRatio));
                 using var scaledImage = ParallelJigsawScreenCopyHelper.CopyScreen(desktopBounds, screenRegion, scaledRegion.Size);
                 graphics.DrawImage(scaledImage, scaledRegion.Location);
-            }
-        );
+            });
 
         return screenshot;
-
     }
 
     private static Bitmap CopyScreen(Rectangle desktopBounds, Rectangle screenBounds, Size scaledSize)
     {
-
         var desktopHwnd = HWND.Null;
         var desktopHdc = HDC.Null;
 
@@ -63,13 +54,10 @@ public sealed class ParallelJigsawScreenCopyHelper : ICopyFromScreen
         var screenshotHBitmap = HBITMAP.Null;
         var originalHBitmap = HGDIOBJ.Null;
 
-        var screenshot = default(Bitmap);
-
         var apiResult = default(int);
 
         try
         {
-
             desktopHwnd = PInvoke.GetDesktopWindow();
 
             desktopHdc = PInvoke.GetWindowDC(desktopHwnd);
@@ -85,7 +73,7 @@ public sealed class ParallelJigsawScreenCopyHelper : ICopyFromScreen
             }
 
             screenshotHBitmap = PInvoke.CreateCompatibleBitmap(
-                desktopHdc, 
+                desktopHdc,
                 scaledSize.Width,
                 scaledSize.Height);
             if (screenshotHBitmap.IsNull)
@@ -106,21 +94,26 @@ public sealed class ParallelJigsawScreenCopyHelper : ICopyFromScreen
             }
 
             apiResult = PInvoke.StretchBlt(
-                new HDC(screenshotHdc), 0, 0, scaledSize.Width, scaledSize.Height,
-                desktopHdc, screenBounds.X, screenBounds.Y, screenBounds.Width, screenBounds.Height,
-                ROP_CODE.SRCCOPY
-            );
+                new HDC(screenshotHdc),
+                0,
+                0,
+                scaledSize.Width,
+                scaledSize.Height,
+                desktopHdc,
+                screenBounds.X,
+                screenBounds.Y,
+                screenBounds.Width,
+                screenBounds.Height,
+                ROP_CODE.SRCCOPY);
             if (apiResult == 0)
             {
                 throw new InvalidOperationException($"{nameof(PInvoke.StretchBlt)} returned {apiResult}");
             }
 
             return Bitmap.FromHbitmap(screenshotHBitmap);
-
         }
         finally
         {
-
             if (!screenshotHdc.IsNull && !originalHBitmap.IsNull)
             {
                 PInvoke.SelectObject(new HDC(screenshotHdc), originalHBitmap);
@@ -152,9 +145,6 @@ public sealed class ParallelJigsawScreenCopyHelper : ICopyFromScreen
                     throw new InvalidOperationException($"{nameof(PInvoke.ReleaseDC)} returned {apiResult}");
                 }
             }
-
         }
-
     }
-
 }

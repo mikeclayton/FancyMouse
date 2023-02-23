@@ -1,20 +1,19 @@
-﻿using FancyMouse.WindowsHotKeys.Interop;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
+using FancyMouse.WindowsHotKeys.Interop;
 
 namespace FancyMouse.WindowsHotKeys.Internal;
 
 internal static class Win32Wrappers
 {
-
     /// <summary>
     /// Posts a message to the message queue of the specified thread. It returns without waiting for the thread to process the message.
     /// </summary>
     /// <param name="idThread">The identifier of the thread to which the message is to be posted.</param>
     /// <param name="Msg">The type of message to be posted.</param>
-    /// <param name="wParam">Additional message-specific information.</param>
-    /// <param name="lParam">Additional message-specific information.</param>
+    /// <param name="wParam">wParam - Additional message-specific information.</param>
+    /// <param name="lParam">lParam - Additional message-specific information.</param>
     /// <returns>
     /// If the function succeeds, the return value is nonzero.
     /// If the function fails, the return value is zero.
@@ -27,23 +26,22 @@ internal static class Win32Wrappers
     /// </remarks>
     public static int PostThreadMessageW(
         int idThread,
-        [SuppressMessage("ReSharper", "InconsistentNaming")]
+        [SuppressMessage("SA1313", "SA1313:ParameterNamesMustBeginWithLowerCaseLetter", Justification = "Parameter name matches Win32 api")]
         User32.WindowMessages Msg,
         IntPtr wParam,
-        IntPtr lParam
-    )
+        IntPtr lParam)
     {
         var result = User32.PostThreadMessageW(
-            idThread, Msg, wParam, lParam
-        );
+            idThread, Msg, wParam, lParam);
+
         if (result == 0)
         {
             var lastWin32Error = Marshal.GetLastWin32Error();
             throw new InvalidOperationException(
                 $"{nameof(User32.PostThreadMessageW)} failed with result {result}. GetLastWin32Error returned '{lastWin32Error}'.",
-                new Win32Exception(lastWin32Error)
-            );
+                new Win32Exception(lastWin32Error));
         }
+
         return result;
     }
 
@@ -65,18 +63,18 @@ internal static class Win32Wrappers
     /// See https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-registerclassexa
     /// </remarks>
     public static ushort RegisterClassExW(
-        ref User32.WNDCLASSEXW lpwcx
-    )
+        ref User32.WNDCLASSEXW lpwcx)
     {
         var result = User32.RegisterClassExW(ref lpwcx);
+
         if (result == 0)
         {
             var lastWin32Error = Marshal.GetLastWin32Error();
             throw new InvalidOperationException(
                 $"{nameof(User32.RegisterClassExW)} failed with result {result}. GetLastWin32Error returned '{lastWin32Error}'.",
-                new Win32Exception(lastWin32Error)
-            );
+                new Win32Exception(lastWin32Error));
         }
+
         return result;
     }
 
@@ -190,20 +188,19 @@ internal static class Win32Wrappers
         IntPtr hWndParent,
         IntPtr hMenu,
         IntPtr hInstance,
-        IntPtr lpParam
-    )
+        IntPtr lpParam)
     {
         var result = User32.CreateWindowExW(
-            dwExStyle, lpClassName, lpWindowName, dwStyle, x, y, nWidth, nHeight, hWndParent, hMenu, hInstance, lpParam
-        );
+            dwExStyle, lpClassName, lpWindowName, dwStyle, x, y, nWidth, nHeight, hWndParent, hMenu, hInstance, lpParam);
+
         if (result == 0)
         {
             var lastWin32Error = Marshal.GetLastWin32Error();
-            throw new InvalidOperationException
-                ($"{nameof(User32.CreateWindowExW)} failed with result {result}. GetLastWin32Error returned '{lastWin32Error}'.",
-                new Win32Exception(lastWin32Error)
-            );
+            throw new InvalidOperationException(
+                $"{nameof(User32.CreateWindowExW)} failed with result {result}. GetLastWin32Error returned '{lastWin32Error}'.",
+                new Win32Exception(lastWin32Error));
         }
+
         return result;
     }
 
@@ -240,20 +237,19 @@ internal static class Win32Wrappers
         IntPtr hWnd,
         int id,
         User32.RegisterHotKeyModifiers fsModifiers,
-        uint vk
-    )
+        uint vk)
     {
         var result = User32.RegisterHotKey(
-            hWnd, id, fsModifiers, vk
-        );
+            hWnd, id, fsModifiers, vk);
+
         if (result == 0)
         {
             var lastWin32Error = Marshal.GetLastWin32Error();
             throw new InvalidOperationException(
                 $"{nameof(User32.RegisterHotKey)} failed with result {result}. GetLastWin32Error returned '{lastWin32Error}'.",
-                new Win32Exception(lastWin32Error)
-            );
+                new Win32Exception(lastWin32Error));
         }
+
         return id;
     }
 
@@ -277,21 +273,19 @@ internal static class Win32Wrappers
     /// </remarks>
     public static int UnregisterHotKey(
         IntPtr hWnd,
-        int id
-    )
+        int id)
     {
         var result = User32.UnregisterHotKey(
-            hWnd, id
-        );
+            hWnd, id);
+
         if (result == 0)
         {
             var lastWin32Error = Marshal.GetLastWin32Error();
             throw new InvalidOperationException(
                 $"{nameof(User32.UnregisterHotKey)} failed with result {result}. GetLastWin32Error returned '{lastWin32Error}'.",
-                new Win32Exception(lastWin32Error)
-            );
+                new Win32Exception(lastWin32Error));
         }
+
         return result;
     }
-
 }

@@ -1,12 +1,9 @@
 ﻿using System.Runtime.InteropServices;
 
-// ReSharper disable CheckNamespace
 namespace FancyMouse.WindowsHotKeys.Interop;
-// ReSharper restore CheckNamespace
 
 internal static partial class User32
 {
-
     /// <summary>
     /// Retrieves a message from the calling thread's message queue.
     /// The function dispatches incoming sent messages until a posted message is available for retrieval.
@@ -31,7 +28,5 @@ internal static partial class User32
         out MSG lpMsg,
         IntPtr hWnd,
         uint wMsgFilterMin,
-        uint wMsgFilterMax
-    );
-
+        uint wMsgFilterMax);
 }

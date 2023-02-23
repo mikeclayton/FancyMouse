@@ -2,17 +2,10 @@
 
 public partial class FancyMouseNotify : Form
 {
-
-    #region Constructors
-
     public FancyMouseNotify()
     {
         InitializeComponent();
     }
-
-    #endregion
-
-    #region Form Events
 
     private void FancyMouseNotify_Load(object sender, EventArgs e)
     {
@@ -22,22 +15,14 @@ public partial class FancyMouseNotify : Form
     {
     }
 
-    #endregion
-
-    #region Context Menu Methods
-
-    private void settingsToolStripMenuItem_Click(object sender, EventArgs e)
+    private void SettingsToolStripMenuItem_Click(object sender, EventArgs e)
     {
-
     }
 
-    private void exitToolStripMenuItem_Click(object sender, EventArgs e)
+    private void ExitToolStripMenuItem_Click(object sender, EventArgs e)
     {
         notifyIcon1.Visible = false;
         Application.DoEvents();
         Application.Exit();
     }
-
-    #endregion
-
 }

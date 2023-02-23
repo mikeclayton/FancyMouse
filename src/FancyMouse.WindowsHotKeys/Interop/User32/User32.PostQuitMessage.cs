@@ -1,13 +1,10 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 
-// ReSharper disable CheckNamespace
 namespace FancyMouse.WindowsHotKeys.Interop;
-// ReSharper restore CheckNamespace
 
 internal static partial class User32
 {
-
     /// <summary>
     /// Indicates to the system that a thread has made a request to terminate (quit).
     /// It is typically used in response to a WM_DESTROY message.
@@ -17,10 +14,7 @@ internal static partial class User32
     /// See https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-postquitmessage
     ///     https://github.com/dotnet/runtime/blob/main/src/libraries/Common/src/Interop/Windows/User32/Interop.PostQuitMessage.cs
     /// </remarks>
-    [SuppressMessage("ReSharper", "UnusedMember.Global")]
     [LibraryImport(Libraries.User32)]
     public static partial void PostQuitMessage(
-        int nExitCode
-    );
-
+        int nExitCode);
 }

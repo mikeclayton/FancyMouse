@@ -1,17 +1,16 @@
 ﻿using FancyMouse.Helpers;
-using FancyMouse.NativeWrappers;
 using FancyMouse.NativeMethods.Core;
+using FancyMouse.NativeWrappers;
 
 namespace FancyMouse.ScreenCopying;
 
 public sealed class NativeJigsawScreenCopyHelper : ICopyFromScreen
 {
-
     public Bitmap CopyFromScreen(
-        Rectangle desktopBounds, IEnumerable<Rectangle> desktopRegions, Size screenshotSize
-    )
+        Rectangle desktopBounds,
+        IEnumerable<Rectangle> desktopRegions,
+        Size screenshotSize)
     {
-
         // based on https://www.cyotek.com/blog/capturing-screenshots-using-csharp-and-p-invoke
 
         // note - it's faster to capture each monitor individually and assemble them into
@@ -35,11 +34,8 @@ public sealed class NativeJigsawScreenCopyHelper : ICopyFromScreen
         var screenshotHBitmap = HBITMAP.Null;
         var originalHBitmap = HGDIOBJ.Null;
 
-        var screenshot = default(Bitmap);
-
         try
         {
-
             desktopHwnd = User32.GetDesktopWindow();
             desktopHdc = User32.GetWindowDC(desktopHwnd);
             screenshotHdc = Gdi32.CreateCompatibleDC(desktopHdc);
@@ -54,17 +50,25 @@ public sealed class NativeJigsawScreenCopyHelper : ICopyFromScreen
                     x: (int)((desktopRegion.X - desktopBounds.X) * scalingRatio),
                     y: (int)((desktopRegion.Y - desktopBounds.Y) * scalingRatio),
                     width: (int)(desktopRegion.Width * scalingRatio),
-                    height: (int)(desktopRegion.Height * scalingRatio)
-                );
+                    height: (int)(desktopRegion.Height * scalingRatio));
                 _ = Gdi32.StretchBlt(
-                    screenshotHdc, screenshotRegion.X, screenshotRegion.Y, screenshotRegion.Width, screenshotRegion.Height,
-                    desktopHdc, desktopRegion.X, desktopRegion.Y, desktopRegion.Width, desktopRegion.Height,
-                    NativeMethods.Gdi32.ROP_CODE.SRCCOPY
-                );
+                    screenshotHdc,
+                    screenshotRegion.X,
+                    screenshotRegion.Y,
+                    screenshotRegion.Width,
+                    screenshotRegion.Height,
+                    desktopHdc,
+                    desktopRegion.X,
+                    desktopRegion.Y,
+                    desktopRegion.Width,
+                    desktopRegion.Height,
+                    NativeMethods.Gdi32.ROP_CODE.SRCCOPY);
             }
 
-            screenshot = Bitmap.FromHbitmap(screenshotHBitmap.Value);
+            var screenshot = Bitmap.FromHbitmap(screenshotHBitmap.Value)
+                ?? throw new InvalidOperationException();
 
+            return screenshot;
         }
         finally
         {
@@ -72,22 +76,21 @@ public sealed class NativeJigsawScreenCopyHelper : ICopyFromScreen
             {
                 _ = Gdi32.SelectObject(screenshotHdc, originalHBitmap);
             }
+
             if (!screenshotHBitmap.IsNull)
             {
                 _ = Gdi32.DeleteObject(screenshotHBitmap);
             }
+
             if (!screenshotHdc.IsNull)
             {
                 _ = Gdi32.DeleteDC(screenshotHdc);
             }
+
             if (!desktopHwnd.IsNull && !desktopHdc.IsNull)
             {
                 _ = User32.ReleaseDC(desktopHwnd, desktopHdc);
             }
         }
-
-        return screenshot ?? throw new InvalidOperationException();
-
     }
-
 }

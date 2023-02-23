@@ -4,21 +4,13 @@ namespace FancyMouse.UI;
 
 internal sealed class FancyMouseDialogOptions
 {
-
-    #region Constructors
-
     public FancyMouseDialogOptions(
         ILogger logger,
-        Size maximumThumbnailSize
-    )
+        Size maximumThumbnailSize)
     {
         this.Logger = logger ?? throw new ArgumentNullException(nameof(logger));
         this.MaximumThumbnailImageSize = maximumThumbnailSize;
     }
-
-    #endregion
-
-    #region Properties
 
     public ILogger Logger
     {
@@ -29,7 +21,4 @@ internal sealed class FancyMouseDialogOptions
     {
         get;
     }
-
-    #endregion
-
 }
