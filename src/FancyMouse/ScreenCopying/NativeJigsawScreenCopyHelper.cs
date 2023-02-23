@@ -27,7 +27,6 @@ public sealed class NativeJigsawScreenCopyHelper : ICopyFromScreen
         //
         // for very irregular monitor layouts this *might* be a big percentage of the rectangle
         // containing the desktop bounds.
-
         var desktopHwnd = HWND.Null;
         var desktopHdc = HDC.Null;
         var screenshotHdc = HDC.Null;

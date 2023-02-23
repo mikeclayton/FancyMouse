@@ -92,7 +92,8 @@ internal static class LayoutHelper
     }
 
     /// <summary>
-    /// Scale an object to fit inside the specified bounds while maintaining aspect ratio.
+    /// Get the scaling ratio to scale obj by so that it fits inside the specified bounds
+	/// without distorting the aspect ratio.
     /// </summary>
     public static double GetScalingRatio(Size obj, Size bounds)
     {
