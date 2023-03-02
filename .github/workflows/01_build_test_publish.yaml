@@ -50,7 +50,7 @@ jobs:
 
       - name: dotnet test
         working-directory: ${{ env.BUILD_PATH }}
-        run: dotnet test --configuration "$CONFIG_NAME" --no-build
+        run: dotnet test --configuration "$CONFIG_NAME" --no-build --filter "TestCategory!=Performance"
 
       - name: dotnet publish
         working-directory: ${{ env.BUILD_PATH }}

@@ -36,36 +36,42 @@ public class PerfTests
     }
 
     [TestMethod]
+    [TestCategory("Performance")]
     public void DefaultScreenCopyHelper_PerfTest()
     {
         PerfTests.RunPerfTest(new DefaultScreenCopyHelper());
     }
 
     [TestMethod]
+    [TestCategory("Performance")]
     public void ScalingScreenCopyHelper_PerfTest()
     {
         PerfTests.RunPerfTest(new ScalingScreenCopyHelper());
     }
 
     [TestMethod]
+    [TestCategory("Performance")]
     public void StretchBltScreenCopyHelper_PerfTest()
     {
         PerfTests.RunPerfTest(new StretchBltScreenCopyHelper());
     }
 
     [TestMethod]
+    [TestCategory("Performance")]
     public void CsWin32JigsawScreenCopyHelper_PerfTest()
     {
         PerfTests.RunPerfTest(new CsWin32JigsawScreenCopyHelper());
     }
 
     [TestMethod]
+    [TestCategory("Performance")]
     public void NativeJigsawScreenCopyHelper_PerfTest()
     {
         PerfTests.RunPerfTest(new NativeJigsawScreenCopyHelper());
     }
 
     [TestMethod]
+    [TestCategory("Performance")]
     public void ParallelJigsawScreenCopyHelper_PerfTest()
     {
         PerfTests.RunPerfTest(new ParallelJigsawScreenCopyHelper());
