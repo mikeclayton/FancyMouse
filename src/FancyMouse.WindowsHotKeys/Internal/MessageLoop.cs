@@ -95,7 +95,7 @@ internal sealed class MessageLoop
         // clean up
         this.ManagedThread = null;
         this.NativeThreadId = null;
-        (this.CancellationTokenSource ?? throw new NullReferenceException())
+        (this.CancellationTokenSource ?? throw new InvalidOperationException())
             .Dispose();
     }
 
@@ -106,14 +106,14 @@ internal sealed class MessageLoop
             throw new InvalidOperationException();
         }
 
-        (this.CancellationTokenSource ?? throw new NullReferenceException())
+        (this.CancellationTokenSource ?? throw new InvalidOperationException())
             .Cancel();
 
         // post a null message just to nudge the message loop and pump it - it'll notice that we've
         // set the cancellation token, then post a quit message to itself and exit the loop
         // see https://devblogs.microsoft.com/oldnewthing/20050405-46/?p=35973
         _ = Win32Wrappers.PostThreadMessageW(
-            idThread: this.NativeThreadId ?? throw new NullReferenceException(),
+            idThread: this.NativeThreadId ?? throw new InvalidOperationException(),
             Msg: User32.WindowMessages.WM_NULL,
             wParam: IntPtr.Zero,
             lParam: IntPtr.Zero);

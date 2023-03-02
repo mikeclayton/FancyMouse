@@ -1,10 +1,10 @@
-﻿using FancyMouse.PerfTests.Helpers;
-using FancyMouse.ScreenCopying;
+﻿using FancyMouse.Display;
+using FancyMouse.PerfTests.Helpers;
 using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.Graphics.Gdi;
 
-namespace FancyMouse.PerfTests.ScreenCopying;
+namespace FancyMouse.PerfTests.Display;
 
 public sealed class CsWin32JigsawScreenCopyHelper : ICopyFromScreen
 {

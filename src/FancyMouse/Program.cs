@@ -2,6 +2,7 @@ using FancyMouse.UI;
 using FancyMouse.WindowsHotKeys;
 using Microsoft.Extensions.Configuration;
 using NLog;
+using System.Globalization;
 
 namespace FancyMouse;
 
@@ -38,7 +39,7 @@ internal static class Program
             .GetSection("FancyMouse");
 
         var preview = (config["Preview"] ?? throw new InvalidOperationException("Missing config value 'Preview'"))
-            .Split("x").Select(s => int.Parse(s.Trim())).ToList();
+            .Split("x").Select(s => int.Parse(s.Trim(), CultureInfo.InvariantCulture)).ToList();
 
         // logger: LogManager.LoadConfiguration(".\\NLog.config").GetCurrentClassLogger(),
         var dialog = new FancyMouseDialog(

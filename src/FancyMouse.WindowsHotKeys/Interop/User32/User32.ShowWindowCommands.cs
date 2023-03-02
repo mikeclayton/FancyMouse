@@ -1,4 +1,6 @@
-﻿namespace FancyMouse.WindowsHotKeys.Interop;
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace FancyMouse.WindowsHotKeys.Interop;
 
 internal static partial class User32
 {
@@ -24,6 +26,7 @@ internal static partial class User32
         /// If the window is minimized or maximized, the system restores it to its original size and position.
         /// An application should specify this flag when displaying the window for the first time.
         /// </summary>
+        [SuppressMessage("Naming", "CA1069", Justification = "Name and value taken from Win32Api")]
         SW_NORMAL = 1,
 
         /// <summary>
@@ -39,6 +42,7 @@ internal static partial class User32
         /// <summary>
         /// Activates the window and displays it as a maximized window.
         /// </summary>
+        [SuppressMessage("Naming", "CA1069", Justification = "Name and value taken from Win32Api")]
         SW_MAXIMIZE = 3,
 
         /// <summary>

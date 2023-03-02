@@ -18,7 +18,7 @@ public class PerfTests
         var desktopBounds = LayoutHelper.CombineRegions(screenBounds);
         var screenshotSize = new Size(desktopBounds.Width / 40, desktopBounds.Height / 40);
 
-        var count = 20;
+        var count = 100;
         for (var i = 0; i < count; i++)
         {
             var stopwatch = Stopwatch.StartNew();
@@ -33,6 +33,12 @@ public class PerfTests
         Console.WriteLine("median = {0}", PerfTests.Median(times));
         Console.WriteLine("mode = {0}", PerfTests.Mode(times, 50));
         Console.WriteLine("times = {0}", string.Join("\r\n", times));
+    }
+
+    [TestMethod]
+    public void DefaultScreenCopyHelper_PerfTest()
+    {
+        PerfTests.RunPerfTest(new DefaultScreenCopyHelper());
     }
 
     [TestMethod]

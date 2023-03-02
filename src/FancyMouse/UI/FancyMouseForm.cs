@@ -1,5 +1,5 @@
+using FancyMouse.Display;
 using FancyMouse.Helpers;
-using FancyMouse.ScreenCopying;
 
 namespace FancyMouse.UI;
 

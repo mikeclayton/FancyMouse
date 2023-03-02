@@ -1,9 +1,9 @@
 ﻿using System.Drawing.Imaging;
-using FancyMouse.ScreenCopying;
+using FancyMouse.Display;
 
-namespace FancyMouse.PerfTests.ScreenCopying;
+namespace FancyMouse.PerfTests.Display;
 
-public sealed class ScreenScreenCopyHelper : ICopyFromScreen
+public sealed class DefaultScreenCopyHelper : ICopyFromScreen
 {
     public Bitmap CopyFromScreen(
         Rectangle desktopBounds, IEnumerable<Rectangle> desktopRegions, Size screenshotSize)

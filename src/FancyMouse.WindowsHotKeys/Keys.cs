@@ -12,6 +12,8 @@
 #pragma warning restore SA1515 // SingleLineCommentMustBePrecededByBlankLine
 #pragma warning disable SA1512 // SingleLineCommentsMustNotBeFollowedByBlankLine
 
+using System.Diagnostics.CodeAnalysis;
+
 namespace FancyMouse.WindowsHotKeys;
 
 /// <summary>
@@ -123,6 +125,7 @@ public enum Keys
     /// <summary>
     ///  The CAPS LOCK key.
     /// </summary>
+    [SuppressMessage("Naming", "CA1069", Justification = "Name and value taken from Win32Api")]
     CapsLock = 0x14,
 
     /// <summary>
@@ -133,11 +136,13 @@ public enum Keys
     /// <summary>
     ///  The IME Hanguel mode key.
     /// </summary>
+    [SuppressMessage("Naming", "CA1069", Justification = "Name and value taken from Win32Api")]
     HanguelMode = 0x15,
 
     /// <summary>
     ///  The IME Hangul mode key.
     /// </summary>
+    [SuppressMessage("Naming", "CA1069", Justification = "Name and value taken from Win32Api")]
     HangulMode = 0x15,
 
     /// <summary>
@@ -158,6 +163,7 @@ public enum Keys
     /// <summary>
     ///  The IME Kanji mode key.
     /// </summary>
+    [SuppressMessage("Naming", "CA1069", Justification = "Name and value taken from Win32Api")]
     KanjiMode = 0x19,
 
     /// <summary>
@@ -558,6 +564,7 @@ public enum Keys
     /// <summary>
     ///  The Decimal key.
     /// </summary>
+    [SuppressMessage("Naming", "CA1720", Justification = "Name and value taken from Win32Api")]
     Decimal = 0x6E,
 
     /// <summary>

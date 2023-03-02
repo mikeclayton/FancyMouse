@@ -1,15 +1,15 @@
 ﻿using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
-using FancyMouse.ScreenCopying;
+using FancyMouse.Display;
 
-namespace FancyMouse.PerfTests.ScreenCopying;
+namespace FancyMouse.PerfTests.Display;
 
 public sealed class ScalingScreenCopyHelper : ICopyFromScreen
 {
     public Bitmap CopyFromScreen(
         Rectangle desktopBounds, IEnumerable<Rectangle> desktopRegions, Size screenshotSize)
     {
-        using var screenshot = new ScreenScreenCopyHelper().CopyFromScreen(
+        using var screenshot = new DefaultScreenCopyHelper().CopyFromScreen(
             desktopBounds, desktopRegions, screenshotSize);
         return ScalingScreenCopyHelper.ResizeImage(
             screenshot, screenshotSize);
