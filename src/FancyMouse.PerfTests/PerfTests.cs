@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics;
-using FancyMouse.Display;
-using FancyMouse.PerfTests.Display;
 using FancyMouse.PerfTests.Helpers;
+using FancyMouse.PerfTests.ScreenCopying;
+using FancyMouse.ScreenCopying;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace FancyMouse.PerfTests;

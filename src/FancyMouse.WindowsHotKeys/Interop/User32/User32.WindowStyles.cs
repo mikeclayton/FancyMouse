@@ -30,6 +30,7 @@ internal static partial class User32
         /// <summary>
         /// Same as the WS_CHILD style.
         /// </summary>
+        [SuppressMessage("Naming", "CA1069", Justification = "Name and value taken from Win32Api")]
         WS_CHILDWINDOW = 0x40000000,
 
         /// <summary>
@@ -101,6 +102,7 @@ internal static partial class User32
         /// The window is initially minimized.
         /// Same as the WS_ICONIC style.
         /// </summary>
+        [SuppressMessage("Naming", "CA1069", Justification = "Name and value taken from Win32Api")]
         WS_MINIMIZE = 0x20000000,
 
         /// <summary>
@@ -108,6 +110,7 @@ internal static partial class User32
         /// Cannot be combined with the WS_EX_CONTEXTHELP style.
         /// The WS_SYSMENU style must also be specified.
         /// </summary>
+        [SuppressMessage("Naming", "CA1069", Justification = "Name and value taken from Win32Api")]
         WS_MINIMIZEBOX = 0x00020000,
 
         /// <summary>
@@ -167,12 +170,14 @@ internal static partial class User32
         /// For user-created windows and modeless dialogs to work with tab stops, alter
         /// the message loop to call the IsDialogMessage function.
         /// </summary>
+        [SuppressMessage("Naming", "CA1069", Justification = "Name and value taken from Win32Api")]
         WS_TABSTOP = 0x00010000,
 
         /// <summary>
         /// The window has a sizing border.
         /// Same as the WS_SIZEBOX style.
         /// </summary>
+        [SuppressMessage("Naming", "CA1069", Justification = "Name and value taken from Win32Api")]
         WS_THICKFRAME = 0x00040000,
 
         /// <summary>
@@ -180,12 +185,14 @@ internal static partial class User32
         /// An overlapped window has a title bar and a border.
         /// Same as the WS_OVERLAPPED style.
         /// </summary>
+        [SuppressMessage("Naming", "CA1069", Justification = "Name and value taken from Win32Api")]
         WS_TILED = 0x00000000,
 
         /// <summary>
         /// The window is an overlapped window.
         /// Same as the WS_OVERLAPPEDWINDOW style.
         /// </summary>
+        [SuppressMessage("Naming", "CA1069", Justification = "Name and value taken from Win32Api")]
         WS_TILEDWINDOW =
             WindowStyles.WS_OVERLAPPED |
             WindowStyles.WS_CAPTION |

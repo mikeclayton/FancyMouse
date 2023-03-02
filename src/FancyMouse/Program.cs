@@ -1,8 +1,8 @@
+using System.Globalization;
 using FancyMouse.UI;
 using FancyMouse.WindowsHotKeys;
 using Microsoft.Extensions.Configuration;
 using NLog;
-using System.Globalization;
 
 namespace FancyMouse;
 

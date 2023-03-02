@@ -1,10 +1,10 @@
-﻿using FancyMouse.Display;
-using FancyMouse.PerfTests.Helpers;
+﻿using FancyMouse.PerfTests.Helpers;
+using FancyMouse.ScreenCopying;
 using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.Graphics.Gdi;
 
-namespace FancyMouse.PerfTests.Display;
+namespace FancyMouse.PerfTests.ScreenCopying;
 
 public sealed class CsWin32JigsawScreenCopyHelper : ICopyFromScreen
 {
@@ -97,7 +97,7 @@ public sealed class CsWin32JigsawScreenCopyHelper : ICopyFromScreen
                 apiResult = PInvoke.DeleteObject((HGDIOBJ)screenshotHBitmap.Value);
                 if (apiResult == 0)
                 {
-                    throw new InvalidOperationException($"{nameof(PInvoke.DeleteDC)} returned {apiResult}");
+                    // throw new InvalidOperationException($"{nameof(PInvoke.DeleteDC)} returned {apiResult}");
                 }
             }
 
@@ -106,7 +106,7 @@ public sealed class CsWin32JigsawScreenCopyHelper : ICopyFromScreen
                 apiResult = PInvoke.DeleteDC(new CreatedHDC(screenshotHdc.Value));
                 if (apiResult == 0)
                 {
-                    throw new InvalidOperationException($"{nameof(PInvoke.DeleteDC)} returned {apiResult}");
+                    // throw new InvalidOperationException($"{nameof(PInvoke.DeleteDC)} returned {apiResult}");
                 }
             }
 
@@ -115,7 +115,7 @@ public sealed class CsWin32JigsawScreenCopyHelper : ICopyFromScreen
                 apiResult = PInvoke.ReleaseDC(new HWND(desktopHwnd.Value), new HDC(desktopHdc.Value));
                 if (apiResult == 0)
                 {
-                    throw new InvalidOperationException($"{nameof(PInvoke.ReleaseDC)} returned {apiResult}");
+                    // throw new InvalidOperationException($"{nameof(PInvoke.ReleaseDC)} returned {apiResult}");
                 }
             }
         }

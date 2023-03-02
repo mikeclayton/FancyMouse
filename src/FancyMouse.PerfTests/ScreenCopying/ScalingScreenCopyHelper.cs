@@ -1,8 +1,8 @@
 ﻿using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
-using FancyMouse.Display;
+using FancyMouse.ScreenCopying;
 
-namespace FancyMouse.PerfTests.Display;
+namespace FancyMouse.PerfTests.ScreenCopying;
 
 public sealed class ScalingScreenCopyHelper : ICopyFromScreen
 {
