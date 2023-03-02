@@ -8,12 +8,9 @@ internal static partial class User32
     {
         var result = NativeMethods.User32.ReleaseDC(hWnd, hDC);
 
-        if (result == 0)
-        {
-            throw new InvalidOperationException(
-                $"{nameof(User32.ReleaseDC)} returned {result}");
-        }
-
-        return result;
+        return result == 0
+            ? throw new InvalidOperationException(
+                $"{nameof(User32.ReleaseDC)} returned {result}")
+            : result;
     }
 }

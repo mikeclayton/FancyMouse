@@ -19,11 +19,5 @@ internal readonly struct HDC
         this.Value = value;
     }
 
-    public bool IsNull
-    {
-        get
-        {
-            return this.Value == HDC.Null.Value;
-        }
-    }
+    public bool IsNull => this.Value == HDC.Null.Value;
 }

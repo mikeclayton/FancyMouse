@@ -30,12 +30,9 @@ internal static partial class Gdi32
             hSrc,
             rop);
 
-        if (!result)
-        {
-            throw new InvalidOperationException(
+        return result
+            ? result
+            : throw new InvalidOperationException(
                 $"{nameof(Gdi32.StretchBlt)} returned {result}");
-        }
-
-        return result;
     }
 }

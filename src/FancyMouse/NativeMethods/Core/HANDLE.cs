@@ -19,13 +19,7 @@ internal readonly struct HANDLE
         this.Value = value;
     }
 
-    public bool IsNull
-    {
-        get
-        {
-            return this.Value == HANDLE.Null.Value;
-        }
-    }
+    public bool IsNull => this.Value == HANDLE.Null.Value;
 
     public static implicit operator uint(HANDLE value) => (uint)value.Value;
 

@@ -157,8 +157,16 @@ internal partial class FancyMouseForm : Form
         logger.Debug(
             $"form bounds     = {formBounds}");
 
-        // var screenCopyHelper = new JigsawScreenCopyHelper();
         var screenCopyHelper = new NativeJigsawScreenCopyHelper();
+
+        // capture the screen area under where the form will be displayed
+        // because once we show the form it'll be visible on the screenshot
+        // var formBackground = screenCopyHelper.CopyFromScreen(
+        //    desktopBounds,
+        //    screens.Select(s => s.Bounds),
+        //    formBounds.Size - previewImagePadding);
+
+        // var screenCopyHelper = new JigsawScreenCopyHelper();
         var preview = screenCopyHelper.CopyFromScreen(
             desktopBounds,
             screens.Select(s => s.Bounds),

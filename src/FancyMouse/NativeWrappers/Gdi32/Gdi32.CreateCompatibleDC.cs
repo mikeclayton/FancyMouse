@@ -8,12 +8,9 @@ internal static partial class Gdi32
     {
         var newHdc = NativeMethods.Gdi32.CreateCompatibleDC(hdc);
 
-        if (newHdc.IsNull)
-        {
-            throw new InvalidOperationException(
-                $"{nameof(Gdi32.CreateCompatibleDC)} returned null");
-        }
-
-        return newHdc;
+        return newHdc.IsNull
+            ? throw new InvalidOperationException(
+                $"{nameof(Gdi32.CreateCompatibleDC)} returned null")
+            : newHdc;
     }
 }

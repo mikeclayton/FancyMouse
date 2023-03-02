@@ -19,13 +19,7 @@ internal readonly struct HBITMAP
         this.Value = value;
     }
 
-    public bool IsNull
-    {
-        get
-        {
-            return this.Value == HBITMAP.Null.Value;
-        }
-    }
+    public bool IsNull => this.Value == HBITMAP.Null.Value;
 
     public static implicit operator HGDIOBJ(HBITMAP h) => new(h.Value);
 

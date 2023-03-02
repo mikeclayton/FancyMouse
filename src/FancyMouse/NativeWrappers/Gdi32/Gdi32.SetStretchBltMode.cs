@@ -8,12 +8,9 @@ internal static partial class Gdi32
     {
         var result = NativeMethods.Gdi32.SetStretchBltMode(hdc, mode);
 
-        if (result == 0)
-        {
-            throw new InvalidOperationException(
-                $"{nameof(Gdi32.SetStretchBltMode)} returned {result}");
-        }
-
-        return result;
+        return result == 0
+            ? throw new InvalidOperationException(
+                $"{nameof(Gdi32.SetStretchBltMode)} returned {result}")
+            : result;
     }
 }

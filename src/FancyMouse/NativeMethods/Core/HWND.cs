@@ -19,11 +19,5 @@ internal readonly struct HWND
         this.Value = value;
     }
 
-    public bool IsNull
-    {
-        get
-        {
-            return this.Value == HWND.Null.Value;
-        }
-    }
+    public bool IsNull => this.Value == HWND.Null.Value;
 }

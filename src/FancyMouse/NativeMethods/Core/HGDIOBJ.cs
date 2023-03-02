@@ -19,13 +19,7 @@ internal readonly struct HGDIOBJ
         this.Value = value;
     }
 
-    public bool IsNull
-    {
-        get
-        {
-            return this.Value == HGDIOBJ.Null.Value;
-        }
-    }
+    public bool IsNull => this.Value == HGDIOBJ.Null.Value;
 
     public static implicit operator HANDLE(HGDIOBJ h) => new(h.Value);
 

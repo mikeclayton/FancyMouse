@@ -8,7 +8,6 @@ internal static partial class Gdi32
     /// <summary>
     /// The DeleteDC function deletes the specified device context (DC).
     /// </summary>
-    /// <param name="hdc"></param>
     /// <returns>
     /// If the function succeeds, the return value is nonzero.
     /// If the function fails, the return value is zero.

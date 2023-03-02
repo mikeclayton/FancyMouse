@@ -8,12 +8,9 @@ internal static partial class Gdi32
     {
         var result = NativeMethods.Gdi32.DeleteDC(hdc);
 
-        if (!result)
-        {
-            throw new InvalidOperationException(
+        return result
+            ? result
+            : throw new InvalidOperationException(
                 $"{nameof(Gdi32.DeleteDC)} returned {result}");
-        }
-
-        return result;
     }
 }

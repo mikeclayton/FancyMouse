@@ -8,12 +8,9 @@ internal static partial class Gdi32
     {
         var hBitmap = NativeMethods.Gdi32.CreateCompatibleBitmap(hdc, cx, cy);
 
-        if (hBitmap.IsNull)
-        {
-            throw new InvalidOperationException(
-                $"{nameof(Gdi32.CreateCompatibleBitmap)} returned null");
-        }
-
-        return hBitmap;
+        return hBitmap.IsNull
+            ? throw new InvalidOperationException(
+                $"{nameof(Gdi32.CreateCompatibleBitmap)} returned null")
+            : hBitmap;
     }
 }
