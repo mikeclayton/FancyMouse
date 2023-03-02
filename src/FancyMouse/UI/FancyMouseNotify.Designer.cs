@@ -29,7 +29,6 @@ partial class FancyMouseNotify {
         System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FancyMouseNotify));
         notifyIcon1 = new NotifyIcon(components);
         contextMenuStrip1 = new ContextMenuStrip(components);
-        toolStripSeparator1 = new ToolStripSeparator();
         ExitToolStripMenuItem = new ToolStripMenuItem();
         contextMenuStrip1.SuspendLayout();
         SuspendLayout();
@@ -43,19 +42,14 @@ partial class FancyMouseNotify {
         // 
         // contextMenuStrip1
         // 
-        contextMenuStrip1.Items.AddRange(new ToolStripItem[] { toolStripSeparator1, ExitToolStripMenuItem });
+        contextMenuStrip1.Items.AddRange(new ToolStripItem[] { ExitToolStripMenuItem });
         contextMenuStrip1.Name = "contextMenuStrip1";
-        contextMenuStrip1.Size = new Size(94, 32);
-        // 
-        // toolStripSeparator1
-        // 
-        toolStripSeparator1.Name = "toolStripSeparator1";
-        toolStripSeparator1.Size = new Size(90, 6);
+        contextMenuStrip1.Size = new Size(181, 48);
         // 
         // ExitToolStripMenuItem
         // 
         ExitToolStripMenuItem.Name = "ExitToolStripMenuItem";
-        ExitToolStripMenuItem.Size = new Size(93, 22);
+        ExitToolStripMenuItem.Size = new Size(180, 22);
         ExitToolStripMenuItem.Text = "Exit";
         ExitToolStripMenuItem.Click += ExitToolStripMenuItem_Click;
         // 
@@ -79,5 +73,4 @@ partial class FancyMouseNotify {
     private NotifyIcon notifyIcon1;
     private ContextMenuStrip contextMenuStrip1;
     private ToolStripMenuItem ExitToolStripMenuItem;
-    private ToolStripSeparator toolStripSeparator1;
 }
