@@ -1,7 +1,6 @@
 ﻿namespace FancyMouse.UI;
 
-partial class FancyMouseNotify
-{
+partial class FancyMouseNotify {
 
     /// <summary>
     /// Required designer variable.
@@ -12,10 +11,8 @@ partial class FancyMouseNotify
     /// Clean up any resources being used.
     /// </summary>
     /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
-    protected override void Dispose(bool disposing)
-    {
-        if (disposing && (components != null))
-        {
+    protected override void Dispose(bool disposing) {
+        if (disposing && (components != null)) {
             components.Dispose();
         }
         base.Dispose(disposing);
@@ -27,67 +24,54 @@ partial class FancyMouseNotify
     /// Required method for Designer support - do not modify
     /// the contents of this method with the code editor.
     /// </summary>
-    private void InitializeComponent()
-    {
-            this.components = new System.ComponentModel.Container();
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FancyMouseNotify));
-            this.notifyIcon1 = new System.Windows.Forms.NotifyIcon(this.components);
-            this.contextMenuStrip1 = new System.Windows.Forms.ContextMenuStrip(this.components);
-            this.SettingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
-            this.ExitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.contextMenuStrip1.SuspendLayout();
-            this.SuspendLayout();
-            // 
-            // notifyIcon1
-            // 
-            this.notifyIcon1.ContextMenuStrip = this.contextMenuStrip1;
-            this.notifyIcon1.Icon = ((System.Drawing.Icon)(resources.GetObject("notifyIcon1.Icon")));
-            this.notifyIcon1.Text = "FancyMouse";
-            this.notifyIcon1.Visible = true;
-            // 
-            // contextMenuStrip1
-            // 
-            this.contextMenuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.SettingsToolStripMenuItem,
-            this.toolStripSeparator1,
-            this.ExitToolStripMenuItem});
-            this.contextMenuStrip1.Name = "contextMenuStrip1";
-            this.contextMenuStrip1.Size = new System.Drawing.Size(117, 54);
-            // 
-            // SettingsToolStripMenuItem
-            // 
-            this.SettingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
-            this.SettingsToolStripMenuItem.Size = new System.Drawing.Size(116, 22);
-            this.SettingsToolStripMenuItem.Text = "Settings";
-            this.SettingsToolStripMenuItem.Click += new System.EventHandler(this.SettingsToolStripMenuItem_Click);
-            // 
-            // toolStripSeparator1
-            // 
-            this.toolStripSeparator1.Name = "toolStripSeparator1";
-            this.toolStripSeparator1.Size = new System.Drawing.Size(113, 6);
-            // 
-            // exitToolStripMenuItem
-            // 
-            this.ExitToolStripMenuItem.Name = "exitToolStripMenuItem";
-            this.ExitToolStripMenuItem.Size = new System.Drawing.Size(116, 22);
-            this.ExitToolStripMenuItem.Text = "Exit";
-            this.ExitToolStripMenuItem.Click += new System.EventHandler(this.ExitToolStripMenuItem_Click);
-            // 
-            // FancyMouseNotify
-            // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(361, 274);
-            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.Name = "FancyMouseNotify";
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
-            this.Text = "FancyMouse NotifyIcon";
-            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.FancyMouseNotify_FormClosing);
-            this.Load += new System.EventHandler(this.FancyMouseNotify_Load);
-            this.contextMenuStrip1.ResumeLayout(false);
-            this.ResumeLayout(false);
-
+    private void InitializeComponent() {
+        components = new System.ComponentModel.Container();
+        System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FancyMouseNotify));
+        notifyIcon1 = new NotifyIcon(components);
+        contextMenuStrip1 = new ContextMenuStrip(components);
+        toolStripSeparator1 = new ToolStripSeparator();
+        ExitToolStripMenuItem = new ToolStripMenuItem();
+        contextMenuStrip1.SuspendLayout();
+        SuspendLayout();
+        // 
+        // notifyIcon1
+        // 
+        notifyIcon1.ContextMenuStrip = contextMenuStrip1;
+        notifyIcon1.Icon = (Icon)resources.GetObject("notifyIcon1.Icon");
+        notifyIcon1.Text = "FancyMouse";
+        notifyIcon1.Visible = true;
+        // 
+        // contextMenuStrip1
+        // 
+        contextMenuStrip1.Items.AddRange(new ToolStripItem[] { toolStripSeparator1, ExitToolStripMenuItem });
+        contextMenuStrip1.Name = "contextMenuStrip1";
+        contextMenuStrip1.Size = new Size(94, 32);
+        // 
+        // toolStripSeparator1
+        // 
+        toolStripSeparator1.Name = "toolStripSeparator1";
+        toolStripSeparator1.Size = new Size(90, 6);
+        // 
+        // ExitToolStripMenuItem
+        // 
+        ExitToolStripMenuItem.Name = "ExitToolStripMenuItem";
+        ExitToolStripMenuItem.Size = new Size(93, 22);
+        ExitToolStripMenuItem.Text = "Exit";
+        ExitToolStripMenuItem.Click += ExitToolStripMenuItem_Click;
+        // 
+        // FancyMouseNotify
+        // 
+        AutoScaleDimensions = new SizeF(7F, 15F);
+        AutoScaleMode = AutoScaleMode.Font;
+        ClientSize = new Size(361, 274);
+        Icon = (Icon)resources.GetObject("$this.Icon");
+        Name = "FancyMouseNotify";
+        StartPosition = FormStartPosition.CenterParent;
+        Text = "FancyMouse NotifyIcon";
+        FormClosing += FancyMouseNotify_FormClosing;
+        Load += FancyMouseNotify_Load;
+        contextMenuStrip1.ResumeLayout(false);
+        ResumeLayout(false);
     }
 
     #endregion
@@ -95,6 +79,5 @@ partial class FancyMouseNotify
     private NotifyIcon notifyIcon1;
     private ContextMenuStrip contextMenuStrip1;
     private ToolStripMenuItem ExitToolStripMenuItem;
-    private ToolStripMenuItem SettingsToolStripMenuItem;
     private ToolStripSeparator toolStripSeparator1;
 }
