@@ -6,22 +6,11 @@
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
 
   <PropertyGroup>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
   </PropertyGroup>
-
-  <ItemGroup>
-    <None Remove="NativeMethods.json" />
-    <None Remove="NativeMethods.txt" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <AdditionalFiles Include="NativeMethods.json" />
-    <AdditionalFiles Include="NativeMethods.txt" />
-  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.5.0" />
