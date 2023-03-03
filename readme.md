@@ -1,12 +1,11 @@
 ![](wiki/images/fancymouse-banner.png)
 
 ----
-## 2023-02-05 Update
+## 2023-03-03 Update
 
-I'm currently working on a PR to integrate this utility into Microsoft PowerToys as a new "Mouse Jump" feature - see https://github.com/microsoft/PowerToys/pull/23566.
+A modified version of FancyMouse is now incorporated into Microsoft [PowerToys](https://github.com/microsoft/PowerToys) and renamed "Mouse Jump".
 
-It's a bit of a work-in-progress so I'll continue to keep this repo up to date for the time being so that FancyMouse can be used as a stand-alone tool, but if you want to contribute it might be better to do it over there instead...
-
+I'll continue to maintain the FancyMouse repo as an incubator for new features going forward.
 ----
 
 ## Overview
