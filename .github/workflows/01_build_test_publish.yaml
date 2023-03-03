@@ -46,7 +46,7 @@ jobs:
 
       - name: dotnet build
         working-directory: ${{ env.BUILD_PATH }}
-        run: dotnet build "./FancyMouse/FancyMouse.csproj" --configuration "$CONFIG_NAME" --no-restore
+        run: dotnet build --configuration "$CONFIG_NAME" --no-restore
 
       - name: dotnet test
         working-directory: ${{ env.BUILD_PATH }}
