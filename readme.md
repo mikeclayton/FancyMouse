@@ -6,6 +6,7 @@
 A modified version of FancyMouse is now incorporated into Microsoft [PowerToys](https://github.com/microsoft/PowerToys) and renamed "Mouse Jump".
 
 I'll continue to maintain the FancyMouse repo as an incubator for new features going forward.
+
 ----
 
 ## Overview
