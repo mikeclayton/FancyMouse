@@ -1,5 +1,5 @@
 ﻿using System.Diagnostics;
-using FancyMouse.PerfTests.Helpers;
+using FancyMouse.Helpers;
 using FancyMouse.PerfTests.ScreenCopying;
 using FancyMouse.ScreenCopying;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -9,20 +9,18 @@ namespace FancyMouse.PerfTests;
 [TestClass]
 public class PerfTests
 {
-    private static void RunPerfTest(ICopyFromScreen copyHelper)
+    public static void RunPerfTest(Func<Rectangle, IEnumerable<Rectangle>, Size, Bitmap> testMethod)
     {
         var times = new List<long>();
-
         var screens = Screen.AllScreens;
         var screenBounds = screens.Select(screen => screen.Bounds).ToList();
         var desktopBounds = LayoutHelper.CombineRegions(screenBounds);
         var screenshotSize = new Size(desktopBounds.Width / 40, desktopBounds.Height / 40);
-
         var count = 100;
         for (var i = 0; i < count; i++)
         {
             var stopwatch = Stopwatch.StartNew();
-            var preview = copyHelper.CopyFromScreen(desktopBounds, screenBounds, screenshotSize);
+            var preview = testMethod(desktopBounds, screenBounds, screenshotSize);
             stopwatch.Stop();
             times.Add(stopwatch.ElapsedMilliseconds);
             preview.Dispose();
@@ -37,44 +35,43 @@ public class PerfTests
 
     [TestMethod]
     [TestCategory("Performance")]
-    public void DefaultScreenCopyHelper_PerfTest()
-    {
-        PerfTests.RunPerfTest(new DefaultScreenCopyHelper());
-    }
-
-    [TestMethod]
-    [TestCategory("Performance")]
-    public void ScalingScreenCopyHelper_PerfTest()
-    {
-        PerfTests.RunPerfTest(new ScalingScreenCopyHelper());
-    }
-
-    [TestMethod]
-    [TestCategory("Performance")]
-    public void StretchBltScreenCopyHelper_PerfTest()
-    {
-        PerfTests.RunPerfTest(new StretchBltScreenCopyHelper());
-    }
-
-    [TestMethod]
-    [TestCategory("Performance")]
     public void CsWin32JigsawScreenCopyHelper_PerfTest()
     {
-        PerfTests.RunPerfTest(new CsWin32JigsawScreenCopyHelper());
+        PerfTests.RunPerfTest(
+            CsWin32JigsawScreenCopyHelper.CopyFromScreen);
     }
 
     [TestMethod]
     [TestCategory("Performance")]
-    public void NativeJigsawScreenCopyHelper_PerfTest()
+    public void GraphicsScreenCopyHelper_PerfTest()
     {
-        PerfTests.RunPerfTest(new NativeJigsawScreenCopyHelper());
+        PerfTests.RunPerfTest(
+            (desktopBounds, screenBounds, screenshotSize) =>
+                GraphicsScreenCopyHelper.CopyFromScreen(desktopBounds));
     }
 
     [TestMethod]
     [TestCategory("Performance")]
     public void ParallelJigsawScreenCopyHelper_PerfTest()
     {
-        PerfTests.RunPerfTest(new ParallelJigsawScreenCopyHelper());
+        PerfTests.RunPerfTest(
+            ParallelJigsawScreenCopyHelper.CopyFromScreen);
+    }
+
+    [TestMethod]
+    [TestCategory("Performance")]
+    public void ScalingScreenCopyHelper_PerfTest()
+    {
+        PerfTests.RunPerfTest(
+            ScalingScreenCopyHelper.CopyFromScreen);
+    }
+
+    [TestMethod]
+    [TestCategory("Performance")]
+    public void StretchBltScreenCopyHelper_PerfTest()
+    {
+        PerfTests.RunPerfTest(
+            StretchBltScreenCopyHelper.CopyFromScreen);
     }
 
     private static IEnumerable<IGrouping<long, long>> Bucket(List<long> values, int bucketSize)

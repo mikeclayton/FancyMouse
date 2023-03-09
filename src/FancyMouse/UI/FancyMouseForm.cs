@@ -157,8 +157,6 @@ internal partial class FancyMouseForm : Form
         logger.Debug(
             $"form bounds     = {formBounds}");
 
-        var screenCopyHelper = new NativeJigsawScreenCopyHelper();
-
         // capture the screen area under where the form will be displayed
         // because once we show the form it'll be visible on the screenshot
         // var formBackground = screenCopyHelper.CopyFromScreen(
@@ -167,7 +165,7 @@ internal partial class FancyMouseForm : Form
         //    formBounds.Size - previewImagePadding);
 
         // var screenCopyHelper = new JigsawScreenCopyHelper();
-        var preview = screenCopyHelper.CopyFromScreen(
+        var preview = StretchBltScreenCopyHelper.CopyFromScreen(
             desktopBounds,
             screens.Select(s => s.Bounds),
             formBounds.Size - previewImagePadding);
@@ -190,5 +188,29 @@ internal partial class FancyMouseForm : Form
 
         // we have to activate the form to make sure the deactivate event fires
         this.Activate();
+    }
+
+    // Sends an input simulating an absolute mouse move to the new location.
+    private void SimulateMouseMovementEvent(Point location)
+    {
+        var mouseMoveInput = new NativeMethods.NativeMethods.INPUT
+        {
+            type = NativeMethods.NativeMethods.INPUTTYPE.INPUT_MOUSE,
+            data = new NativeMethods.NativeMethods.InputUnion
+            {
+                mi = new NativeMethods.NativeMethods.MOUSEINPUT
+                {
+                    dx = NativeMethods.NativeMethods.CalculateAbsoluteCoordinateX(location.X),
+                    dy = NativeMethods.NativeMethods.CalculateAbsoluteCoordinateY(location.Y),
+                    mouseData = 0,
+                    dwFlags = (uint)NativeMethods.NativeMethods.MOUSE_INPUT_FLAGS.MOUSEEVENTF_MOVE
+                        | (uint)NativeMethods.NativeMethods.MOUSE_INPUT_FLAGS.MOUSEEVENTF_ABSOLUTE,
+                    time = 0,
+                    dwExtraInfo = 0,
+                },
+            },
+        };
+        var inputs = new NativeMethods.NativeMethods.INPUT[] { mouseMoveInput };
+        _ = NativeMethods.NativeMethods.SendInput(1, inputs, NativeMethods.NativeMethods.INPUT.Size);
     }
 }
