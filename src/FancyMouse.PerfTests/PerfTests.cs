@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using FancyMouse.Drawing;
 using FancyMouse.Helpers;
 using FancyMouse.PerfTests.Drawing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
