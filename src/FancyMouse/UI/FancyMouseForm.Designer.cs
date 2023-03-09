@@ -1,7 +1,6 @@
 ﻿namespace FancyMouse.UI;
 
-partial class FancyMouseForm
-{
+partial class FancyMouseForm {
 
     /// <summary>
     ///  Required designer variable.
@@ -12,10 +11,8 @@ partial class FancyMouseForm
     ///  Clean up any resources being used.
     /// </summary>
     /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
-    protected override void Dispose(bool disposing)
-    {
-        if (disposing && (components != null))
-        {
+    protected override void Dispose(bool disposing) {
+        if (disposing && (components != null)) {
             components.Dispose();
         }
         base.Dispose(disposing);
@@ -27,58 +24,57 @@ partial class FancyMouseForm
     ///  Required method for Designer support - do not modify
     ///  the contents of this method with the code editor.
     /// </summary>
-    private void InitializeComponent()
-    {
+    private void InitializeComponent() {
         System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FancyMouseForm));
-        this.panel1 = new System.Windows.Forms.Panel();
-        this.Thumbnail = new System.Windows.Forms.PictureBox();
-        this.panel1.SuspendLayout();
-        ((System.ComponentModel.ISupportInitialize)(this.Thumbnail)).BeginInit();
-        this.SuspendLayout();
+        panel1 = new Panel();
+        Thumbnail = new PictureBox();
+        panel1.SuspendLayout();
+        ((System.ComponentModel.ISupportInitialize)Thumbnail).BeginInit();
+        SuspendLayout();
         // 
         // panel1
         // 
-        this.panel1.BackColor = System.Drawing.SystemColors.Highlight;
-        this.panel1.Controls.Add(this.Thumbnail);
-        this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
-        this.panel1.Location = new System.Drawing.Point(0, 0);
-        this.panel1.Name = "panel1";
-        this.panel1.Padding = new System.Windows.Forms.Padding(5);
-        this.panel1.Size = new System.Drawing.Size(800, 450);
-        this.panel1.TabIndex = 1;
+        panel1.BackColor = SystemColors.Highlight;
+        panel1.Controls.Add(Thumbnail);
+        panel1.Dock = DockStyle.Fill;
+        panel1.Location = new Point(0, 0);
+        panel1.Name = "panel1";
+        panel1.Padding = new Padding(5);
+        panel1.Size = new Size(800, 450);
+        panel1.TabIndex = 1;
         // 
         // Thumbnail
         // 
-        this.Thumbnail.BackColor = System.Drawing.SystemColors.Control;
-        this.Thumbnail.Dock = System.Windows.Forms.DockStyle.Fill;
-        this.Thumbnail.Location = new System.Drawing.Point(5, 5);
-        this.Thumbnail.Name = "Thumbnail";
-        this.Thumbnail.Size = new System.Drawing.Size(790, 440);
-        this.Thumbnail.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
-        this.Thumbnail.TabIndex = 1;
-        this.Thumbnail.TabStop = false;
-        this.Thumbnail.Click += new System.EventHandler(this.Thumbnail_Click);
+        Thumbnail.BackColor = SystemColors.ControlDarkDark;
+        Thumbnail.Dock = DockStyle.Fill;
+        Thumbnail.Location = new Point(5, 5);
+        Thumbnail.Name = "Thumbnail";
+        Thumbnail.Size = new Size(790, 440);
+        Thumbnail.SizeMode = PictureBoxSizeMode.StretchImage;
+        Thumbnail.TabIndex = 1;
+        Thumbnail.TabStop = false;
+        Thumbnail.Click += Thumbnail_Click;
         // 
         // FancyMouseForm
         // 
-        this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
-        this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-        this.ClientSize = new System.Drawing.Size(800, 450);
-        this.Controls.Add(this.panel1);
-        this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
-        this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-        this.KeyPreview = true;
-        this.Name = "FancyMouseForm";
-        this.ShowInTaskbar = false;
-        this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
-        this.Text = "FancyMouse";
-        this.TopMost = true;
-        this.Deactivate += new System.EventHandler(this.FancyMouseForm_Deactivate);
-        this.Load += new System.EventHandler(this.FancyMouseForm_Load);
-        this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.FancyMouseForm_KeyDown);
-        this.panel1.ResumeLayout(false);
-        ((System.ComponentModel.ISupportInitialize)(this.Thumbnail)).EndInit();
-        this.ResumeLayout(false);
+        AutoScaleDimensions = new SizeF(7F, 15F);
+        AutoScaleMode = AutoScaleMode.Font;
+        ClientSize = new Size(800, 450);
+        Controls.Add(panel1);
+        FormBorderStyle = FormBorderStyle.None;
+        Icon = (Icon)resources.GetObject("$this.Icon");
+        KeyPreview = true;
+        Name = "FancyMouseForm";
+        ShowInTaskbar = false;
+        StartPosition = FormStartPosition.Manual;
+        Text = "FancyMouse";
+        TopMost = true;
+        Deactivate += FancyMouseForm_Deactivate;
+        Load += FancyMouseForm_Load;
+        KeyDown += FancyMouseForm_KeyDown;
+        panel1.ResumeLayout(false);
+        ((System.ComponentModel.ISupportInitialize)Thumbnail).EndInit();
+        ResumeLayout(false);
     }
 
     #endregion
