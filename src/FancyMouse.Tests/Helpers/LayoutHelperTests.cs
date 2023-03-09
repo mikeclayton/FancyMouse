@@ -1,5 +1,4 @@
 ﻿using System.Drawing;
-using FancyMouse.Drawing.Models;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace FancyMouse.Helpers.Tests;
