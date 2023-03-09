@@ -49,31 +49,31 @@ internal partial class FancyMouseForm : Form
     {
         var logger = this.Options.Logger;
 
-        logger.Debug(string.Join(
-            "\r\n",
+        logger.Info(string.Join(
+            '\n',
             "-----------",
             nameof(FancyMouseForm.Thumbnail_Click),
             "-----------"));
 
         var mouseEventArgs = (MouseEventArgs)e;
-        logger.Debug(string.Join(
-            "\r\n",
-            $"mouse event args = ",
-            $"    button   = {mouseEventArgs.Button}",
-            $"    location = {mouseEventArgs.Location} "));
+        logger.Info(string.Join(
+            '\n',
+            $"Reporting mouse event args",
+            $"\tbutton   = {mouseEventArgs.Button}",
+            $"\tlocation = {mouseEventArgs.Location}"));
 
         if (mouseEventArgs.Button == MouseButtons.Left)
         {
             // plain click - move mouse pointer
             var desktopBounds = SystemInformation.VirtualScreen;
-            logger.Debug($"desktop bounds  = {desktopBounds}");
+            logger.Info($"desktop bounds  = {desktopBounds}");
 
             var mouseEvent = (MouseEventArgs)e;
 
             var scaledLocation = new PointInfo(mouseEvent.X, mouseEvent.Y)
                     .Scale(new SizeInfo(this.Thumbnail.Size).ScaleToFitRatio(new(desktopBounds.Size)))
                     .ToPoint();
-            logger.Debug($"scaled location = {scaledLocation}");
+            logger.Info($"scaled location = {scaledLocation}");
 
             // set the new cursor position *twice* - the cursor sometimes end up in
             // the wrong place if we try to cross the dead space between non-aligned
@@ -110,8 +110,8 @@ internal partial class FancyMouseForm : Form
     {
         var logger = this.Options.Logger;
 
-        logger.Debug(string.Join(
-            "\r\n",
+        logger.Info(string.Join(
+            '\n',
             "-----------",
             nameof(FancyMouseForm.ShowThumbnail),
             "-----------"));
@@ -120,14 +120,15 @@ internal partial class FancyMouseForm : Form
         foreach (var i in Enumerable.Range(0, screens.Length))
         {
             var screen = screens[i];
-            logger.Debug(string.Join(
-                "\r\n",
+            logger.Info(string.Join(
+                '\n',
                 $"screen[{i}] = \"{screen.DeviceName}\"",
-                $"    primary      = {screen.Primary}",
-                $"    bounds       = {screen.Bounds}",
-                $"    working area = {screen.WorkingArea}"));
+                $"\tprimary      = {screen.Primary}",
+                $"\tbounds       = {screen.Bounds}",
+                $"\tworking area = {screen.WorkingArea}"));
         }
 
+        // collect together some values that we need for calculating layout
         var activatedLocation = Cursor.Position;
         var layoutConfig = new LayoutConfig(
             virtualScreen: SystemInformation.VirtualScreen,
@@ -137,8 +138,8 @@ internal partial class FancyMouseForm : Form
             maximumFormSize: this.Options.MaximumThumbnailImageSize,
             formPadding: this.panel1.Padding,
             previewPadding: new Padding(0));
-        logger.Debug(string.Join(
-            "\r\n",
+        logger.Info(string.Join(
+            '\n',
             $"Layout config",
             $"-------------",
             $"virtual screen     = {layoutConfig.VirtualScreen}",
@@ -148,9 +149,10 @@ internal partial class FancyMouseForm : Form
             $"form padding       = {layoutConfig.FormPadding}",
             $"preview padding    = {layoutConfig.PreviewPadding}"));
 
+        // calculate the layout coordinates for everything
         var layoutCoords = PreviewImageComposer.CalculateCoords(layoutConfig);
-        logger.Debug(string.Join(
-            "\r\n",
+        logger.Info(string.Join(
+            '\n',
             $"Layout coords",
             $"-------------",
             $"form bounds      = {layoutCoords.FormBounds}",
@@ -167,13 +169,6 @@ internal partial class FancyMouseForm : Form
         this.Location = layoutCoords.FormBounds.Location.ToPoint();
         _ = this.PointToScreen(Point.Empty);
         this.Size = layoutCoords.FormBounds.Size.ToSize();
-
-        if (this.Thumbnail.Image is not null)
-        {
-            var tmp = this.Thumbnail.Image;
-            this.Thumbnail.Image = null;
-            tmp.Dispose();
-        }
 
         // initialize the preview image
         var preview = new Bitmap(

@@ -22,7 +22,7 @@ internal static class PreviewImageComposer
         builder.ActivatedScreen = layoutConfig.ScreenBounds[layoutConfig.ActivatedScreen];
 
         // work out the maximum *constrained* form size
-        // * can't be bigger than the activated screen,
+        // * can't be bigger than the activated screen
         // * can't be bigger than the max form size
         var maxFormSize = builder.ActivatedScreen.Size
             .Intersect(layoutConfig.MaximumFormSize);
