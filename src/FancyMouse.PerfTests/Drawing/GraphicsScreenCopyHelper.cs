@@ -1,6 +1,6 @@
 ﻿using System.Drawing.Imaging;
 
-namespace FancyMouse.ScreenCopying;
+namespace FancyMouse.PerfTests.Drawing;
 
 internal static class GraphicsScreenCopyHelper
 {

@@ -6,7 +6,7 @@
 /// typedef int BOOL;
 /// </summary>
 /// <remarks>
-/// https://learn.microsoft.com/en-us/windows/win32/winprog/windows-data-types
+/// See https://learn.microsoft.com/en-us/windows/win32/winprog/windows-data-types
 /// </remarks>
 internal readonly struct BOOL
 {
