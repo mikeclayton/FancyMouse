@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using FancyMouse.Helpers;
 using FancyMouse.PerfTests.Drawing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -13,7 +12,7 @@ public class PerfTests
         var times = new List<long>();
         var screens = Screen.AllScreens;
         var screenBounds = screens.Select(screen => screen.Bounds).ToList();
-        var desktopBounds = screenBounds.GetBoundingRectangle();
+        var desktopBounds = SystemInformation.VirtualScreen;
         var screenshotSize = new Size(desktopBounds.Width / 40, desktopBounds.Height / 40);
         var count = 100;
         for (var i = 0; i < count; i++)

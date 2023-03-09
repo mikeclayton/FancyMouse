@@ -3,7 +3,6 @@ using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using FancyMouse.Drawing;
 using FancyMouse.Drawing.Models;
-using FancyMouse.Helpers;
 using FancyMouse.NativeMethods.Core;
 using FancyMouse.NativeWrappers;
 
@@ -66,11 +65,7 @@ internal partial class FancyMouseForm : Form
         if (mouseEventArgs.Button == MouseButtons.Left)
         {
             // plain click - move mouse pointer
-            var desktopBounds = Screen.AllScreens
-                .Select(
-                    screen => screen.Bounds)
-                .ToList()
-                .GetBoundingRectangle();
+            var desktopBounds = SystemInformation.VirtualScreen;
             logger.Debug($"desktop bounds  = {desktopBounds}");
 
             var mouseEvent = (MouseEventArgs)e;
