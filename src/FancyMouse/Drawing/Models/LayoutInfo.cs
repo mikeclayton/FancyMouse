@@ -2,7 +2,7 @@
 
 namespace FancyMouse.Drawing.Models;
 
-internal sealed class LayoutCoords
+public sealed class LayoutInfo
 {
     public sealed class Builder
     {
@@ -41,9 +41,9 @@ internal sealed class LayoutCoords
             set;
         }
 
-        public LayoutCoords Build()
+        public LayoutInfo Build()
         {
-            return new LayoutCoords(
+            return new LayoutInfo(
                 layoutConfig: this.LayoutConfig ?? throw new InvalidOperationException(),
                 formBounds: this.FormBounds ?? throw new InvalidOperationException(),
                 previewBounds: this.PreviewBounds ?? throw new InvalidOperationException(),
@@ -52,7 +52,7 @@ internal sealed class LayoutCoords
         }
     }
 
-    public LayoutCoords(
+    public LayoutInfo(
         LayoutConfig layoutConfig,
         RectangleInfo formBounds,
         RectangleInfo previewBounds,
