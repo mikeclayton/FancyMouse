@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
+using System.Runtime.CompilerServices;
 using FancyMouse.Drawing;
 using FancyMouse.Drawing.Models;
 using FancyMouse.NativeMethods.Core;
@@ -49,51 +50,29 @@ internal partial class FancyMouseForm : Form
     {
         var logger = this.Options.Logger;
 
-        logger.Debug(string.Join(
-            "\r\n",
+        logger.Info(string.Join(
+            '\n',
             "-----------",
             nameof(FancyMouseForm.Thumbnail_Click),
             "-----------"));
 
         var mouseEventArgs = (MouseEventArgs)e;
-        logger.Debug(string.Join(
-            "\r\n",
-            $"mouse event args = ",
-            $"    button   = {mouseEventArgs.Button}",
-            $"    location = {mouseEventArgs.Location} "));
+        logger.Info(string.Join(
+            '\n',
+            $"Reporting mouse event args",
+            $"\tbutton   = {mouseEventArgs.Button}",
+            $"\tlocation = {mouseEventArgs.Location}"));
 
         if (mouseEventArgs.Button == MouseButtons.Left)
         {
             // plain click - move mouse pointer
-            var desktopBounds = SystemInformation.VirtualScreen;
-            logger.Debug($"desktop bounds  = {desktopBounds}");
-
-            var mouseEvent = (MouseEventArgs)e;
-
-            var scaledLocation = new PointInfo(mouseEvent.X, mouseEvent.Y)
-                    .Scale(new SizeInfo(this.Thumbnail.Size).ScaleToFitRatio(new(desktopBounds.Size)))
-                    .ToPoint();
-            logger.Debug($"scaled location = {scaledLocation}");
-
-            // set the new cursor position *twice* - the cursor sometimes end up in
-            // the wrong place if we try to cross the dead space between non-aligned
-            // monitors - e.g. when trying to move the cursor from (a) to (b) we can
-            // *sometimes* - for no clear reason - end up at (c) instead.
-            //
-            //           +----------------+
-            //           |(c)    (b)      |
-            //           |                |
-            //           |                |
-            //           |                |
-            // +---------+                |
-            // |  (a)    |                |
-            // +---------+----------------+
-            //
-            // setting the position a second time seems to fix this and moves the
-            // cursor to the expected location (b) - for more details see
-            // https://github.com/mikeclayton/FancyMouse/pull/3
-            Cursor.Position = scaledLocation;
-            Cursor.Position = scaledLocation;
+            var scaledLocation = DrawingHelper.GetJumpLocation(
+                new PointInfo(mouseEventArgs.X, mouseEventArgs.Y),
+                new SizeInfo(this.Thumbnail.Size),
+                new RectangleInfo(SystemInformation.VirtualScreen));
+            logger.Info($"scaled location = {scaledLocation}");
+            DrawingHelper.JumpCursor(scaledLocation);
+            DrawingHelper.SimulateMouseMovementEvent(scaledLocation.ToPoint());
         }
 
         this.Hide();
@@ -110,8 +89,8 @@ internal partial class FancyMouseForm : Form
     {
         var logger = this.Options.Logger;
 
-        logger.Debug(string.Join(
-            "\r\n",
+        logger.Info(string.Join(
+            '\n',
             "-----------",
             nameof(FancyMouseForm.ShowThumbnail),
             "-----------"));
@@ -120,14 +99,15 @@ internal partial class FancyMouseForm : Form
         foreach (var i in Enumerable.Range(0, screens.Length))
         {
             var screen = screens[i];
-            logger.Debug(string.Join(
-                "\r\n",
+            logger.Info(string.Join(
+                '\n',
                 $"screen[{i}] = \"{screen.DeviceName}\"",
-                $"    primary      = {screen.Primary}",
-                $"    bounds       = {screen.Bounds}",
-                $"    working area = {screen.WorkingArea}"));
+                $"\tprimary      = {screen.Primary}",
+                $"\tbounds       = {screen.Bounds}",
+                $"\tworking area = {screen.WorkingArea}"));
         }
 
+        // collect together some values that we need for calculating layout
         var activatedLocation = Cursor.Position;
         var layoutConfig = new LayoutConfig(
             virtualScreen: SystemInformation.VirtualScreen,
@@ -137,8 +117,8 @@ internal partial class FancyMouseForm : Form
             maximumFormSize: this.Options.MaximumThumbnailImageSize,
             formPadding: this.panel1.Padding,
             previewPadding: new Padding(0));
-        logger.Debug(string.Join(
-            "\r\n",
+        logger.Info(string.Join(
+            '\n',
             $"Layout config",
             $"-------------",
             $"virtual screen     = {layoutConfig.VirtualScreen}",
@@ -148,148 +128,97 @@ internal partial class FancyMouseForm : Form
             $"form padding       = {layoutConfig.FormPadding}",
             $"preview padding    = {layoutConfig.PreviewPadding}"));
 
-        var layoutCoords = PreviewImageComposer.CalculateCoords(layoutConfig);
-        logger.Debug(string.Join(
-            "\r\n",
-            $"Layout coords",
-            $"-------------",
-            $"form bounds      = {layoutCoords.FormBounds}",
-            $"preview bounds   = {layoutCoords.PreviewBounds}",
-            $"activated screen = {layoutCoords.ActivatedScreen}"));
+        // calculate the layout coordinates for everything
+        var layoutInfo = DrawingHelper.CalculateLayoutInfo(layoutConfig);
+        logger.Info(string.Join(
+            '\n',
+            $"Layout info",
+            $"-----------",
+            $"form bounds      = {layoutInfo.FormBounds}",
+            $"preview bounds   = {layoutInfo.PreviewBounds}",
+            $"activated screen = {layoutInfo.ActivatedScreen}"));
 
-        // resize and position the form
-        // note - do this in two steps rather than "this.Bounds = formBounds" as there
-        // appears to be an issue in WinForms with dpi scaling even when using PerMonitorV2,
-        // where the form scaling uses either the *primary* screen scaling or the *previous*
-        // screen's scaling when the form is moved to a different screen. i've got no idea
-        // *why*, but the exact sequence of calls below seems to be a workaround...
-        // see https://github.com/mikeclayton/FancyMouse/issues/2
-        this.Location = layoutCoords.FormBounds.Location.ToPoint();
-        _ = this.PointToScreen(Point.Empty);
-        this.Size = layoutCoords.FormBounds.Size.ToSize();
-
-        if (this.Thumbnail.Image is not null)
-        {
-            var tmp = this.Thumbnail.Image;
-            this.Thumbnail.Image = null;
-            tmp.Dispose();
-        }
+        DrawingHelper.PositionForm(this, layoutInfo.FormBounds);
 
         // initialize the preview image
         var preview = new Bitmap(
-            (int)layoutCoords.PreviewBounds.Width,
-            (int)layoutCoords.PreviewBounds.Height,
+            (int)layoutInfo.PreviewBounds.Width,
+            (int)layoutInfo.PreviewBounds.Height,
             PixelFormat.Format32bppArgb);
         this.Thumbnail.Image = preview;
 
         using var previewGraphics = Graphics.FromImage(preview);
 
-        // draw the preview background
-        using var backgroundBrush = new LinearGradientBrush(
-            new Point(0, 0),
-            new Point(preview.Width, preview.Height),
-            Color.FromArgb(13, 87, 210),
-            Color.FromArgb(3, 68, 192));
-        previewGraphics.FillRectangle(backgroundBrush, layoutCoords.PreviewBounds.ToRectangle());
+        DrawingHelper.DrawPreviewBackground(previewGraphics, layoutInfo.PreviewBounds, layoutInfo.ScreenBounds);
 
-        var previewHdc = HDC.Null;
         var desktopHwnd = HWND.Null;
         var desktopHdc = HDC.Null;
+        var previewHdc = HDC.Null;
         try
         {
-            desktopHwnd = User32.GetDesktopWindow();
-            desktopHdc = User32.GetWindowDC(desktopHwnd);
+            DrawingHelper.EnsureDesktopDeviceContext(ref desktopHwnd, ref desktopHdc);
 
             // we have to capture the screen where we're going to show the form first
             // as the form will obscure the screen as soon as it's visible
-            var stopwatch = Stopwatch.StartNew();
-            previewHdc = new HDC(previewGraphics.GetHdc());
-            PreviewImageComposer.CopyFromScreen(
+            var activatedStopwatch = Stopwatch.StartNew();
+            DrawingHelper.EnsurePreviewDeviceContext(previewGraphics, ref previewHdc);
+            DrawingHelper.DrawPreviewScreen(
                 desktopHdc,
                 previewHdc,
-                layoutConfig.ScreenBounds.Where((_, idx) => idx == layoutConfig.ActivatedScreen).ToList(),
-                layoutCoords.ScreenBounds.Where((_, idx) => idx == layoutConfig.ActivatedScreen).ToList());
-            previewGraphics.ReleaseHdc(previewHdc.Value);
-            previewHdc = HDC.Null;
-            stopwatch.Stop();
+                layoutConfig.ScreenBounds[layoutConfig.ActivatedScreen],
+                layoutInfo.ScreenBounds[layoutConfig.ActivatedScreen]);
+            activatedStopwatch.Stop();
 
-            // show the placeholder image if it looks like it might take a while to capture
-            // the remaining screenshot images
-            if (stopwatch.ElapsedMilliseconds > 150)
+            // show the placeholder images if it looks like it might take a while
+            // to capture the remaining screenshot images
+            if (activatedStopwatch.ElapsedMilliseconds > 250)
             {
                 var activatedArea = layoutConfig.ScreenBounds[layoutConfig.ActivatedScreen].Area;
                 var totalArea = layoutConfig.ScreenBounds.Sum(screen => screen.Area);
                 if ((activatedArea / totalArea) < 0.5M)
                 {
-                    var brush = Brushes.Black;
-                    var bounds = layoutCoords.ScreenBounds
-                        .Where((_, idx) => idx != layoutConfig.ActivatedScreen)
-                        .Select(screen => screen.ToRectangle())
-                        .ToArray();
-                    if (bounds.Any())
-                    {
-                        previewGraphics.FillRectangles(brush, bounds);
-                    }
-
-                    this.Show();
-                    this.Thumbnail.Refresh();
+                    // we need to release the device context handle before we can draw the placeholders
+                    // using the Graphics object otherwise we'll get an error from GDI saying
+                    // "Object is currently in use elsewhere"
+                    DrawingHelper.FreePreviewDeviceContext(previewGraphics, ref previewHdc);
+                    DrawingHelper.DrawPreviewPlaceholders(
+                        previewGraphics,
+                        layoutInfo.ScreenBounds.Where((_, idx) => idx != layoutConfig.ActivatedScreen));
+                    FancyMouseForm.ShowPreview(this);
                 }
             }
 
-            // draw the remaining screen captures on the preview image
-            previewHdc = new HDC(previewGraphics.GetHdc());
-            PreviewImageComposer.CopyFromScreen(
-                desktopHdc,
-                previewHdc,
-                layoutConfig.ScreenBounds.Where((_, idx) => idx != layoutConfig.ActivatedScreen).ToList(),
-                layoutCoords.ScreenBounds.Where((_, idx) => idx != layoutConfig.ActivatedScreen).ToList());
-            previewGraphics.ReleaseHdc(previewHdc.Value);
-            previewHdc = HDC.Null;
-            this.Thumbnail.Refresh();
+            // draw the remaining screen captures (if any) on the preview image
+            var sourceScreens = layoutConfig.ScreenBounds.Where((_, idx) => idx != layoutConfig.ActivatedScreen).ToList();
+            if (sourceScreens.Any())
+            {
+                DrawingHelper.EnsurePreviewDeviceContext(previewGraphics, ref previewHdc);
+                DrawingHelper.DrawPreviewScreens(
+                    desktopHdc,
+                    previewHdc,
+                    sourceScreens,
+                    layoutInfo.ScreenBounds.Where((_, idx) => idx != layoutConfig.ActivatedScreen).ToList());
+                FancyMouseForm.ShowPreview(this);
+            }
         }
         finally
         {
-            if (!desktopHwnd.IsNull && !desktopHdc.IsNull)
-            {
-                _ = User32.ReleaseDC(desktopHwnd, desktopHdc);
-            }
-
-            if (!previewHdc.IsNull)
-            {
-                previewGraphics.ReleaseHdc(previewHdc.Value);
-            }
-        }
-
-        if (!this.Visible)
-        {
-            this.Show();
+            DrawingHelper.FreeDesktopDeviceContext(ref desktopHwnd, ref desktopHdc);
+            DrawingHelper.FreePreviewDeviceContext(previewGraphics, ref previewHdc);
         }
 
         // we have to activate the form to make sure the deactivate event fires
+        FancyMouseForm.ShowPreview(this);
         this.Activate();
     }
 
-    // Sends an input simulating an absolute mouse move to the new location.
-    private void SimulateMouseMovementEvent(Point location)
+    private static void ShowPreview(FancyMouseForm form)
     {
-        var mouseMoveInput = new NativeMethods.NativeMethods.INPUT
+        if (!form.Visible)
         {
-            type = NativeMethods.NativeMethods.INPUTTYPE.INPUT_MOUSE,
-            data = new NativeMethods.NativeMethods.InputUnion
-            {
-                mi = new NativeMethods.NativeMethods.MOUSEINPUT
-                {
-                    dx = NativeMethods.NativeMethods.CalculateAbsoluteCoordinateX(location.X),
-                    dy = NativeMethods.NativeMethods.CalculateAbsoluteCoordinateY(location.Y),
-                    mouseData = 0,
-                    dwFlags = (uint)NativeMethods.NativeMethods.MOUSE_INPUT_FLAGS.MOUSEEVENTF_MOVE
-                        | (uint)NativeMethods.NativeMethods.MOUSE_INPUT_FLAGS.MOUSEEVENTF_ABSOLUTE,
-                    time = 0,
-                    dwExtraInfo = 0,
-                },
-            },
-        };
-        var inputs = new NativeMethods.NativeMethods.INPUT[] { mouseMoveInput };
-        _ = NativeMethods.NativeMethods.SendInput(1, inputs, NativeMethods.NativeMethods.INPUT.Size);
+            form.Show();
+        }
+
+        form.Thumbnail.Refresh();
     }
 }

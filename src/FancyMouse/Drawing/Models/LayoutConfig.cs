@@ -2,7 +2,7 @@
 
 namespace FancyMouse.Drawing.Models;
 
-internal sealed class LayoutConfig
+public sealed class LayoutConfig
 {
     public LayoutConfig(
         Rectangle virtualScreen,
