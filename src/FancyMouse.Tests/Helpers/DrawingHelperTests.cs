@@ -127,10 +127,12 @@ public static class DrawingHelperTests
             Assert.AreEqual(expected.FormBounds.Y, actual.FormBounds.Y, 0.00001M, "FormBounds.Y");
             Assert.AreEqual(expected.FormBounds.Width, actual.FormBounds.Width, 0.00001M, "FormBounds.Width");
             Assert.AreEqual(expected.FormBounds.Height, actual.FormBounds.Height, 0.00001M, "FormBounds.Height");
+            Assert.AreEqual(expected.FormBounds.ToRectangle(), actual.FormBounds.ToRectangle(), "FormBounds.ToRectangle");
             Assert.AreEqual(expected.PreviewBounds.X, actual.PreviewBounds.X, 0.00001M, "PreviewBounds.X");
             Assert.AreEqual(expected.PreviewBounds.Y, actual.PreviewBounds.Y, 0.00001M, "PreviewBounds.Y");
             Assert.AreEqual(expected.PreviewBounds.Width, actual.PreviewBounds.Width, 0.00001M, "PreviewBounds.Width");
             Assert.AreEqual(expected.PreviewBounds.Height, actual.PreviewBounds.Height, 0.00001M, "PreviewBounds.Height");
+            Assert.AreEqual(expected.PreviewBounds.ToRectangle(), actual.PreviewBounds.ToRectangle(), "PreviewBounds.ToRectangle");
             Assert.AreEqual(expected.ScreenBounds.Count, actual.ScreenBounds.Count, "ScreenBounds.Count");
             for (var i = 0; i < expected.ScreenBounds.Count; i++)
             {
@@ -138,12 +140,14 @@ public static class DrawingHelperTests
                 Assert.AreEqual(expected.ScreenBounds[i].Y, actual.ScreenBounds[i].Y, 0.00001M, $"ScreenBounds[{i}].Y");
                 Assert.AreEqual(expected.ScreenBounds[i].Width, actual.ScreenBounds[i].Width, 0.00001M, $"ScreenBounds[{i}].Width");
                 Assert.AreEqual(expected.ScreenBounds[i].Height, actual.ScreenBounds[i].Height, 0.00001M, $"ScreenBounds[{i}].Height");
+                Assert.AreEqual(expected.ScreenBounds[i].ToRectangle(), actual.ScreenBounds[i].ToRectangle(), "ActivatedScreen.ToRectangle");
             }
 
             Assert.AreEqual(expected.ActivatedScreen.X, actual.ActivatedScreen.X, "ActivatedScreen.X");
             Assert.AreEqual(expected.ActivatedScreen.Y, actual.ActivatedScreen.Y, "ActivatedScreen.Y");
             Assert.AreEqual(expected.ActivatedScreen.Width, actual.ActivatedScreen.Width, "ActivatedScreen.Width");
             Assert.AreEqual(expected.ActivatedScreen.Height, actual.ActivatedScreen.Height, "ActivatedScreen.Height");
+            Assert.AreEqual(expected.ActivatedScreen.ToRectangle(), actual.ActivatedScreen.ToRectangle(), "ActivatedScreen.ToRectangle");
         }
     }
 
