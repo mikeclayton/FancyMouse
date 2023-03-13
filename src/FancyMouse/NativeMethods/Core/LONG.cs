@@ -10,14 +10,19 @@
 /// </remarks>
 internal readonly struct LONG
 {
-    public readonly long Value;
+    public readonly int Value;
 
-    public LONG(long value)
+    public LONG(int value)
     {
         this.Value = value;
     }
 
-    public static implicit operator long(LONG value) => value;
+    public static implicit operator int(LONG value) => value;
 
-    public static implicit operator LONG(long value) => new(value);
+    public static implicit operator LONG(int value) => new(value);
+
+    public override string ToString()
+    {
+        return $"{this.GetType().Name}({this.Value})";
+    }
 }

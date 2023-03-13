@@ -28,8 +28,6 @@ public sealed class PointInfo
 
     public SizeInfo Size => new((int)this.X, (int)this.Y);
 
-    public PointInfo Negate() => new(-this.X, -this.Y);
-
     public PointInfo Scale(decimal scalingFactor) => new(this.X * scalingFactor, this.Y * scalingFactor);
 
     public PointInfo Offset(PointInfo amount) => new(this.X + amount.X, this.Y + amount.Y);

@@ -1,11 +1,8 @@
 using System.Diagnostics;
-using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
-using System.Runtime.CompilerServices;
 using FancyMouse.Drawing;
 using FancyMouse.Drawing.Models;
 using FancyMouse.NativeMethods.Core;
-using FancyMouse.NativeWrappers;
 
 namespace FancyMouse.UI;
 
@@ -31,19 +28,81 @@ internal partial class FancyMouseForm : Form
         if (e.KeyCode == Keys.Escape)
         {
             this.OnDeactivate(EventArgs.Empty);
+            return;
+        }
+
+        var cursorPosition = Cursor.Position;
+
+        var screens = Screen.AllScreens.Select((screen, index) => new { Screen = screen, Index = index + 1 }).ToList();
+        var currentScreen = screens.Single(item => item.Screen.Bounds.Contains(cursorPosition));
+        var targetScreen = default(int?);
+
+        if ((e.KeyCode >= Keys.D1) && (e.KeyCode <= Keys.D9))
+        {
+            // number keys 1-9 - move to the numbered screen
+            var index = e.KeyCode - Keys.D1;
+            if (index < screens.Count)
+            {
+                targetScreen = index;
+            }
+        }
+        else if ((e.KeyCode >= Keys.NumPad1) && (e.KeyCode <= Keys.NumPad9))
+        {
+            // num-pad keys 1-9 - move to the numbered screen
+            var index = e.KeyCode - Keys.NumPad1;
+            if (index < screens.Count)
+            {
+                targetScreen = index;
+            }
+        }
+        else if (e.KeyCode == Keys.P)
+        {
+            // "P" - move to the primary screen
+            targetScreen = screens.Single(item => item.Screen.Primary).Index;
+        }
+        else if (e.KeyCode == Keys.Left)
+        {
+            // move to the previous screen
+            targetScreen = currentScreen.Index == 1
+                ? screens.Count
+                : currentScreen.Index - 1;
+        }
+        else if (e.KeyCode == Keys.Right)
+        {
+            // move to the next screen
+            targetScreen = currentScreen.Index == screens.Count
+                ? 1
+                : currentScreen.Index + 1;
+        }
+        else if (e.KeyCode == Keys.Home)
+        {
+            // move to the first screen
+            targetScreen = 1;
+        }
+        else if (e.KeyCode == Keys.End)
+        {
+            // move to the last screen
+            targetScreen = screens.Count;
+        }
+
+        if (targetScreen.HasValue)
+        {
+            DrawingHelper.JumpCursor(
+                new RectangleInfo(screens[targetScreen.Value - 1].Screen.Bounds).Midpoint);
+            this.OnDeactivate(EventArgs.Empty);
         }
     }
 
     private void FancyMouseForm_Deactivate(object sender, EventArgs e)
     {
-        // dispose the existing image if there is one
-        if (Thumbnail.Image != null)
-        {
-            Thumbnail.Image.Dispose();
-            Thumbnail.Image = null;
-        }
-
         this.Hide();
+
+        if (this.Thumbnail.Image is not null)
+        {
+            var tmp = this.Thumbnail.Image;
+            this.Thumbnail.Image = null;
+            tmp.Dispose();
+        }
     }
 
     private void Thumbnail_Click(object sender, EventArgs e)
@@ -75,14 +134,7 @@ internal partial class FancyMouseForm : Form
             DrawingHelper.SimulateMouseMovementEvent(scaledLocation.ToPoint());
         }
 
-        this.Hide();
-
-        if (this.Thumbnail.Image != null)
-        {
-            var tmp = this.Thumbnail.Image;
-            this.Thumbnail.Image = null;
-            tmp.Dispose();
-        }
+        this.OnDeactivate(EventArgs.Empty);
     }
 
     public void ShowThumbnail()

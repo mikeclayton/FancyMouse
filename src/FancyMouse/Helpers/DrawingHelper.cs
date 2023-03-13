@@ -175,6 +175,44 @@ internal static class DrawingHelper
     }
 
     /// <summary>
+    /// Draw placeholder images for any non-activated screens on the preview.
+    /// Will release the specified device context handle if it needs to draw anything.
+    /// </summary>
+    public static void DrawPreviewPlaceholders2(
+        HDC previewHdc, IEnumerable<RectangleInfo> screenBounds)
+    {
+        // we can exclude the activated screen because we've already draw
+        // the screen capture image for that one on the preview
+        var brush = NativeMethods.Gdi32.CreateSolidBrush(
+            new NativeMethods.Gdi32.COLORREF(0, 0, 0));
+        if (brush.IsNull)
+        {
+            throw new InvalidOperationException(
+                $"{nameof(NativeMethods.Gdi32.CreateSolidBrush)} returned {brush}");
+        }
+
+        foreach (var screen in screenBounds)
+        {
+            var target = new NativeMethods.User32.RECT
+            {
+                left = (int)screen.X,
+                top = (int)screen.Y,
+                right = (int)(screen.X + screen.Width),
+                bottom = (int)(screen.Y + screen.Height),
+            };
+            var result = NativeMethods.User32.FillRect(
+                previewHdc,
+                ref target,
+                brush);
+            if (result == 0)
+            {
+                throw new InvalidOperationException(
+                    $"{nameof(Gdi32.SetStretchBltMode)} returned {result}");
+            }
+        }
+    }
+
+    /// <summary>
     /// Draws screen captures from the specified desktop handle onto the target device context.
     /// </summary>
     public static void DrawPreviewScreen(

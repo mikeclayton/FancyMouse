@@ -36,8 +36,6 @@ public sealed class SizeInfo
 
     public RectangleInfo PlaceAt(decimal x, decimal y) => new(x, y, this.Width, this.Height);
 
-    public SizeInfo Scale(decimal scalingFactor) => new(this.Width * scalingFactor, this.Height * scalingFactor);
-
     public SizeInfo ScaleToFit(SizeInfo bounds)
     {
         var widthRatio = bounds.Width / this.Width;
