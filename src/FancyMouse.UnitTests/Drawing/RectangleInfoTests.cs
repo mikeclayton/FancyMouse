@@ -1,7 +1,7 @@
 ﻿using FancyMouse.Drawing.Models;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace FancyMouse.Helpers.Tests;
+namespace FancyMouse.UnitTests.Drawing;
 
 [TestClass]
 public static class RectangleInfoTests

@@ -1,9 +1,9 @@
 ﻿using System.Drawing;
-using FancyMouse.Drawing;
 using FancyMouse.Drawing.Models;
+using FancyMouse.Helpers;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace FancyMouse.Helpers.Tests;
+namespace FancyMouse.UnitTests.Helpers;
 
 [TestClass]
 public static class DrawingHelperTests

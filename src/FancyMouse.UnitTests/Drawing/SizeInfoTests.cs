@@ -1,7 +1,7 @@
 ﻿using FancyMouse.Drawing.Models;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace FancyMouse.Tests.Drawing;
+namespace FancyMouse.UnitTests.Drawing;
 
 public sealed class SizeInfoTests
 {

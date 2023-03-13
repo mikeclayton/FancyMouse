@@ -1,4 +1,4 @@
 ﻿using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("FancyMouse.PerfTests")]
-[assembly: InternalsVisibleTo("FancyMouse.Tests")]
+[assembly: InternalsVisibleTo("FancyMouse.UnitTests")]
