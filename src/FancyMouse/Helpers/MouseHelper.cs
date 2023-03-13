@@ -58,24 +58,24 @@ internal static class MouseHelper
     /// </remarks>
     public static void SimulateMouseMovementEvent(Point location)
     {
-        var mouseMoveInput = new NativeMethods.NativeMethods.INPUT
+        var mouseMoveInput = new NativeMethods.INPUT
         {
-            type = NativeMethods.NativeMethods.INPUTTYPE.INPUT_MOUSE,
-            data = new NativeMethods.NativeMethods.InputUnion
+            type = NativeMethods.INPUTTYPE.INPUT_MOUSE,
+            data = new NativeMethods.InputUnion
             {
-                mi = new NativeMethods.NativeMethods.MOUSEINPUT
+                mi = new NativeMethods.MOUSEINPUT
                 {
-                    dx = NativeMethods.NativeMethods.CalculateAbsoluteCoordinateX(location.X),
-                    dy = NativeMethods.NativeMethods.CalculateAbsoluteCoordinateY(location.Y),
+                    dx = NativeMethods.CalculateAbsoluteCoordinateX(location.X),
+                    dy = NativeMethods.CalculateAbsoluteCoordinateY(location.Y),
                     mouseData = 0,
-                    dwFlags = (uint)NativeMethods.NativeMethods.MOUSE_INPUT_FLAGS.MOUSEEVENTF_MOVE
-                        | (uint)NativeMethods.NativeMethods.MOUSE_INPUT_FLAGS.MOUSEEVENTF_ABSOLUTE,
+                    dwFlags = (uint)NativeMethods.MOUSE_INPUT_FLAGS.MOUSEEVENTF_MOVE
+                        | (uint)NativeMethods.MOUSE_INPUT_FLAGS.MOUSEEVENTF_ABSOLUTE,
                     time = 0,
                     dwExtraInfo = 0,
                 },
             },
         };
-        var inputs = new NativeMethods.NativeMethods.INPUT[] { mouseMoveInput };
-        _ = NativeMethods.NativeMethods.SendInput(1, inputs, NativeMethods.NativeMethods.INPUT.Size);
+        var inputs = new NativeMethods.INPUT[] { mouseMoveInput };
+        _ = NativeMethods.SendInput(1, inputs, NativeMethods.INPUT.Size);
     }
 }

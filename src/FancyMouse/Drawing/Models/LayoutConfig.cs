@@ -2,6 +2,9 @@
 
 namespace FancyMouse.Drawing.Models;
 
+/// <summary>
+/// Represents a collection of values needed for calculating the MainForm layout.
+/// </summary>
 public sealed class LayoutConfig
 {
     public LayoutConfig(
@@ -58,6 +61,9 @@ public sealed class LayoutConfig
         get;
     }
 
+    /// <summary>
+    /// Gets the index of the screen the cursor was on when the form was activated.
+    /// </summary>
     public int ActivatedScreen
     {
         get;

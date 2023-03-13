@@ -5,7 +5,7 @@
 // see https://raw.githubusercontent.com/microsoft/PowerToys/140cdbb88b208bb8b7e17f1d144b59cb7230ddd3/src/modules/MouseUtils/MouseJumpUI/Helpers/NativeMethods.cs
 using System.Runtime.InteropServices;
 
-namespace FancyMouse.NativeMethods;
+namespace FancyMouse.Helpers;
 
 // Win32 functions required for temporary workaround for issue #1273
 internal static class NativeMethods

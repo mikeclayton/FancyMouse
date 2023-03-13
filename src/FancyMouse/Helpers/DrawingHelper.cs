@@ -2,7 +2,6 @@
 using FancyMouse.Drawing.Models;
 using FancyMouse.NativeMethods.Core;
 using FancyMouse.NativeWrappers;
-using FancyMouse.UI;
 
 namespace FancyMouse.Helpers;
 
@@ -72,7 +71,7 @@ internal static class DrawingHelper
     /// Resize and position the specified form.
     /// </summary>
     public static void PositionForm(
-        FancyMouseForm form, RectangleInfo formBounds)
+        Form form, RectangleInfo formBounds)
     {
         // note - do this in two steps rather than "this.Bounds = formBounds" as there
         // appears to be an issue in WinForms with dpi scaling even when using PerMonitorV2,
@@ -142,7 +141,7 @@ internal static class DrawingHelper
         if (previewHdc.IsNull)
         {
             previewHdc = new HDC(previewGraphics.GetHdc());
-            _ = Gdi32.SetStretchBltMode(previewHdc, NativeMethods.Gdi32.STRETCH_BLT_MODE.STRETCH_HALFTONE);
+            _ = Gdi32.SetStretchBltMode(previewHdc, FancyMouse.NativeMethods.Gdi32.STRETCH_BLT_MODE.STRETCH_HALFTONE);
         }
     }
 
@@ -183,24 +182,24 @@ internal static class DrawingHelper
     {
         // we can exclude the activated screen because we've already draw
         // the screen capture image for that one on the preview
-        var brush = NativeMethods.Gdi32.CreateSolidBrush(
-            new NativeMethods.Gdi32.COLORREF(0, 0, 0));
+        var brush = FancyMouse.NativeMethods.Gdi32.CreateSolidBrush(
+            new FancyMouse.NativeMethods.Gdi32.COLORREF(0, 0, 0));
         if (brush.IsNull)
         {
             throw new InvalidOperationException(
-                $"{nameof(NativeMethods.Gdi32.CreateSolidBrush)} returned {brush}");
+                $"{nameof(FancyMouse.NativeMethods.Gdi32.CreateSolidBrush)} returned {brush}");
         }
 
         foreach (var screen in screenBounds)
         {
-            var target = new NativeMethods.User32.RECT
+            var target = new FancyMouse.NativeMethods.User32.RECT
             {
                 left = (int)screen.X,
                 top = (int)screen.Y,
                 right = (int)(screen.X + screen.Width),
                 bottom = (int)(screen.Y + screen.Height),
             };
-            var result = NativeMethods.User32.FillRect(
+            var result = FancyMouse.NativeMethods.User32.FillRect(
                 previewHdc,
                 ref target,
                 brush);
@@ -234,7 +233,7 @@ internal static class DrawingHelper
             source.Y,
             source.Width,
             source.Height,
-            NativeMethods.Gdi32.ROP_CODE.SRCCOPY);
+            FancyMouse.NativeMethods.Gdi32.ROP_CODE.SRCCOPY);
     }
 
     /// <summary>
@@ -261,7 +260,7 @@ internal static class DrawingHelper
                 source.Y,
                 source.Width,
                 source.Height,
-                NativeMethods.Gdi32.ROP_CODE.SRCCOPY);
+                FancyMouse.NativeMethods.Gdi32.ROP_CODE.SRCCOPY);
         }
     }
 }
