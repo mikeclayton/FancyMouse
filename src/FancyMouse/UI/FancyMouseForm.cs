@@ -87,7 +87,7 @@ internal partial class FancyMouseForm : Form
 
         if (targetScreen.HasValue)
         {
-            DrawingHelper.JumpCursor(
+            MouseHelper.JumpCursor(
                 new RectangleInfo(screens[targetScreen.Value - 1].Screen.Bounds).Midpoint);
             this.OnDeactivate(EventArgs.Empty);
         }
@@ -125,13 +125,13 @@ internal partial class FancyMouseForm : Form
         if (mouseEventArgs.Button == MouseButtons.Left)
         {
             // plain click - move mouse pointer
-            var scaledLocation = DrawingHelper.GetJumpLocation(
+            var scaledLocation = MouseHelper.GetJumpLocation(
                 new PointInfo(mouseEventArgs.X, mouseEventArgs.Y),
                 new SizeInfo(this.Thumbnail.Size),
                 new RectangleInfo(SystemInformation.VirtualScreen));
             logger.Info($"scaled location = {scaledLocation}");
-            DrawingHelper.JumpCursor(scaledLocation);
-            DrawingHelper.SimulateMouseMovementEvent(scaledLocation.ToPoint());
+            MouseHelper.JumpCursor(scaledLocation);
+            MouseHelper.SimulateMouseMovementEvent(scaledLocation.ToPoint());
         }
 
         this.OnDeactivate(EventArgs.Empty);
