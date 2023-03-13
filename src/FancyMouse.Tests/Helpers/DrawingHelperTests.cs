@@ -121,6 +121,13 @@ public static class DrawingHelperTests
         [DynamicData(nameof(GetTestCases), DynamicDataSourceType.Method)]
         public void RunTestCases(TestCase data)
         {
+            // note - even if values are within 0.0001M of each other they could
+            // still round to different values - e.g.
+            // (int)1279.999999999999 -> 1279
+            // vs
+            // (int)1280.000000000000 -> 1280
+            // so we'll compare the raw values, *and* convert to an int-based
+            // Rectangle to compare rounded values
             var actual = DrawingHelper.CalculateLayoutInfo(data.LayoutConfig);
             var expected = data.ExpectedResult;
             Assert.AreEqual(expected.FormBounds.X, actual.FormBounds.X, 0.00001M, "FormBounds.X");
