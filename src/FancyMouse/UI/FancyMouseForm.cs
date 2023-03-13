@@ -33,6 +33,7 @@ internal partial class FancyMouseForm : Form
 
         var cursorPosition = Cursor.Position;
 
+        // pair screens up with their screen number in "System > Display"
         var screens = Screen.AllScreens.Select((screen, index) => new { Screen = screen, Index = index + 1 }).ToList();
         var currentScreen = screens.Single(item => item.Screen.Bounds.Contains(cursorPosition));
         var targetScreen = default(int?);
@@ -40,19 +41,19 @@ internal partial class FancyMouseForm : Form
         if ((e.KeyCode >= Keys.D1) && (e.KeyCode <= Keys.D9))
         {
             // number keys 1-9 - move to the numbered screen
-            var index = e.KeyCode - Keys.D1;
-            if (index < screens.Count)
+            var screenNumber = e.KeyCode - Keys.D0;
+            if (screenNumber <= screens.Count)
             {
-                targetScreen = index;
+                targetScreen = screenNumber;
             }
         }
         else if ((e.KeyCode >= Keys.NumPad1) && (e.KeyCode <= Keys.NumPad9))
         {
             // num-pad keys 1-9 - move to the numbered screen
-            var index = e.KeyCode - Keys.NumPad1;
-            if (index < screens.Count)
+            var screenNumber = e.KeyCode - Keys.NumPad0;
+            if (screenNumber <= screens.Count)
             {
-                targetScreen = index;
+                targetScreen = screenNumber;
             }
         }
         else if (e.KeyCode == Keys.P)
