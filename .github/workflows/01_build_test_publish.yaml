@@ -60,7 +60,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: app.zip
-          path: src/.build/app
+          path: .build/app
 
       - name: dotnet tool jb inspectcode
         working-directory: ${{ env.BUILD_PATH }}
@@ -70,11 +70,10 @@ jobs:
           dotnet tool run jb inspectcode "./FancyMouse.sln" -output="../.build/out/inspectcode.xml" --no-build
 
       - name: upload jb-inspectcode.xml
-        working-directory: ${{ env.BUILD_PATH }}
         uses: actions/upload-artifact@v3
         with:
           name: jb-inspectcode.xml
-          path: ../.build/out/jb-inspectcode.xml
+          path: .build/out/jb-inspectcode.xml
 
       #- name: zip
       #  working-directory: ${{ env.BUILD_PATH }}
