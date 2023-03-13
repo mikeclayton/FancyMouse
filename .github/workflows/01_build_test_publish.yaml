@@ -60,7 +60,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: app.zip
-          path: ${{ env:BUILD_PATH }}/${{ env:PUBLISH_PATH }}
+          path: ${{ env:BUILD_PATH }}/${{ env:PUBLISH_PATH }}/**
 
       - name: dotnet tool jb inspectcode
         working-directory: ${{ env.BUILD_PATH }}
