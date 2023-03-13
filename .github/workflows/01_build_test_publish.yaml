@@ -57,11 +57,10 @@ jobs:
         run: dotnet publish "./FancyMouse/FancyMouse.csproj" --configuration "$CONFIG_NAME" --no-build --output "$PUBLISH_PATH"
 
       - name: upload binaries
-        working-directory: ${{ env.BUILD_PATH }}
         uses: actions/upload-artifact@v3
         with:
           name: app.zip
-          path: ${{ env:PUBLISH_PATH }}
+          path: ${{ env:BUILD_PATH }}/${{ env:PUBLISH_PATH }}
 
       - name: dotnet tool jb inspectcode
         working-directory: ${{ env.BUILD_PATH }}
