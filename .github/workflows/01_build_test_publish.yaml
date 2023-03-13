@@ -1,4 +1,4 @@
-b wrname: "01 - Build, Test, Publish"
+name: "01 - Build, Test, Publish"
 
 on:
   push:
