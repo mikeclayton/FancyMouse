@@ -41,7 +41,7 @@ internal static class DrawingHelper
 
         // position the drawing bounds inside the preview border
         var drawingBounds = layoutConfig.VirtualScreen.Size
-            .Scale(scalingRatio)
+            .ScaleToFit(maxDrawingSize)
             .PlaceAt(layoutConfig.PreviewPadding.Left, layoutConfig.PreviewPadding.Top);
 
         // now we know the size of the drawing area we can work out the preview size
