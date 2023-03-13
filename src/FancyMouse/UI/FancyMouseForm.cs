@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Drawing.Imaging;
-using FancyMouse.Drawing;
 using FancyMouse.Drawing.Models;
+using FancyMouse.Helpers;
 using FancyMouse.NativeMethods.Core;
 
 namespace FancyMouse.UI;

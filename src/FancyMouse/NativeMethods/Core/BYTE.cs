@@ -17,7 +17,7 @@ internal readonly struct BYTE
         this.Value = value;
     }
 
-    public static implicit operator byte(BYTE value) => value;
+    public static implicit operator byte(BYTE value) => value.Value;
 
     public static implicit operator BYTE(byte value) => new(value);
 }

@@ -12,7 +12,7 @@ internal readonly struct DWORD
         this.Value = value;
     }
 
-    public static implicit operator uint(DWORD value) => value;
+    public static implicit operator uint(DWORD value) => value.Value;
 
     public static implicit operator DWORD(uint value) => new(value);
 }

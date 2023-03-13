@@ -16,7 +16,7 @@ internal readonly struct HBRUSH
 
     public bool IsNull => this.Value == HBRUSH.Null.Value;
 
-    public static implicit operator IntPtr(HBRUSH value) => value;
+    public static implicit operator IntPtr(HBRUSH value) => value.Value;
 
     public static implicit operator HBRUSH(IntPtr value) => new(value);
 }

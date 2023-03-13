@@ -17,7 +17,7 @@ internal readonly struct ULONG
         this.Value = value;
     }
 
-    public static implicit operator ulong(ULONG value) => value;
+    public static implicit operator ulong(ULONG value) => value.Value;
 
     public static implicit operator ULONG(ulong value) => new(value);
 }

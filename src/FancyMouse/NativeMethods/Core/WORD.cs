@@ -17,7 +17,7 @@ internal readonly struct WORD
         this.Value = value;
     }
 
-    public static implicit operator ulong(WORD value) => value;
+    public static implicit operator ulong(WORD value) => value.Value;
 
     public static implicit operator WORD(ushort value) => new(value);
 }

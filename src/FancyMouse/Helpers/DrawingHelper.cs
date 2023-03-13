@@ -4,7 +4,7 @@ using FancyMouse.NativeMethods.Core;
 using FancyMouse.NativeWrappers;
 using FancyMouse.UI;
 
-namespace FancyMouse.Drawing;
+namespace FancyMouse.Helpers;
 
 internal static class DrawingHelper
 {

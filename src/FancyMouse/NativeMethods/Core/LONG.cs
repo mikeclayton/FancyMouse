@@ -17,7 +17,7 @@ internal readonly struct LONG
         this.Value = value;
     }
 
-    public static implicit operator int(LONG value) => value;
+    public static implicit operator int(LONG value) => value.Value;
 
     public static implicit operator LONG(int value) => new(value);
 

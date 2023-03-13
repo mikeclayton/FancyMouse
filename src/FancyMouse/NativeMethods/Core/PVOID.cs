@@ -17,7 +17,7 @@ internal readonly struct PVOID
         this.Value = value;
     }
 
-    public static implicit operator IntPtr(PVOID value) => value;
+    public static implicit operator IntPtr(PVOID value) => value.Value;
 
     public static implicit operator PVOID(IntPtr value) => new(value);
 }
