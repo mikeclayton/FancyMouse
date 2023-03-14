@@ -59,7 +59,7 @@ jobs:
       - name: upload binaries
         uses: actions/upload-artifact@v3
         with:
-          name: app.zip
+          name: app
           path: .build/app
 
       - name: dotnet tool jb inspectcode
