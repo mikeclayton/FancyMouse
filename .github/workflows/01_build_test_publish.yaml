@@ -67,7 +67,7 @@ jobs:
         run: |
           dotnet new tool-manifest
           dotnet tool install jetbrains.resharper.globaltools
-          dotnet tool run jb inspectcode "./FancyMouse.sln" -output="../.build/out/inspectcode.xml" --no-build
+          dotnet tool run jb inspectcode "./FancyMouse.sln" -output="../.build/out/jb-inspectcode.xml" --no-build
 
       - name: upload jb-inspectcode.xml
         uses: actions/upload-artifact@v3
