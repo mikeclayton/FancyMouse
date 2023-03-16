@@ -16,6 +16,12 @@ public sealed class LayoutConfig
         Padding formPadding,
         Padding previewPadding)
     {
+        // make sure the virtual screen entirely contains all of the individual screen bounds
+        ArgumentNullException.ThrowIfNull(screenBounds);
+        if (screenBounds.Any(screen => !virtualScreen.Contains(screen))) {
+            throw new ArgumentException($"'{nameof(virtualScreen)}' must contain all of the screens in '{nameof(screenBounds)}'", nameof(virtualScreen));
+        }
+
         this.VirtualScreen = new RectangleInfo(virtualScreen);
         this.ScreenBounds = new(
             (screenBounds ?? throw new ArgumentNullException(nameof(screenBounds)))

@@ -33,7 +33,7 @@ internal partial class FancyMouseForm : Form
 
         var cursorPosition = Cursor.Position;
 
-        // pair screens up with their screen number in "System > Display"
+        // map screens to their screen number in "System > Display"
         var screens = Screen.AllScreens.Select((screen, index) => new { Screen = screen, Index = index + 1 }).ToList();
         var currentScreen = screens.Single(item => item.Screen.Bounds.Contains(cursorPosition));
         var targetScreen = default(int?);
