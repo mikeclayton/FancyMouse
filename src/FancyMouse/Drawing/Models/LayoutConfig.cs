@@ -18,7 +18,8 @@ public sealed class LayoutConfig
     {
         // make sure the virtual screen entirely contains all of the individual screen bounds
         ArgumentNullException.ThrowIfNull(screenBounds);
-        if (screenBounds.Any(screen => !virtualScreen.Contains(screen))) {
+        if (screenBounds.Any(screen => !virtualScreen.Contains(screen)))
+        {
             throw new ArgumentException($"'{nameof(virtualScreen)}' must contain all of the screens in '{nameof(screenBounds)}'", nameof(virtualScreen));
         }
 

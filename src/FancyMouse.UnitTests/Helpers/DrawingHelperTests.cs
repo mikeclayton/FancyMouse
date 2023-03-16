@@ -28,7 +28,6 @@ public static class DrawingHelperTests
         {
             // happy path - check the preview form is shown
             // at the correct size and position on a single screen
-            // multi-monitor desktop
             //
             // +----------------+
             // |                |
@@ -104,7 +103,6 @@ public static class DrawingHelperTests
             // with a 5px form padding border:
             //
             // ((decimal)1014 / 7168) * 7168 = 1014.0000000000000000000000002
-            // multi-monitor desktop
             //
             // +----------------+
             // |                |
