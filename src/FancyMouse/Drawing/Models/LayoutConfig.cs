@@ -25,9 +25,7 @@ public sealed class LayoutConfig
 
         this.VirtualScreen = new RectangleInfo(virtualScreen);
         this.ScreenBounds = new(
-            (screenBounds ?? throw new ArgumentNullException(nameof(screenBounds)))
-                .Select(screen => new RectangleInfo(screen))
-                .ToList());
+            screenBounds.Select(screen => new RectangleInfo(screen)).ToList());
         this.ActivatedLocation = new(activatedLocation);
         this.ActivatedScreen = activatedScreen;
         this.MaximumFormSize = new(maximumFormSize);
