@@ -2,7 +2,7 @@ using System.Diagnostics;
 using System.Drawing.Imaging;
 using FancyMouse.Drawing.Models;
 using FancyMouse.Helpers;
-using FancyMouse.NativeMethods.Core;
+using static FancyMouse.NativeMethods.Core;
 
 namespace FancyMouse.UI;
 
@@ -132,6 +132,8 @@ internal partial class FancyMouseForm : Form
                 new RectangleInfo(SystemInformation.VirtualScreen));
             logger.Info($"scaled location = {scaledLocation}");
             MouseHelper.JumpCursor(scaledLocation);
+
+            // required for temporary workaround for issue #1273
             MouseHelper.SimulateMouseMovementEvent(scaledLocation.ToPoint());
         }
 

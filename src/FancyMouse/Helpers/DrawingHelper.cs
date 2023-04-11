@@ -1,7 +1,7 @@
 ﻿using System.Drawing.Drawing2D;
 using FancyMouse.Drawing.Models;
-using FancyMouse.NativeMethods.Core;
-using FancyMouse.NativeWrappers;
+using FancyMouse.NativeMethods;
+using static FancyMouse.NativeMethods.Core;
 
 namespace FancyMouse.Helpers;
 
@@ -118,6 +118,11 @@ internal static class DrawingHelper
         if (desktopHdc.IsNull)
         {
             desktopHdc = User32.GetWindowDC(desktopHwnd);
+            if (desktopHdc.IsNull)
+            {
+                throw new InvalidOperationException(
+                    $"{nameof(User32.GetWindowDC)} returned null");
+            }
         }
     }
 
@@ -125,7 +130,12 @@ internal static class DrawingHelper
     {
         if (!desktopHwnd.IsNull && !desktopHdc.IsNull)
         {
-            _ = User32.ReleaseDC(desktopHwnd, desktopHdc);
+            var result = User32.ReleaseDC(desktopHwnd, desktopHdc);
+            if (result == 0)
+            {
+                throw new InvalidOperationException(
+                    $"{nameof(User32.ReleaseDC)} returned {result}");
+            }
         }
 
         desktopHwnd = HWND.Null;
@@ -141,7 +151,12 @@ internal static class DrawingHelper
         if (previewHdc.IsNull)
         {
             previewHdc = new HDC(previewGraphics.GetHdc());
-            _ = Gdi32.SetStretchBltMode(previewHdc, FancyMouse.NativeMethods.Gdi32.STRETCH_BLT_MODE.STRETCH_HALFTONE);
+            var result = Gdi32.SetStretchBltMode(previewHdc, Gdi32.STRETCH_BLT_MODE.STRETCH_HALFTONE);
+            if (result == 0)
+            {
+                throw new InvalidOperationException(
+                    $"{nameof(Gdi32.SetStretchBltMode)} returned {result}");
+            }
         }
     }
 
@@ -182,24 +197,22 @@ internal static class DrawingHelper
     {
         // we can exclude the activated screen because we've already draw
         // the screen capture image for that one on the preview
-        var brush = FancyMouse.NativeMethods.Gdi32.CreateSolidBrush(
-            new FancyMouse.NativeMethods.Gdi32.COLORREF(0, 0, 0));
+        var brush = Gdi32.CreateSolidBrush(
+            new Gdi32.COLORREF(0, 0, 0));
         if (brush.IsNull)
         {
             throw new InvalidOperationException(
-                $"{nameof(FancyMouse.NativeMethods.Gdi32.CreateSolidBrush)} returned {brush}");
+                $"{nameof(Gdi32.CreateSolidBrush)} returned {brush}");
         }
 
         foreach (var screen in screenBounds)
         {
-            var target = new FancyMouse.NativeMethods.User32.RECT
-            {
-                left = (int)screen.X,
-                top = (int)screen.Y,
-                right = (int)(screen.X + screen.Width),
-                bottom = (int)(screen.Y + screen.Height),
-            };
-            var result = FancyMouse.NativeMethods.User32.FillRect(
+            var target = new RECT(
+                left: (int)screen.X,
+                top: (int)screen.Y,
+                right: (int)screen.Right,
+                bottom: (int)screen.Bottom);
+            var result = User32.FillRect(
                 previewHdc,
                 ref target,
                 brush);
@@ -222,7 +235,7 @@ internal static class DrawingHelper
     {
         var source = sourceBounds.ToRectangle();
         var target = targetBounds.ToRectangle();
-        _ = Gdi32.StretchBlt(
+        var result = Gdi32.StretchBlt(
             targetHdc,
             target.X,
             target.Y,
@@ -233,7 +246,12 @@ internal static class DrawingHelper
             source.Y,
             source.Width,
             source.Height,
-            FancyMouse.NativeMethods.Gdi32.ROP_CODE.SRCCOPY);
+            Gdi32.ROP_CODE.SRCCOPY);
+        if (!result)
+        {
+            throw new InvalidOperationException(
+                $"{nameof(Gdi32.StretchBlt)} returned {result.Value}");
+        }
     }
 
     /// <summary>
@@ -249,7 +267,7 @@ internal static class DrawingHelper
         {
             var source = sourceBounds[i].ToRectangle();
             var target = targetBounds[i].ToRectangle();
-            _ = Gdi32.StretchBlt(
+            var result = Gdi32.StretchBlt(
                 targetHdc,
                 target.X,
                 target.Y,
@@ -260,7 +278,12 @@ internal static class DrawingHelper
                 source.Y,
                 source.Width,
                 source.Height,
-                FancyMouse.NativeMethods.Gdi32.ROP_CODE.SRCCOPY);
+                Gdi32.ROP_CODE.SRCCOPY);
+            if (!result)
+            {
+                throw new InvalidOperationException(
+                    $"{nameof(Gdi32.StretchBlt)} returned {result.Value}");
+            }
         }
     }
 }

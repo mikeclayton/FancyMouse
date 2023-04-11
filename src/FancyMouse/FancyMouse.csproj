@@ -42,10 +42,11 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="7.0.0" />
-    <PackageReference Include="NLog" Version="5.1.2" />
+    <PackageReference Include="NLog" Version="5.1.3" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\FancyMouse.NativeMethods\FancyMouse.NativeMethods.csproj" />
     <ProjectReference Include="..\FancyMouse.WindowsHotKeys\FancyMouse.WindowsHotKeys.csproj" />
   </ItemGroup>
 

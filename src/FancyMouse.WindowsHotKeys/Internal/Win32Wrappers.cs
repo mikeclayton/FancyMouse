@@ -1,7 +1,9 @@
 ﻿using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
-using FancyMouse.WindowsHotKeys.Interop;
+using FancyMouse.NativeMethods;
+using static FancyMouse.NativeMethods.Core;
+using static FancyMouse.NativeMethods.User32;
 
 namespace FancyMouse.WindowsHotKeys.Internal;
 
@@ -25,11 +27,11 @@ internal static class Win32Wrappers
     /// See https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-postmessagew
     /// </remarks>
     public static int PostThreadMessageW(
-        int idThread,
+        DWORD idThread,
         [SuppressMessage("SA1313", "SA1313:ParameterNamesMustBeginWithLowerCaseLetter", Justification = "Parameter name matches Win32 api")]
-        User32.WindowMessages Msg,
-        IntPtr wParam,
-        IntPtr lParam)
+        MESSAGE_TYPE Msg,
+        WPARAM wParam,
+        LPARAM lParam)
     {
         var result = User32.PostThreadMessageW(
             idThread, Msg, wParam, lParam);
@@ -176,24 +178,24 @@ internal static class Win32Wrappers
     /// <remarks>
     /// See https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-createwindowexw
     /// </remarks>
-    public static IntPtr CreateWindowEx(
-        int dwExStyle,
-        string lpClassName,
-        string lpWindowName,
-        uint dwStyle,
+    public static HWND CreateWindowEx(
+        User32.WINDOW_EX_STYLE dwExStyle,
+        LPCWSTR lpClassName,
+        LPCWSTR lpWindowName,
+        WINDOW_STYLE dwStyle,
         int x,
         int y,
         int nWidth,
         int nHeight,
-        IntPtr hWndParent,
-        IntPtr hMenu,
-        IntPtr hInstance,
-        IntPtr lpParam)
+        HWND hWndParent,
+        HMENU hMenu,
+        HINSTANCE hInstance,
+        LPVOID lpParam)
     {
         var result = User32.CreateWindowExW(
             dwExStyle, lpClassName, lpWindowName, dwStyle, x, y, nWidth, nHeight, hWndParent, hMenu, hInstance, lpParam);
 
-        if (result == 0)
+        if (result.IsNull)
         {
             var lastWin32Error = Marshal.GetLastWin32Error();
             throw new InvalidOperationException(
@@ -233,16 +235,16 @@ internal static class Win32Wrappers
     /// <remarks>
     /// See https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-registerhotkey
     /// </remarks>
-    public static int RegisterHotKey(
-        IntPtr hWnd,
+    public static BOOL RegisterHotKey(
+        HWND hWnd,
         int id,
-        User32.RegisterHotKeyModifiers fsModifiers,
-        uint vk)
+        HOT_KEY_MODIFIERS fsModifiers,
+        UINT vk)
     {
         var result = User32.RegisterHotKey(
             hWnd, id, fsModifiers, vk);
 
-        if (result == 0)
+        if (!result)
         {
             var lastWin32Error = Marshal.GetLastWin32Error();
             throw new InvalidOperationException(
@@ -271,14 +273,14 @@ internal static class Win32Wrappers
     /// <remarks>
     /// See https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-unregisterhotkey
     /// </remarks>
-    public static int UnregisterHotKey(
-        IntPtr hWnd,
+    public static BOOL UnregisterHotKey(
+        HWND hWnd,
         int id)
     {
         var result = User32.UnregisterHotKey(
             hWnd, id);
 
-        if (result == 0)
+        if (!result)
         {
             var lastWin32Error = Marshal.GetLastWin32Error();
             throw new InvalidOperationException(
