@@ -31,7 +31,7 @@ internal static partial class User32
         private static IntPtr ToPtr(MSG value)
         {
             var ptr = Marshal.AllocHGlobal(MSG.Size);
-            Marshal.StructureToPtr(value, ptr, true);
+            Marshal.StructureToPtr(value, ptr, false);
             return ptr;
         }
 

@@ -46,7 +46,7 @@ internal static partial class User32
             var size = INPUT.Size;
             foreach (var value in values)
             {
-                Marshal.StructureToPtr(value, ptr, true);
+                Marshal.StructureToPtr(value, ptr, false);
                 ptr += size;
             }
 

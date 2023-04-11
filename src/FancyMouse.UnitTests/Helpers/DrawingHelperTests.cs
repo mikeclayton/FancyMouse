@@ -1,6 +1,7 @@
 ﻿using System.Drawing;
-using FancyMouse.Drawing.Models;
 using FancyMouse.Helpers;
+using FancyMouse.Models.Drawing;
+using FancyMouse.Models.Layout;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace FancyMouse.UnitTests.Helpers;
@@ -9,9 +10,9 @@ namespace FancyMouse.UnitTests.Helpers;
 public static class DrawingHelperTests
 {
     [TestClass]
-    public class CalculateLayoutInfoTests
+    public sealed class CalculateLayoutInfoTests
     {
-        public class TestCase
+        public sealed class TestCase
         {
             public TestCase(LayoutConfig layoutConfig, LayoutInfo expectedResult)
             {
@@ -36,12 +37,13 @@ public static class DrawingHelperTests
             // +----------------+
             var layoutConfig = new LayoutConfig(
                 virtualScreen: new(0, 0, 5120, 1440),
-                screenBounds: new List<Rectangle>
+                screenBounds: new List<RectangleInfo>
                 {
                     new(0, 0, 5120, 1440),
                 },
                 activatedLocation: new(5120 / 2, 1440 / 2),
-                activatedScreen: 0,
+                activatedScreenIndex: 0,
+                activatedScreenNumber: 1,
                 maximumFormSize: new(1600, 1200),
                 formPadding: new(5, 5, 5, 5),
                 previewPadding: new(0, 0, 0, 0));
@@ -70,13 +72,14 @@ public static class DrawingHelperTests
             //         +----------------+
             layoutConfig = new LayoutConfig(
                 virtualScreen: new(-1920, -472, 7040, 1912),
-                screenBounds: new List<Rectangle>
+                screenBounds: new List<RectangleInfo>
                 {
                     new(-1920, -472, 1920, 1080),
                     new(0, 0, 5120, 1440),
                 },
                 activatedLocation: new(-960, -236),
-                activatedScreen: 0,
+                activatedScreenNumber: 0,
+                activatedScreenIndex: 1,
                 maximumFormSize: new(1600, 1200),
                 formPadding: new(5, 5, 5, 5),
                 previewPadding: new(0, 0, 0, 0));
@@ -111,13 +114,14 @@ public static class DrawingHelperTests
             // +----------------+-------+
             layoutConfig = new LayoutConfig(
                 virtualScreen: new(0, 0, 7168, 1440),
-                screenBounds: new List<Rectangle>
+                screenBounds: new List<RectangleInfo>
                 {
                     new(6144, 0, 1024, 768),
                     new(0, 0, 6144, 1440),
                 },
                 activatedLocation: new(6656, 384),
-                activatedScreen: 0,
+                activatedScreenIndex: 0,
+                activatedScreenNumber: 1,
                 maximumFormSize: new(1600, 1200),
                 formPadding: new(5, 5, 5, 5),
                 previewPadding: new(0, 0, 0, 0));
@@ -147,13 +151,14 @@ public static class DrawingHelperTests
             // +----------------+-------+
             layoutConfig = new LayoutConfig(
                 virtualScreen: new(0, 0, 7424, 1440),
-                screenBounds: new List<Rectangle>
+                screenBounds: new List<RectangleInfo>
                 {
                     new(6144, 0, 1280, 768),
                     new(0, 0, 6144, 1440),
                 },
                 activatedLocation: new(6784, 384),
-                activatedScreen: 0,
+                activatedScreenIndex: 0,
+                activatedScreenNumber: 1,
                 maximumFormSize: new(1600, 1200),
                 formPadding: new(5, 5, 5, 5),
                 previewPadding: new(0, 0, 0, 0));
@@ -186,7 +191,7 @@ public static class DrawingHelperTests
             // (int)1280.000000000000 -> 1280
             // so we'll compare the raw values, *and* convert to an int-based
             // Rectangle to compare rounded values
-            var actual = DrawingHelper.CalculateLayoutInfo(data.LayoutConfig);
+            var actual = LayoutHelper.CalculateLayoutInfo(data.LayoutConfig);
             var expected = data.ExpectedResult;
             Assert.AreEqual(expected.FormBounds.X, actual.FormBounds.X, 0.00001M, "FormBounds.X");
             Assert.AreEqual(expected.FormBounds.Y, actual.FormBounds.Y, 0.00001M, "FormBounds.Y");

@@ -1,4 +1,4 @@
-﻿using FancyMouse.Drawing.Models;
+﻿using FancyMouse.Models.Drawing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace FancyMouse.UnitTests.Drawing;
@@ -7,9 +7,9 @@ namespace FancyMouse.UnitTests.Drawing;
 public static class RectangleInfoTests
 {
     [TestClass]
-    public class CenterTests
+    public sealed class CenterTests
     {
-        public class TestCase
+        public sealed class TestCase
         {
             public TestCase(RectangleInfo rectangle, PointInfo point, RectangleInfo expectedResult)
             {
@@ -58,9 +58,9 @@ public static class RectangleInfoTests
     }
 
     [TestClass]
-    public class ClampTests
+    public sealed class ClampTests
     {
-        public class TestCase
+        public sealed class TestCase
         {
             public TestCase(RectangleInfo inner, RectangleInfo outer, RectangleInfo expectedResult)
             {

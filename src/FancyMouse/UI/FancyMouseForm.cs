@@ -1,7 +1,9 @@
 using System.Diagnostics;
 using System.Drawing.Imaging;
-using FancyMouse.Drawing.Models;
 using FancyMouse.Helpers;
+using FancyMouse.Models.Drawing;
+using FancyMouse.Models.Layout;
+using FancyMouse.NativeMethods;
 using static FancyMouse.NativeMethods.Core;
 
 namespace FancyMouse.UI;
@@ -40,7 +42,7 @@ internal partial class FancyMouseForm : Form
 
         if ((e.KeyCode >= Keys.D1) && (e.KeyCode <= Keys.D9))
         {
-            // number keys 1-9 - move to the numbered screen
+            // number keys 1-9 or numpad keys 1-9 - move to the numbered screen
             var screenNumber = e.KeyCode - Keys.D0;
             if (screenNumber <= screens.Count)
             {
@@ -134,7 +136,7 @@ internal partial class FancyMouseForm : Form
             MouseHelper.JumpCursor(scaledLocation);
 
             // required for temporary workaround for issue #1273
-            MouseHelper.SimulateMouseMovementEvent(scaledLocation.ToPoint());
+            MouseHelper.SimulateMouseMovementEvent(scaledLocation);
         }
 
         this.OnDeactivate(EventArgs.Empty);
@@ -164,27 +166,34 @@ internal partial class FancyMouseForm : Form
 
         // collect together some values that we need for calculating layout
         var activatedLocation = Cursor.Position;
+        var activatedScreenIndex = Array.IndexOf(Screen.AllScreens, Screen.FromPoint(activatedLocation));
         var layoutConfig = new LayoutConfig(
-            virtualScreen: SystemInformation.VirtualScreen,
-            screenBounds: Screen.AllScreens.Select(screen => screen.Bounds),
-            activatedLocation: activatedLocation,
-            activatedScreen: Array.IndexOf(Screen.AllScreens, Screen.FromPoint(activatedLocation)),
+            virtualScreen: new(SystemInformation.VirtualScreen),
+            screenBounds: Screen.AllScreens.Select(screen => new RectangleInfo(screen.Bounds)),
+            activatedLocation: new(activatedLocation),
+            activatedScreenIndex: activatedScreenIndex,
+            activatedScreenNumber: activatedScreenIndex + 1,
             maximumFormSize: this.Options.MaximumThumbnailImageSize,
-            formPadding: this.panel1.Padding,
-            previewPadding: new Padding(0));
+            formPadding: new PaddingInfo(
+                this.panel1.Padding.Left,
+                this.panel1.Padding.Top,
+                this.panel1.Padding.Right,
+                this.panel1.Padding.Bottom),
+            previewPadding: new(0));
+
         logger.Info(string.Join(
             '\n',
             $"Layout config",
             $"-------------",
             $"virtual screen     = {layoutConfig.VirtualScreen}",
             $"activated location = {layoutConfig.ActivatedLocation}",
-            $"activated screen   = {layoutConfig.ActivatedScreen}",
+            $"activated screen   = {layoutConfig.ActivatedScreenIndex}",
             $"maximum form size  = {layoutConfig.MaximumFormSize}",
             $"form padding       = {layoutConfig.FormPadding}",
             $"preview padding    = {layoutConfig.PreviewPadding}"));
 
         // calculate the layout coordinates for everything
-        var layoutInfo = DrawingHelper.CalculateLayoutInfo(layoutConfig);
+        var layoutInfo = LayoutHelper.CalculateLayoutInfo(layoutConfig);
         logger.Info(string.Join(
             '\n',
             $"Layout info",
@@ -193,7 +202,7 @@ internal partial class FancyMouseForm : Form
             $"preview bounds   = {layoutInfo.PreviewBounds}",
             $"activated screen = {layoutInfo.ActivatedScreen}"));
 
-        DrawingHelper.PositionForm(this, layoutInfo.FormBounds);
+        LayoutHelper.PositionForm(this, layoutInfo.FormBounds);
 
         // initialize the preview image
         var preview = new Bitmap(
@@ -220,15 +229,15 @@ internal partial class FancyMouseForm : Form
             DrawingHelper.DrawPreviewScreen(
                 desktopHdc,
                 previewHdc,
-                layoutConfig.ScreenBounds[layoutConfig.ActivatedScreen],
-                layoutInfo.ScreenBounds[layoutConfig.ActivatedScreen]);
+                layoutConfig.ScreenBounds[layoutConfig.ActivatedScreenIndex],
+                layoutInfo.ScreenBounds[layoutConfig.ActivatedScreenIndex]);
             activatedStopwatch.Stop();
 
             // show the placeholder images if it looks like it might take a while
             // to capture the remaining screenshot images
             if (activatedStopwatch.ElapsedMilliseconds > 250)
             {
-                var activatedArea = layoutConfig.ScreenBounds[layoutConfig.ActivatedScreen].Area;
+                var activatedArea = layoutConfig.ScreenBounds[layoutConfig.ActivatedScreenIndex].Area;
                 var totalArea = layoutConfig.ScreenBounds.Sum(screen => screen.Area);
                 if ((activatedArea / totalArea) < 0.5M)
                 {
@@ -236,15 +245,15 @@ internal partial class FancyMouseForm : Form
                     // using the Graphics object otherwise we'll get an error from GDI saying
                     // "Object is currently in use elsewhere"
                     DrawingHelper.FreePreviewDeviceContext(previewGraphics, ref previewHdc);
-                    DrawingHelper.DrawPreviewPlaceholders(
+                    DrawingHelper.DrawPreviewScreenPlaceholders(
                         previewGraphics,
-                        layoutInfo.ScreenBounds.Where((_, idx) => idx != layoutConfig.ActivatedScreen));
+                        layoutInfo.ScreenBounds.Where((_, idx) => idx != layoutConfig.ActivatedScreenIndex));
                     FancyMouseForm.ShowPreview(this);
                 }
             }
 
             // draw the remaining screen captures (if any) on the preview image
-            var sourceScreens = layoutConfig.ScreenBounds.Where((_, idx) => idx != layoutConfig.ActivatedScreen).ToList();
+            var sourceScreens = layoutConfig.ScreenBounds.Where((_, idx) => idx != layoutConfig.ActivatedScreenIndex).ToList();
             if (sourceScreens.Any())
             {
                 DrawingHelper.EnsurePreviewDeviceContext(previewGraphics, ref previewHdc);
@@ -252,7 +261,7 @@ internal partial class FancyMouseForm : Form
                     desktopHdc,
                     previewHdc,
                     sourceScreens,
-                    layoutInfo.ScreenBounds.Where((_, idx) => idx != layoutConfig.ActivatedScreen).ToList());
+                    layoutInfo.ScreenBounds.Where((_, idx) => idx != layoutConfig.ActivatedScreenIndex).ToList());
                 FancyMouseForm.ShowPreview(this);
             }
         }

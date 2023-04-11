@@ -1,4 +1,4 @@
-﻿namespace FancyMouse.Drawing.Models;
+﻿namespace FancyMouse.Models.Drawing;
 
 /// <summary>
 /// Immutable version of a System.Drawing.Size object with some extra utility methods.

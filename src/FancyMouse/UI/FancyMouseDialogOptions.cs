@@ -1,4 +1,5 @@
-﻿using NLog;
+﻿using FancyMouse.Models.Drawing;
+using NLog;
 
 namespace FancyMouse.UI;
 
@@ -6,7 +7,7 @@ internal sealed class FancyMouseDialogOptions
 {
     public FancyMouseDialogOptions(
         ILogger logger,
-        Size maximumThumbnailSize)
+        SizeInfo maximumThumbnailSize)
     {
         this.Logger = logger ?? throw new ArgumentNullException(nameof(logger));
         this.MaximumThumbnailImageSize = maximumThumbnailSize;
@@ -17,7 +18,7 @@ internal sealed class FancyMouseDialogOptions
         get;
     }
 
-    public Size MaximumThumbnailImageSize
+    public SizeInfo MaximumThumbnailImageSize
     {
         get;
     }

@@ -1,6 +1,7 @@
 ﻿using System.Collections.ObjectModel;
+using FancyMouse.Models.Drawing;
 
-namespace FancyMouse.Drawing.Models;
+namespace FancyMouse.Models.Layout;
 
 public sealed class LayoutInfo
 {

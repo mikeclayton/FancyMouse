@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel;
 using System.Runtime.InteropServices;
-using FancyMouse.Drawing.Models;
+using FancyMouse.Models.Drawing;
 using FancyMouse.NativeMethods;
 using static FancyMouse.NativeMethods.Core;
 
@@ -60,7 +60,7 @@ internal static class MouseHelper
     /// See https://github.com/microsoft/PowerToys/issues/24523
     ///     https://github.com/microsoft/PowerToys/pull/24527
     /// </remarks>
-    public static void SimulateMouseMovementEvent(Point location)
+    public static void SimulateMouseMovementEvent(PointInfo location)
     {
         var inputs = new User32.INPUT[]
         {
