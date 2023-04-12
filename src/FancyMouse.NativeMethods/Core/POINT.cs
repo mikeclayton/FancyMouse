@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.Runtime.InteropServices;
 using static FancyMouse.NativeMethods.Core;
 
 namespace FancyMouse.NativeMethods;
@@ -30,6 +31,14 @@ internal static partial class Core
         {
             this.x = x;
             this.y = y;
+        }
+
+        public static int Size =>
+            Marshal.SizeOf(typeof(POINT));
+
+        public override string ToString()
+        {
+            return $"x={this.x},y={this.y}";
         }
     }
 }

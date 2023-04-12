@@ -18,12 +18,12 @@ internal class LayoutHelper
             LayoutConfig = layoutConfig,
         };
 
-        builder.ActivatedScreen = layoutConfig.ScreenBounds[layoutConfig.ActivatedScreenIndex];
+        builder.ActivatedScreenBounds = layoutConfig.Screens[layoutConfig.ActivatedScreenIndex].Bounds;
 
         // work out the maximum *constrained* form size
         // * can't be bigger than the activated screen
         // * can't be bigger than the max form size
-        var maxFormSize = builder.ActivatedScreen.Size
+        var maxFormSize = builder.ActivatedScreenBounds.Size
             .Intersect(layoutConfig.MaximumFormSize);
 
         // the drawing area for screen images is inside the
@@ -33,11 +33,11 @@ internal class LayoutHelper
             .Shrink(layoutConfig.PreviewPadding);
 
         // scale the virtual screen to fit inside the drawing bounds
-        var scalingRatio = layoutConfig.VirtualScreen.Size
+        var scalingRatio = layoutConfig.VirtualScreenBounds.Size
             .ScaleToFitRatio(maxDrawingSize);
 
         // position the drawing bounds inside the preview border
-        var drawingBounds = layoutConfig.VirtualScreen.Size
+        var drawingBounds = layoutConfig.VirtualScreenBounds.Size
             .ScaleToFit(maxDrawingSize)
             .PlaceAt(layoutConfig.PreviewPadding.Left, layoutConfig.PreviewPadding.Top);
 
@@ -47,17 +47,16 @@ internal class LayoutHelper
         // ... and the form size
         // * center the form to the activated position, but nudge it back
         //   inside the visible area of the activated screen if it falls outside
-        builder.FormBounds = builder.PreviewBounds.Size
-            .PlaceAt(0, 0)
+        builder.FormBounds = builder.PreviewBounds
             .Enlarge(layoutConfig.FormPadding)
             .Center(layoutConfig.ActivatedLocation)
-            .Clamp(builder.ActivatedScreen);
+            .Clamp(builder.ActivatedScreenBounds);
 
         // now calculate the positions of each of the screen images on the preview
-        builder.ScreenBounds = layoutConfig.ScreenBounds
+        builder.ScreenBounds = layoutConfig.Screens
             .Select(
-                screen => screen
-                    .Offset(layoutConfig.VirtualScreen.Location.Size.Negate())
+                screen => screen.Bounds
+                    .Offset(layoutConfig.VirtualScreenBounds.Location.ToSize().Negate())
                     .Scale(scalingRatio)
                     .Offset(layoutConfig.PreviewPadding.Left, layoutConfig.PreviewPadding.Top))
             .ToList();

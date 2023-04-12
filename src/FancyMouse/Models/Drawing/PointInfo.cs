@@ -26,7 +26,10 @@ public sealed class PointInfo
         get;
     }
 
-    public SizeInfo Size => new((int)this.X, (int)this.Y);
+    public SizeInfo ToSize()
+    {
+        return new((int)this.X, (int)this.Y);
+    }
 
     public PointInfo Scale(decimal scalingFactor) => new(this.X * scalingFactor, this.Y * scalingFactor);
 

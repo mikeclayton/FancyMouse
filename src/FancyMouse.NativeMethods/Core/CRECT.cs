@@ -6,22 +6,22 @@ namespace FancyMouse.NativeMethods;
 internal static partial class Core
 {
     /// <summary>
-    /// The RECT structure defines a rectangle by the coordinates of its upper-left and lower-right corners.
+    /// The CRECT structure defines a rectangle by the coordinates of its upper-left and lower-right corners.
     /// </summary>
     /// <remarks>
     /// See https://learn.microsoft.com/en-us/windows/win32/api/windef/ns-windef-rect
     /// </remarks>
     [SuppressMessage("Naming Rules", "SA1307:AccessibleFieldsMustBeginWithUpperCaseLetter", Justification = "Name and value taken from Win32Api")]
-    internal readonly struct RECT
+    internal readonly struct CRECT
     {
-        public static readonly RECT Empty = new(0, 0, 0, 0);
+        public static readonly CRECT Empty = new(0, 0, 0, 0);
 
         public readonly LONG left;
         public readonly LONG top;
         public readonly LONG right;
         public readonly LONG bottom;
 
-        public RECT(
+        public CRECT(
             LONG left, LONG top, LONG right, LONG bottom)
         {
             this.left = left;
@@ -31,7 +31,7 @@ internal static partial class Core
         }
 
         public static int Size =>
-            Marshal.SizeOf(typeof(RECT));
+            Marshal.SizeOf(typeof(CRECT));
 
         public override string ToString()
         {

@@ -1,5 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 using FancyMouse.Models.Drawing;
+using FancyMouse.Models.Screen;
 
 namespace FancyMouse.Models.Layout;
 
@@ -9,8 +10,8 @@ namespace FancyMouse.Models.Layout;
 public sealed class LayoutConfig
 {
     public LayoutConfig(
-        RectangleInfo virtualScreen,
-        IEnumerable<RectangleInfo> screenBounds,
+        RectangleInfo virtualScreenBounds,
+        List<ScreenInfo> screens,
         PointInfo activatedLocation,
         int activatedScreenIndex,
         int activatedScreenNumber,
@@ -19,15 +20,15 @@ public sealed class LayoutConfig
         PaddingInfo previewPadding)
     {
         // make sure the virtual screen entirely contains all of the individual screen bounds
-        ArgumentNullException.ThrowIfNull(virtualScreen);
-        ArgumentNullException.ThrowIfNull(screenBounds);
-        if (screenBounds.Any(screen => !virtualScreen.Contains(screen)))
+        ArgumentNullException.ThrowIfNull(virtualScreenBounds);
+        ArgumentNullException.ThrowIfNull(screens);
+        if (screens.Any(screen => !virtualScreenBounds.Contains(screen.Bounds)))
         {
-            throw new ArgumentException($"'{nameof(virtualScreen)}' must contain all of the screens in '{nameof(screenBounds)}'", nameof(virtualScreen));
+            throw new ArgumentException($"'{nameof(virtualScreenBounds)}' must contain all of the screens in '{nameof(screens)}'", nameof(virtualScreenBounds));
         }
 
-        this.VirtualScreen = virtualScreen;
-        this.ScreenBounds = new(screenBounds.ToList());
+        this.VirtualScreenBounds = virtualScreenBounds;
+        this.Screens = new(screens.ToList());
         this.ActivatedLocation = activatedLocation;
         this.ActivatedScreenIndex = activatedScreenIndex;
         this.ActivatedScreenNumber = activatedScreenNumber;
@@ -43,15 +44,15 @@ public sealed class LayoutConfig
     /// The Virtual Screen is the bounding rectangle of all the monitors.
     /// https://learn.microsoft.com/en-us/windows/win32/gdi/the-virtual-screen
     /// </remarks>
-    public RectangleInfo VirtualScreen
+    public RectangleInfo VirtualScreenBounds
     {
         get;
     }
 
     /// <summary>
-    /// Gets a collection containing the bounds of all of the individual screens connected to the system.
+    /// Gets a collection containing the individual screens connected to the system.
     /// </summary>
-    public ReadOnlyCollection<RectangleInfo> ScreenBounds
+    public ReadOnlyCollection<ScreenInfo> Screens
     {
         get;
     }

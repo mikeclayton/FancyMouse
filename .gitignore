@@ -1,5 +1,6 @@
 .vs
 .build
+.config
 bin
 obj
 

@@ -1,4 +1,5 @@
-﻿using System.Drawing.Drawing2D;
+﻿using System.Drawing;
+using System.Drawing.Drawing2D;
 using FancyMouse.Models.Drawing;
 using FancyMouse.NativeMethods;
 using static FancyMouse.NativeMethods.Core;

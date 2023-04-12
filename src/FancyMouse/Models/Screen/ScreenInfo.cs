@@ -1,5 +1,4 @@
 ﻿using FancyMouse.Models.Drawing;
-using static FancyMouse.NativeMethods.Core;
 
 namespace FancyMouse.Models.Screen;
 
@@ -7,9 +6,9 @@ namespace FancyMouse.Models.Screen;
 /// Immutable version of a System.Windows.Forms.Screen object so we don't need to
 /// take a dependency on WinForms just for screen info.
 /// </summary>
-internal sealed class ScreenInfo
+public sealed class ScreenInfo
 {
-    public ScreenInfo(HMONITOR handle, bool primary, RectangleInfo displayArea, RectangleInfo workingArea)
+    internal ScreenInfo(int handle, bool primary, RectangleInfo displayArea, RectangleInfo workingArea)
     {
         this.Handle = handle;
         this.Primary = primary;
@@ -17,7 +16,7 @@ internal sealed class ScreenInfo
         this.WorkingArea = workingArea ?? throw new ArgumentNullException(nameof(workingArea));
     }
 
-    public HMONITOR Handle
+    public int Handle
     {
         get;
     }
@@ -32,8 +31,8 @@ internal sealed class ScreenInfo
         get;
     }
 
-    public RectangleInfo Bounds
-        => this.DisplayArea;
+    public RectangleInfo Bounds =>
+        this.DisplayArea;
 
     public RectangleInfo WorkingArea
     {
