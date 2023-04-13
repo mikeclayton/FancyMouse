@@ -1,14 +1,15 @@
-﻿using FancyMouse.Drawing.Models;
+﻿using FancyMouse.Models.Drawing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace FancyMouse.UnitTests.Drawing;
 
-public sealed class SizeInfoTests
+[TestClass]
+public static class SizeInfoTests
 {
     [TestClass]
-    public class ScaleToFitTests
+    public sealed class ScaleToFitTests
     {
-        public class TestCase
+        public sealed class TestCase
         {
             public TestCase(SizeInfo obj, SizeInfo bounds, SizeInfo expectedResult)
             {
@@ -53,9 +54,9 @@ public sealed class SizeInfoTests
     }
 
     [TestClass]
-    public class ScaleToFitRatioTests
+    public sealed class ScaleToFitRatioTests
     {
-        public class TestCase
+        public sealed class TestCase
         {
             public TestCase(SizeInfo obj, SizeInfo bounds, decimal expectedResult)
             {

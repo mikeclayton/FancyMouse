@@ -1,5 +1,5 @@
-﻿using FancyMouse.Drawing.Models;
-using FancyMouse.Helpers;
+﻿using FancyMouse.Helpers;
+using FancyMouse.Models.Drawing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace FancyMouse.UnitTests.Helpers;
@@ -8,9 +8,9 @@ namespace FancyMouse.UnitTests.Helpers;
 public static class MouseHelperTests
 {
     [TestClass]
-    public class GetJumpLocationTests
+    public sealed class GetJumpLocationTests
     {
-        public class TestCase
+        public sealed class TestCase
         {
             public TestCase(PointInfo previewLocation, SizeInfo previewSize,  RectangleInfo desktopBounds, PointInfo expectedResult)
             {

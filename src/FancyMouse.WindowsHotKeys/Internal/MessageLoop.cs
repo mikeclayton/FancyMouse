@@ -1,4 +1,5 @@
-﻿using FancyMouse.WindowsHotKeys.Interop;
+﻿using FancyMouse.NativeMethods;
+using static FancyMouse.NativeMethods.Core;
 
 namespace FancyMouse.WindowsHotKeys.Internal;
 
@@ -26,7 +27,7 @@ internal sealed class MessageLoop
         set;
     }
 
-    private int? NativeThreadId
+    private DWORD NativeThreadId
     {
         get;
         set;
@@ -61,8 +62,6 @@ internal sealed class MessageLoop
 
     private void RunInternal()
     {
-        User32.MSG msg;
-
         var quitMessagePosted = false;
 
         // see https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getmessage
@@ -71,19 +70,25 @@ internal sealed class MessageLoop
         //     https://devblogs.microsoft.com/oldnewthing/20050406-57/?p=35963
         while (true)
         {
-            _ = User32.GetMessageW(
-                lpMsg: out msg,
-                hWnd: IntPtr.Zero,
+            var result = User32.GetMessageW(
+                lpMsg: out var lpMsg,
+                hWnd: HWND.Null,
                 wMsgFilterMin: 0,
                 wMsgFilterMax: 0);
+            if (result.Value == -1)
+            {
+                continue;
+            }
 
-            if (msg.message == User32.WindowMessages.WM_QUIT)
+            var msg = lpMsg.ToStructure();
+
+            if (msg.message == User32.MESSAGE_TYPE.WM_QUIT)
             {
                 break;
             }
 
-            _ = User32.TranslateMessage(ref msg);
-            _ = User32.DispatchMessage(ref msg);
+            _ = User32.TranslateMessage(msg);
+            _ = User32.DispatchMessage(msg);
 
             if ((this.CancellationTokenSource?.IsCancellationRequested ?? false) && !quitMessagePosted)
             {
@@ -94,7 +99,7 @@ internal sealed class MessageLoop
 
         // clean up
         this.ManagedThread = null;
-        this.NativeThreadId = null;
+        this.NativeThreadId = 0;
         (this.CancellationTokenSource ?? throw new InvalidOperationException())
             .Dispose();
     }
@@ -113,9 +118,9 @@ internal sealed class MessageLoop
         // set the cancellation token, then post a quit message to itself and exit the loop
         // see https://devblogs.microsoft.com/oldnewthing/20050405-46/?p=35973
         _ = Win32Wrappers.PostThreadMessageW(
-            idThread: this.NativeThreadId ?? throw new InvalidOperationException(),
-            Msg: User32.WindowMessages.WM_NULL,
-            wParam: IntPtr.Zero,
-            lParam: IntPtr.Zero);
+            idThread: this.NativeThreadId,
+            Msg: User32.MESSAGE_TYPE.WM_NULL,
+            wParam: WPARAM.Null,
+            lParam: LPARAM.Null);
     }
 }

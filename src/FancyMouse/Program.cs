@@ -1,4 +1,5 @@
 using System.Globalization;
+using FancyMouse.Models.Drawing;
 using FancyMouse.UI;
 using FancyMouse.WindowsHotKeys;
 using Microsoft.Extensions.Configuration;
@@ -45,7 +46,7 @@ internal static class Program
         var dialog = new FancyMouseDialog(
             new FancyMouseDialogOptions(
                 logger: LogManager.CreateNullLogger(),
-                maximumThumbnailSize: new Size(
+                maximumThumbnailSize: new SizeInfo(
                     preview[0], preview[1])));
 
         var hotkey = Keystroke.Parse(

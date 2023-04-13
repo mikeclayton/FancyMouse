@@ -1,7 +1,9 @@
 ﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
+using FancyMouse.NativeMethods;
 using FancyMouse.WindowsHotKeys.Internal;
-using FancyMouse.WindowsHotKeys.Interop;
+using static FancyMouse.NativeMethods.Core;
+using static FancyMouse.NativeMethods.User32;
 
 namespace FancyMouse.WindowsHotKeys;
 
@@ -22,7 +24,7 @@ public sealed class HotKeyManager
 
         // cache a window proc delegate so doesn't get garbage-collected
         this.WndProc = this.WindowProc;
-        this.HWnd = IntPtr.Zero;
+        this.HWnd = HWND.Null;
     }
 
     public Keystroke HotKey
@@ -30,12 +32,12 @@ public sealed class HotKeyManager
         get;
     }
 
-    private User32.WNDPROC WndProc
+    private WNDPROC WndProc
     {
         get;
     }
 
-    private IntPtr HWnd
+    private HWND HWnd
     {
         get;
         set;
@@ -47,14 +49,14 @@ public sealed class HotKeyManager
         set;
     }
 
-    private IntPtr WindowProc(IntPtr hWnd, User32.WindowMessages msg, IntPtr wParam, IntPtr lParam)
+    private LRESULT WindowProc(HWND hWnd, User32.MESSAGE_TYPE msg, WPARAM wParam, LPARAM lParam)
     {
         switch (msg)
         {
-            case User32.WindowMessages.WM_HOTKEY:
+            case User32.MESSAGE_TYPE.WM_HOTKEY:
                 // https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-hotkey
                 // https://stackoverflow.com/a/47831305/3156906
-                var param = (uint)lParam.ToInt64();
+                var param = (uint)lParam.Value.ToInt64();
                 var key = (Keys)((param & 0xffff0000) >> 16);
                 var modifiers = (KeyModifiers)(param & 0x0000ffff);
                 var e = new HotKeyEventArgs(key, modifiers);
@@ -71,13 +73,19 @@ public sealed class HotKeyManager
         var hInstance = Process.GetCurrentProcess().Handle;
 
         // see https://stackoverflow.com/a/30992796/3156906
-        var wndClass = new User32.WNDCLASSEXW
-        {
-            cbSize = (uint)Marshal.SizeOf(typeof(User32.WNDCLASSEXW)),
-            hInstance = hInstance,
-            lpszClassName = "FancyMouseMessageClass",
-            lpfnWndProc = Marshal.GetFunctionPointerForDelegate(this.WndProc),
-        };
+        var wndClass = new User32.WNDCLASSEXW(
+            cbSize: (uint)Marshal.SizeOf(typeof(User32.WNDCLASSEXW)),
+            style: 0,
+            lpfnWndProc: this.WndProc,
+            cbClsExtra: 0,
+            cbWndExtra: 0,
+            hInstance: hInstance,
+            hIcon: HICON.Null,
+            hCursor: HCURSOR.Null,
+            hbrBackground: HBRUSH.Null,
+            lpszMenuName: PCWSTR.Null,
+            lpszClassName: "FancyMouseMessageClass",
+            hIconSm: HICON.Null);
 
         // wndClassAtom
         _ = Win32Wrappers.RegisterClassExW(
@@ -95,10 +103,10 @@ public sealed class HotKeyManager
             y: 0,
             nWidth: 300,
             nHeight: 400,
-            hWndParent: User32.HWND_MESSAGE, // message-only window
-            hMenu: IntPtr.Zero,
+            hWndParent: HWND.HWND_MESSAGE, // message-only window
+            hMenu: HMENU.Null,
             hInstance: hInstance,
-            lpParam: IntPtr.Zero);
+            lpParam: LPVOID.Null);
 
         this.MessageLoop = new MessageLoop(
             name: "FancyMouseMessageLoop",
@@ -109,7 +117,7 @@ public sealed class HotKeyManager
         _ = Win32Wrappers.RegisterHotKey(
             hWnd: this.HWnd,
             id: Interlocked.Increment(ref _id),
-            fsModifiers: (User32.RegisterHotKeyModifiers)this.HotKey.Modifiers,
+            fsModifiers: (HOT_KEY_MODIFIERS)this.HotKey.Modifiers,
             vk: (uint)this.HotKey.Key);
     }
 
