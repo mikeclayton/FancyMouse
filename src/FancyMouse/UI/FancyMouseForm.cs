@@ -1,8 +1,10 @@
 using System.Diagnostics;
 using System.Drawing.Imaging;
+using System.Linq;
 using FancyMouse.Helpers;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Layout;
+using NLog;
 using static FancyMouse.NativeMethods.Core;
 
 namespace FancyMouse.UI;
@@ -145,16 +147,18 @@ internal partial class FancyMouseForm : Form
             nameof(FancyMouseForm.ShowThumbnail),
             "-----------"));
 
+        var stopwatch = Stopwatch.StartNew();
         var layoutInfo = FancyMouseForm.GetLayoutInfo(logger, this);
         LayoutHelper.PositionForm(this, layoutInfo.FormBounds);
         FancyMouseForm.RenderPreview(this, layoutInfo);
+        stopwatch.Stop();
 
         // we have to activate the form to make sure the deactivate event fires
         this.Activate();
     }
 
     private static LayoutInfo GetLayoutInfo(
-        NLog.ILogger logger, FancyMouseForm form)
+        ILogger logger, FancyMouseForm form)
     {
         // map screens to their screen number in "System > Display"
         var screens = ScreenHelper.GetAllScreens()
@@ -220,6 +224,8 @@ internal partial class FancyMouseForm : Form
     {
         var layoutConfig = layoutInfo.LayoutConfig;
 
+        var stopwatch = Stopwatch.StartNew();
+
         // initialize the preview image
         var preview = new Bitmap(
             (int)layoutInfo.PreviewBounds.Width,
@@ -236,57 +242,51 @@ internal partial class FancyMouseForm : Form
         var previewHdc = HDC.Null;
         try
         {
+            // sort the source and target screen areas, putting the activated screen first
+            // (we need to capture and draw the activated screen before we show the form
+            // because otherwise we'll capture the form as part of the screenshot!)
+            var sourceScreens = layoutConfig.Screens
+                .Where((_, idx) => idx == layoutConfig.ActivatedScreenIndex)
+                .Union(layoutConfig.Screens.Where((_, idx) => idx != layoutConfig.ActivatedScreenIndex))
+                .Select(screen => screen.Bounds)
+                .ToList();
+            var targetScreens = layoutInfo.ScreenBounds
+                .Where((_, idx) => idx == layoutConfig.ActivatedScreenIndex)
+                .Union(layoutInfo.ScreenBounds.Where((_, idx) => idx != layoutConfig.ActivatedScreenIndex))
+                .ToList();
+
             DrawingHelper.EnsureDesktopDeviceContext(ref desktopHwnd, ref desktopHdc);
-
-            // we have to capture the screen where we're going to show the form first
-            // as the form will obscure the screen as soon as it's visible
-            var activatedScreenStopwatch = Stopwatch.StartNew();
             DrawingHelper.EnsurePreviewDeviceContext(previewGraphics, ref previewHdc);
-            DrawingHelper.DrawPreviewScreen(
-                desktopHdc,
-                previewHdc,
-                layoutConfig.Screens[layoutConfig.ActivatedScreenIndex].Bounds,
-                layoutInfo.ScreenBounds[layoutConfig.ActivatedScreenIndex]);
-            activatedScreenStopwatch.Stop();
 
-            // show the placeholder images if it looks like it might take a while
-            // to capture the remaining screenshot images
-            if (activatedScreenStopwatch.ElapsedMilliseconds > 250)
+            var placeholdersDrawn = false;
+            for (var i = 0; i < sourceScreens.Count; i++)
             {
-                var activatedArea = layoutConfig.Screens[layoutConfig.ActivatedScreenIndex].Bounds.Area;
-                var totalArea = layoutConfig.Screens.Sum(screen => screen.Bounds.Area);
-                if ((activatedArea / totalArea) < 0.5M)
+                DrawingHelper.DrawPreviewScreen(
+                    desktopHdc, previewHdc, sourceScreens[i], targetScreens[i]);
+
+                // show the placeholder images and show the form if it looks like it might take
+                // a while to capture the remaining screenshot images (but only if there are any)
+                if ((i < (sourceScreens.Count - 1)) && (stopwatch.ElapsedMilliseconds > 250))
                 {
-                    // we need to release the device context handle before we can draw the placeholders
+                    // we need to release the device context handle before we draw the placeholders
                     // using the Graphics object otherwise we'll get an error from GDI saying
                     // "Object is currently in use elsewhere"
                     DrawingHelper.FreePreviewDeviceContext(previewGraphics, ref previewHdc);
-                    DrawingHelper.DrawPreviewScreenPlaceholders(
-                        previewGraphics,
-                        layoutInfo.ScreenBounds.Where((_, idx) => idx != layoutConfig.ActivatedScreenIndex));
-                    FancyMouseForm.RefreshPreview(form);
-                }
-            }
 
-            // draw the remaining screen captures (if any) on the preview image
-            var sourceScreens = layoutConfig.Screens
-                .Where((_, idx) => idx != layoutConfig.ActivatedScreenIndex)
-                .Select(screen => screen.Bounds)
-                .ToList();
-            if (sourceScreens.Any())
-            {
-                var stopwatch = Stopwatch.StartNew();
-                var targetScreens = layoutInfo.ScreenBounds
-                    .Where((_, idx) => idx != layoutConfig.ActivatedScreenIndex)
-                    .ToList();
-                DrawingHelper.EnsurePreviewDeviceContext(previewGraphics, ref previewHdc);
-                DrawingHelper.DrawPreviewScreens(
-                    desktopHdc,
-                    previewHdc,
-                    sourceScreens,
-                    targetScreens);
-                FancyMouseForm.RefreshPreview(form);
-                stopwatch.Stop();
+                    if (!placeholdersDrawn)
+                    {
+                        // draw placeholders for any undrawn screens
+                        DrawingHelper.DrawPreviewScreenPlaceholders(
+                            previewGraphics,
+                            targetScreens.Where((_, idx) => idx > i));
+                        placeholdersDrawn = true;
+                    }
+
+                    FancyMouseForm.RefreshPreview(form);
+
+                    // we've still got more screens to draw so open the device context again
+                    DrawingHelper.EnsurePreviewDeviceContext(previewGraphics, ref previewHdc);
+                }
             }
         }
         finally
@@ -296,6 +296,7 @@ internal partial class FancyMouseForm : Form
         }
 
         FancyMouseForm.RefreshPreview(form);
+        stopwatch.Stop();
 
         // we have to activate the form to make sure the deactivate event fires
         form.Activate();
