@@ -1,5 +1,4 @@
-﻿using System.Drawing;
-using System.Drawing.Drawing2D;
+﻿using System.Drawing.Drawing2D;
 using FancyMouse.Models.Drawing;
 using FancyMouse.NativeMethods;
 using static FancyMouse.NativeMethods.Core;
@@ -101,7 +100,7 @@ internal static class DrawingHelper
     /// Will release the specified device context handle if it needs to draw anything.
     /// </summary>
     public static void DrawPreviewScreenPlaceholders(
-        Graphics previewGraphics, IEnumerable<RectangleInfo> screenBounds)
+        Graphics previewGraphics, List<RectangleInfo> screenBounds)
     {
         // we can exclude the activated screen because we've already draw
         // the screen capture image for that one on the preview
@@ -109,42 +108,6 @@ internal static class DrawingHelper
         {
             var brush = Brushes.Black;
             previewGraphics.FillRectangles(brush, screenBounds.Select(screen => screen.ToRectangle()).ToArray());
-        }
-    }
-
-    /// <summary>
-    /// Draw placeholder images for any non-activated screens on the preview.
-    /// Will release the specified device context handle if it needs to draw anything.
-    /// </summary>
-    public static void DrawPreviewPlaceholders2(
-        HDC previewHdc, IEnumerable<RectangleInfo> screenBounds)
-    {
-        // we can exclude the activated screen because we've already draw
-        // the screen capture image for that one on the preview
-        var brush = Gdi32.CreateSolidBrush(
-            new Gdi32.COLORREF(0, 0, 0));
-        if (brush.IsNull)
-        {
-            throw new InvalidOperationException(
-                $"{nameof(Gdi32.CreateSolidBrush)} returned {brush}");
-        }
-
-        foreach (var screen in screenBounds)
-        {
-            var target = new RECT(
-                left: (int)screen.X,
-                top: (int)screen.Y,
-                right: (int)screen.Right,
-                bottom: (int)screen.Bottom);
-            var result = User32.FillRect(
-                previewHdc,
-                ref target,
-                brush);
-            if (result == 0)
-            {
-                throw new InvalidOperationException(
-                    $"{nameof(User32.FillRect)} returned {result}");
-            }
         }
     }
 
@@ -175,39 +138,6 @@ internal static class DrawingHelper
         {
             throw new InvalidOperationException(
                 $"{nameof(Gdi32.StretchBlt)} returned {result.Value}");
-        }
-    }
-
-    /// <summary>
-    /// Draws screen captures from the specified desktop handle onto the target device context.
-    /// </summary>
-    public static void DrawPreviewScreens(
-        HDC sourceHdc,
-        HDC targetHdc,
-        IList<RectangleInfo> sourceBounds,
-        IList<RectangleInfo> targetBounds)
-    {
-        for (var i = 0; i < sourceBounds.Count; i++)
-        {
-            var source = sourceBounds[i].ToRectangle();
-            var target = targetBounds[i].ToRectangle();
-            var result = Gdi32.StretchBlt(
-                targetHdc,
-                target.X,
-                target.Y,
-                target.Width,
-                target.Height,
-                sourceHdc,
-                source.X,
-                source.Y,
-                source.Width,
-                source.Height,
-                Gdi32.ROP_CODE.SRCCOPY);
-            if (!result)
-            {
-                throw new InvalidOperationException(
-                    $"{nameof(Gdi32.StretchBlt)} returned {result.Value}");
-            }
         }
     }
 }

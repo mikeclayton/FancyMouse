@@ -3,7 +3,7 @@ using FancyMouse.Models.Layout;
 
 namespace FancyMouse.Helpers;
 
-internal class LayoutHelper
+internal static class LayoutHelper
 {
     public static LayoutInfo CalculateLayoutInfo(
         LayoutConfig layoutConfig)

@@ -3,7 +3,6 @@ using System.Runtime.InteropServices;
 using FancyMouse.Models.Drawing;
 using FancyMouse.NativeMethods;
 using static FancyMouse.NativeMethods.Core;
-using static FancyMouse.NativeMethods.User32;
 
 namespace FancyMouse.Helpers;
 
@@ -81,7 +80,7 @@ internal static class MouseHelper
         }
 
         // temporary workaround for issue #1273
-        // MouseHelper.SimulateMouseMovementEvent(location);
+        MouseHelper.SimulateMouseMovementEvent(location);
     }
 
     /// <summary>
@@ -124,7 +123,7 @@ internal static class MouseHelper
         return (x * 65535) / User32.GetSystemMetrics(User32.SYSTEM_METRICS_INDEX.SM_CXSCREEN);
     }
 
-    internal static decimal CalculateAbsoluteCoordinateY(decimal y)
+    private static decimal CalculateAbsoluteCoordinateY(decimal y)
     {
         // If MOUSEEVENTF_ABSOLUTE value is specified, dx and dy contain normalized absolute coordinates between 0 and 65,535.
         // see https://learn.microsoft.com/en-us/windows/win32/api/winuser/ns-winuser-mouseinput

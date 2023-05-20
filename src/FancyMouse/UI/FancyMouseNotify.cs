@@ -15,10 +15,6 @@ public partial class FancyMouseNotify : Form
     {
     }
 
-    private void SettingsToolStripMenuItem_Click(object sender, EventArgs e)
-    {
-    }
-
     private void ExitToolStripMenuItem_Click(object sender, EventArgs e)
     {
         notifyIcon1.Visible = false;
