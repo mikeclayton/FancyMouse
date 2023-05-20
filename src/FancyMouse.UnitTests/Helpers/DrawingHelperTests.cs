@@ -40,9 +40,9 @@ public static class DrawingHelperTests
                 virtualScreenBounds: new(0, 0, 5120, 1440),
                 screens: new List<ScreenInfo>
                 {
-                    new ScreenInfo(HMONITOR.Null, false, new(0, 0, 5120, 1440), new(0, 0, 5120, 1440)),
+                    new(HMONITOR.Null, false, new(0, 0, 5120, 1440), new(0, 0, 5120, 1440)),
                 },
-                activatedLocation: new(5120 / 2, 1440 / 2),
+                activatedLocation: new(5120M / 2, 1440M / 2),
                 activatedScreenIndex: 0,
                 activatedScreenNumber: 1,
                 maximumFormSize: new(1600, 1200),
@@ -57,7 +57,7 @@ public static class DrawingHelperTests
                     new(0, 0, 1590, 447.1875M),
                 },
                 activatedScreenBounds: new(0, 0, 5120, 1440));
-            yield return new[] { new TestCase(layoutConfig, layoutInfo) };
+            yield return new object[] { new TestCase(layoutConfig, layoutInfo) };
 
             // primary monitor not topmost / leftmost - if there are screens
             // that are further left or higher than the primary monitor
@@ -75,8 +75,8 @@ public static class DrawingHelperTests
                 virtualScreenBounds: new(-1920, -472, 7040, 1912),
                 screens: new List<ScreenInfo>
                 {
-                    new ScreenInfo(HMONITOR.Null, false, new(-1920, -472, 1920, 1080), new(-1920, -472, 1920, 1080)),
-                    new ScreenInfo(HMONITOR.Null, false, new(0, 0, 5120, 1440), new(0, 0, 5120, 1440)),
+                    new(HMONITOR.Null, false, new(-1920, -472, 1920, 1080), new(-1920, -472, 1920, 1080)),
+                    new(HMONITOR.Null, false, new(0, 0, 5120, 1440), new(0, 0, 5120, 1440)),
                 },
                 activatedLocation: new(-960, -236),
                 activatedScreenIndex: 0,
@@ -99,7 +99,7 @@ public static class DrawingHelperTests
                     new(433.63636M, 106.602270M, 1156.36363M, 325.22727M),
                 },
                 activatedScreenBounds: new(-1920, -472, 1920, 1080));
-            yield return new[] { new TestCase(layoutConfig, layoutInfo) };
+            yield return new object[] { new TestCase(layoutConfig, layoutInfo) };
 
             // check we handle rounding errors in scaling the preview form
             // that might make the form *larger* than the current screen -
@@ -117,8 +117,8 @@ public static class DrawingHelperTests
                 virtualScreenBounds: new(0, 0, 7168, 1440),
                 screens: new List<ScreenInfo>
                 {
-                    new ScreenInfo(HMONITOR.Null, false, new(6144, 0, 1024, 768), new(6144, 0, 1024, 768)),
-                    new ScreenInfo(HMONITOR.Null, false, new(0, 0, 6144, 1440), new(0, 0, 6144, 1440)),
+                    new(HMONITOR.Null, false, new(6144, 0, 1024, 768), new(6144, 0, 1024, 768)),
+                    new(HMONITOR.Null, false, new(0, 0, 6144, 1440), new(0, 0, 6144, 1440)),
                 },
                 activatedLocation: new(6656, 384),
                 activatedScreenIndex: 0,
@@ -136,7 +136,7 @@ public static class DrawingHelperTests
                     new(0, 0, 869.142857M, 203.705357M),
                 },
                 activatedScreenBounds: new(6144, 0, 1024, 768));
-            yield return new[] { new TestCase(layoutConfig, layoutInfo) };
+            yield return new object[] { new TestCase(layoutConfig, layoutInfo) };
 
             // check we handle rounding errors in scaling the preview form
             // that might make the form a pixel *smaller* than the current screen -
@@ -154,8 +154,8 @@ public static class DrawingHelperTests
                 virtualScreenBounds: new(0, 0, 7424, 1440),
                 screens: new List<ScreenInfo>
                 {
-                    new ScreenInfo(HMONITOR.Null, false, new(6144, 0, 1280, 768), new(6144, 0, 1280, 768)),
-                    new ScreenInfo(HMONITOR.Null, false, new(0, 0, 6144, 1440), new(0, 0, 6144, 1440)),
+                    new(HMONITOR.Null, false, new(6144, 0, 1280, 768), new(6144, 0, 1280, 768)),
+                    new(HMONITOR.Null, false, new(0, 0, 6144, 1440), new(0, 0, 6144, 1440)),
                 },
                 activatedLocation: new(6784, 384),
                 activatedScreenIndex: 0,
@@ -178,7 +178,7 @@ public static class DrawingHelperTests
                     new(0, 0M, 1051.03448M, 246.33620M),
                 },
                 activatedScreenBounds: new(6144, 0, 1280, 768));
-            yield return new[] { new TestCase(layoutConfig, layoutInfo) };
+            yield return new object[] { new TestCase(layoutConfig, layoutInfo) };
         }
 
         [TestMethod]
