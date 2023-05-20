@@ -27,10 +27,10 @@ internal static partial class Core
 
         public static implicit operator LPVOID(IntPtr value) => new(value);
 
-        public static PVOID Allocate(int length)
+        public static LPVOID Allocate(int length)
         {
             var ptr = Marshal.AllocHGlobal(length);
-            return new PVOID(ptr);
+            return new LPVOID(ptr);
         }
 
         public string? PtrToStringUni()

@@ -2,12 +2,12 @@
 
 namespace FancyMouse.NativeMethods;
 
-[SuppressMessage("SA1310", "SA1310:FieldNamesMustNotContainUnderscore", Justification = "Names match Win32 api")]
 internal static partial class User32
 {
     /// <remarks>
     /// See https://learn.microsoft.com/en-us/windows/win32/api/winuser/ns-winuser-mouseinput
     /// </remarks>
+    [SuppressMessage("SA1310", "SA1310:FieldNamesMustNotContainUnderscore", Justification = "Names match Win32 api")]
     [Flags]
     internal enum MOUSE_EVENT_FLAGS : uint
     {

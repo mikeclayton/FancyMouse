@@ -8,7 +8,7 @@ internal static partial class User32
     /// <summary>
     /// Registers a window class for subsequent use in calls to the CreateWindow or CreateWindowEx function.
     /// </summary>
-    /// <param name="lpwcx">
+    /// <param name="unamedParam1">
     /// A pointer to a WNDCLASSEX structure.
     /// You must fill the structure with the appropriate class attributes before passing it to the function.
     /// </param>
@@ -24,5 +24,5 @@ internal static partial class User32
     /// </remarks>
     [DllImport(Libraries.User32, CharSet = CharSet.Unicode, SetLastError = true)]
     internal static extern ATOM RegisterClassExW(
-        ref WNDCLASSEXW lpwcx);
+        WNDCLASSEXW unamedParam1);
 }

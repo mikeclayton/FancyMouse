@@ -18,6 +18,6 @@ internal static partial class User32
     ///     https://github.com/dotnet/runtime/blob/main/src/libraries/Common/src/Interop/Windows/User32/Interop.DispatchMessage.cs
     /// </remarks>
     [LibraryImport(Libraries.User32)]
-    internal static partial LRESULT DispatchMessage(
+    internal static partial LRESULT DispatchMessageW(
         MSG lpmsg);
 }

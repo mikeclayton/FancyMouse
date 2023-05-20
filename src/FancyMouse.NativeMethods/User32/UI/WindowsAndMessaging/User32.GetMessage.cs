@@ -26,7 +26,7 @@ internal static partial class User32
     /// </remarks>
     [LibraryImport(Libraries.User32)]
     internal static partial BOOL GetMessageW(
-        out LPMSG lpMsg,
+        LPMSG lpMsg,
         HWND hWnd,
         UINT wMsgFilterMin,
         UINT wMsgFilterMax);
