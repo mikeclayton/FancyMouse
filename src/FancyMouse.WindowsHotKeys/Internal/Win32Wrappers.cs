@@ -50,7 +50,7 @@ internal static class Win32Wrappers
     /// <summary>
     /// Registers a window class for subsequent use in calls to the CreateWindow or CreateWindowEx function.
     /// </summary>
-    /// <param name="lpwcx">
+    /// <param name="unnamedParam1">
     /// A pointer to a WNDCLASSEX structure.
     /// You must fill the structure with the appropriate class attributes before passing it to the function.
     /// </param>
@@ -62,12 +62,12 @@ internal static class Win32Wrappers
     /// To get extended error information, call GetLastError.
     /// </returns>
     /// <remarks>
-    /// See https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-registerclassexa
+    /// See https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-registerclassexw
     /// </remarks>
     public static ushort RegisterClassExW(
-        ref User32.WNDCLASSEXW lpwcx)
+        WNDCLASSEXW unnamedParam1)
     {
-        var result = User32.RegisterClassExW(ref lpwcx);
+        var result = User32.RegisterClassExW(unnamedParam1);
 
         if (result == 0)
         {
@@ -179,7 +179,7 @@ internal static class Win32Wrappers
     /// See https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-createwindowexw
     /// </remarks>
     public static HWND CreateWindowEx(
-        User32.WINDOW_EX_STYLE dwExStyle,
+        WINDOW_EX_STYLE dwExStyle,
         LPCWSTR lpClassName,
         LPCWSTR lpWindowName,
         WINDOW_STYLE dwStyle,

@@ -1,6 +1,5 @@
 ﻿using System.Runtime.InteropServices;
 using static FancyMouse.NativeMethods.Core;
-using static FancyMouse.NativeMethods.User32;
 
 namespace FancyMouse.NativeMethods;
 

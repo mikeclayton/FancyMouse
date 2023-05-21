@@ -49,11 +49,11 @@ public sealed class HotKeyManager
         set;
     }
 
-    private LRESULT WindowProc(HWND hWnd, User32.MESSAGE_TYPE msg, WPARAM wParam, LPARAM lParam)
+    private LRESULT WindowProc(HWND hWnd, MESSAGE_TYPE msg, WPARAM wParam, LPARAM lParam)
     {
         switch (msg)
         {
-            case User32.MESSAGE_TYPE.WM_HOTKEY:
+            case MESSAGE_TYPE.WM_HOTKEY:
                 // https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-hotkey
                 // https://stackoverflow.com/a/47831305/3156906
                 var param = (uint)lParam.Value.ToInt64();
@@ -73,8 +73,8 @@ public sealed class HotKeyManager
         var hInstance = Process.GetCurrentProcess().Handle;
 
         // see https://stackoverflow.com/a/30992796/3156906
-        var wndClass = new User32.WNDCLASSEXW(
-            cbSize: (uint)Marshal.SizeOf(typeof(User32.WNDCLASSEXW)),
+        var wndClass = new WNDCLASSEXW(
+            cbSize: (uint)Marshal.SizeOf(typeof(WNDCLASSEXW)),
             style: 0,
             lpfnWndProc: this.WndProc,
             cbClsExtra: 0,
@@ -89,7 +89,7 @@ public sealed class HotKeyManager
 
         // wndClassAtom
         _ = Win32Wrappers.RegisterClassExW(
-            lpwcx: ref wndClass);
+            unnamedParam1: wndClass);
 
         // see https://learn.microsoft.com/en-us/windows/win32/winmsg/window-features#message-only-windows
         //     https://devblogs.microsoft.com/oldnewthing/20171218-00/?p=97595

@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.Drawing.Imaging;
-using System.Linq;
 using FancyMouse.Helpers;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Layout;
@@ -45,44 +44,41 @@ internal partial class FancyMouseForm : Form
             .Single(item => item.Screen.Handle == currentScreenHandle.Value);
         var targetScreenNumber = default(int?);
 
-        if (((e.KeyCode >= Keys.D1) && (e.KeyCode <= Keys.D9))
-            || ((e.KeyCode >= Keys.NumPad1) && (e.KeyCode <= Keys.NumPad9)))
+        switch (e.KeyCode)
         {
-            // number keys 1-9 or numpad keys 1-9 - move to the numbered screen
-            var screenNumber = e.KeyCode - Keys.D0;
-            if (screenNumber <= screens.Count)
-            {
-                targetScreenNumber = screenNumber;
-            }
-        }
-        else if (e.KeyCode == Keys.P)
-        {
-            // "P" - move to the primary screen
-            targetScreenNumber = screens.Single(item => item.Screen.Primary).Number;
-        }
-        else if (e.KeyCode == Keys.Left)
-        {
-            // move to the previous screen
-            targetScreenNumber = currentScreen.Number == 1
-                ? screens.Count
-                : currentScreen.Number - 1;
-        }
-        else if (e.KeyCode == Keys.Right)
-        {
-            // move to the next screen
-            targetScreenNumber = currentScreen.Number == screens.Count
-                ? 1
-                : currentScreen.Number + 1;
-        }
-        else if (e.KeyCode == Keys.Home)
-        {
-            // move to the first screen
-            targetScreenNumber = 1;
-        }
-        else if (e.KeyCode == Keys.End)
-        {
-            // move to the last screen
-            targetScreenNumber = screens.Count;
+            case (>= Keys.D1 and <= Keys.D9) or (>= Keys.NumPad1 and <= Keys.NumPad9):
+                // number keys 1-9 or numpad keys 1-9 - move to the numbered screen
+                var screenNumber = e.KeyCode - Keys.D0;
+                if (screenNumber <= screens.Count)
+                {
+                    targetScreenNumber = screenNumber;
+                }
+
+                break;
+            case Keys.P:
+                // "P" - move to the primary screen
+                targetScreenNumber = screens.Single(item => item.Screen.Primary).Number;
+                break;
+            case Keys.Left:
+                // move to the previous screen
+                targetScreenNumber = currentScreen.Number == 1
+                    ? screens.Count
+                    : currentScreen.Number - 1;
+                break;
+            case Keys.Right:
+                // move to the next screen
+                targetScreenNumber = currentScreen.Number == screens.Count
+                    ? 1
+                    : currentScreen.Number + 1;
+                break;
+            case Keys.Home:
+                // move to the first screen
+                targetScreenNumber = 1;
+                break;
+            case Keys.End:
+                // move to the last screen
+                targetScreenNumber = screens.Count;
+                break;
         }
 
         if (targetScreenNumber.HasValue)
@@ -118,7 +114,7 @@ internal partial class FancyMouseForm : Form
         var mouseEventArgs = (MouseEventArgs)e;
         logger.Info(string.Join(
             '\n',
-            $"Reporting mouse event args",
+            "Reporting mouse event args",
             $"\tbutton   = {mouseEventArgs.Button}",
             $"\tlocation = {mouseEventArgs.Location}"));
 
@@ -188,7 +184,7 @@ internal partial class FancyMouseForm : Form
             activatedScreenIndex: activatedScreenIndex,
             activatedScreenNumber: activatedScreenIndex + 1,
             maximumFormSize: form.Options.MaximumThumbnailImageSize,
-            formPadding: new PaddingInfo(
+            formPadding: new(
                 form.panel1.Padding.Left,
                 form.panel1.Padding.Top,
                 form.panel1.Padding.Right,
@@ -196,8 +192,8 @@ internal partial class FancyMouseForm : Form
             previewPadding: new(0));
         logger.Info(string.Join(
             '\n',
-            $"Layout config",
-            $"-------------",
+            "Layout config",
+            "-------------",
             $"virtual screen          = {layoutConfig.VirtualScreenBounds}",
             $"activated location      = {layoutConfig.ActivatedLocation}",
             $"activated screen index  = {layoutConfig.ActivatedScreenIndex}",
@@ -210,8 +206,8 @@ internal partial class FancyMouseForm : Form
         var layoutInfo = LayoutHelper.CalculateLayoutInfo(layoutConfig);
         logger.Info(string.Join(
             '\n',
-            $"Layout info",
-            $"-----------",
+            "Layout info",
+            "-----------",
             $"form bounds      = {layoutInfo.FormBounds}",
             $"preview bounds   = {layoutInfo.PreviewBounds}",
             $"activated screen = {layoutInfo.ActivatedScreenBounds}"));
@@ -278,7 +274,7 @@ internal partial class FancyMouseForm : Form
                         // draw placeholders for any undrawn screens
                         DrawingHelper.DrawPreviewScreenPlaceholders(
                             previewGraphics,
-                            targetScreens.Where((_, idx) => idx > i));
+                            targetScreens.Where((_, idx) => idx > i).ToList());
                         placeholdersDrawn = true;
                     }
 
@@ -297,9 +293,6 @@ internal partial class FancyMouseForm : Form
 
         FancyMouseForm.RefreshPreview(form);
         stopwatch.Stop();
-
-        // we have to activate the form to make sure the deactivate event fires
-        form.Activate();
     }
 
     private static void RefreshPreview(FancyMouseForm form)

@@ -28,6 +28,8 @@ internal static partial class Core
             this.Value = Marshal.StringToHGlobalAuto(value);
         }
 
+        public bool IsNull => this.Value == LPCWSTR.Null.Value;
+
         public static implicit operator IntPtr(LPCWSTR value) => value.Value;
 
         public static implicit operator LPCWSTR(IntPtr value) => new(value);

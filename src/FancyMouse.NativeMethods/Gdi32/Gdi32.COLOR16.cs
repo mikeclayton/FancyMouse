@@ -26,7 +26,7 @@ internal static partial class Gdi32
             this.Value = (ushort)(((uint)red << 11) | ((uint)green << 5) | blue);
         }
 
-        public static implicit operator WORD(COLOR16 value) => value;
+        public static implicit operator WORD(COLOR16 value) => value.Value;
 
         public static implicit operator COLOR16(WORD value) => new(value);
     }

@@ -63,48 +63,25 @@ public sealed class RectangleInfo
     public decimal Area => this.Width * this.Height;
 
     /// <remarks>
-    /// Adapted from https://github.comdotnet/runtime.
+    /// Adapted from https://github.com/dotnet/runtime
     /// See https://github.com/dotnet/runtime/blob/dfd618dc648ba9b11dd0f8034f78113d69f223cd/src/libraries/System.Drawing.Primitives/src/System/Drawing/Rectangle.cs
     /// </remarks>
     public bool Contains(int x, int y) =>
         this.X <= x && x < this.X + this.Width && this.Y <= y && y < this.Y + this.Height;
 
     /// <remarks>
-    /// Adapted from https://github.comdotnet/runtime.
-    /// See https://github.com/dotnet/runtime/blob/dfd618dc648ba9b11dd0f8034f78113d69f223cd/src/libraries/System.Drawing.Primitives/src/System/Drawing/Rectangle.cs
-    /// </remarks>
-    public bool Contains(Point pt) =>
-        this.Contains(pt.X, pt.Y);
-
-    /// <remarks>
-    /// Adapted from https://github.comdotnet/runtime.
+    /// Adapted from https://github.com/dotnet/runtime
     /// See https://github.com/dotnet/runtime/blob/dfd618dc648ba9b11dd0f8034f78113d69f223cd/src/libraries/System.Drawing.Primitives/src/System/Drawing/Rectangle.cs
     /// </remarks>
     public bool Contains(RectangleInfo rect) =>
         (this.X <= rect.X) && (rect.X + rect.Width <= this.X + this.Width) &&
         (this.Y <= rect.Y) && (rect.Y + rect.Height <= this.Y + this.Height);
 
-    /// <remarks>
-    /// Adapted from https://github.comdotnet/runtime.
-    /// See https://github.com/dotnet/runtime/blob/dfd618dc648ba9b11dd0f8034f78113d69f223cd/src/libraries/System.Drawing.Primitives/src/System/Drawing/Rectangle.cs
-    /// </remarks>
-    public static RectangleInfo Union(RectangleInfo a, RectangleInfo b)
-    {
-        var x1 = Math.Min(a.X, b.X);
-        var x2 = Math.Max(a.X + a.Width, b.X + b.Width);
-        var y1 = Math.Min(a.Y, b.Y);
-        var y2 = Math.Max(a.Y + a.Height, b.Y + b.Height);
-        return new RectangleInfo(x1, y1, x2 - x1, y2 - y1);
-    }
-
     public RectangleInfo Enlarge(PaddingInfo padding) => new(
         this.X + padding.Left,
         this.Y + padding.Top,
         this.Width + padding.Horizontal,
         this.Height + padding.Vertical);
-
-    public RectangleInfo MoveTo(int x, int y) =>
-        new(x, y, this.Width, this.Height);
 
     public RectangleInfo Offset(SizeInfo amount) => this.Offset(amount.Width, amount.Height);
 

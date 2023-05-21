@@ -21,7 +21,7 @@ internal static partial class Core
             this.Value = value;
         }
 
-        public bool IsNull => this.Value == HDESK.Null.Value;
+        public bool IsNull => this.Value == HMONITOR.Null.Value;
 
         public static implicit operator int(HMONITOR value) => value.Value.ToInt32();
 

@@ -1,5 +1,6 @@
 ﻿using FancyMouse.NativeMethods;
 using static FancyMouse.NativeMethods.Core;
+using static FancyMouse.NativeMethods.User32;
 
 namespace FancyMouse.WindowsHotKeys.Internal;
 
@@ -41,7 +42,7 @@ internal sealed class MessageLoop
 
     public void Run()
     {
-        if (this.ManagedThread != null)
+        if (this.ManagedThread is not null)
         {
             throw new InvalidOperationException();
         }
@@ -64,6 +65,16 @@ internal sealed class MessageLoop
     {
         var quitMessagePosted = false;
 
+        var lpMsg = new LPMSG(
+            new MSG(
+                hwnd: HWND.Null,
+                message: MESSAGE_TYPE.WM_QUIT,
+                wParam: new(0),
+                lParam: new(0),
+                time: new(0),
+                pt: new(0, 0),
+                lPrivate: new(0)));
+
         // see https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getmessage
         //     https://learn.microsoft.com/en-us/windows/win32/winmsg/about-messages-and-message-queues
         //     https://devblogs.microsoft.com/oldnewthing/20050405-46/?p=35973
@@ -71,7 +82,7 @@ internal sealed class MessageLoop
         while (true)
         {
             var result = User32.GetMessageW(
-                lpMsg: out var lpMsg,
+                lpMsg: lpMsg,
                 hWnd: HWND.Null,
                 wMsgFilterMin: 0,
                 wMsgFilterMax: 0);
@@ -82,13 +93,13 @@ internal sealed class MessageLoop
 
             var msg = lpMsg.ToStructure();
 
-            if (msg.message == User32.MESSAGE_TYPE.WM_QUIT)
+            if (msg.message == MESSAGE_TYPE.WM_QUIT)
             {
                 break;
             }
 
             _ = User32.TranslateMessage(msg);
-            _ = User32.DispatchMessage(msg);
+            _ = User32.DispatchMessageW(msg);
 
             if ((this.CancellationTokenSource?.IsCancellationRequested ?? false) && !quitMessagePosted)
             {
@@ -106,7 +117,7 @@ internal sealed class MessageLoop
 
     public void Exit()
     {
-        if (this.ManagedThread == null)
+        if (this.ManagedThread is null)
         {
             throw new InvalidOperationException();
         }
@@ -119,7 +130,7 @@ internal sealed class MessageLoop
         // see https://devblogs.microsoft.com/oldnewthing/20050405-46/?p=35973
         _ = Win32Wrappers.PostThreadMessageW(
             idThread: this.NativeThreadId,
-            Msg: User32.MESSAGE_TYPE.WM_NULL,
+            Msg: MESSAGE_TYPE.WM_NULL,
             wParam: WPARAM.Null,
             lParam: LPARAM.Null);
     }
