@@ -175,7 +175,7 @@ internal static class Program
             defaultSettings,
             spacedSettings,
             gaudy1Settings,
-        }.Skip(3).First();
+        }.Skip(1).First();
 
         // logger: LogManager.LoadConfiguration(".\\NLog.config").GetCurrentClassLogger(),
         var dialog = new FancyMouseDialog(
