@@ -5,6 +5,8 @@
 /// </summary>
 public sealed class RectangleInfo
 {
+    public static readonly RectangleInfo Empty = new(0, 0, 0, 0);
+
     public RectangleInfo(decimal x, decimal y, decimal width, decimal height)
     {
         this.X = x;
@@ -56,52 +58,21 @@ public sealed class RectangleInfo
 
     public decimal Bottom => this.Y + this.Height;
 
-    public SizeInfo Size => new(this.Width, this.Height);
+    public decimal Area => this.Width * this.Height;
 
     public PointInfo Location => new(this.X, this.Y);
 
-    public decimal Area => this.Width * this.Height;
+    public PointInfo Midpoint => new(
+        x: this.X + (this.Width / 2),
+        y: this.Y + (this.Height / 2));
 
-    /// <remarks>
-    /// Adapted from https://github.com/dotnet/runtime
-    /// See https://github.com/dotnet/runtime/blob/dfd618dc648ba9b11dd0f8034f78113d69f223cd/src/libraries/System.Drawing.Primitives/src/System/Drawing/Rectangle.cs
-    /// </remarks>
-    public bool Contains(int x, int y) =>
-        this.X <= x && x < this.X + this.Width && this.Y <= y && y < this.Y + this.Height;
-
-    /// <remarks>
-    /// Adapted from https://github.com/dotnet/runtime
-    /// See https://github.com/dotnet/runtime/blob/dfd618dc648ba9b11dd0f8034f78113d69f223cd/src/libraries/System.Drawing.Primitives/src/System/Drawing/Rectangle.cs
-    /// </remarks>
-    public bool Contains(RectangleInfo rect) =>
-        (this.X <= rect.X) && (rect.X + rect.Width <= this.X + this.Width) &&
-        (this.Y <= rect.Y) && (rect.Y + rect.Height <= this.Y + this.Height);
-
-    public RectangleInfo Enlarge(PaddingInfo padding) => new(
-        this.X + padding.Left,
-        this.Y + padding.Top,
-        this.Width + padding.Horizontal,
-        this.Height + padding.Vertical);
-
-    public RectangleInfo Offset(SizeInfo amount) => this.Offset(amount.Width, amount.Height);
-
-    public RectangleInfo Offset(decimal dx, decimal dy) => new(this.X + dx, this.Y + dy, this.Width, this.Height);
-
-    public RectangleInfo Scale(decimal scalingFactor) => new(
-        this.X * scalingFactor,
-        this.Y * scalingFactor,
-        this.Width * scalingFactor,
-        this.Height * scalingFactor);
+    public SizeInfo Size => new(this.Width, this.Height);
 
     public RectangleInfo Center(PointInfo point) => new(
         x: point.X - (this.Width / 2),
         y: point.Y - (this.Height / 2),
         width: this.Width,
         height: this.Height);
-
-    public PointInfo Midpoint => new(
-        x: this.X + (this.Width / 2),
-        y: this.Y + (this.Height / 2));
 
     public RectangleInfo Clamp(RectangleInfo outer)
     {
@@ -115,6 +86,94 @@ public sealed class RectangleInfo
             y: Math.Clamp(this.Y, outer.Y, outer.Bottom - this.Height),
             width: this.Width,
             height: this.Height);
+    }
+
+    /// <remarks>
+    /// Adapted from https://github.com/dotnet/runtime
+    /// See https://github.com/dotnet/runtime/blob/dfd618dc648ba9b11dd0f8034f78113d69f223cd/src/libraries/System.Drawing.Primitives/src/System/Drawing/Rectangle.cs
+    /// </remarks>
+    public bool Contains(decimal x, decimal y) =>
+        this.X <= x && x < this.X + this.Width && this.Y <= y && y < this.Y + this.Height;
+
+    /// <remarks>
+    /// Adapted from https://github.com/dotnet/runtime
+    /// See https://github.com/dotnet/runtime/blob/dfd618dc648ba9b11dd0f8034f78113d69f223cd/src/libraries/System.Drawing.Primitives/src/System/Drawing/Rectangle.cs
+    /// </remarks>
+    public bool Contains(PointInfo pt) =>
+        this.Contains(pt.X, pt.Y);
+
+    /// <remarks>
+    /// Adapted from https://github.com/dotnet/runtime
+    /// See https://github.com/dotnet/runtime/blob/dfd618dc648ba9b11dd0f8034f78113d69f223cd/src/libraries/System.Drawing.Primitives/src/System/Drawing/Rectangle.cs
+    /// </remarks>
+    public bool Contains(RectangleInfo rect) =>
+        (this.X <= rect.X) && (rect.X + rect.Width <= this.X + this.Width) &&
+        (this.Y <= rect.Y) && (rect.Y + rect.Height <= this.Y + this.Height);
+
+    public RectangleInfo Enlarge(BorderInfo border) =>
+        new(
+            this.X - border.Left,
+            this.Y - border.Top,
+            this.Width + border.Horizontal,
+            this.Height + border.Vertical);
+
+    public RectangleInfo Enlarge(MarginInfo margin) =>
+        new(
+            this.X - margin.Left,
+            this.Y - margin.Top,
+            this.Width + margin.Horizontal,
+            this.Height + margin.Vertical);
+
+    public RectangleInfo Enlarge(PaddingInfo padding) =>
+        new(
+            this.X - padding.Left,
+            this.Y - padding.Top,
+            this.Width + padding.Horizontal,
+            this.Height + padding.Vertical);
+
+    public RectangleInfo Offset(SizeInfo amount) => this.Offset(amount.Width, amount.Height);
+
+    public RectangleInfo Offset(decimal dx, decimal dy) => new(this.X + dx, this.Y + dy, this.Width, this.Height);
+
+    public RectangleInfo Scale(decimal scalingFactor) => new(
+        this.X * scalingFactor,
+        this.Y * scalingFactor,
+        this.Width * scalingFactor,
+        this.Height * scalingFactor);
+
+    public RectangleInfo Shrink(BorderInfo border) =>
+        new(
+            this.X + border.Left,
+            this.Y + border.Top,
+            this.Width - border.Horizontal,
+            this.Height - border.Vertical);
+
+    public RectangleInfo Shrink(MarginInfo margin) =>
+        new(
+            this.X + margin.Left,
+            this.Y + margin.Top,
+            this.Width - margin.Horizontal,
+            this.Height - margin.Vertical);
+
+    public RectangleInfo Shrink(PaddingInfo padding) =>
+        new(
+            this.X + padding.Left,
+            this.Y + padding.Top,
+            this.Width - padding.Horizontal,
+            this.Height - padding.Vertical);
+
+    /// <remarks>
+    /// Adapted from https://github.com/dotnet/runtime
+    /// See https://github.com/dotnet/runtime/blob/dfd618dc648ba9b11dd0f8034f78113d69f223cd/src/libraries/System.Drawing.Primitives/src/System/Drawing/Rectangle.cs
+    /// </remarks>
+    public RectangleInfo Union(RectangleInfo rect)
+    {
+        var x1 = Math.Min(this.X, rect.X);
+        var x2 = Math.Max(this.X + this.Width, rect.X + rect.Width);
+        var y1 = Math.Min(this.Y, rect.Y);
+        var y2 = Math.Max(this.Y + this.Height, rect.Y + rect.Height);
+
+        return new RectangleInfo(x1, y1, x2 - x1, y2 - y1);
     }
 
     public Rectangle ToRectangle() => new((int)this.X, (int)this.Y, (int)this.Width, (int)this.Height);

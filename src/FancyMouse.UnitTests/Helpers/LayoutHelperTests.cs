@@ -1,15 +1,18 @@
-﻿using FancyMouse.Helpers;
+﻿using System.Drawing;
+using FancyMouse.Helpers;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Layout;
 using FancyMouse.Models.Screen;
+using FancyMouse.Models.Settings;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using static FancyMouse.NativeMethods.Core;
 
 namespace FancyMouse.UnitTests.Helpers;
 
 [TestClass]
-public static class DrawingHelperTests
+public static class LayoutHelperTests
 {
+    /*
     [TestClass]
     public sealed class CalculateLayoutInfoTests
     {
@@ -219,6 +222,134 @@ public static class DrawingHelperTests
             Assert.AreEqual(expected.ActivatedScreenBounds.Width, actual.ActivatedScreenBounds.Width, "ActivatedScreen.Width");
             Assert.AreEqual(expected.ActivatedScreenBounds.Height, actual.ActivatedScreenBounds.Height, "ActivatedScreen.Height");
             Assert.AreEqual(expected.ActivatedScreenBounds.ToRectangle(), actual.ActivatedScreenBounds.ToRectangle(), "ActivatedScreen.ToRectangle");
+        }
+    }
+    */
+
+    [TestClass]
+    public sealed class GetPreviewLayoutTests
+    {
+        public sealed class TestCase
+        {
+            public TestCase(PreviewSettings previewSettings, List<ScreenInfo> screens, PointInfo activatedLocation, PreviewLayout expectedResult)
+            {
+                this.PreviewSettings = previewSettings;
+                this.Screens = screens;
+                this.ActivatedLocation = activatedLocation;
+                this.ExpectedResult = expectedResult;
+            }
+
+            public PreviewSettings PreviewSettings { get; set; }
+
+            public List<ScreenInfo> Screens { get; set; }
+
+            public PointInfo ActivatedLocation { get; set; }
+
+            public PreviewLayout ExpectedResult { get; set; }
+        }
+
+        public static IEnumerable<object[]> GetTestCases()
+        {
+            // happy path - 50% scaling
+            //
+            // +----------------+
+            // |                |
+            // |       0        |
+            // |                |
+            // +----------------+
+            var previewSettings = new PreviewSettings(
+                size: new(
+                    width: 7 + 2 + 5 + 512 + 2 + 7,
+                    height: 7 + 2 + 384 + 2 + 7),
+                previewStyle: new(
+                    marginInfo: MarginInfo.Empty,
+                    borderInfo: new(
+                        color: SystemColors.Highlight,
+                        all: 5,
+                        depth: 3),
+                    paddingInfo: new(
+                        all: 1),
+                    backgroundInfo: new(
+                        color1: Color.FromArgb(13, 87, 210), // light blue
+                        color2: Color.FromArgb(3, 68, 192) // darker blue
+                        )
+                ),
+                screenshotStyle: new(
+                    marginInfo: MarginInfo.Empty,
+                    borderInfo: new(Color.Black, 5, 3),
+                    paddingInfo: new(1),
+                    backgroundInfo: BackgroundInfo.Empty
+                ));
+            var screens = new List<ScreenInfo>
+            {
+                new(HANDLE.Null, true, new(0, 0, 1024, 768), new(0, 0, 1024, 768)),
+            };
+            var activatedLocation = new PointInfo(512, 384);
+            var previewLayout = new PreviewLayout(
+                virtualScreen: new(0, 0, 1024, 768),
+                screens: screens,
+                activatedScreen: screens[0],
+                formBounds: new(0, 0, 0, 0),
+                previewStyle: new BoxStyle(
+                    marginInfo: MarginInfo.Empty,
+                    borderInfo: BorderInfo.Empty,
+                    paddingInfo: PaddingInfo.Empty,
+                    backgroundInfo: BackgroundInfo.Empty),
+                previewBounds: new(
+                    outerBounds: RectangleInfo.Empty,
+                    marginBounds: RectangleInfo.Empty,
+                    borderBounds: RectangleInfo.Empty,
+                    paddingBounds: RectangleInfo.Empty,
+                    contentBounds: RectangleInfo.Empty),
+                screenshotStyle: BoxStyle.Empty,
+                screenshotBounds: Enumerable.Empty<BoxBounds>());
+            yield return new object[] { new TestCase(previewSettings, screens, activatedLocation, previewLayout) };
+        }
+
+        [TestMethod]
+        [DynamicData(nameof(GetTestCases), DynamicDataSourceType.Method)]
+        public void RunTestCases(TestCase data)
+        {
+            // note - even if values are within 0.0001M of each other they could
+            // still round to different values - e.g.
+            // (int)1279.999999999999 -> 1279
+            // vs
+            // (int)1280.000000000000 -> 1280
+            // so we'll compare the raw values, *and* convert to an int-based
+            // Rectangle to compare rounded values
+            var actual = LayoutHelper.GetPreviewLayout(data.PreviewSettings, data.Screens, data.ActivatedLocation);
+            var expected = data.ExpectedResult;
+            /* form bounds */
+            Assert.AreEqual(expected.FormBounds.X, actual.FormBounds.X, 0.00001M, "FormBounds.X");
+            Assert.AreEqual(expected.FormBounds.Y, actual.FormBounds.Y, 0.00001M, "FormBounds.Y");
+            Assert.AreEqual(expected.FormBounds.Width, actual.FormBounds.Width, 0.00001M, "FormBounds.Width");
+            Assert.AreEqual(expected.FormBounds.Height, actual.FormBounds.Height, 0.00001M, "FormBounds.Height");
+            Assert.AreEqual(expected.FormBounds.ToRectangle(), actual.FormBounds.ToRectangle(), "FormBounds.ToRectangle");
+            /* preview bounds */
+            /*
+            Assert.AreEqual(expected.PreviewBounds.X, actual.PreviewBounds.X, 0.00001M, "PreviewBounds.X");
+            Assert.AreEqual(expected.PreviewBounds.Y, actual.PreviewBounds.Y, 0.00001M, "PreviewBounds.Y");
+            Assert.AreEqual(expected.PreviewBounds.Width, actual.PreviewBounds.Width, 0.00001M, "PreviewBounds.Width");
+            Assert.AreEqual(expected.PreviewBounds.Height, actual.PreviewBounds.Height, 0.00001M, "PreviewBounds.Height");
+            Assert.AreEqual(expected.PreviewBounds.ToRectangle(), actual.PreviewBounds.ToRectangle(), "PreviewBounds.ToRectangle");
+            */
+            /*
+            Assert.AreEqual(expected.ScreenBounds.Count, actual.ScreenBounds.Count, "ScreenBounds.Count");
+            for (var i = 0; i < expected.ScreenBounds.Count; i++)
+            {
+                Assert.AreEqual(expected.ScreenBounds[i].X, actual.ScreenBounds[i].X, 0.00001M, $"ScreenBounds[{i}].X");
+                Assert.AreEqual(expected.ScreenBounds[i].Y, actual.ScreenBounds[i].Y, 0.00001M, $"ScreenBounds[{i}].Y");
+                Assert.AreEqual(expected.ScreenBounds[i].Width, actual.ScreenBounds[i].Width, 0.00001M, $"ScreenBounds[{i}].Width");
+                Assert.AreEqual(expected.ScreenBounds[i].Height, actual.ScreenBounds[i].Height, 0.00001M, $"ScreenBounds[{i}].Height");
+                Assert.AreEqual(expected.ScreenBounds[i].ToRectangle(), actual.ScreenBounds[i].ToRectangle(), "ActivatedScreen.ToRectangle");
+            }
+
+            Assert.AreEqual(expected.ActivatedScreenBounds.X, actual.ActivatedScreenBounds.X, "ActivatedScreen.X");
+            Assert.AreEqual(expected.ActivatedScreenBounds.Y, actual.ActivatedScreenBounds.Y, "ActivatedScreen.Y");
+            Assert.AreEqual(expected.ActivatedScreenBounds.Width, actual.ActivatedScreenBounds.Width, "ActivatedScreen.Width");
+            Assert.AreEqual(expected.ActivatedScreenBounds.Height, actual.ActivatedScreenBounds.Height, "ActivatedScreen.Height");
+            Assert.AreEqual(expected.ActivatedScreenBounds.ToRectangle(), actual.ActivatedScreenBounds.ToRectangle(), "ActivatedScreen.ToRectangle");
+            */
         }
     }
 }

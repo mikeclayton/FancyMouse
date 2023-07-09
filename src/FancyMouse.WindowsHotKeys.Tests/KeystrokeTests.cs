@@ -23,9 +23,15 @@ public static class KeystrokeTests
         public static void ValidStringsShouldParse(string s, KeyModifiers modifier, Keys key)
         {
             var expected = new Keystroke(key, modifier);
-            var actual = Keystroke.Parse(s);
+            var result = Keystroke.TryParse(s, out var actual);
             Assert.Multiple(() =>
             {
+                Assert.IsTrue(result);
+                if (actual == null)
+                {
+                    throw new InvalidOperationException();
+                }
+
                 Assert.AreEqual(expected.Key, actual.Key);
                 Assert.AreEqual(expected.Modifiers, actual.Modifiers);
             });

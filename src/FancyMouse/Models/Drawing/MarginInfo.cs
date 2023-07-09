@@ -1,18 +1,15 @@
 ﻿namespace FancyMouse.Models.Drawing;
 
-/// <summary>
-/// Immutable version of a System.Windows.Forms.Padding object with some extra utility methods.
-/// </summary>
-public sealed class PaddingInfo
+public sealed class MarginInfo
 {
-    public static readonly PaddingInfo Empty = new(0);
+    public static readonly MarginInfo Empty = new(0);
 
-    public PaddingInfo(decimal all)
+    public MarginInfo(decimal all)
         : this(all, all, all, all)
     {
     }
 
-    public PaddingInfo(decimal left, decimal top, decimal right, decimal bottom)
+    public MarginInfo(decimal left, decimal top, decimal right, decimal bottom)
     {
         this.Left = left;
         this.Top = top;
@@ -43,11 +40,6 @@ public sealed class PaddingInfo
     public decimal Horizontal => this.Left + this.Right;
 
     public decimal Vertical => this.Top + this.Bottom;
-
-    public MarginInfo ToMarginInfo()
-    {
-        return new MarginInfo(this.Left, this.Top, this.Right, this.Bottom);
-    }
 
     public override string ToString()
     {

@@ -3,6 +3,7 @@ using System.Drawing.Imaging;
 using FancyMouse.Helpers;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Layout;
+using FancyMouse.Models.Screen;
 using NLog;
 using static FancyMouse.NativeMethods.Core;
 
@@ -144,94 +145,42 @@ internal partial class FancyMouseForm : Form
             "-----------"));
 
         var stopwatch = Stopwatch.StartNew();
-        var layoutInfo = FancyMouseForm.GetLayoutInfo(logger, this);
-        LayoutHelper.PositionForm(this, layoutInfo.FormBounds);
-        FancyMouseForm.RenderPreview(this, layoutInfo);
+
+        var screens = ScreenHelper.GetAllScreens();
+        var activatedLocation = MouseHelper.GetCursorPosition();
+        var previewLayout = LayoutHelper.GetPreviewLayout(
+            previewSettings: this.Options.PreviewSettings,
+            screens: screens,
+            activatedLocation: activatedLocation);
+
+        LayoutHelper.PositionForm(this, previewLayout.FormBounds);
+        FancyMouseForm.RenderPreview(this, previewLayout);
         stopwatch.Stop();
 
         // we have to activate the form to make sure the deactivate event fires
         this.Activate();
     }
 
-    private static LayoutInfo GetLayoutInfo(
-        ILogger logger, FancyMouseForm form)
-    {
-        // map screens to their screen number in "System > Display"
-        var screens = ScreenHelper.GetAllScreens()
-            .Select((screen, index) => new { Screen = screen, Index = index, Number = index + 1 })
-            .ToList();
-        foreach (var screen in screens)
-        {
-            logger.Info(string.Join(
-                '\n',
-                $"screen[{screen.Number}]",
-                $"\tprimary      = {screen.Screen.Primary}",
-                $"\tdisplay area = {screen.Screen.DisplayArea}",
-                $"\tworking area = {screen.Screen.WorkingArea}"));
-        }
-
-        // collect together some values that we need for calculating layout
-        var activatedLocation = MouseHelper.GetCursorPosition();
-        var activatedScreenHandle = ScreenHelper.MonitorFromPoint(activatedLocation);
-        var activatedScreenIndex = screens
-            .Single(item => item.Screen.Handle == activatedScreenHandle.Value)
-            .Index;
-
-        var layoutConfig = new LayoutConfig(
-            virtualScreenBounds: ScreenHelper.GetVirtualScreen(),
-            screens: screens.Select(item => item.Screen).ToList(),
-            activatedLocation: activatedLocation,
-            activatedScreenIndex: activatedScreenIndex,
-            activatedScreenNumber: activatedScreenIndex + 1,
-            maximumFormSize: form.Options.MaximumThumbnailImageSize,
-            formPadding: new(
-                form.panel1.Padding.Left,
-                form.panel1.Padding.Top,
-                form.panel1.Padding.Right,
-                form.panel1.Padding.Bottom),
-            previewPadding: new(0));
-        logger.Info(string.Join(
-            '\n',
-            "Layout config",
-            "-------------",
-            $"virtual screen          = {layoutConfig.VirtualScreenBounds}",
-            $"activated location      = {layoutConfig.ActivatedLocation}",
-            $"activated screen index  = {layoutConfig.ActivatedScreenIndex}",
-            $"activated screen number = {layoutConfig.ActivatedScreenNumber}",
-            $"maximum form size       = {layoutConfig.MaximumFormSize}",
-            $"form padding            = {layoutConfig.FormPadding}",
-            $"preview padding         = {layoutConfig.PreviewPadding}"));
-
-        // calculate the layout coordinates for everything
-        var layoutInfo = LayoutHelper.CalculateLayoutInfo(layoutConfig);
-        logger.Info(string.Join(
-            '\n',
-            "Layout info",
-            "-----------",
-            $"form bounds      = {layoutInfo.FormBounds}",
-            $"preview bounds   = {layoutInfo.PreviewBounds}",
-            $"activated screen = {layoutInfo.ActivatedScreenBounds}"));
-
-        return layoutInfo;
-    }
-
     private static void RenderPreview(
-        FancyMouseForm form, LayoutInfo layoutInfo)
+        FancyMouseForm form, PreviewLayout previewLayout)
     {
-        var layoutConfig = layoutInfo.LayoutConfig;
-
         var stopwatch = Stopwatch.StartNew();
 
         // initialize the preview image
-        var preview = new Bitmap(
-            (int)layoutInfo.PreviewBounds.Width,
-            (int)layoutInfo.PreviewBounds.Height,
+        var previewImage = new Bitmap(
+            (int)previewLayout.PreviewBounds.OuterBounds.Width,
+            (int)previewLayout.PreviewBounds.OuterBounds.Height,
             PixelFormat.Format32bppArgb);
-        form.Thumbnail.Image = preview;
+        form.Thumbnail.Image = previewImage;
 
-        using var previewGraphics = Graphics.FromImage(preview);
+        using var previewGraphics = Graphics.FromImage(previewImage);
 
-        DrawingHelper.DrawPreviewBackground(previewGraphics, layoutInfo.PreviewBounds, layoutInfo.ScreenBounds);
+        DrawingHelper.DrawBoxBorder(previewGraphics, previewLayout.PreviewStyle, previewLayout.PreviewBounds);
+        DrawingHelper.DrawBoxBackground(
+            previewGraphics,
+            previewLayout.PreviewStyle,
+            previewLayout.PreviewBounds,
+            Enumerable.Empty<RectangleInfo>());
 
         var desktopHwnd = HWND.Null;
         var desktopHdc = HDC.Null;
@@ -241,48 +190,55 @@ internal partial class FancyMouseForm : Form
             // sort the source and target screen areas, putting the activated screen first
             // (we need to capture and draw the activated screen before we show the form
             // because otherwise we'll capture the form as part of the screenshot!)
-            var sourceScreens = layoutConfig.Screens
-                .Where((_, idx) => idx == layoutConfig.ActivatedScreenIndex)
-                .Union(layoutConfig.Screens.Where((_, idx) => idx != layoutConfig.ActivatedScreenIndex))
+            var activatedScreenIndex = previewLayout.Screens.IndexOf(previewLayout.ActivatedScreen);
+            var sourceScreens = new List<ScreenInfo> { previewLayout.ActivatedScreen }
+                .Union(previewLayout.Screens.Where((_, idx) => idx != activatedScreenIndex))
                 .Select(screen => screen.Bounds)
                 .ToList();
-            var targetScreens = layoutInfo.ScreenBounds
-                .Where((_, idx) => idx == layoutConfig.ActivatedScreenIndex)
-                .Union(layoutInfo.ScreenBounds.Where((_, idx) => idx != layoutConfig.ActivatedScreenIndex))
+            var targetScreens = previewLayout.ScreenshotBounds
+                .Where((_, idx) => idx == activatedScreenIndex)
+                .Union(previewLayout.ScreenshotBounds.Where((_, idx) => idx != activatedScreenIndex))
                 .ToList();
 
             DrawingHelper.EnsureDesktopDeviceContext(ref desktopHwnd, ref desktopHdc);
-            DrawingHelper.EnsurePreviewDeviceContext(previewGraphics, ref previewHdc);
+
+            // draw all the screenshot bezels
+            foreach (var screenshotBounds in previewLayout.ScreenshotBounds)
+            {
+                DrawingHelper.DrawBoxBorder(
+                    previewGraphics, previewLayout.ScreenshotStyle, screenshotBounds);
+            }
 
             var placeholdersDrawn = false;
             for (var i = 0; i < sourceScreens.Count; i++)
             {
-                DrawingHelper.DrawPreviewScreen(
+                DrawingHelper.EnsurePreviewDeviceContext(previewGraphics, ref previewHdc);
+                DrawingHelper.DrawScreenshot(
                     desktopHdc, previewHdc, sourceScreens[i], targetScreens[i]);
 
                 // show the placeholder images and show the form if it looks like it might take
                 // a while to capture the remaining screenshot images (but only if there are any)
-                if ((i < (sourceScreens.Count - 1)) && (stopwatch.ElapsedMilliseconds > 250))
+                if ((i >= (sourceScreens.Count - 1)) || (stopwatch.ElapsedMilliseconds <= 250))
                 {
-                    // we need to release the device context handle before we draw the placeholders
-                    // using the Graphics object otherwise we'll get an error from GDI saying
-                    // "Object is currently in use elsewhere"
-                    DrawingHelper.FreePreviewDeviceContext(previewGraphics, ref previewHdc);
-
-                    if (!placeholdersDrawn)
-                    {
-                        // draw placeholders for any undrawn screens
-                        DrawingHelper.DrawPreviewScreenPlaceholders(
-                            previewGraphics,
-                            targetScreens.Where((_, idx) => idx > i).ToList());
-                        placeholdersDrawn = true;
-                    }
-
-                    FancyMouseForm.RefreshPreview(form);
-
-                    // we've still got more screens to draw so open the device context again
-                    DrawingHelper.EnsurePreviewDeviceContext(previewGraphics, ref previewHdc);
+                    continue;
                 }
+
+                // we need to release the device context handle before we draw anything
+                // using the Graphics object otherwise we'll get an error from GDI saying
+                // "Object is currently in use elsewhere"
+                DrawingHelper.FreePreviewDeviceContext(previewGraphics, ref previewHdc);
+
+                if (!placeholdersDrawn)
+                {
+                    // draw placeholders for any undrawn screens
+                    DrawingHelper.DrawPlaceholders(
+                        previewGraphics,
+                        previewLayout.ScreenshotStyle,
+                        targetScreens.Where((_, idx) => idx > i).ToList());
+                    placeholdersDrawn = true;
+                }
+
+                FancyMouseForm.RefreshPreview(form);
             }
         }
         finally
