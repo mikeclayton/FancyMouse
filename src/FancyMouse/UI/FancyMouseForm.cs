@@ -186,7 +186,6 @@ internal partial class FancyMouseForm : Form
             this.PreviewLayout,
             this.OnPreviewImageCreated,
             this.OnPreviewImageUpdated);
-
         stopwatch.Stop();
 
         // we have to activate the form to make sure the deactivate event fires
