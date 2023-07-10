@@ -1,6 +1,10 @@
-﻿using System.Drawing.Drawing2D;
+﻿using System.Diagnostics;
+using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Layout;
+using FancyMouse.Models.Screen;
+using FancyMouse.Models.Styles;
 using FancyMouse.NativeMethods;
 using static FancyMouse.NativeMethods.Core;
 
@@ -8,13 +12,112 @@ namespace FancyMouse.Helpers;
 
 internal static class DrawingHelper
 {
+    internal static void RenderPreview(
+        PreviewLayout previewLayout,
+        Action<Bitmap> imageCreatedCallback,
+        Action imageUpdatedCallback)
+    {
+        var stopwatch = Stopwatch.StartNew();
+
+        // initialize the preview image
+        var previewImage = new Bitmap(
+            (int)previewLayout.PreviewBounds.OuterBounds.Width,
+            (int)previewLayout.PreviewBounds.OuterBounds.Height,
+            PixelFormat.Format32bppArgb);
+        imageCreatedCallback.Invoke(previewImage);
+
+        using var previewGraphics = Graphics.FromImage(previewImage);
+
+        DrawingHelper.DrawBoxBorder(previewGraphics, previewLayout.PreviewStyle, previewLayout.PreviewBounds);
+        DrawingHelper.DrawBoxBackground(
+            previewGraphics,
+            previewLayout.PreviewStyle,
+            previewLayout.PreviewBounds,
+            Enumerable.Empty<RectangleInfo>());
+
+        var desktopHwnd = HWND.Null;
+        var desktopHdc = HDC.Null;
+        var previewHdc = HDC.Null;
+        var imageUpdated = false;
+        try
+        {
+            // sort the source and target screen areas, putting the activated screen first
+            // (we need to capture and draw the activated screen before we show the form
+            // because otherwise we'll capture the form as part of the screenshot!)
+            var activatedScreenIndex = previewLayout.Screens.IndexOf(previewLayout.ActivatedScreen);
+            var sourceScreens = new List<ScreenInfo> { previewLayout.ActivatedScreen }
+                .Union(previewLayout.Screens.Where((_, idx) => idx != activatedScreenIndex))
+                .Select(screen => screen.DisplayArea)
+                .ToList();
+            var targetScreens = previewLayout.ScreenshotBounds
+                .Where((_, idx) => idx == activatedScreenIndex)
+                .Union(previewLayout.ScreenshotBounds.Where((_, idx) => idx != activatedScreenIndex))
+                .ToList();
+
+            DrawingHelper.EnsureDesktopDeviceContext(ref desktopHwnd, ref desktopHdc);
+
+            // draw all the screenshot bezels
+            foreach (var screenshotBounds in previewLayout.ScreenshotBounds)
+            {
+                DrawingHelper.DrawBoxBorder(
+                    previewGraphics, previewLayout.ScreenshotStyle, screenshotBounds);
+            }
+
+            var placeholdersDrawn = false;
+            for (var i = 0; i < sourceScreens.Count; i++)
+            {
+                DrawingHelper.EnsurePreviewDeviceContext(previewGraphics, ref previewHdc);
+                DrawingHelper.DrawScreenshot(
+                    desktopHdc, previewHdc, sourceScreens[i], targetScreens[i]);
+                imageUpdated = true;
+
+                // show the placeholder images and show the form if it looks like it might take
+                // a while to capture the remaining screenshot images (but only if there are any)
+                if ((i >= (sourceScreens.Count - 1)) || (stopwatch.ElapsedMilliseconds <= 250))
+                {
+                    continue;
+                }
+
+                // we need to release the device context handle before we draw anything
+                // using the Graphics object otherwise we'll get an error from GDI saying
+                // "Object is currently in use elsewhere"
+                DrawingHelper.FreePreviewDeviceContext(previewGraphics, ref previewHdc);
+
+                if (!placeholdersDrawn)
+                {
+                    // draw placeholders for any undrawn screens
+                    DrawingHelper.DrawPlaceholders(
+                        previewGraphics,
+                        previewLayout.ScreenshotStyle,
+                        targetScreens.Where((_, idx) => idx > i).ToList());
+                    placeholdersDrawn = true;
+                }
+
+                imageUpdatedCallback.Invoke();
+                imageUpdated = false;
+            }
+        }
+        finally
+        {
+            DrawingHelper.FreeDesktopDeviceContext(ref desktopHwnd, ref desktopHdc);
+            DrawingHelper.FreePreviewDeviceContext(previewGraphics, ref previewHdc);
+        }
+
+        if (imageUpdated)
+        {
+            imageUpdatedCallback.Invoke();
+        }
+
+        stopwatch.Stop();
+    }
+
     /// <summary>
-    /// Draw a border shape.
+    /// Draws a border shape with an optional 3d highlight and shadow effect.
     /// </summary>
     public static void DrawBoxBorder(
         Graphics graphics, BoxStyle boxStyle, BoxBounds boxBounds)
     {
-        var borderInfo = boxStyle.BorderInfo;
+        var borderInfo = boxStyle.BorderStyle;
         if (borderInfo is { Horizontal: 0, Vertical: 0 })
         {
             return;
@@ -104,13 +207,13 @@ internal static class DrawingHelper
     }
 
     /// <summary>
-    /// Draw a gradient-filled background shape.
+    /// Draws a gradient-filled background shape.
     /// </summary>
     public static void DrawBoxBackground(
         Graphics graphics, BoxStyle boxStyle, BoxBounds boxBounds, IEnumerable<RectangleInfo> excludeBounds)
     {
         var backgroundBounds = boxBounds.PaddingBounds;
-        var backgroundInfo = boxStyle.BackgroundInfo;
+        var backgroundInfo = boxStyle.BackgroundStyle;
 
         using var backgroundBrush = new LinearGradientBrush(
             backgroundBounds.ToRectangle(),
@@ -196,17 +299,17 @@ internal static class DrawingHelper
     }
 
     /// <summary>
-    /// Draw placeholder images for any non-activated screens on the preview.
+    /// Draws placeholder images for any non-activated screens on the preview.
     /// Will release the specified device context handle if it needs to draw anything.
     /// </summary>
     public static void DrawPlaceholders(
-        Graphics graphics, BoxStyle screenStyle, IEnumerable<BoxBounds> screenBounds)
+        Graphics graphics, BoxStyle screenStyle, IList<BoxBounds> screenBounds)
     {
         // we can exclude the activated screen because we've already draw
         // the screen capture image for that one on the preview
         if (screenBounds.Any())
         {
-            var brush = new SolidBrush(screenStyle.BackgroundInfo.Color1);
+            var brush = new SolidBrush(screenStyle.BackgroundStyle.Color1);
             graphics.FillRectangles(brush, screenBounds.Select(bounds => bounds.PaddingBounds.ToRectangle()).ToArray());
         }
     }

@@ -139,7 +139,7 @@ internal sealed class MessageLoop
             .Cancel();
 
         // post a null message just in case GetMessageW needs a nudge to stop blocking the
-        // message loop. the loop will then notice that we've set the cancellation token,
+        // message loop - the loop will then notice that we've set the cancellation token,
         // and exit the loop...
         // (see https://devblogs.microsoft.com/oldnewthing/20050405-46/?p=35973)
         _ = Win32Wrappers.PostThreadMessageW(

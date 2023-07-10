@@ -20,6 +20,8 @@ internal static partial class Core
             this.Value = LPCRECT.ToPtr(value);
         }
 
+        public bool IsNull => this.Value == LPCRECT.Null.Value;
+
         private static IntPtr ToPtr(CRECT value)
         {
             var ptr = Marshal.AllocHGlobal(CRECT.Size);

@@ -1,15 +1,18 @@
-﻿namespace FancyMouse.Models.Drawing;
+﻿namespace FancyMouse.Models.Styles;
 
-public sealed class MarginInfo
+/// <summary>
+/// Represents the margin style for a drawing object.
+/// </summary>
+public sealed class PaddingStyle
 {
-    public static readonly MarginInfo Empty = new(0);
+    public static readonly PaddingStyle Empty = new(0);
 
-    public MarginInfo(decimal all)
+    public PaddingStyle(decimal all)
         : this(all, all, all, all)
     {
     }
 
-    public MarginInfo(decimal left, decimal top, decimal right, decimal bottom)
+    public PaddingStyle(decimal left, decimal top, decimal right, decimal bottom)
     {
         this.Left = left;
         this.Top = top;

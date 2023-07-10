@@ -60,7 +60,7 @@ public sealed class BoxBounds
     }
 
     /// <summary>
-    /// Gets the content settings for this layout box.
+    /// Gets the bounds of the content area for this layout box.
     /// </summary>
     public RectangleInfo ContentBounds
     {

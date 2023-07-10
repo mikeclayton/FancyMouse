@@ -32,9 +32,6 @@ public sealed class ScreenInfo
         get;
     }
 
-    public RectangleInfo Bounds =>
-        this.DisplayArea;
-
     public RectangleInfo WorkingArea
     {
         get;

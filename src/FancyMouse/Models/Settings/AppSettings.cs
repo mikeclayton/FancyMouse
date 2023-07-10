@@ -1,5 +1,4 @@
-﻿using FancyMouse.Models.Layout;
-using FancyMouse.WindowsHotKeys;
+﻿using FancyMouse.WindowsHotKeys;
 
 namespace FancyMouse.Models.Settings;
 

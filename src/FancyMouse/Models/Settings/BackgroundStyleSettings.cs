@@ -1,23 +1,24 @@
-﻿namespace FancyMouse.Models.Drawing;
+﻿namespace FancyMouse.Models.Settings;
 
-public sealed class BackgroundInfo
+/// <summary>
+/// Represents the background fill style for a drawing object.
+/// </summary>
+public sealed class BackgroundStyleSettings
 {
-    public static readonly BackgroundInfo Empty = new(SystemColors.Control, SystemColors.Control);
-
-    public BackgroundInfo(
-        Color color1,
-        Color color2)
+    public BackgroundStyleSettings(
+        string color1,
+        string color2)
     {
         this.Color1 = color1;
         this.Color2 = color2;
     }
 
-    public Color Color1
+    public string Color1
     {
         get;
     }
 
-    public Color Color2
+    public string Color2
     {
         get;
     }

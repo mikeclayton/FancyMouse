@@ -1,6 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Screen;
+using FancyMouse.Models.Styles;
 
 namespace FancyMouse.Models.Layout;
 

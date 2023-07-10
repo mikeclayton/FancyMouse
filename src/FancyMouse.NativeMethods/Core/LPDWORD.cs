@@ -28,6 +28,8 @@ internal static partial class Core
             this.Value = LPDWORD.ToPtr(value);
         }
 
+        public bool IsNull => this.Value == LPDWORD.Null.Value;
+
         private static IntPtr ToPtr(DWORD value)
         {
             var ptr = Marshal.AllocHGlobal(DWORD.Size);

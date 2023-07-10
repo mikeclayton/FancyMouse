@@ -20,6 +20,8 @@ internal static partial class Core
             this.Value = LPPOINT.ToPtr(value);
         }
 
+        public bool IsNull => this.Value == LPPOINT.Null.Value;
+
         private static IntPtr ToPtr(POINT value)
         {
             var ptr = Marshal.AllocHGlobal(POINT.Size);

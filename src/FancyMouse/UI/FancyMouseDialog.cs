@@ -16,8 +16,7 @@ internal class FancyMouseDialog
     public void Show()
     {
         var form = this.Form;
-        form.Visible = false;
-        form.ShowThumbnail();
+        form.ShowPreview();
 
         // GC.Collect();
     }
