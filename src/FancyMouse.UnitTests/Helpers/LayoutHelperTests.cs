@@ -3,7 +3,7 @@ using FancyMouse.Helpers;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Layout;
 using FancyMouse.Models.Screen;
-using FancyMouse.Models.Settings;
+using FancyMouse.Models.Styles;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using static FancyMouse.NativeMethods.Core;
 
@@ -231,15 +231,15 @@ public static class LayoutHelperTests
     {
         public sealed class TestCase
         {
-            public TestCase(PreviewSettings previewSettings, List<ScreenInfo> screens, PointInfo activatedLocation, PreviewLayout expectedResult)
+            public TestCase(PreviewStyle previewStyle, List<ScreenInfo> screens, PointInfo activatedLocation, PreviewLayout expectedResult)
             {
-                this.PreviewSettings = previewSettings;
+                this.PreviewStyle = previewStyle;
                 this.Screens = screens;
                 this.ActivatedLocation = activatedLocation;
                 this.ExpectedResult = expectedResult;
             }
 
-            public PreviewSettings PreviewSettings { get; set; }
+            public PreviewStyle PreviewStyle { get; set; }
 
             public List<ScreenInfo> Screens { get; set; }
 
@@ -257,28 +257,28 @@ public static class LayoutHelperTests
             // |       0        |
             // |                |
             // +----------------+
-            var previewSettings = new PreviewSettings(
-                size: new(
+            var previewConfig = new PreviewStyle(
+                canvasSize: new(
                     width: 7 + 2 + 5 + 512 + 2 + 7,
                     height: 7 + 2 + 384 + 2 + 7),
-                previewStyle: new(
-                    marginInfo: MarginInfo.Empty,
-                    borderInfo: new(
+                canvasStyle: new(
+                    marginStyle: MarginStyle.Empty,
+                    borderStyle: new(
                         color: SystemColors.Highlight,
                         all: 5,
                         depth: 3),
-                    paddingInfo: new(
+                    paddingStyle: new(
                         all: 1),
-                    backgroundInfo: new(
+                    backgroundStyle: new(
                         color1: Color.FromArgb(13, 87, 210), // light blue
                         color2: Color.FromArgb(3, 68, 192) // darker blue
-                        )
+                    )
                 ),
                 screenshotStyle: new(
-                    marginInfo: MarginInfo.Empty,
-                    borderInfo: new(Color.Black, 5, 3),
-                    paddingInfo: new(1),
-                    backgroundInfo: BackgroundInfo.Empty
+                    marginStyle: MarginStyle.Empty,
+                    borderStyle: new(Color.Black, 5, 3),
+                    paddingStyle: PaddingStyle.Empty,
+                    backgroundStyle: new(Color.Transparent, Color.Transparent)
                 ));
             var screens = new List<ScreenInfo>
             {
@@ -291,10 +291,10 @@ public static class LayoutHelperTests
                 activatedScreen: screens[0],
                 formBounds: new(0, 0, 0, 0),
                 previewStyle: new BoxStyle(
-                    marginInfo: MarginInfo.Empty,
-                    borderInfo: BorderInfo.Empty,
-                    paddingInfo: PaddingInfo.Empty,
-                    backgroundInfo: BackgroundInfo.Empty),
+                    marginStyle: MarginStyle.Empty,
+                    borderStyle: BorderStyle.Empty,
+                    paddingStyle: PaddingStyle.Empty,
+                    backgroundStyle: BackgroundStyle.Empty),
                 previewBounds: new(
                     outerBounds: RectangleInfo.Empty,
                     marginBounds: RectangleInfo.Empty,
@@ -303,7 +303,7 @@ public static class LayoutHelperTests
                     contentBounds: RectangleInfo.Empty),
                 screenshotStyle: BoxStyle.Empty,
                 screenshotBounds: Enumerable.Empty<BoxBounds>());
-            yield return new object[] { new TestCase(previewSettings, screens, activatedLocation, previewLayout) };
+            yield return new object[] { new TestCase(previewConfig, screens, activatedLocation, previewLayout) };
         }
 
         [TestMethod]
@@ -317,7 +317,7 @@ public static class LayoutHelperTests
             // (int)1280.000000000000 -> 1280
             // so we'll compare the raw values, *and* convert to an int-based
             // Rectangle to compare rounded values
-            var actual = LayoutHelper.GetPreviewLayout(data.PreviewSettings, data.Screens, data.ActivatedLocation);
+            var actual = LayoutHelper.GetPreviewLayout(data.PreviewStyle, data.Screens, data.ActivatedLocation);
             var expected = data.ExpectedResult;
             /* form bounds */
             Assert.AreEqual(expected.FormBounds.X, actual.FormBounds.X, 0.00001M, "FormBounds.X");

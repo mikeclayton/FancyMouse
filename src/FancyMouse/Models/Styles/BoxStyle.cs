@@ -1,5 +1,8 @@
-﻿namespace FancyMouse.Models.Drawing;
+﻿namespace FancyMouse.Models.Styles;
 
+/// <summary>
+/// Represents the styles to apply to a simple box-layout based drawing object.
+/// </summary>
 public sealed class BoxStyle
 {
     /*
@@ -22,45 +25,48 @@ public sealed class BoxStyle
 
     */
 
-    public static readonly BoxStyle Empty = new(MarginInfo.Empty, BorderInfo.Empty, PaddingInfo.Empty, BackgroundInfo.Empty);
+    public static readonly BoxStyle Empty = new(MarginStyle.Empty, BorderStyle.Empty, PaddingStyle.Empty, BackgroundStyle.Empty);
 
-    internal BoxStyle(
-        MarginInfo marginInfo,
-        BorderInfo borderInfo,
-        PaddingInfo paddingInfo,
-        BackgroundInfo backgroundInfo)
+    public BoxStyle(
+        MarginStyle marginStyle,
+        BorderStyle borderStyle,
+        PaddingStyle paddingStyle,
+        BackgroundStyle backgroundStyle)
     {
-        this.MarginInfo = marginInfo ?? throw new ArgumentNullException(nameof(marginInfo));
-        this.BorderInfo = borderInfo ?? throw new ArgumentNullException(nameof(borderInfo));
-        this.PaddingInfo = paddingInfo ?? throw new ArgumentNullException(nameof(paddingInfo));
-        this.BackgroundInfo = backgroundInfo ?? throw new ArgumentNullException(nameof(backgroundInfo));
+        this.MarginStyle = marginStyle ?? throw new ArgumentNullException(nameof(marginStyle));
+        this.BorderStyle = borderStyle ?? throw new ArgumentNullException(nameof(borderStyle));
+        this.PaddingStyle = paddingStyle ?? throw new ArgumentNullException(nameof(paddingStyle));
+        this.BackgroundStyle = backgroundStyle ?? throw new ArgumentNullException(nameof(backgroundStyle));
     }
 
     /// <summary>
-    /// Gets the margin settings for this layout box.
+    /// Gets the margin style for this layout box.
     /// </summary>
-    public MarginInfo MarginInfo
+    public MarginStyle MarginStyle
     {
         get;
     }
 
     /// <summary>
-    /// Gets the border settings for this layout box.
+    /// Gets the border style for this layout box.
     /// </summary>
-    public BorderInfo BorderInfo
+    public BorderStyle BorderStyle
     {
         get;
     }
 
     /// <summary>
-    /// Gets the padding settings for this layout box.
+    /// Gets the padding style for this layout box.
     /// </summary>
-    public PaddingInfo PaddingInfo
+    public PaddingStyle PaddingStyle
     {
         get;
     }
 
-    public BackgroundInfo BackgroundInfo
+    /// <summary>
+    /// Gets the background fill style for the content area of this layout box.
+    /// </summary>
+    public BackgroundStyle BackgroundStyle
     {
         get;
     }

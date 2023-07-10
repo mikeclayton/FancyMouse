@@ -4,7 +4,6 @@ using FancyMouse.Helpers;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Layout;
 using FancyMouse.Models.Screen;
-using NLog;
 using static FancyMouse.NativeMethods.Core;
 
 namespace FancyMouse.UI;
@@ -20,6 +19,12 @@ internal partial class FancyMouseForm : Form
     private FancyMouseDialogOptions Options
     {
         get;
+    }
+
+    private PreviewLayout? PreviewLayout
+    {
+        get;
+        set;
     }
 
     private void FancyMouseForm_Load(object sender, EventArgs e)
@@ -148,13 +153,13 @@ internal partial class FancyMouseForm : Form
 
         var screens = ScreenHelper.GetAllScreens();
         var activatedLocation = MouseHelper.GetCursorPosition();
-        var previewLayout = LayoutHelper.GetPreviewLayout(
-            previewSettings: this.Options.PreviewSettings,
+        this.PreviewLayout = LayoutHelper.GetPreviewLayout(
+            previewStyle: this.Options.PreviewStyle,
             screens: screens,
             activatedLocation: activatedLocation);
 
-        LayoutHelper.PositionForm(this, previewLayout.FormBounds);
-        FancyMouseForm.RenderPreview(this, previewLayout);
+        LayoutHelper.PositionForm(this, this.PreviewLayout.FormBounds);
+        FancyMouseForm.RenderPreview(this, this.PreviewLayout);
         stopwatch.Stop();
 
         // we have to activate the form to make sure the deactivate event fires

@@ -1,4 +1,6 @@
-﻿namespace FancyMouse.Models.Drawing;
+﻿using FancyMouse.Models.Styles;
+
+namespace FancyMouse.Models.Drawing;
 
 /// <summary>
 /// Immutable version of a System.Drawing.Rectangle object with some extra utility methods.
@@ -110,21 +112,21 @@ public sealed class RectangleInfo
         (this.X <= rect.X) && (rect.X + rect.Width <= this.X + this.Width) &&
         (this.Y <= rect.Y) && (rect.Y + rect.Height <= this.Y + this.Height);
 
-    public RectangleInfo Enlarge(BorderInfo border) =>
+    public RectangleInfo Enlarge(Styles.BorderStyle border) =>
         new(
             this.X - border.Left,
             this.Y - border.Top,
             this.Width + border.Horizontal,
             this.Height + border.Vertical);
 
-    public RectangleInfo Enlarge(MarginInfo margin) =>
+    public RectangleInfo Enlarge(MarginStyle margin) =>
         new(
             this.X - margin.Left,
             this.Y - margin.Top,
             this.Width + margin.Horizontal,
             this.Height + margin.Vertical);
 
-    public RectangleInfo Enlarge(PaddingInfo padding) =>
+    public RectangleInfo Enlarge(PaddingStyle padding) =>
         new(
             this.X - padding.Left,
             this.Y - padding.Top,
@@ -141,21 +143,21 @@ public sealed class RectangleInfo
         this.Width * scalingFactor,
         this.Height * scalingFactor);
 
-    public RectangleInfo Shrink(BorderInfo border) =>
+    public RectangleInfo Shrink(Styles.BorderStyle border) =>
         new(
             this.X + border.Left,
             this.Y + border.Top,
             this.Width - border.Horizontal,
             this.Height - border.Vertical);
 
-    public RectangleInfo Shrink(MarginInfo margin) =>
+    public RectangleInfo Shrink(MarginStyle margin) =>
         new(
             this.X + margin.Left,
             this.Y + margin.Top,
             this.Width - margin.Horizontal,
             this.Height - margin.Vertical);
 
-    public RectangleInfo Shrink(PaddingInfo padding) =>
+    public RectangleInfo Shrink(PaddingStyle padding) =>
         new(
             this.X + padding.Left,
             this.Y + padding.Top,

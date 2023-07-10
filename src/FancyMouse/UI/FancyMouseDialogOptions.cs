@@ -1,4 +1,4 @@
-﻿using FancyMouse.Models.Settings;
+﻿using FancyMouse.Models.Styles;
 using NLog;
 
 namespace FancyMouse.UI;
@@ -7,10 +7,10 @@ internal sealed class FancyMouseDialogOptions
 {
     public FancyMouseDialogOptions(
         ILogger logger,
-        PreviewSettings previewSettings)
+        PreviewStyle previewStyle)
     {
         this.Logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        this.PreviewSettings = previewSettings ?? throw new ArgumentNullException(nameof(previewSettings));
+        this.PreviewStyle = previewStyle ?? throw new ArgumentNullException(nameof(previewStyle));
     }
 
     public ILogger Logger
@@ -18,7 +18,7 @@ internal sealed class FancyMouseDialogOptions
         get;
     }
 
-    public PreviewSettings PreviewSettings
+    public PreviewStyle PreviewStyle
     {
         get;
     }

@@ -1,4 +1,6 @@
-﻿namespace FancyMouse.Models.Drawing;
+﻿using FancyMouse.Models.Styles;
+
+namespace FancyMouse.Models.Drawing;
 
 /// <summary>
 /// Immutable version of a System.Drawing.Size object with some extra utility methods.
@@ -26,12 +28,12 @@ public sealed class SizeInfo
         get;
     }
 
-    public SizeInfo Enlarge(BorderInfo border) =>
+    public SizeInfo Enlarge(Styles.BorderStyle border) =>
         new(
             this.Width + border.Horizontal,
             this.Height + border.Vertical);
 
-    public SizeInfo Enlarge(PaddingInfo padding) =>
+    public SizeInfo Enlarge(PaddingStyle padding) =>
         new(
             this.Width + padding.Horizontal,
             this.Height + padding.Vertical);
@@ -44,13 +46,13 @@ public sealed class SizeInfo
     public SizeInfo Negate() =>
         new(-this.Width, -this.Height);
 
-    public SizeInfo Shrink(BorderInfo border) =>
+    public SizeInfo Shrink(Styles.BorderStyle border) =>
         new(this.Width - border.Horizontal, this.Height - border.Vertical);
 
-    public SizeInfo Shrink(MarginInfo margin) =>
+    public SizeInfo Shrink(MarginStyle margin) =>
         new(this.Width - margin.Horizontal, this.Height - margin.Vertical);
 
-    public SizeInfo Shrink(PaddingInfo padding) =>
+    public SizeInfo Shrink(PaddingStyle padding) =>
         new(this.Width - padding.Horizontal, this.Height - padding.Vertical);
 
     public RectangleInfo PlaceAt(decimal x, decimal y) => new(x, y, this.Width, this.Height);

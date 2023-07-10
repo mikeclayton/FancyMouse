@@ -1,6 +1,6 @@
 ﻿using System.Drawing.Drawing2D;
 using FancyMouse.Models.Drawing;
-using FancyMouse.Models.Layout;
+using FancyMouse.Models.Styles;
 using FancyMouse.NativeMethods;
 using static FancyMouse.NativeMethods.Core;
 
@@ -9,12 +9,12 @@ namespace FancyMouse.Helpers;
 internal static class DrawingHelper
 {
     /// <summary>
-    /// Draw a border shape.
+    /// Draws a border shape with an optional 3d highlight and shadow effect.
     /// </summary>
     public static void DrawBoxBorder(
         Graphics graphics, BoxStyle boxStyle, BoxBounds boxBounds)
     {
-        var borderInfo = boxStyle.BorderInfo;
+        var borderInfo = boxStyle.BorderStyle;
         if (borderInfo is { Horizontal: 0, Vertical: 0 })
         {
             return;
@@ -104,13 +104,13 @@ internal static class DrawingHelper
     }
 
     /// <summary>
-    /// Draw a gradient-filled background shape.
+    /// Draws a gradient-filled background shape.
     /// </summary>
     public static void DrawBoxBackground(
         Graphics graphics, BoxStyle boxStyle, BoxBounds boxBounds, IEnumerable<RectangleInfo> excludeBounds)
     {
         var backgroundBounds = boxBounds.PaddingBounds;
-        var backgroundInfo = boxStyle.BackgroundInfo;
+        var backgroundInfo = boxStyle.BackgroundStyle;
 
         using var backgroundBrush = new LinearGradientBrush(
             backgroundBounds.ToRectangle(),
@@ -196,17 +196,17 @@ internal static class DrawingHelper
     }
 
     /// <summary>
-    /// Draw placeholder images for any non-activated screens on the preview.
+    /// Draws placeholder images for any non-activated screens on the preview.
     /// Will release the specified device context handle if it needs to draw anything.
     /// </summary>
     public static void DrawPlaceholders(
-        Graphics graphics, BoxStyle screenStyle, IEnumerable<BoxBounds> screenBounds)
+        Graphics graphics, BoxStyle screenStyle, IList<BoxBounds> screenBounds)
     {
         // we can exclude the activated screen because we've already draw
         // the screen capture image for that one on the preview
         if (screenBounds.Any())
         {
-            var brush = new SolidBrush(screenStyle.BackgroundInfo.Color1);
+            var brush = new SolidBrush(screenStyle.BackgroundStyle.Color1);
             graphics.FillRectangles(brush, screenBounds.Select(bounds => bounds.PaddingBounds.ToRectangle()).ToArray());
         }
     }

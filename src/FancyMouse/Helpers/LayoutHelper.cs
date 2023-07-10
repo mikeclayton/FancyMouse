@@ -1,18 +1,18 @@
 ﻿using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Layout;
 using FancyMouse.Models.Screen;
-using FancyMouse.Models.Settings;
+using FancyMouse.Models.Styles;
 
 namespace FancyMouse.Helpers;
 
 internal static class LayoutHelper
 {
     public static PreviewLayout GetPreviewLayout(
-        PreviewSettings previewSettings, IEnumerable<ScreenInfo> screens, PointInfo activatedLocation)
+        PreviewStyle previewStyle, IEnumerable<ScreenInfo> screens, PointInfo activatedLocation)
     {
-        if (previewSettings is null)
+        if (previewStyle is null)
         {
-            throw new ArgumentNullException(nameof(previewSettings));
+            throw new ArgumentNullException(nameof(previewStyle));
         }
 
         if (screens is null)
@@ -46,14 +46,14 @@ internal static class LayoutHelper
         // * can't be bigger than the activated screen
         // * can't be bigger than the max form size
         var maxPreviewSize = activatedScreen.DisplayArea.Size
-            .Intersect(previewSettings.Size);
+            .Intersect(previewStyle.CanvasSize);
 
         // the drawing area for screenshots is inside the
         // preview border and inside the preview padding (if any)
         var maxContentSize = maxPreviewSize
-            .Shrink(previewSettings.PreviewStyle.MarginInfo)
-            .Shrink(previewSettings.PreviewStyle.BorderInfo)
-            .Shrink(previewSettings.PreviewStyle.PaddingInfo);
+            .Shrink(previewStyle.CanvasStyle.MarginStyle)
+            .Shrink(previewStyle.CanvasStyle.BorderStyle)
+            .Shrink(previewStyle.CanvasStyle.PaddingStyle);
 
         // position the drawing area on the preview image, offset to
         // allow for any borders and padding
@@ -61,15 +61,15 @@ internal static class LayoutHelper
             .ScaleToFit(maxContentSize)
             .Floor()
             .PlaceAt(0, 0)
-            .Offset(previewSettings.PreviewStyle.MarginInfo.Left, previewSettings.PreviewStyle.MarginInfo.Top)
-            .Offset(previewSettings.PreviewStyle.BorderInfo.Left, previewSettings.PreviewStyle.BorderInfo.Top)
-            .Offset(previewSettings.PreviewStyle.PaddingInfo.Left, previewSettings.PreviewStyle.PaddingInfo.Top);
+            .Offset(previewStyle.CanvasStyle.MarginStyle.Left, previewStyle.CanvasStyle.MarginStyle.Top)
+            .Offset(previewStyle.CanvasStyle.BorderStyle.Left, previewStyle.CanvasStyle.BorderStyle.Top)
+            .Offset(previewStyle.CanvasStyle.PaddingStyle.Left, previewStyle.CanvasStyle.PaddingStyle.Top);
 
         // now we know the size of the content area we can work out the background bounds
-        builder.PreviewStyle = previewSettings.PreviewStyle;
+        builder.PreviewStyle = previewStyle.CanvasStyle;
         builder.PreviewBounds = LayoutHelper.GetBoxBoundsFromContentBounds(
             contentBounds,
-            previewSettings.PreviewStyle);
+            previewStyle.CanvasStyle);
 
         // ... and the form bounds
         // * center the form to the activated position, but nudge it back
@@ -84,7 +84,7 @@ internal static class LayoutHelper
             .ScaleToFitRatio(contentBounds.Size);
 
         // now calculate the positions of each of the screenshot images on the preview
-        builder.ScreenshotStyle = previewSettings.ScreenshotStyle;
+        builder.ScreenshotStyle = previewStyle.ScreenshotStyle;
         builder.ScreenshotBounds = allScreens
             .Select(
                 screen => LayoutHelper.GetBoxBoundsFromOuterBounds(
@@ -92,7 +92,7 @@ internal static class LayoutHelper
                             .Offset(virtualScreen.Location.ToSize().Negate())
                             .Scale(scalingRatio)
                             .Offset(builder.PreviewBounds.ContentBounds.Location.ToSize()),
-                        previewSettings.ScreenshotStyle))
+                        previewStyle.ScreenshotStyle))
             .ToList();
 
         return builder.Build();
@@ -103,11 +103,11 @@ internal static class LayoutHelper
         BoxStyle boxStyle)
     {
         var paddingBounds = contentBounds.Enlarge(
-            boxStyle.PaddingInfo ?? throw new ArgumentException(nameof(boxStyle.PaddingInfo)));
+            boxStyle.PaddingStyle ?? throw new ArgumentException(nameof(boxStyle.PaddingStyle)));
         var borderBounds = paddingBounds.Enlarge(
-            boxStyle.BorderInfo ?? throw new ArgumentException(nameof(boxStyle.BorderInfo)));
+            boxStyle.BorderStyle ?? throw new ArgumentException(nameof(boxStyle.BorderStyle)));
         var marginBounds = borderBounds.Enlarge(
-            boxStyle.MarginInfo ?? throw new ArgumentException(nameof(boxStyle.MarginInfo)));
+            boxStyle.MarginStyle ?? throw new ArgumentException(nameof(boxStyle.MarginStyle)));
         var outerBounds = marginBounds;
         return new(
             outerBounds, marginBounds, borderBounds, paddingBounds, contentBounds);
@@ -119,11 +119,11 @@ internal static class LayoutHelper
     {
         var marginBounds = outerBounds ?? throw new ArgumentNullException(nameof(outerBounds));
         var borderBounds = marginBounds.Shrink(
-            boxStyle.MarginInfo ?? throw new ArgumentException(nameof(boxStyle.MarginInfo)));
+            boxStyle.MarginStyle ?? throw new ArgumentException(nameof(boxStyle.MarginStyle)));
         var paddingBounds = borderBounds.Shrink(
-            boxStyle.BorderInfo ?? throw new ArgumentException(nameof(boxStyle.BorderInfo)));
+            boxStyle.BorderStyle ?? throw new ArgumentException(nameof(boxStyle.BorderStyle)));
         var contentBounds = paddingBounds.Shrink(
-            boxStyle.PaddingInfo ?? throw new ArgumentException(nameof(boxStyle.PaddingInfo)));
+            boxStyle.PaddingStyle ?? throw new ArgumentException(nameof(boxStyle.PaddingStyle)));
         return new(
             outerBounds, marginBounds, borderBounds, paddingBounds, contentBounds);
     }

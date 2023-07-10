@@ -1,15 +1,18 @@
-﻿namespace FancyMouse.Models.Drawing;
+﻿namespace FancyMouse.Models.Styles;
 
-public sealed class BorderInfo
+/// <summary>
+/// Represents the border style for a drawing object.
+/// </summary>
+public sealed class BorderStyle
 {
-    public static readonly BorderInfo Empty = new(Color.Transparent, 0, 0);
+    public static readonly BorderStyle Empty = new(Color.Transparent, 0, 0);
 
-    public BorderInfo(Color color, decimal all, decimal depth)
+    public BorderStyle(Color color, decimal all, decimal depth)
         : this(color, all, all, all, all, depth)
     {
     }
 
-    public BorderInfo(Color color, decimal left, decimal top, decimal right, decimal bottom, decimal depth)
+    public BorderStyle(Color color, decimal left, decimal top, decimal right, decimal bottom, decimal depth)
     {
         this.Color = color;
         this.Left = left;
@@ -59,11 +62,12 @@ public sealed class BorderInfo
     public override string ToString()
     {
         return "{" +
-           $"{nameof(this.Color)}={this.Color}" +
+           $"{nameof(this.Color)}={this.Color}," +
            $"{nameof(this.Left)}={this.Left}," +
            $"{nameof(this.Top)}={this.Top}," +
            $"{nameof(this.Right)}={this.Right}," +
-           $"{nameof(this.Bottom)}={this.Bottom}" +
+           $"{nameof(this.Bottom)}={this.Bottom}," +
+           $"{nameof(this.Depth)}={this.Depth}" +
            "}";
     }
 }
