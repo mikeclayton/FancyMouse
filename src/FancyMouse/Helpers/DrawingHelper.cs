@@ -3,7 +3,6 @@ using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Layout;
-using FancyMouse.Models.Screen;
 using FancyMouse.Models.Styles;
 using FancyMouse.NativeMethods;
 using static FancyMouse.NativeMethods.Core;

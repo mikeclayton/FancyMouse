@@ -1,12 +1,53 @@
 ﻿using System.Globalization;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using FancyMouse.Models.Styles;
+using FancyMouse.WindowsHotKeys;
 
-namespace FancyMouse.Models.Settings;
+namespace FancyMouse.Models.Settings.V2;
 
 internal static class SettingsConverter
 {
-    public static PreviewStyle ConvertToPreviewStyle(PreviewSettings previewSettings)
+    public static AppSettings ParseAppSettings(string json)
     {
+        var options = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,
+            Converters = { new JsonStringEnumConverter() },
+        };
+        var appConfig = JsonSerializer.Deserialize<AppConfig>(json, options)
+            ?? throw new InvalidOperationException();
+        var appSettings = new AppSettings(
+            hotkey: SettingsConverter.ConvertToKeystroke(appConfig.Hotkey),
+            previewStyle: SettingsConverter.ConvertToPreviewStyle(appConfig.Preview));
+        return appSettings;
+    }
+
+    public static Keystroke ConvertToKeystroke(HotkeySettings? hotkeySettings)
+    {
+        if (hotkeySettings is null)
+        {
+            return AppSettings.DefaultSettings.Hotkey;
+        }
+
+        var key = Enum.TryParse<WindowsHotKeys.Keys>(hotkeySettings.Key, out var outKey)
+            ? outKey
+            : AppSettings.DefaultSettings.Hotkey.Key;
+        var modifiers = Enum.TryParse<KeyModifiers>(hotkeySettings.Modifiers, out var outModifiers)
+            ? outModifiers
+            : AppSettings.DefaultSettings.Hotkey.Modifiers;
+        return new Keystroke(key, modifiers);
+    }
+
+    public static PreviewStyle ConvertToPreviewStyle(PreviewSettings? previewSettings)
+    {
+        if (previewSettings is null)
+        {
+            return AppSettings.DefaultSettings.PreviewStyle;
+        }
+
+        var canvasStyle = AppSettings.DefaultSettings.PreviewStyle.CanvasStyle;
+        var screenshotStyle = AppSettings.DefaultSettings.PreviewStyle.ScreenshotStyle;
         return new PreviewStyle(
             canvasSize: new(
                 width: Math.Clamp(previewSettings.CanvasSize.Width, 50, 99999),
@@ -17,7 +58,7 @@ internal static class SettingsConverter
                 borderStyle: new(
                     color: SettingsConverter.ParseColorSettings(
                         value: previewSettings.CanvasStyle.BorderStyle.Color,
-                        @default: Color.Red),
+                        @default: canvasStyle.BorderStyle.Color),
                     all: Math.Clamp(previewSettings.CanvasStyle.BorderStyle.Width, 0, 99),
                     depth: Math.Clamp(previewSettings.CanvasStyle.BorderStyle.Depth, 0, 99)
                 ),
@@ -27,10 +68,10 @@ internal static class SettingsConverter
                 backgroundStyle: new(
                     color1: SettingsConverter.ParseColorSettings(
                         value: previewSettings.CanvasStyle.BackgroundStyle.Color1,
-                        @default: Color.Red),
+                        @default: canvasStyle.BackgroundStyle.Color1),
                     color2: SettingsConverter.ParseColorSettings(
                         value: previewSettings.CanvasStyle.BackgroundStyle.Color2,
-                        @default: Color.Red)
+                        @default: canvasStyle.BackgroundStyle.Color2)
                 )
             ),
             screenshotStyle: new(
@@ -40,7 +81,7 @@ internal static class SettingsConverter
                 borderStyle: new(
                     color: SettingsConverter.ParseColorSettings(
                         value: previewSettings.ScreenshotStyle.BorderStyle.Color,
-                        @default: Color.Red),
+                        @default: screenshotStyle.BorderStyle.Color),
                     all: previewSettings.ScreenshotStyle.BorderStyle.Width,
                     depth: previewSettings.ScreenshotStyle.BorderStyle.Depth
                 ),
@@ -48,10 +89,10 @@ internal static class SettingsConverter
                 backgroundStyle: new(
                     color1: SettingsConverter.ParseColorSettings(
                         previewSettings.ScreenshotStyle.BackgroundStyle.Color1,
-                        @default: Color.Red),
+                        @default: screenshotStyle.BackgroundStyle.Color1),
                     color2: SettingsConverter.ParseColorSettings(
                         value: previewSettings.ScreenshotStyle.BackgroundStyle.Color2,
-                        @default: Color.Red)
+                        @default: screenshotStyle.BackgroundStyle.Color2)
                 )
             ));
     }

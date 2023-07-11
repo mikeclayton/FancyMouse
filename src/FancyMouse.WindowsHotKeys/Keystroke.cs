@@ -20,6 +20,16 @@ public sealed class Keystroke
         get;
     }
 
+    public static Keystroke Parse(string s)
+    {
+        if (!Keystroke.TryParse(s, out var result))
+        {
+            throw new ArgumentException($"Invalid argument format.", nameof(s));
+        }
+
+        return result;
+    }
+
     public static bool TryParse(string s, [NotNullWhen(true)] out Keystroke? result)
     {
         // see https://github.com/microsoft/terminal/blob/14919073a12fc0ecb4a9805cc183fdd68d30c4b6/src/cascadia/TerminalSettingsModel/KeyChordSerialization.cpp#L124

@@ -2,7 +2,6 @@
 using FancyMouse.Helpers;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Layout;
-using FancyMouse.Models.Screen;
 using FancyMouse.Models.Styles;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using static FancyMouse.NativeMethods.Core;

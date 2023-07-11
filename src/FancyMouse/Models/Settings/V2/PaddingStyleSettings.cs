@@ -1,11 +1,11 @@
-﻿namespace FancyMouse.Models.Settings;
+﻿namespace FancyMouse.Models.Settings.V2;
 
 /// <summary>
 /// Represents the margin style for a drawing object.
 /// </summary>
-public sealed class MarginStyleSettings
+public sealed class PaddingStyleSettings
 {
-    public MarginStyleSettings(decimal width)
+    public PaddingStyleSettings(decimal width)
     {
         this.Width = width;
     }

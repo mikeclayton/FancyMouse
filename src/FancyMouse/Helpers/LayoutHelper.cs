@@ -1,6 +1,5 @@
 ﻿using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Layout;
-using FancyMouse.Models.Screen;
 using FancyMouse.Models.Styles;
 
 namespace FancyMouse.Helpers;

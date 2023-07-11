@@ -1,31 +1,31 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace FancyMouse.Models.Settings;
+namespace FancyMouse.Models.Settings.V2;
 
 /// <remarks>
-/// Doesn't have a PaddingStyle setting like the BoxStyle class does - we don't
+/// Doesn't have a MarginStyle setting like the BoxStyle class does - we don't
 /// support configuring this in app settings.
 /// ></remarks>
-public sealed class ScreenshotStyleSettings
+public sealed class CanvasStyleSettings
 {
-    public ScreenshotStyleSettings(
-        MarginStyleSettings marginStyle,
+    public CanvasStyleSettings(
         BorderStyleSettings borderStyle,
+        PaddingStyleSettings paddingStyle,
         BackgroundStyleSettings backgroundStyle)
     {
-        this.MarginStyle = marginStyle ?? throw new ArgumentNullException(nameof(marginStyle));
         this.BorderStyle = borderStyle ?? throw new ArgumentNullException(nameof(borderStyle));
+        this.PaddingStyle = paddingStyle ?? throw new ArgumentNullException(nameof(paddingStyle));
         this.BackgroundStyle = backgroundStyle ?? throw new ArgumentNullException(nameof(backgroundStyle));
-    }
-
-    [JsonPropertyName("margin")]
-    public MarginStyleSettings MarginStyle
-    {
-        get;
     }
 
     [JsonPropertyName("border")]
     public BorderStyleSettings BorderStyle
+    {
+        get;
+    }
+
+    [JsonPropertyName("padding")]
+    public PaddingStyleSettings PaddingStyle
     {
         get;
     }

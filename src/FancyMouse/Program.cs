@@ -1,5 +1,4 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
+using System.Text.Json.Nodes;
 using FancyMouse.Models.Settings;
 using FancyMouse.UI;
 using FancyMouse.WindowsHotKeys;
@@ -34,20 +33,13 @@ internal static class Program
         // create the notify icon for the application
         var notifyForm = new FancyMouseNotify();
 
-        var options = new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true,
-            Converters = { new JsonStringEnumConverter() },
-        };
-        var appSettings = JsonSerializer.Deserialize<AppSettings>(
-            File.ReadAllText("appSettings.json"), options)
-            ?? throw new InvalidOperationException();
+        var appSettings = AppSettingsReader.ReadFile(".\\appSettings.json");
 
         // logger: LogManager.LoadConfiguration(".\\NLog.config").GetCurrentClassLogger(),
         var dialog = new FancyMouseDialog(
             new FancyMouseDialogOptions(
                 logger: LogManager.CreateNullLogger(),
-                previewStyle: SettingsConverter.ConvertToPreviewStyle(appSettings.Preview)));
+                previewStyle: appSettings.PreviewStyle));
 
         var hotKeyManager = new HotKeyManager(appSettings.Hotkey);
         hotKeyManager.HotKeyPressed +=

@@ -1,4 +1,4 @@
-﻿namespace FancyMouse.Models.Settings;
+﻿namespace FancyMouse.Models.Settings.V2;
 
 /// <summary>
 /// Represents the background fill style for a drawing object.

@@ -1,7 +1,6 @@
-﻿using FancyMouse.Models.Drawing;
-using FancyMouse.NativeMethods;
+﻿using FancyMouse.NativeMethods;
 
-namespace FancyMouse.Models.Screen;
+namespace FancyMouse.Models.Drawing;
 
 /// <summary>
 /// Immutable version of a System.Windows.Forms.Screen object so we don't need to
