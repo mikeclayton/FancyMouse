@@ -70,7 +70,7 @@ public sealed class HotKeyManager
     public void Start()
     {
         // see https://learn.microsoft.com/en-us/windows/win32/winmsg/using-messages-and-message-queues
-        var hInstance = Process.GetCurrentProcess().Handle;
+        var hInstance = (HINSTANCE)Process.GetCurrentProcess().Handle;
 
         // see https://stackoverflow.com/a/30992796/3156906
         var wndClass = new WNDCLASSEXW(

@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using FancyMouse.Models.Drawing;
@@ -11,21 +12,26 @@ namespace FancyMouse.Helpers;
 
 internal static class DrawingHelper
 {
-    internal static void RenderPreview(
+    internal static Bitmap RenderPreview(
         PreviewLayout previewLayout,
-        Action<Bitmap> imageCreatedCallback,
-        Action imageUpdatedCallback)
+        HDC sourceHdc)
+    {
+        return DrawingHelper.RenderPreview(previewLayout, sourceHdc, null, null);
+    }
+
+    internal static Bitmap RenderPreview(
+        PreviewLayout previewLayout,
+        HDC sourceHdc,
+        Action<Bitmap>? previewImageCreatedCallback,
+        Action? previewImageUpdatedCallback)
     {
         var stopwatch = Stopwatch.StartNew();
 
         // initialize the preview image
-        var previewImage = new Bitmap(
-            (int)previewLayout.PreviewBounds.OuterBounds.Width,
-            (int)previewLayout.PreviewBounds.OuterBounds.Height,
-            PixelFormat.Format32bppArgb);
-        imageCreatedCallback.Invoke(previewImage);
-
-        using var previewGraphics = Graphics.FromImage(previewImage);
+        var previewBounds = previewLayout.PreviewBounds.OuterBounds.ToRectangle();
+        var previewImage = new Bitmap(previewBounds.Width, previewBounds.Height, PixelFormat.Format32bppArgb);
+        var previewGraphics = Graphics.FromImage(previewImage);
+        previewImageCreatedCallback?.Invoke(previewImage);
 
         DrawingHelper.DrawBoxBorder(previewGraphics, previewLayout.PreviewStyle, previewLayout.PreviewBounds);
         DrawingHelper.DrawBoxBackground(
@@ -34,8 +40,6 @@ internal static class DrawingHelper
             previewLayout.PreviewBounds,
             Enumerable.Empty<RectangleInfo>());
 
-        var desktopHwnd = HWND.Null;
-        var desktopHdc = HDC.Null;
         var previewHdc = HDC.Null;
         var imageUpdated = false;
         try
@@ -43,17 +47,12 @@ internal static class DrawingHelper
             // sort the source and target screen areas, putting the activated screen first
             // (we need to capture and draw the activated screen before we show the form
             // because otherwise we'll capture the form as part of the screenshot!)
-            var activatedScreenIndex = previewLayout.Screens.IndexOf(previewLayout.ActivatedScreen);
-            var sourceScreens = new List<ScreenInfo> { previewLayout.ActivatedScreen }
-                .Union(previewLayout.Screens.Where((_, idx) => idx != activatedScreenIndex))
-                .Select(screen => screen.DisplayArea)
+            var sourceScreens = new List<RectangleInfo> { previewLayout.Screens[previewLayout.ActivatedScreenIndex] }
+                .Union(previewLayout.Screens.Where((_, idx) => idx != previewLayout.ActivatedScreenIndex))
                 .ToList();
-            var targetScreens = previewLayout.ScreenshotBounds
-                .Where((_, idx) => idx == activatedScreenIndex)
-                .Union(previewLayout.ScreenshotBounds.Where((_, idx) => idx != activatedScreenIndex))
+            var targetScreens = new List<BoxBounds> { previewLayout.ScreenshotBounds[previewLayout.ActivatedScreenIndex] }
+                .Union(previewLayout.ScreenshotBounds.Where((_, idx) => idx != previewLayout.ActivatedScreenIndex))
                 .ToList();
-
-            DrawingHelper.EnsureDesktopDeviceContext(ref desktopHwnd, ref desktopHdc);
 
             // draw all the screenshot bezels
             foreach (var screenshotBounds in previewLayout.ScreenshotBounds)
@@ -67,7 +66,7 @@ internal static class DrawingHelper
             {
                 DrawingHelper.EnsurePreviewDeviceContext(previewGraphics, ref previewHdc);
                 DrawingHelper.DrawScreenshot(
-                    desktopHdc, previewHdc, sourceScreens[i], targetScreens[i]);
+                    sourceHdc, previewHdc, sourceScreens[i], targetScreens[i]);
                 imageUpdated = true;
 
                 // show the placeholder images and show the form if it looks like it might take
@@ -92,22 +91,23 @@ internal static class DrawingHelper
                     placeholdersDrawn = true;
                 }
 
-                imageUpdatedCallback.Invoke();
+                previewImageUpdatedCallback?.Invoke();
                 imageUpdated = false;
             }
         }
         finally
         {
-            DrawingHelper.FreeDesktopDeviceContext(ref desktopHwnd, ref desktopHdc);
             DrawingHelper.FreePreviewDeviceContext(previewGraphics, ref previewHdc);
         }
 
         if (imageUpdated)
         {
-            imageUpdatedCallback.Invoke();
+            previewImageUpdatedCallback?.Invoke();
         }
 
         stopwatch.Stop();
+
+        return previewImage;
     }
 
     /// <summary>
@@ -274,7 +274,7 @@ internal static class DrawingHelper
     {
         if (previewHdc.IsNull)
         {
-            previewHdc = new HDC(graphics.GetHdc());
+            previewHdc = (HDC)graphics.GetHdc();
             var result = Gdi32.SetStretchBltMode(previewHdc, Gdi32.STRETCH_BLT_MODE.STRETCH_HALFTONE);
 
             if (result == 0)

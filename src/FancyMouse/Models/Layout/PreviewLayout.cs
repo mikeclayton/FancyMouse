@@ -1,12 +1,13 @@
 ﻿using System.Collections.ObjectModel;
 using FancyMouse.Models.Drawing;
-using FancyMouse.Models.Screen;
 using FancyMouse.Models.Styles;
 
 namespace FancyMouse.Models.Layout;
 
+// [Obsolete("Do not use")]
 public sealed class PreviewLayout
 {
+    // [Obsolete("Do not use")]
     public sealed class Builder
     {
         public Builder()
@@ -21,13 +22,13 @@ public sealed class PreviewLayout
             set;
         }
 
-        public List<ScreenInfo> Screens
+        public List<RectangleInfo> Screens
         {
             get;
             set;
         }
 
-        public ScreenInfo? ActivatedScreen
+        public int ActivatedScreenIndex
         {
             get;
             set;
@@ -68,7 +69,7 @@ public sealed class PreviewLayout
             return new PreviewLayout(
                 virtualScreen: this.VirtualScreen ?? throw new InvalidOperationException($"{nameof(this.VirtualScreen)} must be initialized before calling {nameof(this.Build)}."),
                 screens: this.Screens ?? throw new InvalidOperationException($"{nameof(this.Screens)} must be initialized before calling {nameof(this.Build)}."),
-                activatedScreen: this.ActivatedScreen ?? throw new InvalidOperationException($"{nameof(this.ActivatedScreen)} must be initialized before calling {nameof(this.Build)}."),
+                activatedScreenIndex: this.ActivatedScreenIndex,
                 formBounds: this.FormBounds ?? throw new InvalidOperationException($"{nameof(this.FormBounds)} must be initialized before calling {nameof(this.Build)}."),
                 previewStyle: this.PreviewStyle ?? throw new InvalidOperationException($"{nameof(this.PreviewStyle)} must be initialized before calling {nameof(this.Build)}."),
                 previewBounds: this.PreviewBounds ?? throw new InvalidOperationException($"{nameof(this.PreviewBounds)} must be initialized before calling {nameof(this.Build)}."),
@@ -79,8 +80,8 @@ public sealed class PreviewLayout
 
     public PreviewLayout(
         RectangleInfo virtualScreen,
-        IEnumerable<ScreenInfo> screens,
-        ScreenInfo activatedScreen,
+        IEnumerable<RectangleInfo> screens,
+        int activatedScreenIndex,
         RectangleInfo formBounds,
         BoxStyle previewStyle,
         BoxBounds previewBounds,
@@ -91,7 +92,7 @@ public sealed class PreviewLayout
         this.Screens = new(
             (screens ?? throw new ArgumentNullException(nameof(screens)))
             .ToList());
-        this.ActivatedScreen = activatedScreen ?? throw new ArgumentNullException(nameof(activatedScreen));
+        this.ActivatedScreenIndex = activatedScreenIndex;
         this.FormBounds = formBounds ?? throw new ArgumentNullException(nameof(formBounds));
         this.PreviewStyle = previewStyle ?? throw new ArgumentNullException(nameof(previewStyle));
         this.PreviewBounds = previewBounds ?? throw new ArgumentNullException(nameof(previewBounds));
@@ -106,12 +107,12 @@ public sealed class PreviewLayout
         get;
     }
 
-    public ReadOnlyCollection<ScreenInfo> Screens
+    public ReadOnlyCollection<RectangleInfo> Screens
     {
         get;
     }
 
-    public ScreenInfo ActivatedScreen
+    public int ActivatedScreenIndex
     {
         get;
     }

@@ -2,6 +2,7 @@ using System.Diagnostics;
 using FancyMouse.Helpers;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Layout;
+using static FancyMouse.NativeMethods.Core;
 
 namespace FancyMouse.UI;
 
@@ -141,13 +142,13 @@ internal partial class FancyMouseForm : Form
             var clickedLocation = new PointInfo(mouseEventArgs.Location)
                 .Stretch(
                     source: clickedScreenshot.ContentBounds,
-                    target: clickedScreen.DisplayArea)
+                    target: clickedScreen)
                 .Clamp(
                     new(
-                        x: clickedScreen.DisplayArea.X + 1,
-                        y: clickedScreen.DisplayArea.Y + 1,
-                        width: clickedScreen.DisplayArea.Width - 1,
-                        height: clickedScreen.DisplayArea.Height - 1
+                        x: clickedScreen.X + 1,
+                        y: clickedScreen.Y + 1,
+                        width: clickedScreen.Width - 1,
+                        height: clickedScreen.Height - 1
                     ))
                 .Truncate();
 
@@ -174,7 +175,7 @@ internal partial class FancyMouseForm : Form
 
         var stopwatch = Stopwatch.StartNew();
 
-        var screens = ScreenHelper.GetAllScreens();
+        var screens = ScreenHelper.GetAllScreens().Select(screen => screen.DisplayArea).ToList();
         var activatedLocation = MouseHelper.GetCursorPosition();
         this.PreviewLayout = LayoutHelper.GetPreviewLayout(
             previewStyle: this.Options.PreviewStyle,
@@ -182,10 +183,23 @@ internal partial class FancyMouseForm : Form
             activatedLocation: activatedLocation);
 
         this.PositionForm(this.PreviewLayout.FormBounds);
-        DrawingHelper.RenderPreview(
-            this.PreviewLayout,
-            this.OnPreviewImageCreated,
-            this.OnPreviewImageUpdated);
+
+        var desktopHwnd = HWND.Null;
+        var desktopHdc = HDC.Null;
+        DrawingHelper.EnsureDesktopDeviceContext(ref desktopHwnd, ref desktopHdc);
+        try
+        {
+            DrawingHelper.RenderPreview(
+                this.PreviewLayout,
+                desktopHdc,
+                this.OnPreviewImageCreated,
+                this.OnPreviewImageUpdated);
+        }
+        catch
+        {
+            DrawingHelper.FreeDesktopDeviceContext(ref desktopHwnd, ref desktopHdc);
+        }
+
         stopwatch.Stop();
 
         // we have to activate the form to make sure the deactivate event fires

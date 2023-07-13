@@ -7,7 +7,7 @@ namespace FancyMouse.Helpers;
 internal static class LayoutHelper
 {
     public static PreviewLayout GetPreviewLayout(
-        PreviewStyle previewStyle, IEnumerable<ScreenInfo> screens, PointInfo activatedLocation)
+        PreviewStyle previewStyle, IEnumerable<RectangleInfo> screens, PointInfo activatedLocation)
     {
         if (previewStyle is null)
         {
@@ -28,9 +28,7 @@ internal static class LayoutHelper
         var builder = new PreviewLayout.Builder();
 
         // calculate the bounding rectangle for the virtual screen
-        var virtualScreen = allScreens.Skip(1).Aggregate(
-            seed: allScreens.First().DisplayArea,
-            (bounds, screen) => bounds.Union(screen.DisplayArea));
+        var virtualScreen = LayoutHelper.GetCombinedScreenBounds(allScreens);
         builder.VirtualScreen = virtualScreen;
 
         builder.Screens = allScreens;
@@ -38,13 +36,13 @@ internal static class LayoutHelper
         // find the screen that contains the activated location - this is the
         // one we'll show the preview form on
         var activatedScreen = allScreens.Single(
-            screen => screen.DisplayArea.Contains(activatedLocation));
-        builder.ActivatedScreen = activatedScreen;
+            screen => screen.Contains(activatedLocation));
+        builder.ActivatedScreenIndex = allScreens.IndexOf(activatedScreen);
 
         // work out the maximum *constrained* form size
         // * can't be bigger than the activated screen
         // * can't be bigger than the max form size
-        var maxPreviewSize = activatedScreen.DisplayArea.Size
+        var maxPreviewSize = activatedScreen.Size
             .Intersect(previewStyle.CanvasSize);
 
         // the drawing area for screenshots is inside the
@@ -75,7 +73,7 @@ internal static class LayoutHelper
         //   inside the visible area of the activated screen if it falls outside
         var formBounds = builder.PreviewBounds.OuterBounds
             .Center(activatedLocation)
-            .Clamp(activatedScreen.DisplayArea);
+            .Clamp(activatedScreen);
         builder.FormBounds = formBounds;
 
         // scale the virtual screen to fit inside the preview content bounds
@@ -87,7 +85,7 @@ internal static class LayoutHelper
         builder.ScreenshotBounds = allScreens
             .Select(
                 screen => LayoutHelper.GetBoxBoundsFromOuterBounds(
-                    screen.DisplayArea
+                    screen
                         .Offset(virtualScreen.Location.ToSize().Negate())
                         .Scale(scalingRatio)
                         .Offset(builder.PreviewBounds.ContentBounds.Location.ToSize())
@@ -96,6 +94,13 @@ internal static class LayoutHelper
             .ToList();
 
         return builder.Build();
+    }
+
+    public static RectangleInfo GetCombinedScreenBounds(List<RectangleInfo> screens)
+    {
+        return screens.Skip(1).Aggregate(
+            seed: screens.First(),
+            (bounds, screen) => bounds.Union(screen));
     }
 
     public static BoxBounds GetBoxBoundsFromContentBounds(
