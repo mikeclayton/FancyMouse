@@ -29,7 +29,7 @@ internal sealed class AppSettings
                     depth: 0
                 ),
                 paddingStyle: new(
-                    all: 6
+                    all: 4
                 ),
                 backgroundStyle: new(
                     color1: Color.FromArgb(0xFF, 0x0D, 0x57, 0xD2),
@@ -38,7 +38,7 @@ internal sealed class AppSettings
             ),
             screenshotStyle: new(
                 marginStyle: new(
-                    all: 2
+                    all: 4
                 ),
                 borderStyle: new(
                     color: Color.FromArgb(0xFF, 0x22, 0x22, 0x22),
