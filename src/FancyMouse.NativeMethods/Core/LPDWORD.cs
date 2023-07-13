@@ -44,7 +44,7 @@ internal static partial class Core
 
         public static implicit operator IntPtr(LPDWORD value) => value.Value;
 
-        public static implicit operator LPDWORD(IntPtr value) => new(value);
+        public static explicit operator LPDWORD(IntPtr value) => new(value);
 
         public override string ToString()
         {

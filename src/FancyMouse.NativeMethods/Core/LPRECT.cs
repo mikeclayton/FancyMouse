@@ -36,7 +36,7 @@ internal static partial class Core
 
         public static implicit operator IntPtr(LPRECT value) => value.Value;
 
-        public static implicit operator LPRECT(IntPtr value) => new(value);
+        public static explicit operator LPRECT(IntPtr value) => new(value);
 
         public override string ToString()
         {

@@ -32,7 +32,7 @@ internal static partial class Core
 
         public static implicit operator IntPtr(LPCWSTR value) => value.Value;
 
-        public static implicit operator LPCWSTR(IntPtr value) => new(value);
+        public static explicit operator LPCWSTR(IntPtr value) => new(value);
 
         public static implicit operator string?(LPCWSTR value) => Marshal.PtrToStringUni(value.Value);
 

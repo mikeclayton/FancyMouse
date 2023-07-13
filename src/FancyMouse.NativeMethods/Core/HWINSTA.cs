@@ -25,7 +25,7 @@ internal static partial class Core
 
         public static implicit operator IntPtr(HWINSTA value) => value.Value;
 
-        public static implicit operator HWINSTA(IntPtr value) => new(value);
+        public static explicit operator HWINSTA(IntPtr value) => new(value);
 
         public override string ToString()
         {

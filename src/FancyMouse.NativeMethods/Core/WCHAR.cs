@@ -3,29 +3,25 @@
 internal static partial class Core
 {
     /// <summary>
-    /// A handle to an object.
+    /// A 16-bit Unicode character.For more information, see Character Sets Used By Fonts.
     /// This type is declared in WinNT.h as follows:
-    /// typedef PVOID HANDLE;
+    /// typedef wchar_t WCHAR;
     /// </summary>
     /// <remarks>
     /// See https://learn.microsoft.com/en-us/windows/win32/winprog/windows-data-types
     /// </remarks>
-    internal readonly struct HANDLE
+    internal readonly struct WCHAR
     {
-        public static readonly HANDLE Null = new(IntPtr.Zero);
+        public readonly char Value;
 
-        public readonly IntPtr Value;
-
-        public HANDLE(IntPtr value)
+        public WCHAR(char value)
         {
             this.Value = value;
         }
 
-        public bool IsNull => this.Value == HANDLE.Null.Value;
+        public static implicit operator char(WCHAR value) => value.Value;
 
-        public static implicit operator IntPtr(HANDLE value) => value.Value;
-
-        public static explicit operator HANDLE(IntPtr value) => new(value);
+        public static implicit operator WCHAR(char value) => new(value);
 
         public override string ToString()
         {

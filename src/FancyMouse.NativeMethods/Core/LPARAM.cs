@@ -25,7 +25,7 @@ internal static partial class Core
 
         public static implicit operator IntPtr(LPARAM value) => value.Value;
 
-        public static implicit operator LPARAM(IntPtr value) => new(value);
+        public static explicit operator LPARAM(IntPtr value) => new(value);
 
         public override string ToString()
         {

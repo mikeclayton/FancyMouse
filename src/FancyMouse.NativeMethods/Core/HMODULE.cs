@@ -26,7 +26,7 @@ internal static partial class Core
 
         public static implicit operator IntPtr(HMODULE value) => value.Value;
 
-        public static implicit operator HMODULE(IntPtr value) => new(value);
+        public static explicit operator HMODULE(IntPtr value) => new(value);
 
         public override string ToString()
         {

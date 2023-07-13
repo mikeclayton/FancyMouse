@@ -25,7 +25,7 @@ internal static partial class Core
 
         public static implicit operator IntPtr(HBRUSH value) => value.Value;
 
-        public static implicit operator HBRUSH(IntPtr value) => new(value);
+        public static explicit operator HBRUSH(IntPtr value) => new(value);
 
         public override string ToString()
         {

@@ -26,7 +26,7 @@ internal static partial class Core
 
         public static implicit operator IntPtr(HINSTANCE value) => value.Value;
 
-        public static implicit operator HINSTANCE(IntPtr value) => new(value);
+        public static explicit operator HINSTANCE(IntPtr value) => new(value);
 
         public override string ToString()
         {

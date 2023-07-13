@@ -24,7 +24,7 @@ internal static partial class Core
 
         public static implicit operator ushort(ATOM value) => value.Value;
 
-        public static implicit operator ATOM(ushort value) => new(value);
+        public static explicit operator ATOM(ushort value) => new(value);
 
         public override string ToString()
         {

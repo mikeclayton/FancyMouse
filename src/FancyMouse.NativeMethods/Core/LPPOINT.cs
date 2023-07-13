@@ -41,7 +41,7 @@ internal static partial class Core
 
         public static implicit operator IntPtr(LPPOINT value) => value.Value;
 
-        public static implicit operator LPPOINT(IntPtr value) => new(value);
+        public static explicit operator LPPOINT(IntPtr value) => new(value);
 
         public override string ToString()
         {
