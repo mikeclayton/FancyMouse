@@ -1,4 +1,3 @@
-using System.Text.Json.Nodes;
 using FancyMouse.Models.Settings;
 using FancyMouse.UI;
 using FancyMouse.WindowsHotKeys;

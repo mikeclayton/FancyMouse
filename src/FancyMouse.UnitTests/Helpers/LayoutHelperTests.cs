@@ -5,7 +5,6 @@ using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Layout;
 using FancyMouse.Models.Styles;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using static FancyMouse.NativeMethods.Core;
 
 namespace FancyMouse.UnitTests.Helpers;
 
@@ -24,9 +23,9 @@ public static class LayoutHelperTests
                 this.ExpectedResult = expectedResult;
             }
 
-            public LayoutConfig LayoutConfig { get; set; }
+            public LayoutConfig LayoutConfig { get; }
 
-            public LayoutInfo ExpectedResult { get; set; }
+            public LayoutInfo ExpectedResult { get; }
         }
 
         public static IEnumerable<object[]> GetTestCases()

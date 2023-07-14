@@ -1,6 +1,5 @@
 ﻿using System.Drawing;
 using System.Drawing.Imaging;
-using System.Security.Cryptography.X509Certificates;
 using FancyMouse.Helpers;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Settings;
@@ -57,11 +56,11 @@ public static class DrawingHelperTests
                 this.ActivatedLocation = activatedLocation;
             }
 
-            public PreviewStyle PreviewStyle { get; set; }
+            public PreviewStyle PreviewStyle { get; }
 
-            public List<(RectangleInfo Bounds, Color Color)> Screens { get; set; }
+            public List<(RectangleInfo Bounds, Color Color)> Screens { get; }
 
-            public PointInfo ActivatedLocation { get; set; }
+            public PointInfo ActivatedLocation { get; }
         }
 
         public static IEnumerable<object[]> GetTestCases()

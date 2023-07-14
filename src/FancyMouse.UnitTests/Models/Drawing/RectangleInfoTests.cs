@@ -18,11 +18,11 @@ public static class RectangleInfoTests
                 this.ExpectedResult = expectedResult;
             }
 
-            public RectangleInfo Rectangle { get; set; }
+            public RectangleInfo Rectangle { get; }
 
-            public PointInfo Point { get; set; }
+            public PointInfo Point { get; }
 
-            public RectangleInfo ExpectedResult { get; set; }
+            public RectangleInfo ExpectedResult { get; }
         }
 
         public static IEnumerable<object[]> GetTestCases()
@@ -69,11 +69,11 @@ public static class RectangleInfoTests
                 this.ExpectedResult = expectedResult;
             }
 
-            public RectangleInfo Inner { get; set; }
+            public RectangleInfo Inner { get; }
 
-            public RectangleInfo Outer { get; set; }
+            public RectangleInfo Outer { get; }
 
-            public RectangleInfo ExpectedResult { get; set; }
+            public RectangleInfo ExpectedResult { get; }
         }
 
         public static IEnumerable<object[]> GetTestCases()

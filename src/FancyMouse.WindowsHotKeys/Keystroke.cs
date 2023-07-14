@@ -24,7 +24,7 @@ public sealed class Keystroke
     {
         if (!Keystroke.TryParse(s, out var result))
         {
-            throw new ArgumentException($"Invalid argument format.", nameof(s));
+            throw new ArgumentException("Invalid argument format.", nameof(s));
         }
 
         return result;
