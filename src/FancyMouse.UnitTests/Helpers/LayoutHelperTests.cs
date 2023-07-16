@@ -13,54 +13,11 @@ public static class LayoutHelperTests
 {
     /*
     [TestClass]
-    public sealed class CalculateLayoutInfoTests
+    public sealed class OldLayoutTests
     {
-        public sealed class TestCase
-        {
-            public TestCase(LayoutConfig layoutConfig, LayoutInfo expectedResult)
-            {
-                this.LayoutConfig = layoutConfig;
-                this.ExpectedResult = expectedResult;
-            }
-
-            public LayoutConfig LayoutConfig { get; }
-
-            public LayoutInfo ExpectedResult { get; }
-        }
 
         public static IEnumerable<object[]> GetTestCases()
         {
-            // happy path - check the preview form is shown
-            // at the correct size and position on a single screen
-            //
-            // +----------------+
-            // |                |
-            // |       0        |
-            // |                |
-            // +----------------+
-            var layoutConfig = new LayoutConfig(
-                virtualScreenBounds: new(0, 0, 5120, 1440),
-                screens: new List<ScreenInfo>
-                {
-                    new(HMONITOR.Null, false, new(0, 0, 5120, 1440), new(0, 0, 5120, 1440)),
-                },
-                activatedLocation: new(5120M / 2, 1440M / 2),
-                activatedScreenIndex: 0,
-                activatedScreenNumber: 1,
-                maximumFormSize: new(1600, 1200),
-                formPadding: new(5, 5, 5, 5),
-                previewPadding: new(0, 0, 0, 0));
-            var layoutInfo = new LayoutInfo(
-                layoutConfig: layoutConfig,
-                formBounds: new(1760, 491.40625M, 1600, 457.1875M),
-                previewBounds: new(0, 0, 1590, 447.1875M),
-                screenBounds: new List<RectangleInfo>
-                {
-                    new(0, 0, 1590, 447.1875M),
-                },
-                activatedScreenBounds: new(0, 0, 5120, 1440));
-            yield return new object[] { new TestCase(layoutConfig, layoutInfo) };
-
             // primary monitor not topmost / leftmost - if there are screens
             // that are further left or higher than the primary monitor
             // they'll have negative coordinates which has caused some
@@ -194,8 +151,11 @@ public static class LayoutHelperTests
             // (int)1280.000000000000 -> 1280
             // so we'll compare the raw values, *and* convert to an int-based
             // Rectangle to compare rounded values
-            var actual = LayoutHelper.CalculateLayoutInfo(data.LayoutConfig);
+            var actual = LayoutHelper.GetPreviewLayout(data.PreviewStyle, data.Screens, data.ActivatedLocation);
             var expected = data.ExpectedResult;
+            Assert.AreEqual(
+                JsonSerializer.Serialize(expected),
+                JsonSerializer.Serialize(actual));
             Assert.AreEqual(expected.FormBounds.X, actual.FormBounds.X, 0.00001M, "FormBounds.X");
             Assert.AreEqual(expected.FormBounds.Y, actual.FormBounds.Y, 0.00001M, "FormBounds.Y");
             Assert.AreEqual(expected.FormBounds.Width, actual.FormBounds.Width, 0.00001M, "FormBounds.Width");
@@ -249,17 +209,18 @@ public static class LayoutHelperTests
 
         public static IEnumerable<object[]> GetTestCases()
         {
-            // happy path - 50% scaling
+            // happy path - 50% scaling, *has* preview borders but *no* screenshot borders
             //
             // +----------------+
             // |                |
             // |       0        |
             // |                |
             // +----------------+
-            var previewConfig = new PreviewStyle(
+            var previewStyle = new PreviewStyle(
                 canvasSize: new(
-                    width: 7 + 2 + 5 + 512 + 2 + 7,
-                    height: 7 + 2 + 384 + 2 + 7),
+                    width: 524,
+                    height: 396
+                ),
                 canvasStyle: new(
                     marginStyle: MarginStyle.Empty,
                     borderStyle: new(
@@ -273,12 +234,7 @@ public static class LayoutHelperTests
                         color2: Color.FromArgb(3, 68, 192) // darker blue
                     )
                 ),
-                screenshotStyle: new(
-                    marginStyle: MarginStyle.Empty,
-                    borderStyle: new(Color.Black, 5, 3),
-                    paddingStyle: PaddingStyle.Empty,
-                    backgroundStyle: new(Color.Transparent, Color.Transparent)
-                ));
+                screenshotStyle: BoxStyle.Empty);
             var screens = new List<RectangleInfo>
             {
                 new(0, 0, 1024, 768),
@@ -288,21 +244,82 @@ public static class LayoutHelperTests
                 virtualScreen: new(0, 0, 1024, 768),
                 screens: screens,
                 activatedScreenIndex: 0,
-                formBounds: new(0, 0, 0, 0),
-                previewStyle: new BoxStyle(
-                    marginStyle: MarginStyle.Empty,
-                    borderStyle: BorderStyle.Empty,
-                    paddingStyle: PaddingStyle.Empty,
-                    backgroundStyle: BackgroundStyle.Empty),
+                formBounds: new(250, 186, 524, 396),
+                previewStyle: previewStyle,
                 previewBounds: new(
-                    outerBounds: RectangleInfo.Empty,
-                    marginBounds: RectangleInfo.Empty,
-                    borderBounds: RectangleInfo.Empty,
-                    paddingBounds: RectangleInfo.Empty,
-                    contentBounds: RectangleInfo.Empty),
-                screenshotStyle: BoxStyle.Empty,
-                screenshotBounds: Enumerable.Empty<BoxBounds>());
-            yield return new object[] { new TestCase(previewConfig, screens, activatedLocation, previewLayout) };
+                    outerBounds: new(0, 0, 524, 396),
+                    marginBounds: new(0, 0, 524, 396),
+                    borderBounds: new(0, 0, 524, 396),
+                    paddingBounds: new(5, 5, 514, 386),
+                    contentBounds: new(6, 6, 512, 384)
+                ),
+                screenshotBounds: new()
+                {
+                    new(
+                        outerBounds: new(6, 6, 512, 384),
+                        marginBounds: new(6, 6, 512, 384),
+                        borderBounds: new(6, 6, 512, 384),
+                        paddingBounds: new(6, 6, 512, 384),
+                        contentBounds: new(6, 6, 512, 384)
+                    ),
+                });
+            yield return new object[] { new TestCase(previewStyle, screens, activatedLocation, previewLayout) };
+
+            // happy path - 50% scaling, *no* preview borders but *has* screenshot borders
+            //
+            // +----------------+
+            // |                |
+            // |       0        |
+            // |                |
+            // +----------------+
+            previewStyle = new PreviewStyle(
+                canvasSize: new(
+                    width: 512,
+                    height: 384
+                ),
+                canvasStyle: BoxStyle.Empty,
+                screenshotStyle: new(
+                    marginStyle: new(
+                        all: 1),
+                    borderStyle: new(
+                        color: SystemColors.Highlight,
+                        all: 5,
+                        depth: 3),
+                    paddingStyle: PaddingStyle.Empty,
+                    backgroundStyle: new(
+                        color1: Color.FromArgb(13, 87, 210), // light blue
+                        color2: Color.FromArgb(3, 68, 192) // darker blue
+                    )
+                ));
+            screens = new List<RectangleInfo>
+            {
+                new(0, 0, 1024, 768),
+            };
+            activatedLocation = new PointInfo(512, 384);
+            previewLayout = new PreviewLayout(
+                virtualScreen: new(0, 0, 1024, 768),
+                screens: screens,
+                activatedScreenIndex: 0,
+                formBounds: new(256, 192, 512, 384),
+                previewStyle: previewStyle,
+                previewBounds: new(
+                    outerBounds: new(0, 0, 512, 384),
+                    marginBounds: new(0, 0, 512, 384),
+                    borderBounds: new(0, 0, 512, 384),
+                    paddingBounds: new(0, 0, 512, 384),
+                    contentBounds: new(0, 0, 512, 384)
+                ),
+                screenshotBounds: new()
+                {
+                    new(
+                        outerBounds: new(0, 0, 512, 384),
+                        marginBounds: new(0, 0, 512, 384),
+                        borderBounds: new(1, 1, 510, 382),
+                        paddingBounds: new(6, 6, 500, 372),
+                        contentBounds: new(6, 6, 500, 372)
+                    ),
+                });
+            yield return new object[] { new TestCase(previewStyle, screens, activatedLocation, previewLayout) };
         }
 
         [TestMethod]
@@ -316,10 +333,15 @@ public static class LayoutHelperTests
             // (int)1280.000000000000 -> 1280
             // so we'll compare the raw values, *and* convert to an int-based
             // Rectangle to compare rounded values
-            /*
             var actual = LayoutHelper.GetPreviewLayout(data.PreviewStyle, data.Screens, data.ActivatedLocation);
             var expected = data.ExpectedResult;
-            */
+            var options = new JsonSerializerOptions
+            {
+                WriteIndented = true,
+            };
+            Assert.AreEqual(
+                JsonSerializer.Serialize(expected, options),
+                JsonSerializer.Serialize(actual, options));
             /* form bounds */
             /*
             Assert.AreEqual(expected.FormBounds.X, actual.FormBounds.X, 0.00001M, "FormBounds.X");

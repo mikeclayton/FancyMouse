@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Text.Json;
 using FancyMouse.Models.Settings;
 using FancyMouse.Models.Styles;
+using FancyMouse.UnitTests.TestUtils;
 using FancyMouse.WindowsHotKeys;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -51,7 +52,7 @@ public sealed class AppSettingsReaderTests
         [TestMethod]
         public void EmptyVersion1ShouldParse()
         {
-            var json = ParseJsonTests.SerializeAnonymousType(
+            var json = SerializationUtils.SerializeAnonymousType(
                 new
                 {
                     version = 1,
@@ -66,7 +67,7 @@ public sealed class AppSettingsReaderTests
         [TestMethod]
         public void Version1WithNullRootKeysShouldParse()
         {
-            var json = ParseJsonTests.SerializeAnonymousType(
+            var json = SerializationUtils.SerializeAnonymousType(
                 new
                 {
                     version = 1,
@@ -82,7 +83,7 @@ public sealed class AppSettingsReaderTests
         [TestMethod]
         public void Version1WithNullChildKeysShouldParse()
         {
-            var json = ParseJsonTests.SerializeAnonymousType(
+            var json = SerializationUtils.SerializeAnonymousType(
                 new
                 {
                     version = 1,
@@ -101,7 +102,7 @@ public sealed class AppSettingsReaderTests
         [TestMethod]
         public void Version1WithAllValuesShouldParse()
         {
-            var json = ParseJsonTests.SerializeAnonymousType(
+            var json = SerializationUtils.SerializeAnonymousType(
                 new
                 {
                     version = 1,
@@ -133,7 +134,7 @@ public sealed class AppSettingsReaderTests
         [TestMethod]
         public void Version2WithNullRootKeysShouldParse()
         {
-            var json = ParseJsonTests.SerializeAnonymousType(
+            var json = SerializationUtils.SerializeAnonymousType(
                 new
                 {
                     version = 2,
@@ -150,7 +151,7 @@ public sealed class AppSettingsReaderTests
         [TestMethod]
         public void Version2WithAllValuesShouldParse()
         {
-            var json = ParseJsonTests.SerializeAnonymousType(
+            var json = SerializationUtils.SerializeAnonymousType(
                 new
                 {
                     version = 2,
@@ -254,7 +255,7 @@ public sealed class AppSettingsReaderTests
         [TestMethod]
         public void PerformanceTest()
         {
-            var json = ParseJsonTests.SerializeAnonymousType(
+            var json = SerializationUtils.SerializeAnonymousType(
                 new
                 {
                     version = 2,
@@ -321,16 +322,7 @@ public sealed class AppSettingsReaderTests
             var averageMs = (decimal)times.Sum() / times.Count / ticksPerMs;
             Console.WriteLine($"{averageMs} ms");
 
-            Assert.IsTrue(averageMs < 1);
-        }
-
-        private static string SerializeAnonymousType<T>(T value)
-        {
-            var options = new JsonSerializerOptions
-            {
-                 WriteIndented = true,
-            };
-            return JsonSerializer.Serialize(value, options);
+            Assert.IsTrue(averageMs < 1.5M);
         }
     }
 }

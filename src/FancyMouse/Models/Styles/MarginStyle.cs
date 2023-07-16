@@ -1,4 +1,6 @@
-﻿namespace FancyMouse.Models.Styles;
+﻿using System.Text.Json.Serialization;
+
+namespace FancyMouse.Models.Styles;
 
 /// <summary>
 /// Represents the margin style for a drawing object.
@@ -40,8 +42,10 @@ public sealed class MarginStyle
         get;
     }
 
+    [JsonIgnore]
     public decimal Horizontal => this.Left + this.Right;
 
+    [JsonIgnore]
     public decimal Vertical => this.Top + this.Bottom;
 
     public override string ToString()

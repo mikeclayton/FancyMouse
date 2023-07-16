@@ -1,4 +1,5 @@
-﻿using FancyMouse.Models.Styles;
+﻿using System.Text.Json.Serialization;
+using FancyMouse.Models.Styles;
 
 namespace FancyMouse.Models.Drawing;
 
@@ -52,22 +53,30 @@ public sealed class RectangleInfo
         get;
     }
 
+    [JsonIgnore]
     public decimal Left => this.X;
 
+    [JsonIgnore]
     public decimal Top => this.Y;
 
+    [JsonIgnore]
     public decimal Right => this.X + this.Width;
 
+    [JsonIgnore]
     public decimal Bottom => this.Y + this.Height;
 
+    [JsonIgnore]
     public decimal Area => this.Width * this.Height;
 
+    [JsonIgnore]
     public PointInfo Location => new(this.X, this.Y);
 
+    [JsonIgnore]
     public PointInfo Midpoint => new(
         x: this.X + (this.Width / 2),
         y: this.Y + (this.Height / 2));
 
+    [JsonIgnore]
     public SizeInfo Size => new(this.Width, this.Height);
 
     public RectangleInfo Center(PointInfo point) => new(

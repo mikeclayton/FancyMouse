@@ -63,7 +63,7 @@ internal static class LayoutHelper
             .Offset(previewStyle.CanvasStyle.PaddingStyle.Left, previewStyle.CanvasStyle.PaddingStyle.Top);
 
         // now we know the size of the content area we can work out the background bounds
-        builder.PreviewStyle = previewStyle.CanvasStyle;
+        builder.PreviewStyle = previewStyle;
         builder.PreviewBounds = LayoutHelper.GetBoxBoundsFromContentBounds(
             contentBounds,
             previewStyle.CanvasStyle);
@@ -81,7 +81,6 @@ internal static class LayoutHelper
             .ScaleToFitRatio(contentBounds.Size);
 
         // now calculate the positions of each of the screenshot images on the preview
-        builder.ScreenshotStyle = previewStyle.ScreenshotStyle;
         builder.ScreenshotBounds = allScreens
             .Select(
                 screen => LayoutHelper.GetBoxBoundsFromOuterBounds(

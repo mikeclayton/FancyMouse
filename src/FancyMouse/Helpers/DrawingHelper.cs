@@ -32,10 +32,10 @@ internal static class DrawingHelper
         var previewGraphics = Graphics.FromImage(previewImage);
         previewImageCreatedCallback?.Invoke(previewImage);
 
-        DrawingHelper.DrawBoxBorder(previewGraphics, previewLayout.PreviewStyle, previewLayout.PreviewBounds);
+        DrawingHelper.DrawBoxBorder(previewGraphics, previewLayout.PreviewStyle.CanvasStyle, previewLayout.PreviewBounds);
         DrawingHelper.DrawBoxBackground(
             previewGraphics,
-            previewLayout.PreviewStyle,
+            previewLayout.PreviewStyle.CanvasStyle,
             previewLayout.PreviewBounds,
             Enumerable.Empty<RectangleInfo>());
 
@@ -57,7 +57,7 @@ internal static class DrawingHelper
             foreach (var screenshotBounds in previewLayout.ScreenshotBounds)
             {
                 DrawingHelper.DrawBoxBorder(
-                    previewGraphics, previewLayout.ScreenshotStyle, screenshotBounds);
+                    previewGraphics, previewLayout.PreviewStyle.ScreenshotStyle, screenshotBounds);
             }
 
             var placeholdersDrawn = false;
@@ -85,7 +85,7 @@ internal static class DrawingHelper
                     // draw placeholders for any undrawn screens
                     DrawingHelper.DrawPlaceholders(
                         previewGraphics,
-                        previewLayout.ScreenshotStyle,
+                        previewLayout.PreviewStyle.ScreenshotStyle,
                         targetScreens.Where((_, idx) => idx > i).ToList());
                     placeholdersDrawn = true;
                 }
