@@ -2,6 +2,7 @@ using System.Diagnostics;
 using FancyMouse.Helpers;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Layout;
+using FancyMouse.Models.Settings;
 using static FancyMouse.NativeMethods.Core;
 
 namespace FancyMouse.UI;
@@ -173,12 +174,15 @@ internal partial class FancyMouseForm : Form
         // hide the form while we redraw it...
         this.Visible = false;
 
+        // load the config so it can be changed without having to restart the app
+        var appSettings = AppSettingsReader.ReadFile(".\\appSettings.json");
+
         var stopwatch = Stopwatch.StartNew();
 
         var screens = ScreenHelper.GetAllScreens().Select(screen => screen.DisplayArea).ToList();
         var activatedLocation = MouseHelper.GetCursorPosition();
         this.PreviewLayout = LayoutHelper.GetPreviewLayout(
-            previewStyle: this.Options.PreviewStyle,
+            previewStyle: appSettings.PreviewStyle,
             screens: screens,
             activatedLocation: activatedLocation);
 

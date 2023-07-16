@@ -114,7 +114,7 @@ internal static class SettingsConverter
 
         if (value.StartsWith("Color.", comparison))
         {
-            var propertyName = value.Substring("Color.".Length);
+            var propertyName = value["Color.".Length..];
             var property = typeof(Color).GetProperties()
                 .SingleOrDefault(property => property.Name == propertyName);
             if (property is not null)
@@ -126,7 +126,7 @@ internal static class SettingsConverter
 
         if (value.StartsWith("SystemColors.", comparison))
         {
-            var propertyName = value.Substring("SystemColors.".Length);
+            var propertyName = value["SystemColors.".Length..];
             var property = typeof(SystemColors).GetProperties()
                 .SingleOrDefault(property => property.Name == propertyName);
             if (property is not null)

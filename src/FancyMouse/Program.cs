@@ -37,8 +37,7 @@ internal static class Program
         // logger: LogManager.LoadConfiguration(".\\NLog.config").GetCurrentClassLogger(),
         var dialog = new FancyMouseDialog(
             new FancyMouseDialogOptions(
-                logger: LogManager.CreateNullLogger(),
-                previewStyle: appSettings.PreviewStyle));
+                logger: LogManager.CreateNullLogger()));
 
         var hotKeyManager = new HotKeyManager(appSettings.Hotkey);
         hotKeyManager.HotKeyPressed +=

@@ -1,4 +1,5 @@
-﻿using System.Drawing;
+﻿using System.Diagnostics;
+using System.Drawing;
 using System.Text.Json;
 using FancyMouse.Models.Settings;
 using FancyMouse.Models.Styles;
@@ -248,6 +249,79 @@ public sealed class AppSettingsReaderTests
             Assert.AreEqual(
                 JsonSerializer.Serialize(expected),
                 JsonSerializer.Serialize(actual));
+        }
+
+        [TestMethod]
+        public void PerformanceTest()
+        {
+            var json = ParseJsonTests.SerializeAnonymousType(
+                new
+                {
+                    version = 2,
+                    hotkey = new
+                    {
+                        key = Keys.X.ToString(),
+                        modifiers = (KeyModifiers.Control | KeyModifiers.Alt).ToString(),
+                    },
+                    preview = new
+                    {
+                        size = new
+                        {
+                            width = 800,
+                            height = 600,
+                        },
+                        canvas = new
+                        {
+                            border = new
+                            {
+                                color = $"{nameof(SystemColors)}.{nameof(SystemColors.Control)}",
+                                width = 5,
+                                depth = 2,
+                            },
+                            padding = new
+                            {
+                                width = 2,
+                            },
+                            background = new
+                            {
+                                color1 = $"{nameof(Color)}.{nameof(Color.Green)}",
+                                color2 = $"{nameof(Color)}.{nameof(Color.Blue)}",
+                            },
+                        },
+                        screenshot = new
+                        {
+                            margin = new
+                            {
+                                width = 10,
+                            },
+                            border = new
+                            {
+                                color = $"{nameof(SystemColors)}.{nameof(SystemColors.Control)}",
+                                width = 5,
+                                depth = 2,
+                            },
+                            background = new
+                            {
+                                color1 = $"{nameof(Color)}.{nameof(Color.Yellow)}",
+                                color2 = $"{nameof(Color)}.{nameof(Color.Pink)}",
+                            },
+                        },
+                    },
+                });
+            var times = new List<long>();
+            for (var i = 0; i < 10000; i++)
+            {
+                var stopwatch = Stopwatch.StartNew();
+                AppSettingsReader.ParseJson(json);
+                stopwatch.Stop();
+                times.Add(stopwatch.ElapsedTicks);
+            }
+
+            const int ticksPerMs = 10000;
+            var averageMs = (decimal)times.Sum() / times.Count / ticksPerMs;
+            Console.WriteLine($"{averageMs} ms");
+
+            Assert.IsTrue(averageMs < 1);
         }
 
         private static string SerializeAnonymousType<T>(T value)
