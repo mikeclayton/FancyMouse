@@ -18,48 +18,6 @@ public static class LayoutHelperTests
 
         public static IEnumerable<object[]> GetTestCases()
         {
-            // primary monitor not topmost / leftmost - if there are screens
-            // that are further left or higher than the primary monitor
-            // they'll have negative coordinates which has caused some
-            // issues with calculations in the past. this test will make
-            // sure we handle negative coordinates gracefully
-            //
-            // +-------+
-            // |   0   +----------------+
-            // +-------+                |
-            //         |       1        |
-            //         |                |
-            //         +----------------+
-            layoutConfig = new LayoutConfig(
-                virtualScreenBounds: new(-1920, -472, 7040, 1912),
-                screens: new List<ScreenInfo>
-                {
-                    new(HMONITOR.Null, false, new(-1920, -472, 1920, 1080), new(-1920, -472, 1920, 1080)),
-                    new(HMONITOR.Null, false, new(0, 0, 5120, 1440), new(0, 0, 5120, 1440)),
-                },
-                activatedLocation: new(-960, -236),
-                activatedScreenIndex: 0,
-                activatedScreenNumber: 1,
-                maximumFormSize: new(1600, 1200),
-                formPadding: new(5, 5, 5, 5),
-                previewPadding: new(0, 0, 0, 0));
-            layoutInfo = new LayoutInfo(
-                layoutConfig: layoutConfig,
-                formBounds: new(
-                    -1760,
-                    -456.91477M, // -236 - (((decimal)(1600-10) / 7040 * 1912) + 10) / 2
-                    1600,
-                    441.829545M // ((decimal)(1600-10) / 7040 * 1912) + 10
-                ),
-                previewBounds: new(0, 0, 1590, 431.829545M),
-                screenBounds: new List<RectangleInfo>
-                {
-                    new(0, 0, 433.63636M, 243.92045M),
-                    new(433.63636M, 106.602270M, 1156.36363M, 325.22727M),
-                },
-                activatedScreenBounds: new(-1920, -472, 1920, 1080));
-            yield return new object[] { new TestCase(layoutConfig, layoutInfo) };
-
             // check we handle rounding errors in scaling the preview form
             // that might make the form *larger* than the current screen -
             // e.g. a desktop 7168 x 1440 scaled to a screen 1024 x 768
@@ -138,49 +96,6 @@ public static class LayoutHelperTests
                 },
                 activatedScreenBounds: new(6144, 0, 1280, 768));
             yield return new object[] { new TestCase(layoutConfig, layoutInfo) };
-        }
-
-        [TestMethod]
-        [DynamicData(nameof(GetTestCases), DynamicDataSourceType.Method)]
-        public void RunTestCases(TestCase data)
-        {
-            // note - even if values are within 0.0001M of each other they could
-            // still round to different values - e.g.
-            // (int)1279.999999999999 -> 1279
-            // vs
-            // (int)1280.000000000000 -> 1280
-            // so we'll compare the raw values, *and* convert to an int-based
-            // Rectangle to compare rounded values
-            var actual = LayoutHelper.GetPreviewLayout(data.PreviewStyle, data.Screens, data.ActivatedLocation);
-            var expected = data.ExpectedResult;
-            Assert.AreEqual(
-                JsonSerializer.Serialize(expected),
-                JsonSerializer.Serialize(actual));
-            Assert.AreEqual(expected.FormBounds.X, actual.FormBounds.X, 0.00001M, "FormBounds.X");
-            Assert.AreEqual(expected.FormBounds.Y, actual.FormBounds.Y, 0.00001M, "FormBounds.Y");
-            Assert.AreEqual(expected.FormBounds.Width, actual.FormBounds.Width, 0.00001M, "FormBounds.Width");
-            Assert.AreEqual(expected.FormBounds.Height, actual.FormBounds.Height, 0.00001M, "FormBounds.Height");
-            Assert.AreEqual(expected.FormBounds.ToRectangle(), actual.FormBounds.ToRectangle(), "FormBounds.ToRectangle");
-            Assert.AreEqual(expected.PreviewBounds.X, actual.PreviewBounds.X, 0.00001M, "PreviewBounds.X");
-            Assert.AreEqual(expected.PreviewBounds.Y, actual.PreviewBounds.Y, 0.00001M, "PreviewBounds.Y");
-            Assert.AreEqual(expected.PreviewBounds.Width, actual.PreviewBounds.Width, 0.00001M, "PreviewBounds.Width");
-            Assert.AreEqual(expected.PreviewBounds.Height, actual.PreviewBounds.Height, 0.00001M, "PreviewBounds.Height");
-            Assert.AreEqual(expected.PreviewBounds.ToRectangle(), actual.PreviewBounds.ToRectangle(), "PreviewBounds.ToRectangle");
-            Assert.AreEqual(expected.ScreenBounds.Count, actual.ScreenBounds.Count, "ScreenBounds.Count");
-            for (var i = 0; i < expected.ScreenBounds.Count; i++)
-            {
-                Assert.AreEqual(expected.ScreenBounds[i].X, actual.ScreenBounds[i].X, 0.00001M, $"ScreenBounds[{i}].X");
-                Assert.AreEqual(expected.ScreenBounds[i].Y, actual.ScreenBounds[i].Y, 0.00001M, $"ScreenBounds[{i}].Y");
-                Assert.AreEqual(expected.ScreenBounds[i].Width, actual.ScreenBounds[i].Width, 0.00001M, $"ScreenBounds[{i}].Width");
-                Assert.AreEqual(expected.ScreenBounds[i].Height, actual.ScreenBounds[i].Height, 0.00001M, $"ScreenBounds[{i}].Height");
-                Assert.AreEqual(expected.ScreenBounds[i].ToRectangle(), actual.ScreenBounds[i].ToRectangle(), "ActivatedScreen.ToRectangle");
-            }
-
-            Assert.AreEqual(expected.ActivatedScreenBounds.X, actual.ActivatedScreenBounds.X, "ActivatedScreen.X");
-            Assert.AreEqual(expected.ActivatedScreenBounds.Y, actual.ActivatedScreenBounds.Y, "ActivatedScreen.Y");
-            Assert.AreEqual(expected.ActivatedScreenBounds.Width, actual.ActivatedScreenBounds.Width, "ActivatedScreen.Width");
-            Assert.AreEqual(expected.ActivatedScreenBounds.Height, actual.ActivatedScreenBounds.Height, "ActivatedScreen.Height");
-            Assert.AreEqual(expected.ActivatedScreenBounds.ToRectangle(), actual.ActivatedScreenBounds.ToRectangle(), "ActivatedScreen.ToRectangle");
         }
     }
     */
@@ -320,6 +235,87 @@ public static class LayoutHelperTests
                     ),
                 });
             yield return new object[] { new TestCase(previewStyle, screens, activatedLocation, previewLayout) };
+
+            // primary monitor not topmost / leftmost - if there are screens
+            // that are further left or higher up than the primary monitor
+            // they'll have negative coordinates which has caused some
+            // issues with calculations in the past. this test will make
+            // sure we handle screens with negative coordinates gracefully
+            //
+            // +-------+
+            // |   0   +----------------+
+            // +-------+                |
+            //         |       1        |
+            //         |                |
+            //         +----------------+
+            previewStyle = new PreviewStyle(
+                canvasSize: new(
+                    width: 716,
+                    height: 204
+                ),
+                canvasStyle: new(
+                    marginStyle: MarginStyle.Empty,
+                    borderStyle: new(
+                        color: SystemColors.Highlight,
+                        all: 5,
+                        depth: 3),
+                    paddingStyle: new(
+                        all: 1),
+                    backgroundStyle: new(
+                        color1: Color.FromArgb(13, 87, 210), // light blue
+                        color2: Color.FromArgb(3, 68, 192) // darker blue
+                    )
+                ),
+                screenshotStyle: new(
+                    marginStyle: new(
+                        all: 1),
+                    borderStyle: new(
+                        color: SystemColors.Highlight,
+                        all: 5,
+                        depth: 3),
+                    paddingStyle: PaddingStyle.Empty,
+                    backgroundStyle: new(
+                        color1: Color.FromArgb(13, 87, 210), // light blue
+                        color2: Color.FromArgb(3, 68, 192) // darker blue
+                    )
+                ));
+            screens = new List<RectangleInfo>
+            {
+                new(-1920, -480, 1920, 1080),
+                new(0, 0, 5120, 1440),
+            };
+            activatedLocation = new(-960, 60);
+            previewLayout = new PreviewLayout(
+                virtualScreen: new(-1920, -480, 7040, 1920),
+                screens: screens,
+                activatedScreenIndex: 0,
+                formBounds: new(-1318, -42, 716, 204),
+                previewStyle: previewStyle,
+                previewBounds: new(
+                    outerBounds: new(0, 0, 716, 204),
+                    marginBounds: new(0, 0, 716, 204),
+                    borderBounds: new(0, 0, 716, 204),
+                    paddingBounds: new(5, 5, 706, 194),
+                    contentBounds: new(6, 6, 704, 192)
+                ),
+                screenshotBounds: new()
+                {
+                    new(
+                        outerBounds: new(6, 6, 192, 108),
+                        marginBounds: new(6, 6, 192, 108),
+                        borderBounds: new(7, 7, 190, 106),
+                        paddingBounds: new(12, 12, 180, 96),
+                        contentBounds: new(12, 12, 180, 96)
+                    ),
+                    new(
+                        outerBounds: new(198, 54, 512, 144),
+                        marginBounds: new(198, 54, 512, 144),
+                        borderBounds: new(199, 55, 510, 142),
+                        paddingBounds: new(204, 60, 500, 132),
+                        contentBounds: new(204, 60, 500, 132)
+                    ),
+                });
+            yield return new object[] { new TestCase(previewStyle, screens, activatedLocation, previewLayout) };
         }
 
         [TestMethod]
@@ -342,39 +338,6 @@ public static class LayoutHelperTests
             Assert.AreEqual(
                 JsonSerializer.Serialize(expected, options),
                 JsonSerializer.Serialize(actual, options));
-            /* form bounds */
-            /*
-            Assert.AreEqual(expected.FormBounds.X, actual.FormBounds.X, 0.00001M, "FormBounds.X");
-            Assert.AreEqual(expected.FormBounds.Y, actual.FormBounds.Y, 0.00001M, "FormBounds.Y");
-            Assert.AreEqual(expected.FormBounds.Width, actual.FormBounds.Width, 0.00001M, "FormBounds.Width");
-            Assert.AreEqual(expected.FormBounds.Height, actual.FormBounds.Height, 0.00001M, "FormBounds.Height");
-            Assert.AreEqual(expected.FormBounds.ToRectangle(), actual.FormBounds.ToRectangle(), "FormBounds.ToRectangle");
-            */
-            /* preview bounds */
-            /*
-            Assert.AreEqual(expected.PreviewBounds.X, actual.PreviewBounds.X, 0.00001M, "PreviewBounds.X");
-            Assert.AreEqual(expected.PreviewBounds.Y, actual.PreviewBounds.Y, 0.00001M, "PreviewBounds.Y");
-            Assert.AreEqual(expected.PreviewBounds.Width, actual.PreviewBounds.Width, 0.00001M, "PreviewBounds.Width");
-            Assert.AreEqual(expected.PreviewBounds.Height, actual.PreviewBounds.Height, 0.00001M, "PreviewBounds.Height");
-            Assert.AreEqual(expected.PreviewBounds.ToRectangle(), actual.PreviewBounds.ToRectangle(), "PreviewBounds.ToRectangle");
-            */
-            /*
-            Assert.AreEqual(expected.ScreenBounds.Count, actual.ScreenBounds.Count, "ScreenBounds.Count");
-            for (var i = 0; i < expected.ScreenBounds.Count; i++)
-            {
-                Assert.AreEqual(expected.ScreenBounds[i].X, actual.ScreenBounds[i].X, 0.00001M, $"ScreenBounds[{i}].X");
-                Assert.AreEqual(expected.ScreenBounds[i].Y, actual.ScreenBounds[i].Y, 0.00001M, $"ScreenBounds[{i}].Y");
-                Assert.AreEqual(expected.ScreenBounds[i].Width, actual.ScreenBounds[i].Width, 0.00001M, $"ScreenBounds[{i}].Width");
-                Assert.AreEqual(expected.ScreenBounds[i].Height, actual.ScreenBounds[i].Height, 0.00001M, $"ScreenBounds[{i}].Height");
-                Assert.AreEqual(expected.ScreenBounds[i].ToRectangle(), actual.ScreenBounds[i].ToRectangle(), "ActivatedScreen.ToRectangle");
-            }
-
-            Assert.AreEqual(expected.ActivatedScreenBounds.X, actual.ActivatedScreenBounds.X, "ActivatedScreen.X");
-            Assert.AreEqual(expected.ActivatedScreenBounds.Y, actual.ActivatedScreenBounds.Y, "ActivatedScreen.Y");
-            Assert.AreEqual(expected.ActivatedScreenBounds.Width, actual.ActivatedScreenBounds.Width, "ActivatedScreen.Width");
-            Assert.AreEqual(expected.ActivatedScreenBounds.Height, actual.ActivatedScreenBounds.Height, "ActivatedScreen.Height");
-            Assert.AreEqual(expected.ActivatedScreenBounds.ToRectangle(), actual.ActivatedScreenBounds.ToRectangle(), "ActivatedScreen.ToRectangle");
-            */
         }
     }
 
