@@ -97,13 +97,7 @@ internal partial class FancyMouseForm : Form
     private void FancyMouseForm_Deactivate(object sender, EventArgs e)
     {
         this.Hide();
-
-        if (this.Thumbnail.Image is not null)
-        {
-            var tmp = this.Thumbnail.Image;
-            this.Thumbnail.Image = null;
-            tmp.Dispose();
-        }
+        this.ClearPreview();
     }
 
     private void Thumbnail_Click(object sender, EventArgs e)
@@ -199,7 +193,7 @@ internal partial class FancyMouseForm : Form
                 this.OnPreviewImageCreated,
                 this.OnPreviewImageUpdated);
         }
-        catch
+        finally
         {
             DrawingHelper.FreeDesktopDeviceContext(ref desktopHwnd, ref desktopHdc);
         }
@@ -208,6 +202,22 @@ internal partial class FancyMouseForm : Form
 
         // we have to activate the form to make sure the deactivate event fires
         this.Activate();
+    }
+
+    private void ClearPreview()
+    {
+        if (this.Thumbnail.Image is null)
+        {
+            return;
+        }
+
+        var tmp = this.Thumbnail.Image;
+        this.Thumbnail.Image = null;
+        tmp.Dispose();
+
+        // force preview image memory to be released, otherwise
+        // all the disposed images can pile up without being GC'ed
+        GC.Collect();
     }
 
     /// <summary>
@@ -229,6 +239,7 @@ internal partial class FancyMouseForm : Form
 
     private void OnPreviewImageCreated(Bitmap preview)
     {
+        this.ClearPreview();
         this.Thumbnail.Image = preview;
     }
 
