@@ -13,6 +13,13 @@ I'll continue to maintain the FancyMouse repo as an incubator for new features g
 
 FancyMouse is a Windows utility for quickly moving the mouse large distances on high-res desktops.
 
+See links for additional details:
+
+* [Basic Configuration](./wiki/config/basic_config.md)
+* [Advancedc Configuration](./wiki/config/advanced_config.md)
+
+---
+
 ## The Problem
 
 On a modern laptop that uses an Ultra-Wide external monitor you could easily have a desktop in the region of 8000+ pixels wide, and that's a lot of ground for your mouse to cover.
@@ -21,6 +28,8 @@ What tends to happen is you end up swiping the physical mouse as far as it will 
 
 FancyMouse helps by letting you click a scaled-down preview of your entire desktop and "teleport" the mouse there in an instant.
 
+---
+
 ## Swiping
 
 Here's an animation showing the old slow way of swiping the mouse multiple times.
@@ -28,6 +37,8 @@ Here's an animation showing the old slow way of swiping the mouse multiple times
 Imagine you're happily working on a spreadsheet on your ultra-wide external monitor you get a notification of a new email arriving on your laptop's screen. They're opposite ends of the desktop and several thousand pixels away so you start swiping the mouse repeatedly...
 
 ![Animation of swiping a mouse multiple times to move across a large monitor setup](wiki/images/swipe.gif)
+
+---
 
 ## FancyMouse
 
