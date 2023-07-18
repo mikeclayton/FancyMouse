@@ -28,6 +28,8 @@ internal static partial class Core
             this.Value = LPDWORD.ToPtr(value);
         }
 
+        public bool IsNull => this.Value == LPDWORD.Null.Value;
+
         private static IntPtr ToPtr(DWORD value)
         {
             var ptr = Marshal.AllocHGlobal(DWORD.Size);
@@ -42,7 +44,7 @@ internal static partial class Core
 
         public static implicit operator IntPtr(LPDWORD value) => value.Value;
 
-        public static implicit operator LPDWORD(IntPtr value) => new(value);
+        public static explicit operator LPDWORD(IntPtr value) => new(value);
 
         public override string ToString()
         {

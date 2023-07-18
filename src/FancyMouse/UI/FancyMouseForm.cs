@@ -1,9 +1,8 @@
 using System.Diagnostics;
-using System.Drawing.Imaging;
 using FancyMouse.Helpers;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Layout;
-using NLog;
+using FancyMouse.Models.Settings;
 using static FancyMouse.NativeMethods.Core;
 
 namespace FancyMouse.UI;
@@ -19,6 +18,12 @@ internal partial class FancyMouseForm : Form
     private FancyMouseDialogOptions Options
     {
         get;
+    }
+
+    private PreviewLayout? PreviewLayout
+    {
+        get;
+        set;
     }
 
     private void FancyMouseForm_Load(object sender, EventArgs e)
@@ -84,7 +89,7 @@ internal partial class FancyMouseForm : Form
         if (targetScreenNumber.HasValue)
         {
             MouseHelper.SetCursorPosition(
-                screens[targetScreenNumber.Value - 1].Screen.Bounds.Midpoint);
+                screens[targetScreenNumber.Value - 1].Screen.DisplayArea.Midpoint);
             this.OnDeactivate(EventArgs.Empty);
         }
     }
@@ -92,13 +97,7 @@ internal partial class FancyMouseForm : Form
     private void FancyMouseForm_Deactivate(object sender, EventArgs e)
     {
         this.Hide();
-
-        if (this.Thumbnail.Image is not null)
-        {
-            var tmp = this.Thumbnail.Image;
-            this.Thumbnail.Image = null;
-            tmp.Dispose();
-        }
+        this.ClearPreview();
     }
 
     private void Thumbnail_Click(object sender, EventArgs e)
@@ -120,188 +119,137 @@ internal partial class FancyMouseForm : Form
 
         if (mouseEventArgs.Button == MouseButtons.Left)
         {
-            // plain click - move mouse pointer
-            var virtualScreen = ScreenHelper.GetVirtualScreen();
-            var scaledLocation = MouseHelper.GetJumpLocation(
-                new PointInfo(mouseEventArgs.X, mouseEventArgs.Y),
-                new SizeInfo(this.Thumbnail.Size),
-                virtualScreen);
-            logger.Info($"scaled location = {scaledLocation}");
-            MouseHelper.SetCursorPosition(scaledLocation);
+            // work out which screenshot was clicked
+            var clickedScreenshot = (this.PreviewLayout ?? throw new InvalidOperationException())
+                .ScreenshotBounds
+                .SingleOrDefault(
+                    box => box.BorderBounds.Contains(mouseEventArgs.X, mouseEventArgs.Y));
+            if (clickedScreenshot is null)
+            {
+                return;
+            }
+
+            // scale up the click onto the physical screen - the aspect ratio of the screenshot
+            // might be distorted compared to the physical screen due to the borders around the
+            // screenshot, so we need to work out the target location on the physical screen first
+            var clickedScreen =
+                this.PreviewLayout.Screens[this.PreviewLayout.ScreenshotBounds.IndexOf(clickedScreenshot)];
+            var clickedLocation = new PointInfo(mouseEventArgs.Location)
+                .Stretch(
+                    source: clickedScreenshot.ContentBounds,
+                    target: clickedScreen)
+                .Clamp(
+                    new(
+                        x: clickedScreen.X + 1,
+                        y: clickedScreen.Y + 1,
+                        width: clickedScreen.Width - 1,
+                        height: clickedScreen.Height - 1
+                    ))
+                .Truncate();
+
+            // move mouse pointer
+            logger.Info($"clicked location = {clickedLocation}");
+            MouseHelper.SetCursorPosition(clickedLocation);
         }
 
         this.OnDeactivate(EventArgs.Empty);
     }
 
-    public void ShowThumbnail()
+    public void ShowPreview()
     {
         var logger = this.Options.Logger;
 
         logger.Info(string.Join(
             '\n',
             "-----------",
-            nameof(FancyMouseForm.ShowThumbnail),
+            nameof(FancyMouseForm.ShowPreview),
             "-----------"));
 
+        // hide the form while we redraw it...
+        this.Visible = false;
+
+        // load the config so it can be changed without having to restart the app
+        var appSettings = AppSettingsReader.ReadFile(".\\appSettings.json");
+
         var stopwatch = Stopwatch.StartNew();
-        var layoutInfo = FancyMouseForm.GetLayoutInfo(logger, this);
-        LayoutHelper.PositionForm(this, layoutInfo.FormBounds);
-        FancyMouseForm.RenderPreview(this, layoutInfo);
+
+        var screens = ScreenHelper.GetAllScreens().Select(screen => screen.DisplayArea).ToList();
+        var activatedLocation = MouseHelper.GetCursorPosition();
+        this.PreviewLayout = LayoutHelper.GetPreviewLayout(
+            previewStyle: appSettings.PreviewStyle,
+            screens: screens,
+            activatedLocation: activatedLocation);
+
+        this.PositionForm(this.PreviewLayout.FormBounds);
+
+        var desktopHwnd = HWND.Null;
+        var desktopHdc = HDC.Null;
+        DrawingHelper.EnsureDesktopDeviceContext(ref desktopHwnd, ref desktopHdc);
+        try
+        {
+            DrawingHelper.RenderPreview(
+                this.PreviewLayout,
+                desktopHdc,
+                this.OnPreviewImageCreated,
+                this.OnPreviewImageUpdated);
+        }
+        finally
+        {
+            DrawingHelper.FreeDesktopDeviceContext(ref desktopHwnd, ref desktopHdc);
+        }
+
         stopwatch.Stop();
 
         // we have to activate the form to make sure the deactivate event fires
         this.Activate();
     }
 
-    private static LayoutInfo GetLayoutInfo(
-        ILogger logger, FancyMouseForm form)
+    private void ClearPreview()
     {
-        // map screens to their screen number in "System > Display"
-        var screens = ScreenHelper.GetAllScreens()
-            .Select((screen, index) => new { Screen = screen, Index = index, Number = index + 1 })
-            .ToList();
-        foreach (var screen in screens)
+        if (this.Thumbnail.Image is null)
         {
-            logger.Info(string.Join(
-                '\n',
-                $"screen[{screen.Number}]",
-                $"\tprimary      = {screen.Screen.Primary}",
-                $"\tdisplay area = {screen.Screen.DisplayArea}",
-                $"\tworking area = {screen.Screen.WorkingArea}"));
+            return;
         }
 
-        // collect together some values that we need for calculating layout
-        var activatedLocation = MouseHelper.GetCursorPosition();
-        var activatedScreenHandle = ScreenHelper.MonitorFromPoint(activatedLocation);
-        var activatedScreenIndex = screens
-            .Single(item => item.Screen.Handle == activatedScreenHandle.Value)
-            .Index;
+        var tmp = this.Thumbnail.Image;
+        this.Thumbnail.Image = null;
+        tmp.Dispose();
 
-        var layoutConfig = new LayoutConfig(
-            virtualScreenBounds: ScreenHelper.GetVirtualScreen(),
-            screens: screens.Select(item => item.Screen).ToList(),
-            activatedLocation: activatedLocation,
-            activatedScreenIndex: activatedScreenIndex,
-            activatedScreenNumber: activatedScreenIndex + 1,
-            maximumFormSize: form.Options.MaximumThumbnailImageSize,
-            formPadding: new(
-                form.panel1.Padding.Left,
-                form.panel1.Padding.Top,
-                form.panel1.Padding.Right,
-                form.panel1.Padding.Bottom),
-            previewPadding: new(0));
-        logger.Info(string.Join(
-            '\n',
-            "Layout config",
-            "-------------",
-            $"virtual screen          = {layoutConfig.VirtualScreenBounds}",
-            $"activated location      = {layoutConfig.ActivatedLocation}",
-            $"activated screen index  = {layoutConfig.ActivatedScreenIndex}",
-            $"activated screen number = {layoutConfig.ActivatedScreenNumber}",
-            $"maximum form size       = {layoutConfig.MaximumFormSize}",
-            $"form padding            = {layoutConfig.FormPadding}",
-            $"preview padding         = {layoutConfig.PreviewPadding}"));
-
-        // calculate the layout coordinates for everything
-        var layoutInfo = LayoutHelper.CalculateLayoutInfo(layoutConfig);
-        logger.Info(string.Join(
-            '\n',
-            "Layout info",
-            "-----------",
-            $"form bounds      = {layoutInfo.FormBounds}",
-            $"preview bounds   = {layoutInfo.PreviewBounds}",
-            $"activated screen = {layoutInfo.ActivatedScreenBounds}"));
-
-        return layoutInfo;
+        // force preview image memory to be released, otherwise
+        // all the disposed images can pile up without being GC'ed
+        GC.Collect();
     }
 
-    private static void RenderPreview(
-        FancyMouseForm form, LayoutInfo layoutInfo)
+    /// <summary>
+    /// Resize and position the specified form.
+    /// </summary>
+    private void PositionForm(RectangleInfo bounds)
     {
-        var layoutConfig = layoutInfo.LayoutConfig;
-
-        var stopwatch = Stopwatch.StartNew();
-
-        // initialize the preview image
-        var preview = new Bitmap(
-            (int)layoutInfo.PreviewBounds.Width,
-            (int)layoutInfo.PreviewBounds.Height,
-            PixelFormat.Format32bppArgb);
-        form.Thumbnail.Image = preview;
-
-        using var previewGraphics = Graphics.FromImage(preview);
-
-        DrawingHelper.DrawPreviewBackground(previewGraphics, layoutInfo.PreviewBounds, layoutInfo.ScreenBounds);
-
-        var desktopHwnd = HWND.Null;
-        var desktopHdc = HDC.Null;
-        var previewHdc = HDC.Null;
-        try
-        {
-            // sort the source and target screen areas, putting the activated screen first
-            // (we need to capture and draw the activated screen before we show the form
-            // because otherwise we'll capture the form as part of the screenshot!)
-            var sourceScreens = layoutConfig.Screens
-                .Where((_, idx) => idx == layoutConfig.ActivatedScreenIndex)
-                .Union(layoutConfig.Screens.Where((_, idx) => idx != layoutConfig.ActivatedScreenIndex))
-                .Select(screen => screen.Bounds)
-                .ToList();
-            var targetScreens = layoutInfo.ScreenBounds
-                .Where((_, idx) => idx == layoutConfig.ActivatedScreenIndex)
-                .Union(layoutInfo.ScreenBounds.Where((_, idx) => idx != layoutConfig.ActivatedScreenIndex))
-                .ToList();
-
-            DrawingHelper.EnsureDesktopDeviceContext(ref desktopHwnd, ref desktopHdc);
-            DrawingHelper.EnsurePreviewDeviceContext(previewGraphics, ref previewHdc);
-
-            var placeholdersDrawn = false;
-            for (var i = 0; i < sourceScreens.Count; i++)
-            {
-                DrawingHelper.DrawPreviewScreen(
-                    desktopHdc, previewHdc, sourceScreens[i], targetScreens[i]);
-
-                // show the placeholder images and show the form if it looks like it might take
-                // a while to capture the remaining screenshot images (but only if there are any)
-                if ((i < (sourceScreens.Count - 1)) && (stopwatch.ElapsedMilliseconds > 250))
-                {
-                    // we need to release the device context handle before we draw the placeholders
-                    // using the Graphics object otherwise we'll get an error from GDI saying
-                    // "Object is currently in use elsewhere"
-                    DrawingHelper.FreePreviewDeviceContext(previewGraphics, ref previewHdc);
-
-                    if (!placeholdersDrawn)
-                    {
-                        // draw placeholders for any undrawn screens
-                        DrawingHelper.DrawPreviewScreenPlaceholders(
-                            previewGraphics,
-                            targetScreens.Where((_, idx) => idx > i).ToList());
-                        placeholdersDrawn = true;
-                    }
-
-                    FancyMouseForm.RefreshPreview(form);
-
-                    // we've still got more screens to draw so open the device context again
-                    DrawingHelper.EnsurePreviewDeviceContext(previewGraphics, ref previewHdc);
-                }
-            }
-        }
-        finally
-        {
-            DrawingHelper.FreeDesktopDeviceContext(ref desktopHwnd, ref desktopHdc);
-            DrawingHelper.FreePreviewDeviceContext(previewGraphics, ref previewHdc);
-        }
-
-        FancyMouseForm.RefreshPreview(form);
-        stopwatch.Stop();
+        // note - do this in two steps rather than "this.Bounds = formBounds" as there
+        // appears to be an issue in WinForms with dpi scaling even when using PerMonitorV2,
+        // where the form scaling uses either the *primary* screen scaling or the *previous*
+        // screen's scaling when the form is moved to a different screen. i've got no idea
+        // *why*, but the exact sequence of calls below seems to be a workaround...
+        // see https://github.com/mikeclayton/FancyMouse/issues/2
+        var rect = bounds.ToRectangle();
+        this.Location = rect.Location;
+        _ = this.PointToScreen(Point.Empty);
+        this.Size = rect.Size;
     }
 
-    private static void RefreshPreview(FancyMouseForm form)
+    private void OnPreviewImageCreated(Bitmap preview)
     {
-        if (!form.Visible)
+        this.ClearPreview();
+        this.Thumbnail.Image = preview;
+    }
+
+    private void OnPreviewImageUpdated()
+    {
+        if (!this.Visible)
         {
-            form.Show();
+            this.Show();
         }
 
-        form.Thumbnail.Refresh();
+        this.Thumbnail.Refresh();
     }
 }

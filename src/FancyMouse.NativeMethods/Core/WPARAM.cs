@@ -23,7 +23,7 @@ internal static partial class Core
 
         public static implicit operator UIntPtr(WPARAM value) => value.Value;
 
-        public static implicit operator WPARAM(UIntPtr value) => new(value);
+        public static explicit operator WPARAM(UIntPtr value) => new(value);
 
         public override string ToString()
         {

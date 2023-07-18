@@ -26,9 +26,14 @@ public sealed class PointInfo
         get;
     }
 
-    public SizeInfo ToSize()
+    /// <summary>
+    /// Moves this PointInfo inside the specified RectangleInfo.
+    /// </summary>
+    public PointInfo Clamp(RectangleInfo outer)
     {
-        return new((int)this.X, (int)this.Y);
+        return new(
+            x: Math.Clamp(this.X, outer.X, outer.Right),
+            y: Math.Clamp(this.Y, outer.Y, outer.Bottom));
     }
 
     public PointInfo Scale(decimal scalingFactor) => new(this.X * scalingFactor, this.Y * scalingFactor);
@@ -36,6 +41,27 @@ public sealed class PointInfo
     public PointInfo Offset(PointInfo amount) => new(this.X + amount.X, this.Y + amount.Y);
 
     public Point ToPoint() => new((int)this.X, (int)this.Y);
+
+    public SizeInfo ToSize()
+    {
+        return new((int)this.X, (int)this.Y);
+    }
+
+    /// <summary>
+    /// Stretches the point to the same proportional position in targetBounds as
+    /// it currently is in sourceBounds
+    /// </summary>
+    public PointInfo Stretch(RectangleInfo source, RectangleInfo target)
+    {
+        return new PointInfo(
+            x: ((this.X - source.X) / source.Width * target.Width) + target.X,
+            y: ((this.Y - source.Y) / source.Height * target.Height) + target.Y);
+    }
+
+    public PointInfo Truncate() =>
+        new(
+            (int)this.X,
+            (int)this.Y);
 
     public override string ToString()
     {

@@ -6,6 +6,6 @@ obj
 
 releases
 
-*.csproj.user
+*.user
 
 wiki/anim

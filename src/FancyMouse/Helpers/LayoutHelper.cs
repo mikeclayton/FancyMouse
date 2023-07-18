@@ -1,84 +1,134 @@
 ﻿using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Layout;
+using FancyMouse.Models.Styles;
 
 namespace FancyMouse.Helpers;
 
 internal static class LayoutHelper
 {
-    public static LayoutInfo CalculateLayoutInfo(
-        LayoutConfig layoutConfig)
+    public static PreviewLayout GetPreviewLayout(
+        PreviewStyle previewStyle, IEnumerable<RectangleInfo> screens, PointInfo activatedLocation)
     {
-        if (layoutConfig is null)
+        if (previewStyle is null)
         {
-            throw new ArgumentNullException(nameof(layoutConfig));
+            throw new ArgumentNullException(nameof(previewStyle));
         }
 
-        var builder = new LayoutInfo.Builder
+        if (screens is null)
         {
-            LayoutConfig = layoutConfig,
-        };
+            throw new ArgumentNullException(nameof(screens));
+        }
 
-        builder.ActivatedScreenBounds = layoutConfig.Screens[layoutConfig.ActivatedScreenIndex].Bounds;
+        var allScreens = screens.ToList();
+        if (allScreens.Count == 0)
+        {
+            throw new ArgumentException("Value must contain at least one item.", nameof(screens));
+        }
+
+        var builder = new PreviewLayout.Builder();
+
+        // calculate the bounding rectangle for the virtual screen
+        var virtualScreen = LayoutHelper.GetCombinedScreenBounds(allScreens);
+        builder.VirtualScreen = virtualScreen;
+
+        builder.Screens = allScreens;
+
+        // find the screen that contains the activated location - this is the
+        // one we'll show the preview form on
+        var activatedScreen = allScreens.Single(
+            screen => screen.Contains(activatedLocation));
+        builder.ActivatedScreenIndex = allScreens.IndexOf(activatedScreen);
 
         // work out the maximum *constrained* form size
         // * can't be bigger than the activated screen
         // * can't be bigger than the max form size
-        var maxFormSize = builder.ActivatedScreenBounds.Size
-            .Intersect(layoutConfig.MaximumFormSize);
+        var maxPreviewSize = activatedScreen.Size
+            .Intersect(previewStyle.CanvasSize);
 
-        // the drawing area for screen images is inside the
-        // form border and inside the preview border
-        var maxDrawingSize = maxFormSize
-            .Shrink(layoutConfig.FormPadding)
-            .Shrink(layoutConfig.PreviewPadding);
+        // the drawing area for screenshots is inside the
+        // preview border and inside the preview padding (if any)
+        var maxContentSize = maxPreviewSize
+            .Shrink(previewStyle.CanvasStyle.MarginStyle)
+            .Shrink(previewStyle.CanvasStyle.BorderStyle)
+            .Shrink(previewStyle.CanvasStyle.PaddingStyle);
 
-        // scale the virtual screen to fit inside the drawing bounds
-        var scalingRatio = layoutConfig.VirtualScreenBounds.Size
-            .ScaleToFitRatio(maxDrawingSize);
+        // position the drawing area on the preview image, offset to
+        // allow for any borders and padding
+        var contentBounds = virtualScreen.Size
+            .ScaleToFit(maxContentSize)
+            .Floor()
+            .PlaceAt(0, 0)
+            .Offset(previewStyle.CanvasStyle.MarginStyle.Left, previewStyle.CanvasStyle.MarginStyle.Top)
+            .Offset(previewStyle.CanvasStyle.BorderStyle.Left, previewStyle.CanvasStyle.BorderStyle.Top)
+            .Offset(previewStyle.CanvasStyle.PaddingStyle.Left, previewStyle.CanvasStyle.PaddingStyle.Top);
 
-        // position the drawing bounds inside the preview border
-        var drawingBounds = layoutConfig.VirtualScreenBounds.Size
-            .ScaleToFit(maxDrawingSize)
-            .PlaceAt(layoutConfig.PreviewPadding.Left, layoutConfig.PreviewPadding.Top);
+        // now we know the size of the content area we can work out the background bounds
+        builder.PreviewStyle = previewStyle;
+        builder.PreviewBounds = LayoutHelper.GetBoxBoundsFromContentBounds(
+            contentBounds,
+            previewStyle.CanvasStyle);
 
-        // now we know the size of the drawing area we can work out the preview size
-        builder.PreviewBounds = drawingBounds.Enlarge(layoutConfig.PreviewPadding);
-
-        // ... and the form size
+        // ... and the form bounds
         // * center the form to the activated position, but nudge it back
         //   inside the visible area of the activated screen if it falls outside
-        builder.FormBounds = builder.PreviewBounds
-            .Enlarge(layoutConfig.FormPadding)
-            .Center(layoutConfig.ActivatedLocation)
-            .Clamp(builder.ActivatedScreenBounds);
+        var formBounds = builder.PreviewBounds.OuterBounds
+            .Center(activatedLocation)
+            .Clamp(activatedScreen);
+        builder.FormBounds = formBounds;
 
-        // now calculate the positions of each of the screen images on the preview
-        builder.ScreenBounds = layoutConfig.Screens
+        // scale the virtual screen to fit inside the preview content bounds
+        var scalingRatio = builder.VirtualScreen.Size
+            .ScaleToFitRatio(contentBounds.Size);
+
+        // now calculate the positions of each of the screenshot images on the preview
+        builder.ScreenshotBounds = allScreens
             .Select(
-                screen => screen.Bounds
-                    .Offset(layoutConfig.VirtualScreenBounds.Location.ToSize().Negate())
-                    .Scale(scalingRatio)
-                    .Offset(layoutConfig.PreviewPadding.Left, layoutConfig.PreviewPadding.Top))
+                screen => LayoutHelper.GetBoxBoundsFromOuterBounds(
+                    screen
+                        .Offset(virtualScreen.Location.ToSize().Negate())
+                        .Scale(scalingRatio)
+                        .Offset(builder.PreviewBounds.ContentBounds.Location.ToSize())
+                        .Truncate(),
+                    previewStyle.ScreenshotStyle))
             .ToList();
 
         return builder.Build();
     }
 
-    /// <summary>
-    /// Resize and position the specified form.
-    /// </summary>
-    public static void PositionForm(
-        Form form, RectangleInfo formBounds)
+    public static RectangleInfo GetCombinedScreenBounds(List<RectangleInfo> screens)
     {
-        // note - do this in two steps rather than "this.Bounds = formBounds" as there
-        // appears to be an issue in WinForms with dpi scaling even when using PerMonitorV2,
-        // where the form scaling uses either the *primary* screen scaling or the *previous*
-        // screen's scaling when the form is moved to a different screen. i've got no idea
-        // *why*, but the exact sequence of calls below seems to be a workaround...
-        // see https://github.com/mikeclayton/FancyMouse/issues/2
-        var bounds = formBounds.ToRectangle();
-        form.Location = bounds.Location;
-        _ = form.PointToScreen(Point.Empty);
-        form.Size = bounds.Size;
+        return screens.Skip(1).Aggregate(
+            seed: screens.First(),
+            (bounds, screen) => bounds.Union(screen));
+    }
+
+    public static BoxBounds GetBoxBoundsFromContentBounds(
+        RectangleInfo contentBounds,
+        BoxStyle boxStyle)
+    {
+        var paddingBounds = contentBounds.Enlarge(
+            boxStyle.PaddingStyle ?? throw new ArgumentException(nameof(boxStyle.PaddingStyle)));
+        var borderBounds = paddingBounds.Enlarge(
+            boxStyle.BorderStyle ?? throw new ArgumentException(nameof(boxStyle.BorderStyle)));
+        var marginBounds = borderBounds.Enlarge(
+            boxStyle.MarginStyle ?? throw new ArgumentException(nameof(boxStyle.MarginStyle)));
+        var outerBounds = marginBounds;
+        return new(
+            outerBounds, marginBounds, borderBounds, paddingBounds, contentBounds);
+    }
+
+    public static BoxBounds GetBoxBoundsFromOuterBounds(
+        RectangleInfo outerBounds,
+        BoxStyle boxStyle)
+    {
+        var marginBounds = outerBounds ?? throw new ArgumentNullException(nameof(outerBounds));
+        var borderBounds = marginBounds.Shrink(
+            boxStyle.MarginStyle ?? throw new ArgumentException(nameof(boxStyle.MarginStyle)));
+        var paddingBounds = borderBounds.Shrink(
+            boxStyle.BorderStyle ?? throw new ArgumentException(nameof(boxStyle.BorderStyle)));
+        var contentBounds = paddingBounds.Shrink(
+            boxStyle.PaddingStyle ?? throw new ArgumentException(nameof(boxStyle.PaddingStyle)));
+        return new(
+            outerBounds, marginBounds, borderBounds, paddingBounds, contentBounds);
     }
 }

@@ -1,4 +1,6 @@
-﻿namespace FancyMouse.WindowsHotKeys;
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace FancyMouse.WindowsHotKeys;
 
 public sealed class Keystroke
 {
@@ -20,13 +22,24 @@ public sealed class Keystroke
 
     public static Keystroke Parse(string s)
     {
+        if (!Keystroke.TryParse(s, out var result))
+        {
+            throw new ArgumentException("Invalid argument format.", nameof(s));
+        }
+
+        return result;
+    }
+
+    public static bool TryParse(string s, [NotNullWhen(true)] out Keystroke? result)
+    {
         // see https://github.com/microsoft/terminal/blob/14919073a12fc0ecb4a9805cc183fdd68d30c4b6/src/cascadia/TerminalSettingsModel/KeyChordSerialization.cpp#L124
         // for an alternate implementation
 
         // e.g. "CTRL + ALT + SHIFT + F"
-        if (s == null)
+        if (string.IsNullOrEmpty(s))
         {
-            throw new ArgumentNullException(nameof(s));
+            result = null;
+            return false;
         }
 
         var parts = s
@@ -53,12 +66,20 @@ public sealed class Keystroke
                     keystroke.Modifiers |= KeyModifiers.Windows;
                     break;
                 default:
-                    keystroke.Keys = Enum.Parse<Keys>(part);
+                    if (!Enum.TryParse<Keys>(part, out var key))
+                    {
+                        result = null;
+                        return false;
+                    }
+
+                    keystroke.Keys = key;
                     break;
             }
         }
 
-        return new Keystroke(keystroke.Keys, keystroke.Modifiers);
+        result = new Keystroke(
+            keystroke.Keys, keystroke.Modifiers);
+        return true;
     }
 
     public override string ToString()

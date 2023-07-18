@@ -1,6 +1,7 @@
 ﻿namespace FancyMouse.UI;
 
-partial class FancyMouseForm {
+partial class FancyMouseForm
+{
 
     /// <summary>
     ///  Required designer variable.
@@ -11,8 +12,10 @@ partial class FancyMouseForm {
     ///  Clean up any resources being used.
     /// </summary>
     /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
-    protected override void Dispose(bool disposing) {
-        if (disposing && (components != null)) {
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing && (components != null))
+        {
             components.Dispose();
         }
         base.Dispose(disposing);
@@ -24,7 +27,8 @@ partial class FancyMouseForm {
     ///  Required method for Designer support - do not modify
     ///  the contents of this method with the code editor.
     /// </summary>
-    private void InitializeComponent() {
+    private void InitializeComponent()
+    {
         System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FancyMouseForm));
         panel1 = new Panel();
         Thumbnail = new PictureBox();
@@ -39,7 +43,6 @@ partial class FancyMouseForm {
         panel1.Dock = DockStyle.Fill;
         panel1.Location = new Point(0, 0);
         panel1.Name = "panel1";
-        panel1.Padding = new Padding(5);
         panel1.Size = new Size(800, 450);
         panel1.TabIndex = 1;
         // 
@@ -47,9 +50,9 @@ partial class FancyMouseForm {
         // 
         Thumbnail.BackColor = SystemColors.ControlDarkDark;
         Thumbnail.Dock = DockStyle.Fill;
-        Thumbnail.Location = new Point(5, 5);
+        Thumbnail.Location = new Point(0, 0);
         Thumbnail.Name = "Thumbnail";
-        Thumbnail.Size = new Size(790, 440);
+        Thumbnail.Size = new Size(800, 450);
         Thumbnail.SizeMode = PictureBoxSizeMode.StretchImage;
         Thumbnail.TabIndex = 1;
         Thumbnail.TabStop = false;

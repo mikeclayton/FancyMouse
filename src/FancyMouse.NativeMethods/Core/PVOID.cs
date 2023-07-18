@@ -25,7 +25,7 @@ internal static partial class Core
 
         public static implicit operator IntPtr(PVOID value) => value.Value;
 
-        public static implicit operator PVOID(IntPtr value) => new(value);
+        public static explicit operator PVOID(IntPtr value) => new(value);
 
         public static PVOID Allocate(int length)
         {

@@ -1,16 +1,20 @@
-﻿namespace FancyMouse.Models.Drawing;
+﻿using System.Text.Json.Serialization;
+
+namespace FancyMouse.Models.Styles;
 
 /// <summary>
-/// Immutable version of a System.Windows.Forms.Padding object with some extra utility methods.
+/// Represents the margin style for a drawing object.
 /// </summary>
-public sealed class PaddingInfo
+public sealed class MarginStyle
 {
-    public PaddingInfo(decimal all)
+    public static readonly MarginStyle Empty = new(0);
+
+    public MarginStyle(decimal all)
         : this(all, all, all, all)
     {
     }
 
-    public PaddingInfo(decimal left, decimal top, decimal right, decimal bottom)
+    public MarginStyle(decimal left, decimal top, decimal right, decimal bottom)
     {
         this.Left = left;
         this.Top = top;
@@ -38,8 +42,10 @@ public sealed class PaddingInfo
         get;
     }
 
+    [JsonIgnore]
     public decimal Horizontal => this.Left + this.Right;
 
+    [JsonIgnore]
     public decimal Vertical => this.Top + this.Bottom;
 
     public override string ToString()

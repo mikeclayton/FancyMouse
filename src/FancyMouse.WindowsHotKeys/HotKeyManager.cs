@@ -22,7 +22,7 @@ public sealed class HotKeyManager
     {
         this.HotKey = hotkey ?? throw new ArgumentNullException(nameof(hotkey));
 
-        // cache a window proc delegate so doesn't get garbage-collected
+        // cache the window proc delegate so it doesn't get garbage-collected
         this.WndProc = this.WindowProc;
         this.HWnd = HWND.Null;
     }
@@ -70,7 +70,7 @@ public sealed class HotKeyManager
     public void Start()
     {
         // see https://learn.microsoft.com/en-us/windows/win32/winmsg/using-messages-and-message-queues
-        var hInstance = Process.GetCurrentProcess().Handle;
+        var hInstance = (HINSTANCE)Process.GetCurrentProcess().Handle;
 
         // see https://stackoverflow.com/a/30992796/3156906
         var wndClass = new WNDCLASSEXW(
@@ -109,10 +109,9 @@ public sealed class HotKeyManager
             lpParam: LPVOID.Null);
 
         this.MessageLoop = new MessageLoop(
-            name: "FancyMouseMessageLoop",
-            isBackground: true);
+            name: "FancyMouseMessageLoop");
 
-        this.MessageLoop.Run();
+        this.MessageLoop.Start();
 
         _ = Win32Wrappers.RegisterHotKey(
             hWnd: this.HWnd,
@@ -126,7 +125,7 @@ public sealed class HotKeyManager
         _ = Win32Wrappers.UnregisterHotKey(
             hWnd: this.HWnd,
             id: this._id);
-        this.MessageLoop?.Exit();
+        this.MessageLoop?.Stop();
     }
 
     private void OnHotKeyPressed(HotKeyEventArgs e)

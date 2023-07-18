@@ -1,8 +1,6 @@
-using System.Globalization;
-using FancyMouse.Models.Drawing;
+using FancyMouse.Models.Settings;
 using FancyMouse.UI;
 using FancyMouse.WindowsHotKeys;
-using Microsoft.Extensions.Configuration;
 using NLog;
 
 namespace FancyMouse;
@@ -34,24 +32,14 @@ internal static class Program
         // create the notify icon for the application
         var notifyForm = new FancyMouseNotify();
 
-        var config = new ConfigurationBuilder()
-            .AddJsonFile("FancyMouse.json")
-            .Build()
-            .GetSection("FancyMouse");
-
-        var preview = (config["Preview"] ?? throw new InvalidOperationException("Missing config value 'Preview'"))
-            .Split("x").Select(s => int.Parse(s.Trim(), CultureInfo.InvariantCulture)).ToList();
+        var appSettings = AppSettingsReader.ReadFile(".\\appSettings.json");
 
         // logger: LogManager.LoadConfiguration(".\\NLog.config").GetCurrentClassLogger(),
         var dialog = new FancyMouseDialog(
             new FancyMouseDialogOptions(
-                logger: LogManager.CreateNullLogger(),
-                maximumThumbnailSize: new SizeInfo(
-                    preview[0], preview[1])));
+                logger: LogManager.CreateNullLogger()));
 
-        var hotkey = Keystroke.Parse(
-            config["HotKey"] ?? throw new InvalidOperationException("Missing config value 'HotKey'"));
-        var hotKeyManager = new HotKeyManager(hotkey);
+        var hotKeyManager = new HotKeyManager(appSettings.Hotkey);
         hotKeyManager.HotKeyPressed +=
             (_, _) =>
             {

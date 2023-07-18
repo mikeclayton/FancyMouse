@@ -44,6 +44,27 @@ internal static class MouseHelper
             point.x, point.y);
     }
 
+    public static PointInfo GetCursorPosition(PointInfo location)
+    {
+        var pos = new POINT(0, 0);
+        var lpPoint = new LPPOINT(pos);
+
+        if (!User32.GetCursorPos(lpPoint))
+        {
+            throw new InvalidOperationException();
+        }
+
+        if (lpPoint.IsNull)
+        {
+            throw new InvalidOperationException();
+        }
+
+        pos = lpPoint.ToStructure();
+        lpPoint.Free();
+
+        return new PointInfo(pos.x, pos.y);
+    }
+
     /// <summary>
     /// Moves the cursor to the specified location.
     /// </summary>
@@ -68,16 +89,29 @@ internal static class MouseHelper
         //
         // setting the position a second time seems to fix this and moves the
         // cursor to the expected location (b)
-        var point = location.ToPoint();
+        var target = location.ToPoint();
         for (var i = 0; i < 2; i++)
         {
-            var result = User32.SetCursorPos(point.X, point.Y);
+            var result = User32.SetCursorPos(target.X, target.Y);
             if (!result)
             {
                 throw new Win32Exception(
                     Marshal.GetLastWin32Error());
             }
+
+            var current = MouseHelper.GetCursorPosition();
+            if ((current.X == target.X) || (current.Y == target.Y))
+            {
+                break;
+            }
         }
+
+        /*
+        if ((pos.x != target.X) || (pos.y != target.Y))
+        {
+            throw new InvalidOperationException();
+        }
+        */
 
         // temporary workaround for issue #1273
         MouseHelper.SimulateMouseMovementEvent(location);

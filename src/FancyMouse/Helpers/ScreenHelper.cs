@@ -1,6 +1,5 @@
 ﻿using System.ComponentModel;
 using FancyMouse.Models.Drawing;
-using FancyMouse.Models.Screen;
 using FancyMouse.NativeMethods;
 using static FancyMouse.NativeMethods.Core;
 

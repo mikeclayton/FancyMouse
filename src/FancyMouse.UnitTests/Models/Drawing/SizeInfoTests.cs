@@ -18,11 +18,11 @@ public static class SizeInfoTests
                 this.ExpectedResult = expectedResult;
             }
 
-            public SizeInfo Obj { get; set; }
+            public SizeInfo Obj { get; }
 
-            public SizeInfo Bounds { get; set; }
+            public SizeInfo Bounds { get; }
 
-            public SizeInfo ExpectedResult { get; set; }
+            public SizeInfo ExpectedResult { get; }
         }
 
         public static IEnumerable<object[]> GetTestCases()
@@ -65,11 +65,11 @@ public static class SizeInfoTests
                 this.ExpectedResult = expectedResult;
             }
 
-            public SizeInfo Obj { get; set; }
+            public SizeInfo Obj { get; }
 
-            public SizeInfo Bounds { get; set; }
+            public SizeInfo Bounds { get; }
 
-            public decimal ExpectedResult { get; set; }
+            public decimal ExpectedResult { get; }
         }
 
         public static IEnumerable<object[]> GetTestCases()

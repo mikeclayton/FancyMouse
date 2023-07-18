@@ -33,9 +33,11 @@ internal static partial class Core
             this.Value = Marshal.StringToHGlobalAuto(value);
         }
 
+        public bool IsNull => this.Value == LPTSTR.Null.Value;
+
         public static implicit operator IntPtr(LPTSTR value) => value.Value;
 
-        public static implicit operator LPTSTR(IntPtr value) => new(value);
+        public static explicit operator LPTSTR(IntPtr value) => new(value);
 
         public static implicit operator string?(LPTSTR value) => Marshal.PtrToStringUni(value.Value);
 

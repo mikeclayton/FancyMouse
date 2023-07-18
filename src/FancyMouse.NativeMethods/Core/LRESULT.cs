@@ -23,7 +23,7 @@ internal static partial class Core
 
         public static implicit operator IntPtr(LRESULT value) => value.Value;
 
-        public static implicit operator LRESULT(IntPtr value) => new(value);
+        public static explicit operator LRESULT(IntPtr value) => new(value);
 
         public override string ToString()
         {
