@@ -39,27 +39,27 @@ internal static class DrawingHelper
             previewLayout.PreviewBounds,
             Enumerable.Empty<RectangleInfo>());
 
+        // sort the source and target screen areas, putting the activated screen first
+        // (we need to capture and draw the activated screen before we show the form
+        // because otherwise we'll capture the form as part of the screenshot!)
+        var sourceScreens = new List<RectangleInfo> { previewLayout.Screens[previewLayout.ActivatedScreenIndex] }
+            .Union(previewLayout.Screens.Where((_, idx) => idx != previewLayout.ActivatedScreenIndex))
+            .ToList();
+        var targetScreens = new List<BoxBounds> { previewLayout.ScreenshotBounds[previewLayout.ActivatedScreenIndex] }
+            .Union(previewLayout.ScreenshotBounds.Where((_, idx) => idx != previewLayout.ActivatedScreenIndex))
+            .ToList();
+
+        // draw all the screenshot bezels
+        foreach (var screenshotBounds in previewLayout.ScreenshotBounds)
+        {
+            DrawingHelper.DrawBoxBorder(
+                previewGraphics, previewLayout.PreviewStyle.ScreenshotStyle, screenshotBounds);
+        }
+
         var previewHdc = HDC.Null;
         var imageUpdated = false;
         try
         {
-            // sort the source and target screen areas, putting the activated screen first
-            // (we need to capture and draw the activated screen before we show the form
-            // because otherwise we'll capture the form as part of the screenshot!)
-            var sourceScreens = new List<RectangleInfo> { previewLayout.Screens[previewLayout.ActivatedScreenIndex] }
-                .Union(previewLayout.Screens.Where((_, idx) => idx != previewLayout.ActivatedScreenIndex))
-                .ToList();
-            var targetScreens = new List<BoxBounds> { previewLayout.ScreenshotBounds[previewLayout.ActivatedScreenIndex] }
-                .Union(previewLayout.ScreenshotBounds.Where((_, idx) => idx != previewLayout.ActivatedScreenIndex))
-                .ToList();
-
-            // draw all the screenshot bezels
-            foreach (var screenshotBounds in previewLayout.ScreenshotBounds)
-            {
-                DrawingHelper.DrawBoxBorder(
-                    previewGraphics, previewLayout.PreviewStyle.ScreenshotStyle, screenshotBounds);
-            }
-
             var placeholdersDrawn = false;
             for (var i = 0; i < sourceScreens.Count; i++)
             {
@@ -86,7 +86,7 @@ internal static class DrawingHelper
                     DrawingHelper.DrawPlaceholders(
                         previewGraphics,
                         previewLayout.PreviewStyle.ScreenshotStyle,
-                        targetScreens.Where((_, idx) => idx > i).ToList());
+                        targetScreens.GetRange(i + 1, targetScreens.Count - i - 1));
                     placeholdersDrawn = true;
                 }
 

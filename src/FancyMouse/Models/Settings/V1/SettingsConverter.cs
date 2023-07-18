@@ -17,14 +17,17 @@ internal static class SettingsConverter
         };
         var appConfig = JsonSerializer.Deserialize<AppConfig>(json, options)
             ?? throw new InvalidOperationException();
-        var hotkey = appConfig?.FancyMouse?.Hotkey is null
-            ? AppSettings.DefaultSettings.Hotkey
-            : Keystroke.Parse(appConfig.FancyMouse.Hotkey);
-        var previewStyle = appConfig?.FancyMouse?.PreviewSize is null
-            ? AppSettings.DefaultSettings.PreviewStyle
-            : SettingsConverter.ConvertToPreviewStyle(appConfig.FancyMouse.PreviewSize);
+        var hotkey = SettingsConverter.ConvertToKeystroke(appConfig?.FancyMouse?.Hotkey);
+        var previewStyle = SettingsConverter.ConvertToPreviewStyle(appConfig?.FancyMouse?.PreviewSize);
         var appSettings = new AppSettings(hotkey, previewStyle);
         return appSettings;
+    }
+
+    public static Keystroke ConvertToKeystroke(string? hotkey)
+    {
+        return (hotkey == null)
+            ? AppSettings.DefaultSettings.Hotkey
+            : Keystroke.Parse(hotkey);
     }
 
     public static PreviewStyle ConvertToPreviewStyle(string? previewSize)

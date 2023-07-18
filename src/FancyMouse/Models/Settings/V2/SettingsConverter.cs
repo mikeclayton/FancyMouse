@@ -2,7 +2,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using FancyMouse.Models.Styles;
-using FancyMouse.WindowsHotKeys;
+using BorderStyle = FancyMouse.Models.Styles.BorderStyle;
 
 namespace FancyMouse.Models.Settings.V2;
 
@@ -17,26 +17,10 @@ internal static class SettingsConverter
         };
         var appConfig = JsonSerializer.Deserialize<AppConfig>(json, options)
             ?? throw new InvalidOperationException();
-        var appSettings = new AppSettings(
-            hotkey: SettingsConverter.ConvertToKeystroke(appConfig.Hotkey),
-            previewStyle: SettingsConverter.ConvertToPreviewStyle(appConfig.Preview));
+        var hotkey = V1.SettingsConverter.ConvertToKeystroke(appConfig.Hotkey);
+        var previewStyle = SettingsConverter.ConvertToPreviewStyle(appConfig.Preview);
+        var appSettings = new AppSettings(hotkey, previewStyle);
         return appSettings;
-    }
-
-    public static Keystroke ConvertToKeystroke(HotkeySettings? hotkeySettings)
-    {
-        if (hotkeySettings is null)
-        {
-            return AppSettings.DefaultSettings.Hotkey;
-        }
-
-        var key = Enum.TryParse<WindowsHotKeys.Keys>(hotkeySettings.Key, out var outKey)
-            ? outKey
-            : AppSettings.DefaultSettings.Hotkey.Key;
-        var modifiers = Enum.TryParse<KeyModifiers>(hotkeySettings.Modifiers, out var outModifiers)
-            ? outModifiers
-            : AppSettings.DefaultSettings.Hotkey.Modifiers;
-        return new Keystroke(key, modifiers);
     }
 
     public static PreviewStyle ConvertToPreviewStyle(PreviewSettings? previewSettings)
@@ -46,59 +30,84 @@ internal static class SettingsConverter
             return AppSettings.DefaultSettings.PreviewStyle;
         }
 
+        var defaultStyle = AppSettings.DefaultSettings.PreviewStyle;
         var canvasStyle = AppSettings.DefaultSettings.PreviewStyle.CanvasStyle;
         var screenshotStyle = AppSettings.DefaultSettings.PreviewStyle.ScreenshotStyle;
         return new PreviewStyle(
             canvasSize: new(
-                width: Math.Clamp(previewSettings.CanvasSize.Width, 50, 99999),
-                height: Math.Clamp(previewSettings.CanvasSize.Height, 50, 99999)
+                width: Math.Clamp(
+                    value: previewSettings?.CanvasSize?.Width ?? defaultStyle.CanvasSize.Width,
+                    min: 50,
+                    max: 99999),
+                height: Math.Clamp(
+                    value: previewSettings?.CanvasSize?.Height ?? defaultStyle.CanvasSize.Height,
+                    min: 50,
+                    max: 99999)
             ),
             canvasStyle: new(
                 marginStyle: MarginStyle.Empty,
-                borderStyle: new(
-                    color: SettingsConverter.ParseColorSettings(
-                        value: previewSettings.CanvasStyle.BorderStyle.Color,
-                        @default: canvasStyle.BorderStyle.Color),
-                    all: Math.Clamp(previewSettings.CanvasStyle.BorderStyle.Width, 0, 99),
-                    depth: Math.Clamp(previewSettings.CanvasStyle.BorderStyle.Depth, 0, 99)
-                ),
+                borderStyle: SettingsConverter.ConvertToBorderStyle(previewSettings?.CanvasStyle?.BorderStyle, defaultStyle.CanvasStyle.BorderStyle),
                 paddingStyle: new(
-                    all: Math.Clamp(previewSettings.CanvasStyle.PaddingStyle.Width, 0, 99)
+                    all: Math.Clamp(
+                        value: previewSettings?.CanvasStyle?.PaddingStyle?.Width ?? canvasStyle.PaddingStyle.Top,
+                        min: 0,
+                        max: 99)
                 ),
                 backgroundStyle: new(
                     color1: SettingsConverter.ParseColorSettings(
-                        value: previewSettings.CanvasStyle.BackgroundStyle.Color1,
-                        @default: canvasStyle.BackgroundStyle.Color1),
+                        value: previewSettings?.CanvasStyle?.BackgroundStyle?.Color1,
+                        defaultValue: canvasStyle.BackgroundStyle.Color1),
                     color2: SettingsConverter.ParseColorSettings(
-                        value: previewSettings.CanvasStyle.BackgroundStyle.Color2,
-                        @default: canvasStyle.BackgroundStyle.Color2)
+                        value: previewSettings?.CanvasStyle?.BackgroundStyle?.Color2,
+                        defaultValue: canvasStyle.BackgroundStyle.Color2)
                 )
             ),
             screenshotStyle: new(
                 marginStyle: new(
-                    Math.Clamp(previewSettings.ScreenshotStyle.MarginStyle.Width, 0, 99)
+                    Math.Clamp(
+                        value: previewSettings?.ScreenshotStyle?.MarginStyle?.Width ?? screenshotStyle.MarginStyle.Top,
+                        min: 0,
+                        max: 99)
                 ),
-                borderStyle: new(
-                    color: SettingsConverter.ParseColorSettings(
-                        value: previewSettings.ScreenshotStyle.BorderStyle.Color,
-                        @default: screenshotStyle.BorderStyle.Color),
-                    all: previewSettings.ScreenshotStyle.BorderStyle.Width,
-                    depth: previewSettings.ScreenshotStyle.BorderStyle.Depth
-                ),
+                borderStyle: SettingsConverter.ConvertToBorderStyle(previewSettings?.ScreenshotStyle?.BorderStyle, defaultStyle.CanvasStyle.BorderStyle),
                 paddingStyle: PaddingStyle.Empty,
                 backgroundStyle: new(
                     color1: SettingsConverter.ParseColorSettings(
-                        previewSettings.ScreenshotStyle.BackgroundStyle.Color1,
-                        @default: screenshotStyle.BackgroundStyle.Color1),
+                        previewSettings?.ScreenshotStyle?.BackgroundStyle?.Color1,
+                        defaultValue: screenshotStyle.BackgroundStyle.Color1),
                     color2: SettingsConverter.ParseColorSettings(
-                        value: previewSettings.ScreenshotStyle.BackgroundStyle.Color2,
-                        @default: screenshotStyle.BackgroundStyle.Color2)
+                        value: previewSettings?.ScreenshotStyle?.BackgroundStyle?.Color2,
+                        defaultValue: screenshotStyle.BackgroundStyle.Color2)
                 )
             ));
     }
 
-    public static Color ParseColorSettings(string value, Color @default)
+    private static BorderStyle ConvertToBorderStyle(BorderStyleSettings? settings, BorderStyle defaultStyle)
     {
+        return new(
+            color: settings?.Color is null
+                ? defaultStyle.Color
+                : SettingsConverter.ParseColorSettings(
+                    value: settings.Color,
+                    defaultValue: defaultStyle.Color),
+            all: Math.Clamp(
+                value: settings?.Width ?? defaultStyle.Top,
+                min: 0,
+                max: 99),
+            depth: Math.Clamp(
+                value: settings?.Depth ?? defaultStyle.Depth,
+                min: 0,
+                max: 99)
+        );
+    }
+
+    private static Color ParseColorSettings(string? value, Color defaultValue)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return defaultValue;
+        }
+
         var comparison = StringComparison.InvariantCulture;
         if (value.StartsWith("#", comparison))
         {
@@ -120,7 +129,7 @@ internal static class SettingsConverter
             if (property is not null)
             {
                 var propertyValue = property.GetValue(null, null);
-                return (propertyValue is null) ? @default : (Color)propertyValue;
+                return (propertyValue is null) ? defaultValue : (Color)propertyValue;
             }
         }
 
@@ -132,10 +141,10 @@ internal static class SettingsConverter
             if (property is not null)
             {
                 var propertyValue = property.GetValue(null, null);
-                return (propertyValue is null) ? @default : (Color)propertyValue;
+                return (propertyValue is null) ? defaultValue : (Color)propertyValue;
             }
         }
 
-        return @default;
+        return defaultValue;
     }
 }

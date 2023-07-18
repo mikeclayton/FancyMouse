@@ -23,6 +23,8 @@ internal static class AppSettingsReader
         try
         {
             var configNode = JsonNode.Parse(configJson);
+
+            // if the version isn't specified we'll default to v1
             configVersion = configNode?["version"]?.GetValue<int>() ?? 1;
         }
         catch

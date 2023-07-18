@@ -155,11 +155,7 @@ public sealed class AppSettingsReaderTests
                 new
                 {
                     version = 2,
-                    hotkey = new
-                    {
-                        key = Keys.X.ToString(),
-                        modifiers = (KeyModifiers.Control | KeyModifiers.Alt).ToString(),
-                    },
+                    hotkey = "CTRL + ALT + X",
                     preview = new
                     {
                         size = new
@@ -259,11 +255,7 @@ public sealed class AppSettingsReaderTests
                 new
                 {
                     version = 2,
-                    hotkey = new
-                    {
-                        key = Keys.X.ToString(),
-                        modifiers = (KeyModifiers.Control | KeyModifiers.Alt).ToString(),
-                    },
+                    hotkey = "CTRL + ALT + X",
                     preview = new
                     {
                         size = new

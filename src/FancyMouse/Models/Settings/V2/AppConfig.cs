@@ -8,14 +8,14 @@
 internal sealed class AppConfig
 {
     public AppConfig(
-        HotkeySettings? hotkey,
+        string? hotkey,
         PreviewSettings? preview)
     {
         this.Hotkey = hotkey;
         this.Preview = preview;
     }
 
-    public HotkeySettings? Hotkey
+    public string? Hotkey
     {
         get;
     }
