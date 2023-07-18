@@ -113,14 +113,6 @@ public static class DrawingHelperTests
                 screens: data.Screens.Select(s => s.Bounds).ToList(),
                 activatedLocation: data.ActivatedLocation);
             using var actual = DrawingHelper.RenderPreview(previewLayout, desktopHdc);
-            /*
-            actual.Save(".\\actual.png", ImageFormat.Png);
-            var expected = data.ExpectedResult;
-            Assert.AreEqual(expected.X, actual.X);
-            Assert.AreEqual(expected.Y, actual.Y);
-            Assert.AreEqual(expected.Width, actual.Width);
-            Assert.AreEqual(expected.Height, actual.Height);
-            */
         }
     }
 }
