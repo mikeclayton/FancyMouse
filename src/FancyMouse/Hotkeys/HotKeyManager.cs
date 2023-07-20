@@ -1,11 +1,11 @@
-﻿using System.Diagnostics;
+﻿using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using FancyMouse.NativeMethods;
-using FancyMouse.WindowsHotKeys.Internal;
 using static FancyMouse.NativeMethods.Core;
 using static FancyMouse.NativeMethods.User32;
 
-namespace FancyMouse.WindowsHotKeys;
+namespace FancyMouse.HotKeys;
 
 /// <remarks>
 /// See https://stackoverflow.com/a/3654821/3156906
@@ -88,13 +88,20 @@ public sealed class HotKeyManager
             hIconSm: HICON.Null);
 
         // wndClassAtom
-        _ = Win32Wrappers.RegisterClassExW(
+        var atom = User32.RegisterClassExW(
             unnamedParam1: wndClass);
+        if (atom.Value == 0)
+        {
+            var lastWin32Error = Marshal.GetLastWin32Error();
+            throw new InvalidOperationException(
+                $"{nameof(User32.RegisterClassExW)} failed with result {atom}. GetLastWin32Error returned '{lastWin32Error}'.",
+                new Win32Exception(lastWin32Error));
+        }
 
         // see https://learn.microsoft.com/en-us/windows/win32/winmsg/window-features#message-only-windows
         //     https://devblogs.microsoft.com/oldnewthing/20171218-00/?p=97595
         //     https://stackoverflow.com/a/30992796/3156906
-        this.HWnd = Win32Wrappers.CreateWindowEx(
+        this.HWnd = User32.CreateWindowExW(
             dwExStyle: 0,
             lpClassName: "FancyMouseMessageClass",
             lpWindowName: "FancyMouseMessageWindow",
@@ -107,24 +114,46 @@ public sealed class HotKeyManager
             hMenu: HMENU.Null,
             hInstance: hInstance,
             lpParam: LPVOID.Null);
+        if (this.HWnd.IsNull)
+        {
+            var lastWin32Error = Marshal.GetLastWin32Error();
+            throw new InvalidOperationException(
+                $"{nameof(User32.CreateWindowExW)} failed with result {this.HWnd}. GetLastWin32Error returned '{lastWin32Error}'.",
+                new Win32Exception(lastWin32Error));
+        }
 
         this.MessageLoop = new MessageLoop(
             name: "FancyMouseMessageLoop");
 
         this.MessageLoop.Start();
 
-        _ = Win32Wrappers.RegisterHotKey(
+        var result = User32.RegisterHotKey(
             hWnd: this.HWnd,
             id: Interlocked.Increment(ref _id),
             fsModifiers: (HOT_KEY_MODIFIERS)this.HotKey.Modifiers,
             vk: (uint)this.HotKey.Key);
+        if (!result)
+        {
+            var lastWin32Error = Marshal.GetLastWin32Error();
+            throw new InvalidOperationException(
+                $"{nameof(User32.RegisterHotKey)} failed with result {result}. GetLastWin32Error returned '{lastWin32Error}'.",
+                new Win32Exception(lastWin32Error));
+        }
     }
 
     public void Stop()
     {
-        _ = Win32Wrappers.UnregisterHotKey(
+        var result = User32.UnregisterHotKey(
             hWnd: this.HWnd,
             id: this._id);
+        if (!result)
+        {
+            var lastWin32Error = Marshal.GetLastWin32Error();
+            throw new InvalidOperationException(
+                $"{nameof(User32.UnregisterHotKey)} failed with result {result}. GetLastWin32Error returned '{lastWin32Error}'.",
+                new Win32Exception(lastWin32Error));
+        }
+
         this.MessageLoop?.Stop();
     }
 

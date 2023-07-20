@@ -1,6 +1,6 @@
+using FancyMouse.HotKeys;
 using FancyMouse.Models.Settings;
 using FancyMouse.UI;
-using FancyMouse.WindowsHotKeys;
 using NLog;
 
 namespace FancyMouse;

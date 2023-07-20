@@ -1,6 +1,6 @@
-﻿using FancyMouse.Models.Styles;
-using FancyMouse.WindowsHotKeys;
-using Keys = FancyMouse.WindowsHotKeys.Keys;
+﻿using FancyMouse.HotKeys;
+using FancyMouse.Models.Styles;
+using Keys = FancyMouse.HotKeys.Keys;
 
 namespace FancyMouse.Models.Settings;
 

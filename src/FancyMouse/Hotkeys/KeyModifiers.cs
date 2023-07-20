@@ -1,6 +1,6 @@
 ﻿using FancyMouse.NativeMethods;
 
-namespace FancyMouse.WindowsHotKeys;
+namespace FancyMouse.HotKeys;
 
 [Flags]
 public enum KeyModifiers

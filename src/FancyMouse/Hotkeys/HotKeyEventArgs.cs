@@ -1,4 +1,4 @@
-﻿namespace FancyMouse.WindowsHotKeys;
+﻿namespace FancyMouse.HotKeys;
 
 public sealed class HotKeyEventArgs : EventArgs
 {

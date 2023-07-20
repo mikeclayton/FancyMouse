@@ -1,8 +1,10 @@
-﻿using FancyMouse.NativeMethods;
+﻿using System.ComponentModel;
+using System.Runtime.InteropServices;
+using FancyMouse.NativeMethods;
 using static FancyMouse.NativeMethods.Core;
 using static FancyMouse.NativeMethods.User32;
 
-namespace FancyMouse.WindowsHotKeys.Internal;
+namespace FancyMouse.HotKeys;
 
 internal sealed class MessageLoop
 {
@@ -142,13 +144,20 @@ internal sealed class MessageLoop
         // message loop - the loop will then notice that we've set the cancellation token,
         // and exit the loop...
         // (see https://devblogs.microsoft.com/oldnewthing/20050405-46/?p=35973)
-        _ = Win32Wrappers.PostThreadMessageW(
+        var result = User32.PostThreadMessageW(
             idThread: this.NativeThreadId,
             Msg: MESSAGE_TYPE.WM_NULL,
             wParam: WPARAM.Null,
             lParam: LPARAM.Null);
+        if (result == 0)
+        {
+            var lastWin32Error = Marshal.GetLastWin32Error();
+            throw new InvalidOperationException(
+                $"{nameof(User32.PostThreadMessageW)} failed with result {result}. GetLastWin32Error returned '{lastWin32Error}'.",
+                new Win32Exception(lastWin32Error));
+        }
 
-        // wait for the internal message loop to actually stop
+        // wait for the internal message loop to actually stop before we exit
         this.RunningSemaphore.Wait();
     }
 }

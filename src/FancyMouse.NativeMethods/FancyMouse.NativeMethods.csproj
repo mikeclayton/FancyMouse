@@ -7,4 +7,12 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
+  <ItemGroup>
+    <AdditionalFiles Remove="C:\src\github\mikeclayton\FancyMouse\\src\codeAnalysis\StyleCop.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="C:\src\github\mikeclayton\FancyMouse\\src\codeAnalysis\GlobalSuppressions.cs" />
+  </ItemGroup>
+
 </Project>
