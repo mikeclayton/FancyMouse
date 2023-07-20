@@ -20,12 +20,10 @@
     <Compile Include="$(MSBuildThisFileDirectory)\src\codeAnalysis\GlobalSuppressions.cs" Link="GlobalSuppressions.cs" />
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)\src\codeAnalysis\StyleCop.json" Link="StyleCop.json" />
 
-    <!---
     <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="7.0.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    -->
 
   </ItemGroup>
 

@@ -36,11 +36,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\FancyMouse.NativeMethods\FancyMouse.NativeMethods.csproj" />
-    <ProjectReference Include="..\FancyMouse.WindowsHotKeys\FancyMouse.WindowsHotKeys.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Compile Update="Properties\Resources.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
