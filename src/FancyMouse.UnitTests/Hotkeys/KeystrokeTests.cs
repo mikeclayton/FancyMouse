@@ -21,6 +21,7 @@ public static class KeystrokeTests
 
             public Keystroke ExpectedResult { get; }
         }
+
         public static IEnumerable<object[]> GetTestCases()
         {
             // individual modifiers / keys
