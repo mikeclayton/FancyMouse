@@ -11,6 +11,7 @@ internal static partial class User32
     /// See https://learn.microsoft.com/en-us/windows/win32/winmsg/window-class-styles
     /// </remarks>
     [Flags]
+    [SuppressMessage("ReSharper", "InconsistentNaming", Justification = "Names and values taken from Win32Api")]
     [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Names and values taken from Win32Api")]
     internal enum WNDCLASS_STYLES : uint
     {

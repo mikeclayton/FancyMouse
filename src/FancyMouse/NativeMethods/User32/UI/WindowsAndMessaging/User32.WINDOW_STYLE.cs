@@ -8,6 +8,7 @@ internal static partial class User32
     /// See https://learn.microsoft.com/en-us/windows/win32/winmsg/window-styles
     ///     https://github.com/dotnet/pinvoke/blob/main/src/User32/User32+WindowStyles.cs
     /// </remarks>
+    [SuppressMessage("ReSharper", "InconsistentNaming", Justification = "Names and values taken from Win32Api")]
     [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Names and values taken from Win32Api")]
     internal enum WINDOW_STYLE : uint
     {
