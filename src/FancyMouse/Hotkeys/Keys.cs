@@ -20,6 +20,7 @@ namespace FancyMouse.HotKeys;
 ///  Specifies key codes and modifiers.
 /// </summary>
 [Flags]
+[SuppressMessage("ReSharper", "InconsistentNaming", Justification = "Names and values taken from Win32Api")]
 [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Names and values taken from Win32Api")]
 public enum Keys
 {

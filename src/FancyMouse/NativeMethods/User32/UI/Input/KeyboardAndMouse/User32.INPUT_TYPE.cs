@@ -11,7 +11,7 @@ internal static partial class User32
     /// <remarks>
     /// See https://learn.microsoft.com/en-us/windows/win32/api/winuser/ns-winuser-input
     /// </remarks>
-    [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Names and values taken from Win32Api")]
+    [SuppressMessage("ReSharper", "InconsistentNaming", Justification = "Names and values taken from Win32Api")]
     [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Names and values taken from Win32Api")]
     internal enum INPUT_TYPE : uint
     {

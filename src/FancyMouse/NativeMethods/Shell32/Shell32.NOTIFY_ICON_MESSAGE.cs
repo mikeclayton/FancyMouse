@@ -10,6 +10,7 @@ internal static partial class Shell32
     /// <remarks>>
     /// See https://learn.microsoft.com/en-us/windows/win32/api/shellapi/nf-shellapi-shell_notifyiconw
     /// </remarks>
+    [SuppressMessage("ReSharper", "InconsistentNaming", Justification = "Names and values taken from Win32Api")]
     [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Names and values taken from Win32Api")]
     internal enum NOTIFY_ICON_MESSAGE : uint
     {
