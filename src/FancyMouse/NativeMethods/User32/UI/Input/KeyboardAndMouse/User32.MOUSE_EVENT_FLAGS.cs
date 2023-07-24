@@ -1,4 +1,6 @@
-﻿namespace FancyMouse.NativeMethods;
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace FancyMouse.NativeMethods;
 
 internal static partial class User32
 {
@@ -6,6 +8,7 @@ internal static partial class User32
     /// See https://learn.microsoft.com/en-us/windows/win32/api/winuser/ns-winuser-mouseinput
     /// </remarks>
     [Flags]
+    [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Names and values taken from Win32Api")]
     internal enum MOUSE_EVENT_FLAGS : uint
     {
         MOUSEEVENTF_MOVE = 0x0001,

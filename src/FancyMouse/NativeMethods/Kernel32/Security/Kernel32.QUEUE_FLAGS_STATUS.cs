@@ -1,8 +1,11 @@
-﻿namespace FancyMouse.NativeMethods;
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace FancyMouse.NativeMethods;
 
 internal static partial class Kernel32
 {
     [Flags]
+    [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Names and values taken from Win32Api")]
     internal enum QUEUE_STATUS_FLAGS : uint
     {
         QS_ALLEVENTS = 0x000004BF,

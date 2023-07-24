@@ -5,11 +5,12 @@ namespace FancyMouse.Helpers;
 
 internal static class ConfigHelper
 {
+    private static readonly HotKeyManager _hotKeyManager;
+
     private static string? _appSettingsPath;
     private static FileSystemWatcher? _appSettingsWatcher;
 
     private static AppSettings? _appSettings;
-    private static HotKeyManager _hotKeyManager;
     private static EventHandler<HotKeyEventArgs>? _hotKeyPressed;
 
     static ConfigHelper()

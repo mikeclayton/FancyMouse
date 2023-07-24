@@ -1,4 +1,6 @@
-﻿namespace FancyMouse.NativeMethods;
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace FancyMouse.NativeMethods;
 
 internal static partial class Gdi32
 {
@@ -8,6 +10,7 @@ internal static partial class Gdi32
     /// <remarks>
     /// See https://learn.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-setstretchbltmode
     /// </remarks>
+    [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Names and values taken from Win32Api")]
     internal enum STRETCH_BLT_MODE : int
     {
         BLACKONWHITE = 1,

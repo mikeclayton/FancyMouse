@@ -1,10 +1,13 @@
-﻿namespace FancyMouse.NativeMethods;
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace FancyMouse.NativeMethods;
 
 internal static partial class User32
 {
     /// <remarks>
     /// See https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-peekmessagea
     /// </remarks>
+    [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Names and values taken from Win32Api")]
     internal enum PEEK_MESSAGE_REMOVE_TYPE : uint
     {
         /// <summary>

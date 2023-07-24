@@ -7,6 +7,7 @@ internal static partial class User32
     /// <remarks>
     /// See https://github.com/dotnet/pinvoke/blob/main/src/User32/User32+WindowMessage.cs
     /// </remarks>
+    [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Names and values taken from Win32Api")]
     [SuppressMessage("SA1124", "SA1124:DoNotUseRegions", Justification = "Allow rule here")]
     [SuppressMessage("SA1512", "SA1512:SingleLineCommentsMustNotBeFollowedByBlankLine", Justification = "Allow rule here")]
     [SuppressMessage("SA1515", "SA1515:SingleLineCommentMustBePrecededByBlankLine\r\n", Justification = "Allow rule here")]

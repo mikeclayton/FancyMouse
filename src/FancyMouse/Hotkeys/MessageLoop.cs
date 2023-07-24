@@ -162,18 +162,13 @@ internal sealed class MessageLoop
         (this.CancellationTokenSource ?? throw new InvalidOperationException())
             .Cancel();
 
-        var hwnd = this.Hwnd;
-        if (hwnd is null)
-        {
-            throw new InvalidOperationException();
-        }
-
         // post a null message just in case GetMessageW needs a nudge to stop blocking the
         // message loop - the loop will then notice that we've set the cancellation token,
         // and exit the loop...
         // (see https://devblogs.microsoft.com/oldnewthing/20050405-46/?p=35973)
+        var hwnd = this.Hwnd ?? throw new InvalidOperationException();
         var result = User32.PostMessageW(
-            hWnd: hwnd.Value,
+            hWnd: hwnd,
             Msg: MESSAGE_TYPE.WM_NULL,
             wParam: WPARAM.Null,
             lParam: LPARAM.Null);

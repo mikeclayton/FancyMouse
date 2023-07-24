@@ -108,26 +108,16 @@ public sealed class HotKeyManager
 
             case (MESSAGE_TYPE)HotKeyHelper.WM_PRIV_REGISTER_HOTKEY:
             {
-                var hwnd = this.MessageLoop.Hwnd;
-                if (hwnd is null)
-                {
-                    throw new InvalidOperationException();
-                }
-
-                HotKeyHelper.RegisterHotKey(hwnd.Value, this.HotKey!, 1);
+                var hwnd = this.MessageLoop.Hwnd ?? throw new InvalidOperationException();
+                HotKeyHelper.RegisterHotKey(hwnd, this.HotKey!, 1);
                 this.MessageSemaphore.Release();
                 break;
             }
 
             case (MESSAGE_TYPE)HotKeyHelper.WM_PRIV_UNREGISTER_HOTKEY:
             {
-                var hwnd = this.MessageLoop.Hwnd;
-                if (hwnd is null)
-                {
-                    throw new InvalidOperationException();
-                }
-
-                HotKeyHelper.UnregisterHotKey(hwnd.Value, 1);
+                var hwnd = this.MessageLoop.Hwnd ?? throw new InvalidOperationException();
+                HotKeyHelper.UnregisterHotKey(hwnd, 1);
                 this.MessageSemaphore.Release();
                 break;
             }

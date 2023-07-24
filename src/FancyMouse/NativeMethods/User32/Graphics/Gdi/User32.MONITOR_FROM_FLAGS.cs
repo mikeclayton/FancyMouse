@@ -11,6 +11,7 @@ internal static partial class User32
     /// <remarks>
     /// See https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-monitorfrompoint
     /// </remarks>
+    [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Names and values taken from Win32Api")]
     internal enum MONITOR_FROM_FLAGS : uint
     {
         MONITOR_DEFAULTTONULL = 0x00000000,
