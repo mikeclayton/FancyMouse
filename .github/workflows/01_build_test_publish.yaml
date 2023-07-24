@@ -59,7 +59,7 @@ jobs:
       - name: zip release
         working-directory: ${{ env.BUILD_PATH }}
         run: |
-          "C:\Program Files\7-Zip\7z.exe" FancyMouse-preview-v0.0.1.zip app
+          "C:\Program Files\7-Zip\7z.exe" "FancyMouse-preview-v0.0.1.zip" "app"
 
       - name: upload release
         uses: actions/upload-artifact@v3
