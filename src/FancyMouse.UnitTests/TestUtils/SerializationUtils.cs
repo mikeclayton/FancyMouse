@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 
 namespace FancyMouse.UnitTests.TestUtils;
+
 internal static class SerializationUtils
 {
     public static string SerializeAnonymousType<T>(T value)
@@ -9,6 +10,7 @@ internal static class SerializationUtils
         {
             WriteIndented = true,
         };
+
         return JsonSerializer.Serialize(value, options);
     }
 }
