@@ -2,20 +2,20 @@ using System.Diagnostics;
 using FancyMouse.Helpers;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Layout;
-using FancyMouse.Models.Settings;
+using NLog;
 using static FancyMouse.NativeMethods.Core;
 
 namespace FancyMouse.UI;
 
 internal partial class FancyMouseForm : Form
 {
-    public FancyMouseForm(FancyMouseDialogOptions options)
+    public FancyMouseForm(ILogger logger)
     {
-        this.Options = options ?? throw new ArgumentNullException(nameof(options));
+        this.Logger = logger ?? throw new ArgumentNullException(nameof(logger));
         this.InitializeComponent();
     }
 
-    private FancyMouseDialogOptions Options
+    private ILogger Logger
     {
         get;
     }
@@ -102,7 +102,7 @@ internal partial class FancyMouseForm : Form
 
     private void Thumbnail_Click(object sender, EventArgs e)
     {
-        var logger = this.Options.Logger;
+        var logger = this.Logger;
 
         logger.Info(string.Join(
             '\n',
@@ -157,7 +157,7 @@ internal partial class FancyMouseForm : Form
 
     public void ShowPreview()
     {
-        var logger = this.Options.Logger;
+        var logger = this.Logger;
 
         logger.Info(string.Join(
             '\n',
@@ -168,15 +168,12 @@ internal partial class FancyMouseForm : Form
         // hide the form while we redraw it...
         this.Visible = false;
 
-        // load the config so it can be changed without having to restart the app
-        var appSettings = AppSettingsReader.ReadFile(".\\appSettings.json");
-
         var stopwatch = Stopwatch.StartNew();
 
         var screens = ScreenHelper.GetAllScreens().Select(screen => screen.DisplayArea).ToList();
         var activatedLocation = MouseHelper.GetCursorPosition();
         this.PreviewLayout = LayoutHelper.GetPreviewLayout(
-            previewStyle: appSettings.PreviewStyle,
+            previewStyle: (ConfigHelper.AppSettings ?? throw new InvalidOperationException()).PreviewStyle,
             screens: screens,
             activatedLocation: activatedLocation);
 
