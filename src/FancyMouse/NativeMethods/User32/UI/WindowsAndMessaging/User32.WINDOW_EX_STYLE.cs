@@ -10,8 +10,10 @@ internal static partial class User32
     /// <remarks>
     /// https://learn.microsoft.com/en-us/windows/win32/winmsg/extended-window-styles
     /// </remarks>
-    [SuppressMessage("CA1069", "CA1069:EnumsShouldNotHaveDuplicateValues", Justification = "Values match Win32 api")]
     [Flags]
+    [SuppressMessage("ReSharper", "InconsistentNaming", Justification = "Names and values taken from Win32Api")]
+    [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Names and values taken from Win32Api")]
+    [SuppressMessage("CA1069", "CA1069:EnumsShouldNotHaveDuplicateValues", Justification = "Values match Win32 api")]
     internal enum WINDOW_EX_STYLE : uint
     {
         WS_EX_ACCEPTFILES = 0x00000010,

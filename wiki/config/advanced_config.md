@@ -24,7 +24,7 @@
 * **padding** - the size of the gap between the border and the content
 * **content** - the area at the center of the element that can contain child elements
 
-There are two sets of box configurations that can be defined - one for the main pewview popup, and one for the miniature screenshots shown in the preview popup. These can be combined to make a variety of effects.
+There are two sets of box configurations that can be customised - one for the main pewview popup canvas, and one for the miniature screenshots. These can be combined to make a variety of effects.
 
 ## Gallery
 

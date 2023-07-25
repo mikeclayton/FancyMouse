@@ -1,4 +1,6 @@
-﻿namespace FancyMouse.NativeMethods;
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace FancyMouse.NativeMethods;
 
 internal static partial class Gdi32
 {
@@ -10,6 +12,8 @@ internal static partial class Gdi32
     /// <remarks>
     /// See https://learn.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-bitblt
     /// </remarks>
+    [SuppressMessage("ReSharper", "InconsistentNaming", Justification = "Names and values taken from Win32Api")]
+    [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Names and values taken from Win32Api")]
     internal enum ROP_CODE : uint
     {
         BLACKNESS = 0x00000042,

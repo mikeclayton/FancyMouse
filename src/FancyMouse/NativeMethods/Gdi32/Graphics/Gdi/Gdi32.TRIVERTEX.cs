@@ -11,6 +11,7 @@ internal static partial class Gdi32
     /// <remarks>
     /// See https://learn.microsoft.com/en-us/windows/win32/api/wingdi/ns-wingdi-trivertex
     /// </remarks>
+    [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Names and values taken from Win32Api")]
     [SuppressMessage("Naming Rules", "SA1307:AccessibleFieldsMustBeginWithUpperCaseLetter", Justification = "Name and value taken from Win32Api")]
     internal readonly struct TRIVERTEX
     {

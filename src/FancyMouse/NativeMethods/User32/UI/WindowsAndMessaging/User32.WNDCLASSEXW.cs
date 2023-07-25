@@ -57,5 +57,8 @@ internal static partial class User32
             this.lpszClassName = lpszClassName;
             this.hIconSm = hIconSm;
         }
+
+        public static int Size =>
+            Marshal.SizeOf(typeof(WNDCLASSEXW));
     }
 }

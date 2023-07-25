@@ -14,7 +14,7 @@ jobs:
 
     defaults:
       run:
-        shell: bash
+        shell: powershell
 
     env:
 
@@ -36,9 +36,9 @@ jobs:
         with:
           dotnet-version: 7.0.x
 
-      - name: dotnet version
+      - name: dotnet info
         working-directory: ${{ env.BUILD_PATH }}
-        run: dotnet --version
+        run: dotnet --info
 
       - name: dotnet restore
         working-directory: ${{ env.BUILD_PATH }}
@@ -46,39 +46,36 @@ jobs:
 
       - name: dotnet build
         working-directory: ${{ env.BUILD_PATH }}
-        run: dotnet build --configuration "$CONFIG_NAME" --no-restore
+        run: dotnet build --configuration "${{ env.CONFIG_NAME }}" --no-restore
 
       - name: dotnet test
         working-directory: ${{ env.BUILD_PATH }}
-        run: dotnet test --configuration "$CONFIG_NAME" --no-build --filter "TestCategory!=Performance"
+        run: dotnet test --configuration "${{ env.CONFIG_NAME }}" --no-build --filter "TestCategory!=Performance"
 
       - name: dotnet publish
         working-directory: ${{ env.BUILD_PATH }}
-        run: dotnet publish "./FancyMouse/FancyMouse.csproj" --configuration "$CONFIG_NAME" --no-build --output "$PUBLISH_PATH"
+        run: dotnet publish "./FancyMouse/FancyMouse.csproj" --configuration "${{ env.CONFIG_NAME }}" --no-build --output "${{ env.PUBLISH_PATH }}/net7.0-windows"
 
-      - name: upload binaries
-        uses: actions/upload-artifact@v3
-        with:
-          name: app
-          path: .build/app
-
-      - name: dotnet tool jb inspectcode
-        working-directory: ${{ env.BUILD_PATH }}
-        run: |
-          dotnet new tool-manifest
-          dotnet tool install jetbrains.resharper.globaltools
-          dotnet tool run jb inspectcode "./FancyMouse.sln" -output="../.build/out/jb-inspectcode.xml" --no-build
-
-      - name: upload jb-inspectcode.xml
-        uses: actions/upload-artifact@v3
-        with:
-          name: jb-inspectcode.xml
-          path: .build/out/jb-inspectcode.xml
-
-      #- name: zip
+      #- name: zip release
       #  working-directory: ${{ env.BUILD_PATH }}
       #  run: |
-      #    sudo apt-get update
-      #    sudo apt-get install -y zip
-      #    echo "version = ${{ github.ref_name }}"
-      #    zip -r "$PUBLISH_PATH" FancyMouse-${{ github.ref_name }}.zip
+      #    & "C:\Program Files\7-Zip\7z.exe" a "FancyMouse-preview-v0.0.0.zip" "${{ env.PUBLISH_PATH }}"
+
+      - name: upload release
+        uses: actions/upload-artifact@v3
+        with:
+          name: FancyMouse-v0.0.0-preview
+          path: .build/app
+
+      #- name: dotnet tool jb inspectcode
+      #  working-directory: ${{ env.BUILD_PATH }}
+      #  run: |
+      #    dotnet new tool-manifest
+      #    dotnet tool install jetbrains.resharper.globaltools
+      #    dotnet tool run jb inspectcode "./FancyMouse.sln" -output="../.build/out/jb-inspectcode.xml" --no-build
+
+      #- name: upload jb-inspectcode.xml
+      #  uses: actions/upload-artifact@v3
+      #  with:
+      #    name: jb-inspectcode.xml
+      #    path: .build/out/jb-inspectcode.xml
