@@ -64,7 +64,7 @@ jobs:
       - name: upload release
         uses: actions/upload-artifact@v3
         with:
-          name: FancyMouse-preview-v0.0.0
+          name: FancyMouse.0.0.0-preview
           path: .build/app
 
       #- name: dotnet tool jb inspectcode
