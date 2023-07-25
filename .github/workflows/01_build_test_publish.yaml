@@ -56,15 +56,15 @@ jobs:
         working-directory: ${{ env.BUILD_PATH }}
         run: dotnet publish "./FancyMouse/FancyMouse.csproj" --configuration "${{ env.CONFIG_NAME }}" --no-build --output "${{ env.PUBLISH_PATH }}/net7.0-windows"
 
-      - name: zip release
-        working-directory: ${{ env.BUILD_PATH }}
-        run: |
-          & "C:\Program Files\7-Zip\7z.exe" a "FancyMouse-preview-v0.0.1.zip" "${{ env.PUBLISH_PATH }}"
+      #- name: zip release
+      #  working-directory: ${{ env.BUILD_PATH }}
+      #  run: |
+      #    & "C:\Program Files\7-Zip\7z.exe" a "FancyMouse-preview-v0.0.0.zip" "${{ env.PUBLISH_PATH }}"
 
       - name: upload release
         uses: actions/upload-artifact@v3
         with:
-          name: app
+          name: FancyMouse-preview-v0.0.0.zip
           path: .build/app
 
       - name: dotnet tool jb inspectcode
