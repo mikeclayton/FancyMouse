@@ -62,7 +62,7 @@ internal static class ConfigHelper
             ?? throw new InvalidOperationException($"{nameof(_appSettings.Hotkey)} cannot be null"));
     }
 
-    public static void StartWatcher()
+    public static void StartAppSettingsWatcher()
     {
         // set up the filesystem watcher
         var path = Path.GetDirectoryName(ConfigHelper.AppSettingsPath) ?? throw new InvalidOperationException();
