@@ -44,27 +44,6 @@ internal static class MouseHelper
             point.x, point.y);
     }
 
-    public static PointInfo GetCursorPosition(PointInfo location)
-    {
-        var pos = new POINT(0, 0);
-        var lpPoint = new LPPOINT(pos);
-
-        if (!User32.GetCursorPos(lpPoint))
-        {
-            throw new InvalidOperationException();
-        }
-
-        if (lpPoint.IsNull)
-        {
-            throw new InvalidOperationException();
-        }
-
-        pos = lpPoint.ToStructure();
-        lpPoint.Free();
-
-        return new PointInfo(pos.x, pos.y);
-    }
-
     /// <summary>
     /// Moves the cursor to the specified location.
     /// </summary>

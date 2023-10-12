@@ -2,9 +2,12 @@
 
 namespace FancyMouse.Models.Settings.V1;
 
-public sealed class FancyMouseSettings
+/// <summary>
+/// Represents the "fancymouse"' node in the V1 config file
+/// </summary>
+public sealed class FancyMouse
 {
-    public FancyMouseSettings(
+    public FancyMouse(
         string? hotkey,
         string? previewSize)
     {

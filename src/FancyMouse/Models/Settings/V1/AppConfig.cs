@@ -8,12 +8,12 @@
 internal sealed class AppConfig
 {
     public AppConfig(
-        FancyMouseSettings? fancymouse)
+        FancyMouse? fancyMouse)
     {
-        this.FancyMouse = fancymouse;
+        this.FancyMouse = fancyMouse;
     }
 
-    public FancyMouseSettings? FancyMouse
+    public FancyMouse? FancyMouse
     {
         get;
     }
