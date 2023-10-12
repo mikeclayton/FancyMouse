@@ -60,7 +60,7 @@ internal static class Program
         // load the application settings and start the filesystem watcher
         // so we reload if it changes
         ConfigHelper.LoadAppSettings();
-        ConfigHelper.StartWatcher();
+        ConfigHelper.StartAppSettingsWatcher();
 
         Application.Run();
     }
