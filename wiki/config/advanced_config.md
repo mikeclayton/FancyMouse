@@ -24,7 +24,7 @@
 * **padding** - the size of the gap between the border and the content
 * **content** - the area at the center of the element that can contain child elements
 
-There are two sets of box configurations that can be customised - one for the main pewview popup canvas, and one for the miniature screenshots. These can be combined to make a variety of effects.
+There are two sets of box configurations that can be customised - one for the main preview popup canvas, and one for the miniature screenshots. These can be combined to make a variety of effects.
 
 ## Gallery
 
@@ -34,7 +34,7 @@ If you just want to dive into some examples to see how it works, here's some pre
 | ------- | ---- | ----------- |
 | ![](./default_v2_config_t.png) | **[Default](./default_v2_config.md)** | The current default preview style
 | ![](./legacy_v1_config_t.png) | **[Legacy](./legacy_v1_config.md)** | Config settings that emulate the legacy preview style
-| ![](./gaudy_v2_config_t.png) | **[Gaudy](./gaudy_v2_config.md)** | A ghastly assaault on the eyes
+| ![](./gaudy_v2_config_t.png) | **[Gaudy](./gaudy_v2_config.md)** | A ghastly assault on the eyes
 
 > **Note:** If you design an interesting style feel free to share it by raising an [issue](https://github.com/mikeclayton/FancyMouse/issues) with a screenshot and the contents of the config file and I'll and some of them to this gallery.
 
@@ -46,7 +46,7 @@ The table below annotates a sample config file, but check out one of the gallery
 | --- | ----------- |
 | ```{``` |
 | &nbsp;&nbsp;&nbsp;&nbsp;```"version": 2,``` | Indicates the **version** of the config file format used in this file. DIfferent versions will support different settings and this is used where possible to read old formats and apply them to the application's behaviour and visual style.
-| &nbsp;&nbsp;&nbsp;&nbsp;```"hotkey": "CTRL + ALT + SHIFT + F",``` | The key combination that activates the preview popup. You can potentially bind this combination to spare button on your mouse if your manufacturer's softwatr supports it to make it easier to trigger.
+| &nbsp;&nbsp;&nbsp;&nbsp;```"hotkey": "CTRL + ALT + SHIFT + F",``` | The key combination that activates the preview popup. You can potentially make it easier to trigger by binding the key combination to a spare button on your mouse if your manufacturer's softwate supports it.
 | &nbsp;&nbsp;&nbsp;&nbsp;```"preview: {``` |
 | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;```"name": "default",``` | Specifies an arbitray **name** for the style in this config file to make it easier to distinguish it when comparing to other config files.
 | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;```"size": {``` |

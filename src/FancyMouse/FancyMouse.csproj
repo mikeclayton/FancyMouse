@@ -14,13 +14,31 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="appSettings.styles.json" />
+    <None Remove="appSettings.json" />
   </ItemGroup>
 
   <ItemGroup>
     <Content Include="appSettings.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="appSettings.default.json">
+      <DependentUpon>appSettings.json</DependentUpon>
+    </Content>
+    <Content Include="appSettings.gaudy.json">
+      <DependentUpon>appSettings.json</DependentUpon>
+    </Content>
+    <Content Include="appSettings.gaudy_v2.json">
+      <DependentUpon>appSettings.json</DependentUpon>
+    </Content>
+    <Content Include="appSettings.legacy.json">
+      <DependentUpon>appSettings.json</DependentUpon>
+    </Content>
+    <Content Include="appSettings.spaced.json">
+      <DependentUpon>appSettings.json</DependentUpon>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Include="NLog.config">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

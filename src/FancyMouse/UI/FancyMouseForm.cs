@@ -1,9 +1,9 @@
 using System.Diagnostics;
 using FancyMouse.Helpers;
+using FancyMouse.Helpers.Screenshot;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Layout;
 using NLog;
-using static FancyMouse.NativeMethods.Core;
 
 namespace FancyMouse.UI;
 
@@ -170,30 +170,22 @@ internal partial class FancyMouseForm : Form
 
         var stopwatch = Stopwatch.StartNew();
 
+        var appSettings = ConfigHelper.AppSettings ?? throw new InvalidOperationException();
         var screens = ScreenHelper.GetAllScreens().Select(screen => screen.DisplayArea).ToList();
         var activatedLocation = MouseHelper.GetCursorPosition();
         this.PreviewLayout = LayoutHelper.GetPreviewLayout(
-            previewStyle: (ConfigHelper.AppSettings ?? throw new InvalidOperationException()).PreviewStyle,
+            previewStyle: appSettings.PreviewStyle,
             screens: screens,
             activatedLocation: activatedLocation);
 
         this.PositionForm(this.PreviewLayout.FormBounds);
 
-        var desktopHwnd = HWND.Null;
-        var desktopHdc = HDC.Null;
-        DrawingHelper.EnsureDesktopDeviceContext(ref desktopHwnd, ref desktopHdc);
-        try
-        {
-            DrawingHelper.RenderPreview(
-                this.PreviewLayout,
-                desktopHdc,
-                this.OnPreviewImageCreated,
-                this.OnPreviewImageUpdated);
-        }
-        finally
-        {
-            DrawingHelper.FreeDesktopDeviceContext(ref desktopHwnd, ref desktopHdc);
-        }
+        var screenshotProvider = new DesktopScreenshotProvider();
+        DrawingHelper.RenderPreview(
+            this.PreviewLayout,
+            screenshotProvider,
+            this.OnPreviewImageCreated,
+            this.OnPreviewImageUpdated);
 
         stopwatch.Stop();
 

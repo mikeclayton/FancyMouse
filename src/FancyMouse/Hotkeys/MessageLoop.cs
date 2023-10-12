@@ -11,7 +11,6 @@ internal sealed class MessageLoop
     public MessageLoop(string name, Func<HWND> hwndCallback)
     {
         this.Name = name ?? throw new ArgumentNullException(nameof(name));
-
         this.HwndCallback = hwndCallback ?? throw new ArgumentNullException(nameof(hwndCallback));
 
         this.RunningSemaphore = new SemaphoreSlim(1);
@@ -159,8 +158,7 @@ internal sealed class MessageLoop
         }
 
         // signal to the internal message loop that it should stop
-        (this.CancellationTokenSource ?? throw new InvalidOperationException())
-            .Cancel();
+        this.CancellationTokenSource.Cancel();
 
         // post a null message just in case GetMessageW needs a nudge to stop blocking the
         // message loop - the loop will then notice that we've set the cancellation token,

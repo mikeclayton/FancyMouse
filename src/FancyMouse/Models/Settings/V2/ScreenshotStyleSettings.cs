@@ -9,9 +9,9 @@ namespace FancyMouse.Models.Settings.V2;
 public sealed class ScreenshotStyleSettings
 {
     public ScreenshotStyleSettings(
-        MarginStyleSettings marginStyle,
-        BorderStyleSettings borderStyle,
-        BackgroundStyleSettings backgroundStyle)
+        MarginStyleSettings? marginStyle,
+        BorderStyleSettings? borderStyle,
+        BackgroundStyleSettings? backgroundStyle)
     {
         this.MarginStyle = marginStyle ?? throw new ArgumentNullException(nameof(marginStyle));
         this.BorderStyle = borderStyle ?? throw new ArgumentNullException(nameof(borderStyle));
@@ -19,19 +19,19 @@ public sealed class ScreenshotStyleSettings
     }
 
     [JsonPropertyName("margin")]
-    public MarginStyleSettings MarginStyle
+    public MarginStyleSettings? MarginStyle
     {
         get;
     }
 
     [JsonPropertyName("border")]
-    public BorderStyleSettings BorderStyle
+    public BorderStyleSettings? BorderStyle
     {
         get;
     }
 
     [JsonPropertyName("background")]
-    public BackgroundStyleSettings BackgroundStyle
+    public BackgroundStyleSettings? BackgroundStyle
     {
         get;
     }

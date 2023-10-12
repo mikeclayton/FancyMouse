@@ -42,8 +42,8 @@ internal sealed class AppSettings
                 ),
                 borderStyle: new(
                     color: Color.FromArgb(0xFF, 0x22, 0x22, 0x22),
-                    all: 10,
-                    depth: 3
+                    all: 12,
+                    depth: 4
                 ),
                 paddingStyle: PaddingStyle.Empty,
                 backgroundStyle: new(

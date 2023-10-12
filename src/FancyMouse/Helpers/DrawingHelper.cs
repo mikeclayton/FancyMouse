@@ -1,11 +1,10 @@
 ﻿using System.Diagnostics;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
+using FancyMouse.Helpers.Screenshot;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Layout;
 using FancyMouse.Models.Styles;
-using FancyMouse.NativeMethods;
-using static FancyMouse.NativeMethods.Core;
 
 namespace FancyMouse.Helpers;
 
@@ -13,14 +12,14 @@ internal static class DrawingHelper
 {
     internal static Bitmap RenderPreview(
         PreviewLayout previewLayout,
-        HDC sourceHdc)
+        IScreenshotProvider screenshotProvider)
     {
-        return DrawingHelper.RenderPreview(previewLayout, sourceHdc, null, null);
+        return DrawingHelper.RenderPreview(previewLayout, screenshotProvider, null, null);
     }
 
     internal static Bitmap RenderPreview(
         PreviewLayout previewLayout,
-        HDC sourceHdc,
+        IScreenshotProvider screenshotProvider,
         Action<Bitmap>? previewImageCreatedCallback,
         Action? previewImageUpdatedCallback)
     {
@@ -39,9 +38,10 @@ internal static class DrawingHelper
             previewLayout.PreviewBounds,
             Enumerable.Empty<RectangleInfo>());
 
-        // sort the source and target screen areas, putting the activated screen first
-        // (we need to capture and draw the activated screen before we show the form
-        // because otherwise we'll capture the form as part of the screenshot!)
+        // sort the source and target screen areas into the order we want to
+        // draw them, putting the activated screen first (we need to capture
+        // and draw the activated screen before we show the form because
+        // otherwise we'll capture the form as part of the screenshot!)
         var sourceScreens = new List<RectangleInfo> { previewLayout.Screens[previewLayout.ActivatedScreenIndex] }
             .Union(previewLayout.Screens.Where((_, idx) => idx != previewLayout.ActivatedScreenIndex))
             .ToList();
@@ -56,33 +56,20 @@ internal static class DrawingHelper
                 previewGraphics, previewLayout.PreviewStyle.ScreenshotStyle, screenshotBounds);
         }
 
-        var previewHdc = HDC.Null;
         var imageUpdated = false;
-        try
+        var placeholdersDrawn = false;
+        for (var i = 0; i < sourceScreens.Count; i++)
         {
-            var placeholdersDrawn = false;
-            for (var i = 0; i < sourceScreens.Count; i++)
+            screenshotProvider.DrawScreenshot(previewGraphics, sourceScreens[i], targetScreens[i].ContentBounds);
+            imageUpdated = true;
+
+            // show the placeholder images and show the form if it looks like it might take
+            // a while to capture the remaining screenshot images (but only if there are any)
+            if (stopwatch.ElapsedMilliseconds > 250)
             {
-                DrawingHelper.EnsurePreviewDeviceContext(previewGraphics, ref previewHdc);
-                DrawingHelper.DrawScreenshot(
-                    sourceHdc, previewHdc, sourceScreens[i], targetScreens[i]);
-                imageUpdated = true;
-
-                // show the placeholder images and show the form if it looks like it might take
-                // a while to capture the remaining screenshot images (but only if there are any)
-                if ((i >= (sourceScreens.Count - 1)) || (stopwatch.ElapsedMilliseconds <= 250))
-                {
-                    continue;
-                }
-
-                // we need to release the device context handle before we draw anything
-                // using the Graphics object otherwise we'll get an error from GDI saying
-                // "Object is currently in use elsewhere"
-                DrawingHelper.FreePreviewDeviceContext(previewGraphics, ref previewHdc);
-
+                // draw placeholder backgrounds for any undrawn screens
                 if (!placeholdersDrawn)
                 {
-                    // draw placeholders for any undrawn screens
                     DrawingHelper.DrawPlaceholders(
                         previewGraphics,
                         previewLayout.PreviewStyle.ScreenshotStyle,
@@ -93,10 +80,6 @@ internal static class DrawingHelper
                 previewImageUpdatedCallback?.Invoke();
                 imageUpdated = false;
             }
-        }
-        finally
-        {
-            DrawingHelper.FreePreviewDeviceContext(previewGraphics, ref previewHdc);
         }
 
         if (imageUpdated)
@@ -231,114 +214,16 @@ internal static class DrawingHelper
         graphics.FillRegion(backgroundBrush, backgroundRegion);
     }
 
-    public static void EnsureDesktopDeviceContext(ref HWND desktopHwnd, ref HDC desktopHdc)
-    {
-        if (desktopHwnd.IsNull)
-        {
-            desktopHwnd = User32.GetDesktopWindow();
-        }
-
-        if (desktopHdc.IsNull)
-        {
-            desktopHdc = User32.GetWindowDC(desktopHwnd);
-            if (desktopHdc.IsNull)
-            {
-                throw new InvalidOperationException(
-                    $"{nameof(User32.GetWindowDC)} returned null");
-            }
-        }
-    }
-
-    public static void FreeDesktopDeviceContext(ref HWND desktopHwnd, ref HDC desktopHdc)
-    {
-        if (!desktopHwnd.IsNull && !desktopHdc.IsNull)
-        {
-            var result = User32.ReleaseDC(desktopHwnd, desktopHdc);
-            if (result == 0)
-            {
-                throw new InvalidOperationException(
-                    $"{nameof(User32.ReleaseDC)} returned {result}");
-            }
-        }
-
-        desktopHwnd = HWND.Null;
-        desktopHdc = HDC.Null;
-    }
-
     /// <summary>
-    /// Checks if the device context handle exists, and creates a new one from the
-    /// specified Graphics object if not.
-    /// </summary>
-    public static void EnsurePreviewDeviceContext(Graphics graphics, ref HDC previewHdc)
-    {
-        if (previewHdc.IsNull)
-        {
-            previewHdc = (HDC)graphics.GetHdc();
-            var result = Gdi32.SetStretchBltMode(previewHdc, Gdi32.STRETCH_BLT_MODE.STRETCH_HALFTONE);
-
-            if (result == 0)
-            {
-                throw new InvalidOperationException(
-                    $"{nameof(Gdi32.SetStretchBltMode)} returned {result}");
-            }
-        }
-    }
-
-    /// <summary>
-    /// Free the specified device context handle if it exists.
-    /// </summary>
-    public static void FreePreviewDeviceContext(Graphics graphics, ref HDC previewHdc)
-    {
-        if ((graphics is not null) && !previewHdc.IsNull)
-        {
-            graphics.ReleaseHdc(previewHdc.Value);
-            previewHdc = HDC.Null;
-        }
-    }
-
-    /// <summary>
-    /// Draws placeholder images for any non-activated screens on the preview.
-    /// Will release the specified device context handle if it needs to draw anything.
+    /// Draws placeholder background images for the specified screens on the preview.
     /// </summary>
     public static void DrawPlaceholders(
         Graphics graphics, BoxStyle screenStyle, IList<BoxBounds> screenBounds)
     {
-        // we can exclude the activated screen because we've already draw
-        // the screen capture image for that one on the preview
         if (screenBounds.Any())
         {
             var brush = new SolidBrush(screenStyle.BackgroundStyle.Color1);
             graphics.FillRectangles(brush, screenBounds.Select(bounds => bounds.PaddingBounds.ToRectangle()).ToArray());
-        }
-    }
-
-    /// <summary>
-    /// Draws a screen capture from the specified desktop handle onto the target device context.
-    /// </summary>
-    public static void DrawScreenshot(
-        HDC sourceHdc,
-        HDC targetHdc,
-        RectangleInfo sourceBounds,
-        BoxBounds targetBounds)
-    {
-        var source = sourceBounds.ToRectangle();
-        var target = targetBounds.ContentBounds.ToRectangle();
-        var result = Gdi32.StretchBlt(
-            targetHdc,
-            target.X,
-            target.Y,
-            target.Width,
-            target.Height,
-            sourceHdc,
-            source.X,
-            source.Y,
-            source.Width,
-            source.Height,
-            Gdi32.ROP_CODE.SRCCOPY);
-        if (!result)
-        {
-            throw new InvalidOperationException(
-                $"{nameof(Gdi32.StretchBlt)} returned {result.Value}");
         }
     }
 }

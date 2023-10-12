@@ -74,7 +74,6 @@ public sealed class HotKeyManager
         // do we need to unregister the existing hotkey first?
         if ((this.HotKey is not null) && hwnd.HasValue)
         {
-            // HotKeyHelper.PostPrivateThreadMessage(this.MessageLoop.NativeThreadId, HotKeyHelper.WM_PRIV_UNREGISTER_HOTKEY);
             HotKeyHelper.PostPrivateMessage(hwnd.Value, HotKeyHelper.WM_PRIV_UNREGISTER_HOTKEY);
             this.MessageSemaphore.Wait();
         }
@@ -84,7 +83,6 @@ public sealed class HotKeyManager
         // register the new hotkey
         if ((this.HotKey is not null) && hwnd.HasValue)
         {
-            // HotKeyHelper.PostPrivateThreadMessage(this.MessageLoop.NativeThreadId, HotKeyHelper.WM_PRIV_REGISTER_HOTKEY);
             HotKeyHelper.PostPrivateMessage(hwnd.Value, HotKeyHelper.WM_PRIV_REGISTER_HOTKEY);
             this.MessageSemaphore.Wait();
         }
