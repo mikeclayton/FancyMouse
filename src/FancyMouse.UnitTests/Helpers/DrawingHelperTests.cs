@@ -92,8 +92,7 @@ public static class DrawingHelperTests
 
             // compare the images
             var screens = System.Windows.Forms.Screen.AllScreens;
-            Assert.IsTrue(
-                GetPreviewLayoutTests.CompareImages(actual, expected));
+            AssertImagesEqual(expected, actual);
         }
 
         private static Bitmap LoadImageResource(string filename)
@@ -116,25 +115,26 @@ public static class DrawingHelperTests
         /// <summary>
         /// Naive / brute force image comparison - we can optimise this later :-)
         /// </summary>
-        private static bool CompareImages(Bitmap left, Bitmap right)
+        private static void AssertImagesEqual(Bitmap expected, Bitmap actual)
         {
-            if ((right.Width != left.Width) || (right.Height != left.Height))
+            Assert.AreEqual(
+                expected.Width,
+                actual.Width,
+                $"expected width: {expected.Width}, actual width: {actual.Width}");
+            Assert.AreEqual(
+                expected.Height,
+                actual.Height,
+                $"expected height: {expected.Height}, actual height: {actual.Height}");
+            for (var y = 0; y < expected.Height; y++)
             {
-                return false;
-            }
-
-            for (var y = 0; y < left.Height; y++)
-            {
-                for (var x = 0; x < left.Width; x++)
+                for (var x = 0; x < expected.Width; x++)
                 {
-                    if (right.GetPixel(x, y) != left.GetPixel(x, y))
-                    {
-                        return false;
-                    }
+                    Assert.AreEqual(
+                    expected.GetPixel(x, y),
+                    actual.GetPixel(x, y),
+                    $"images differ at pixel ({x}, {y}) - expected: {expected.GetPixel(x, y)}, actual: {actual.GetPixel(x, y)}");
                 }
             }
-
-            return true;
         }
     }
 }
