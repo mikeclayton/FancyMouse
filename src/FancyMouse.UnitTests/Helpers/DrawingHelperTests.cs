@@ -129,10 +129,16 @@ public static class DrawingHelperTests
             {
                 for (var x = 0; x < expected.Width; x++)
                 {
-                    Assert.AreEqual(
-                    expected.GetPixel(x, y),
-                    actual.GetPixel(x, y),
-                    $"images differ at pixel ({x}, {y}) - expected: {expected.GetPixel(x, y)}, actual: {actual.GetPixel(x, y)}");
+                    var expectedPixel = expected.GetPixel(x, y);
+                    var actualPixel = actual.GetPixel(x, y);
+
+                    // allow a small tolerance for rounding differences in gdi
+                    Assert.IsTrue(
+                        (Math.Abs(expectedPixel.A - actualPixel.A) <= 1) &&
+                        (Math.Abs(expectedPixel.R - actualPixel.R) <= 1) &&
+                        (Math.Abs(expectedPixel.G - actualPixel.G) <= 1) &&
+                        (Math.Abs(expectedPixel.B - actualPixel.B) <= 1),
+                        $"images differ at pixel ({x}, {y}) - expected: {expectedPixel}, actual: {actualPixel}");
                 }
             }
         }
