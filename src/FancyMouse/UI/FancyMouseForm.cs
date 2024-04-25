@@ -1,8 +1,9 @@
 using System.Diagnostics;
+using FancyMouse.Common.Helpers;
+using FancyMouse.Common.Imaging;
+using FancyMouse.Common.Models.Drawing;
+using FancyMouse.Common.Models.Layout;
 using FancyMouse.Helpers;
-using FancyMouse.Helpers.Screenshot;
-using FancyMouse.Models.Drawing;
-using FancyMouse.Models.Layout;
 using NLog;
 
 namespace FancyMouse.UI;
@@ -180,10 +181,10 @@ internal partial class FancyMouseForm : Form
 
         this.PositionForm(this.PreviewLayout.FormBounds);
 
-        var screenshotProvider = new DesktopScreenshotProvider();
+        var imageCopyService = new DesktopImageRegionCopyService();
         DrawingHelper.RenderPreview(
             this.PreviewLayout,
-            screenshotProvider,
+            imageCopyService,
             this.OnPreviewImageCreated,
             this.OnPreviewImageUpdated);
 

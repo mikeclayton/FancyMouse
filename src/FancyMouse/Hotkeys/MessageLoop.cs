@@ -1,8 +1,8 @@
 ﻿using System.ComponentModel;
 using System.Runtime.InteropServices;
-using FancyMouse.NativeMethods;
-using static FancyMouse.NativeMethods.Core;
-using static FancyMouse.NativeMethods.User32;
+using FancyMouse.Common.NativeMethods;
+using static FancyMouse.Common.NativeMethods.Core;
+using static FancyMouse.Common.NativeMethods.User32;
 
 namespace FancyMouse.HotKeys;
 

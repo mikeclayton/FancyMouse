@@ -1,14 +1,14 @@
 ﻿using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using FancyMouse.Common.Models.Styles;
 using FancyMouse.HotKeys;
-using FancyMouse.Models.Styles;
 
 namespace FancyMouse.Models.Settings.V1;
 
 internal static class SettingsConverter
 {
-    public static AppSettings ParseAppSettings(string json)
+    public static Settings.AppSettings ParseAppSettings(string json)
     {
         var options = new JsonSerializerOptions
         {
@@ -19,14 +19,14 @@ internal static class SettingsConverter
             ?? throw new InvalidOperationException();
         var hotkey = SettingsConverter.ConvertToKeystroke(appConfig?.FancyMouse?.Hotkey);
         var previewStyle = SettingsConverter.ConvertToPreviewStyle(appConfig?.FancyMouse?.PreviewSize);
-        var appSettings = new AppSettings(hotkey, previewStyle);
+        var appSettings = new Settings.AppSettings(hotkey, previewStyle);
         return appSettings;
     }
 
     public static Keystroke ConvertToKeystroke(string? hotkey)
     {
         return (hotkey == null)
-            ? AppSettings.DefaultSettings.Hotkey
+            ? Settings.AppSettings.DefaultSettings.Hotkey
             : Keystroke.Parse(hotkey);
     }
 
@@ -34,7 +34,7 @@ internal static class SettingsConverter
     {
         if (previewSize is null)
         {
-            return AppSettings.DefaultSettings.PreviewStyle;
+            return Settings.AppSettings.DefaultSettings.PreviewStyle;
         }
 
         var parts = previewSize.Split("x")
@@ -46,7 +46,7 @@ internal static class SettingsConverter
                 width: parts[0],
                 height: parts[1]
             ),
-            canvasStyle: AppSettings.DefaultSettings.PreviewStyle.CanvasStyle,
-            screenshotStyle: AppSettings.DefaultSettings.PreviewStyle.ScreenshotStyle);
+            canvasStyle: Settings.AppSettings.DefaultSettings.PreviewStyle.CanvasStyle,
+            screenStyle: Settings.AppSettings.DefaultSettings.PreviewStyle.ScreenStyle);
     }
 }

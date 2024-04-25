@@ -5,13 +5,13 @@ namespace FancyMouse.Models.Settings.V2;
 /// <remarks>
 /// Doesn't have a MarginStyle setting like the BoxStyle class does - we don't
 /// support configuring this in app settings.
-/// ></remarks>
+/// </remarks>
 public sealed class CanvasStyleSettings
 {
     public CanvasStyleSettings(
-        BorderStyleSettings borderStyle,
-        PaddingStyleSettings paddingStyle,
-        BackgroundStyleSettings backgroundStyle)
+        BorderStyleSettings? borderStyle,
+        PaddingStyleSettings? paddingStyle,
+        BackgroundStyleSettings? backgroundStyle)
     {
         this.BorderStyle = borderStyle ?? throw new ArgumentNullException(nameof(borderStyle));
         this.PaddingStyle = paddingStyle ?? throw new ArgumentNullException(nameof(paddingStyle));
@@ -19,19 +19,22 @@ public sealed class CanvasStyleSettings
     }
 
     [JsonPropertyName("border")]
-    public BorderStyleSettings BorderStyle
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public BorderStyleSettings? BorderStyle
     {
         get;
     }
 
     [JsonPropertyName("padding")]
-    public PaddingStyleSettings PaddingStyle
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public PaddingStyleSettings? PaddingStyle
     {
         get;
     }
 
     [JsonPropertyName("background")]
-    public BackgroundStyleSettings BackgroundStyle
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public BackgroundStyleSettings? BackgroundStyle
     {
         get;
     }

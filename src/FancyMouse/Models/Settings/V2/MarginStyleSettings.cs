@@ -1,16 +1,20 @@
-﻿namespace FancyMouse.Models.Settings.V2;
+﻿using System.Text.Json.Serialization;
+
+namespace FancyMouse.Models.Settings.V2;
 
 /// <summary>
 /// Represents the margin style for a drawing object.
 /// </summary>
 public sealed class MarginStyleSettings
 {
-    public MarginStyleSettings(decimal width)
+    public MarginStyleSettings(int? width)
     {
         this.Width = width;
     }
 
-    public decimal Width
+    [JsonPropertyName("width")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? Width
     {
         get;
     }

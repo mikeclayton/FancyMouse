@@ -7,10 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Helpers\_test-4grid-desktop.png" />
-    <None Remove="Helpers\_test-4grid-expected.png" />
-    <None Remove="Helpers\_test-win11-desktop.png" />
-    <None Remove="Helpers\_test-win11-expected.png" />
+    <None Remove="Common\Helpers\_test-4grid-desktop.png" />
+    <None Remove="Common\Helpers\_test-4grid-expected.png" />
+    <None Remove="Common\Helpers\_test-win11-desktop.png" />
+    <None Remove="Common\Helpers\_test-win11-expected.png" />
   </ItemGroup>
 
   <ItemGroup>
@@ -24,10 +24,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Helpers\_test-4grid-desktop.png" />
-    <EmbeddedResource Include="Helpers\_test-4grid-expected.png" />
-    <EmbeddedResource Include="Helpers\_test-win11-desktop.png" />
-    <EmbeddedResource Include="Helpers\_test-win11-expected.png" />
+    <EmbeddedResource Include="Common\Helpers\_test-4grid-desktop.png" />
+    <EmbeddedResource Include="Common\Helpers\_test-4grid-expected.png" />
+    <EmbeddedResource Include="Common\Helpers\_test-win11-desktop.png" />
+    <EmbeddedResource Include="Common\Helpers\_test-win11-expected.png" />
   </ItemGroup>
 
   <ItemGroup>

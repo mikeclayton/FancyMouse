@@ -1,0 +1,43 @@
+{
+
+  "version": 2,
+
+  "hotkey": "CTRL + ALT + SHIFT + F",
+
+  "preview": {
+    "name": "default",
+    "size": {
+      "width": 1600,
+      "height": 1200
+    },
+    "canvas": {
+      "border": {
+        "color": "SystemColors.Highlight",
+        "width": 6,
+        "depth": 0
+      },
+      "padding": {
+        "width": 6
+      },
+      "background": {
+        "color1": "#0D57D2",
+        "color2": "#0344C0"
+      }
+    },
+    "screenshot": {
+      "margin": {
+        "width": 2
+      },
+      "border": {
+        "color": "#222222",
+        "width": 10,
+        "depth": 3
+      },
+      "background": {
+        "color1": "Color.MidnightBlue",
+        "color2": "Color.MidnightBlue"
+      }
+    }
+  }
+
+}
