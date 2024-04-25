@@ -2,7 +2,7 @@
 
 ## Description
 
-The **Default V2 Config** style places a thin, flat border around the main preview popup, and then adde a margin and border with a 3d effect to each screenshot to make it appear as if it's being displayed on a monitor bezel.
+The **Default V2 Config** style places a thin, flat border around the main preview popup, and then adds a margin and border with a 3d effect to each screenshot to make it appear as if it's being displayed on a physical monitor.
 
 ## Preview
 
