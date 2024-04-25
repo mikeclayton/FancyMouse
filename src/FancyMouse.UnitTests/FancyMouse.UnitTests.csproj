@@ -1,10 +1,17 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net7.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Common\Helpers\_test-4grid-desktop.png" />
+    <None Remove="Common\Helpers\_test-4grid-expected.png" />
+    <None Remove="Common\Helpers\_test-win11-desktop.png" />
+    <None Remove="Common\Helpers\_test-win11-expected.png" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.7.0-preview-23364-03" />
@@ -14,6 +21,13 @@
 
   <ItemGroup>
     <ProjectReference Include="..\FancyMouse\FancyMouse.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Common\Helpers\_test-4grid-desktop.png" />
+    <EmbeddedResource Include="Common\Helpers\_test-4grid-expected.png" />
+    <EmbeddedResource Include="Common\Helpers\_test-win11-desktop.png" />
+    <EmbeddedResource Include="Common\Helpers\_test-win11-expected.png" />
   </ItemGroup>
 
   <ItemGroup>

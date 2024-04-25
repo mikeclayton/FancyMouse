@@ -1,6 +1,6 @@
-﻿using FancyMouse.NativeMethods;
-using static FancyMouse.NativeMethods.Core;
-using static FancyMouse.NativeMethods.User32;
+﻿using FancyMouse.Common.NativeMethods;
+using static FancyMouse.Common.NativeMethods.Core;
+using static FancyMouse.Common.NativeMethods.User32;
 
 namespace FancyMouse.HotKeys;
 
@@ -74,7 +74,6 @@ public sealed class HotKeyManager
         // do we need to unregister the existing hotkey first?
         if ((this.HotKey is not null) && hwnd.HasValue)
         {
-            // HotKeyHelper.PostPrivateThreadMessage(this.MessageLoop.NativeThreadId, HotKeyHelper.WM_PRIV_UNREGISTER_HOTKEY);
             HotKeyHelper.PostPrivateMessage(hwnd.Value, HotKeyHelper.WM_PRIV_UNREGISTER_HOTKEY);
             this.MessageSemaphore.Wait();
         }
@@ -84,7 +83,6 @@ public sealed class HotKeyManager
         // register the new hotkey
         if ((this.HotKey is not null) && hwnd.HasValue)
         {
-            // HotKeyHelper.PostPrivateThreadMessage(this.MessageLoop.NativeThreadId, HotKeyHelper.WM_PRIV_REGISTER_HOTKEY);
             HotKeyHelper.PostPrivateMessage(hwnd.Value, HotKeyHelper.WM_PRIV_REGISTER_HOTKEY);
             this.MessageSemaphore.Wait();
         }

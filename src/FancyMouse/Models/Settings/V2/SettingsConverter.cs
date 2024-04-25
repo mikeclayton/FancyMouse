@@ -1,150 +1,180 @@
-﻿using System.Globalization;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using FancyMouse.Models.Styles;
-using BorderStyle = FancyMouse.Models.Styles.BorderStyle;
+﻿using System.Text.Json;
+using FancyMouse.Common.Models.Styles;
+using BorderStyle = FancyMouse.Common.Models.Styles.BorderStyle;
 
 namespace FancyMouse.Models.Settings.V2;
 
 internal static class SettingsConverter
 {
-    public static AppSettings ParseAppSettings(string json)
+    public static Settings.AppSettings ParseAppSettings(string json)
     {
         var options = new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true,
-            Converters = { new JsonStringEnumConverter() },
         };
         var appConfig = JsonSerializer.Deserialize<AppConfig>(json, options)
             ?? throw new InvalidOperationException();
         var hotkey = V1.SettingsConverter.ConvertToKeystroke(appConfig.Hotkey);
-        var previewStyle = SettingsConverter.ConvertToPreviewStyle(appConfig.Preview);
-        var appSettings = new AppSettings(hotkey, previewStyle);
+        var previewStyle = SettingsConverter.MergePreviewStyles(appConfig.Preview, Settings.AppSettings.DefaultSettings.PreviewStyle);
+        var appSettings = new Settings.AppSettings(hotkey, previewStyle);
         return appSettings;
     }
 
-    public static PreviewStyle ConvertToPreviewStyle(PreviewSettings? previewSettings)
+    public static PreviewStyle MergePreviewStyles(PreviewStyleSettings? previewStyle, PreviewStyle defaultStyle)
     {
-        if (previewSettings is null)
+        if (previewStyle is null)
         {
-            return AppSettings.DefaultSettings.PreviewStyle;
+            return Settings.AppSettings.DefaultSettings.PreviewStyle;
         }
 
-        var defaultStyle = AppSettings.DefaultSettings.PreviewStyle;
-        var canvasStyle = AppSettings.DefaultSettings.PreviewStyle.CanvasStyle;
-        var screenshotStyle = AppSettings.DefaultSettings.PreviewStyle.ScreenshotStyle;
         return new PreviewStyle(
             canvasSize: new(
-                width: Math.Clamp(
-                    value: previewSettings?.CanvasSize?.Width ?? defaultStyle.CanvasSize.Width,
+                width: SettingsConverter.Clamp(
+                    value: previewStyle?.CanvasSize?.Width,
+                    defaultValue: defaultStyle?.CanvasSize?.Width,
                     min: 50,
                     max: 99999),
-                height: Math.Clamp(
-                    value: previewSettings?.CanvasSize?.Height ?? defaultStyle.CanvasSize.Height,
+                height: SettingsConverter.Clamp(
+                    value: previewStyle?.CanvasSize?.Height,
+                    defaultValue: defaultStyle?.CanvasSize?.Height,
                     min: 50,
                     max: 99999)
             ),
             canvasStyle: new(
-                marginStyle: MarginStyle.Empty,
-                borderStyle: SettingsConverter.ConvertToBorderStyle(previewSettings?.CanvasStyle?.BorderStyle, defaultStyle.CanvasStyle.BorderStyle),
-                paddingStyle: new(
-                    all: Math.Clamp(
-                        value: previewSettings?.CanvasStyle?.PaddingStyle?.Width ?? canvasStyle.PaddingStyle.Top,
-                        min: 0,
-                        max: 99)
+                marginStyle: new(
+                    all: 0
                 ),
+                borderStyle: SettingsConverter.MergeBorderStyles(
+                    borderStyle: previewStyle?.CanvasStyle?.BorderStyle,
+                    defaultStyle: defaultStyle?.CanvasStyle?.BorderStyle),
+                paddingStyle: SettingsConverter.MergePaddingStyles(
+                    paddingStyle: previewStyle?.CanvasStyle?.PaddingStyle,
+                    defaultStyle: defaultStyle?.CanvasStyle?.PaddingStyle),
                 backgroundStyle: new(
-                    color1: SettingsConverter.ParseColorSettings(
-                        value: previewSettings?.CanvasStyle?.BackgroundStyle?.Color1,
-                        defaultValue: canvasStyle.BackgroundStyle.Color1),
-                    color2: SettingsConverter.ParseColorSettings(
-                        value: previewSettings?.CanvasStyle?.BackgroundStyle?.Color2,
-                        defaultValue: canvasStyle.BackgroundStyle.Color2)
+                    color1: SettingsConverter.MergeColors(
+                        color: previewStyle?.CanvasStyle?.BackgroundStyle?.Color1,
+                        defaultValue: defaultStyle?.CanvasStyle?.BackgroundStyle?.Color1),
+                    color2: SettingsConverter.MergeColors(
+                        color: previewStyle?.CanvasStyle?.BackgroundStyle?.Color2,
+                        defaultValue: defaultStyle?.CanvasStyle?.BackgroundStyle?.Color2)
                 )
             ),
-            screenshotStyle: new(
-                marginStyle: new(
-                    Math.Clamp(
-                        value: previewSettings?.ScreenshotStyle?.MarginStyle?.Width ?? screenshotStyle.MarginStyle.Top,
-                        min: 0,
-                        max: 99)
+            screenStyle: new(
+                marginStyle: SettingsConverter.MergeMarginStyles(
+                    marginStyle: previewStyle?.ScreenStyle?.MarginStyle,
+                    defaultStyle: defaultStyle?.ScreenStyle?.MarginStyle),
+                borderStyle: SettingsConverter.MergeBorderStyles(
+                    borderStyle: previewStyle?.ScreenStyle?.BorderStyle,
+                    defaultStyle: defaultStyle?.ScreenStyle?.BorderStyle),
+                paddingStyle: new(
+                    all: 0
                 ),
-                borderStyle: SettingsConverter.ConvertToBorderStyle(previewSettings?.ScreenshotStyle?.BorderStyle, defaultStyle.CanvasStyle.BorderStyle),
-                paddingStyle: PaddingStyle.Empty,
                 backgroundStyle: new(
-                    color1: SettingsConverter.ParseColorSettings(
-                        previewSettings?.ScreenshotStyle?.BackgroundStyle?.Color1,
-                        defaultValue: screenshotStyle.BackgroundStyle.Color1),
-                    color2: SettingsConverter.ParseColorSettings(
-                        value: previewSettings?.ScreenshotStyle?.BackgroundStyle?.Color2,
-                        defaultValue: screenshotStyle.BackgroundStyle.Color2)
+                    color1: SettingsConverter.MergeColors(
+                        color: previewStyle?.ScreenStyle?.BackgroundStyle?.Color1,
+                        defaultValue: defaultStyle?.ScreenStyle?.BackgroundStyle?.Color1),
+                    color2: SettingsConverter.MergeColors(
+                        color: previewStyle?.ScreenStyle?.BackgroundStyle?.Color2,
+                        defaultValue: defaultStyle?.ScreenStyle?.BackgroundStyle?.Color2)
                 )
             ));
     }
 
-    private static BorderStyle ConvertToBorderStyle(BorderStyleSettings? settings, BorderStyle defaultStyle)
+    private static MarginStyle MergeMarginStyles(MarginStyleSettings? marginStyle, MarginStyle? defaultStyle)
     {
         return new(
-            color: settings?.Color is null
-                ? defaultStyle.Color
-                : SettingsConverter.ParseColorSettings(
-                    value: settings.Color,
-                    defaultValue: defaultStyle.Color),
-            all: Math.Clamp(
-                value: settings?.Width ?? defaultStyle.Top,
+            left: SettingsConverter.Clamp(
+                value: marginStyle?.Width,
+                defaultValue: defaultStyle?.Left,
                 min: 0,
                 max: 99),
-            depth: Math.Clamp(
-                value: settings?.Depth ?? defaultStyle.Depth,
+            top: SettingsConverter.Clamp(
+                value: marginStyle?.Width,
+                defaultValue: defaultStyle?.Top,
+                min: 0,
+                max: 99),
+            right: SettingsConverter.Clamp(
+                value: marginStyle?.Width,
+                defaultValue: defaultStyle?.Right,
+                min: 0,
+                max: 99),
+            bottom: SettingsConverter.Clamp(
+                value: marginStyle?.Width,
+                defaultValue: defaultStyle?.Bottom,
                 min: 0,
                 max: 99)
         );
     }
 
-    private static Color ParseColorSettings(string? value, Color defaultValue)
+    private static BorderStyle MergeBorderStyles(BorderStyleSettings? borderStyle, BorderStyle? defaultStyle)
     {
-        if (string.IsNullOrEmpty(value))
-        {
-            return defaultValue;
-        }
+        return new(
+            color: SettingsConverter.MergeColors(
+                color: borderStyle?.Color,
+                defaultValue: defaultStyle?.Color),
+            left: SettingsConverter.Clamp(
+                value: borderStyle?.Width,
+                defaultValue: defaultStyle?.Left,
+                min: 0,
+                max: 99),
+            top: SettingsConverter.Clamp(
+                value: borderStyle?.Width,
+                defaultValue: defaultStyle?.Top,
+                min: 0,
+                max: 99),
+            right: SettingsConverter.Clamp(
+                value: borderStyle?.Width,
+                defaultValue: defaultStyle?.Right,
+                min: 0,
+                max: 99),
+            bottom: SettingsConverter.Clamp(
+                value: borderStyle?.Width,
+                defaultValue: defaultStyle?.Bottom,
+                min: 0,
+                max: 99),
+            depth: SettingsConverter.Clamp(
+                value: borderStyle?.Depth,
+                defaultValue: defaultStyle?.Depth,
+                min: 0,
+                max: 99)
+        );
+    }
 
-        var comparison = StringComparison.InvariantCulture;
-        if (value.StartsWith("#", comparison))
-        {
-            var culture = CultureInfo.InvariantCulture;
-            if ((value.Length == 7)
-               && int.TryParse(value[1..3], NumberStyles.HexNumber, culture, out var r)
-               && int.TryParse(value[3..5], NumberStyles.HexNumber, culture, out var g)
-               && int.TryParse(value[5..7], NumberStyles.HexNumber, culture, out var b))
-            {
-                return Color.FromArgb(0xff, r, g, b);
-            }
-        }
+    private static PaddingStyle MergePaddingStyles(PaddingStyleSettings? paddingStyle, PaddingStyle? defaultStyle)
+    {
+        return new(
+            left: SettingsConverter.Clamp(
+                value: paddingStyle?.Width,
+                defaultValue: defaultStyle?.Left,
+                min: 0,
+                max: 99),
+            top: SettingsConverter.Clamp(
+                value: paddingStyle?.Width,
+                defaultValue: defaultStyle?.Top,
+                min: 0,
+                max: 99),
+            right: SettingsConverter.Clamp(
+                value: paddingStyle?.Width,
+                defaultValue: defaultStyle?.Right,
+                min: 0,
+                max: 99),
+            bottom: SettingsConverter.Clamp(
+                value: paddingStyle?.Width,
+                defaultValue: defaultStyle?.Bottom,
+                min: 0,
+                max: 99)
+        );
+    }
 
-        if (value.StartsWith("Color.", comparison))
-        {
-            var propertyName = value["Color.".Length..];
-            var property = typeof(Color).GetProperties()
-                .SingleOrDefault(property => property.Name == propertyName);
-            if (property is not null)
-            {
-                var propertyValue = property.GetValue(null, null);
-                return (propertyValue is null) ? defaultValue : (Color)propertyValue;
-            }
-        }
+    private static Color MergeColors(string? color, Color? defaultValue)
+    {
+        return ColorConverter.Deserialize(color) ?? defaultValue ?? throw new InvalidOperationException();
+    }
 
-        if (value.StartsWith("SystemColors.", comparison))
-        {
-            var propertyName = value["SystemColors.".Length..];
-            var property = typeof(SystemColors).GetProperties()
-                .SingleOrDefault(property => property.Name == propertyName);
-            if (property is not null)
-            {
-                var propertyValue = property.GetValue(null, null);
-                return (propertyValue is null) ? defaultValue : (Color)propertyValue;
-            }
-        }
-
-        return defaultValue;
+    private static decimal Clamp(decimal? value, decimal? defaultValue, decimal min, decimal max)
+    {
+        return (value.HasValue || defaultValue.HasValue)
+            ? Math.Clamp(value ?? defaultValue ?? throw new InvalidOperationException(), min, max)
+            : throw new InvalidOperationException();
     }
 }

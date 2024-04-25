@@ -7,7 +7,6 @@ internal static class ConfigHelper
 {
     private static readonly HotKeyManager _hotKeyManager;
 
-    private static string? _appSettingsPath;
     private static FileSystemWatcher? _appSettingsWatcher;
 
     private static AppSettings? _appSettings;
@@ -16,6 +15,12 @@ internal static class ConfigHelper
     static ConfigHelper()
     {
         ConfigHelper._hotKeyManager = new HotKeyManager();
+    }
+
+    public static string? AppSettingsPath
+    {
+        get;
+        private set;
     }
 
     public static AppSettings? AppSettings
@@ -33,7 +38,7 @@ internal static class ConfigHelper
 
     public static void SetAppSettingsPath(string appSettingsPath)
     {
-        _appSettingsPath = appSettingsPath;
+        ConfigHelper.AppSettingsPath = appSettingsPath;
     }
 
     public static void SetHotKeyEventHandler(EventHandler<HotKeyEventArgs> eventHandler)
@@ -51,17 +56,17 @@ internal static class ConfigHelper
     public static void LoadAppSettings()
     {
         _hotKeyManager.SetHoKey(null);
-        _appSettings = AppSettingsReader.ReadFile(_appSettingsPath
+        _appSettings = AppSettingsReader.ReadFile(ConfigHelper.AppSettingsPath
             ?? throw new InvalidOperationException("AppSettings cannot be null"));
         _hotKeyManager.SetHoKey(_appSettings?.Hotkey
             ?? throw new InvalidOperationException($"{nameof(_appSettings.Hotkey)} cannot be null"));
     }
 
-    public static void StartWatcher()
+    public static void StartAppSettingsWatcher()
     {
         // set up the filesystem watcher
-        var path = Path.GetDirectoryName(_appSettingsPath) ?? throw new InvalidOperationException();
-        var filter = Path.GetFileName(_appSettingsPath) ?? throw new InvalidOperationException();
+        var path = Path.GetDirectoryName(ConfigHelper.AppSettingsPath) ?? throw new InvalidOperationException();
+        var filter = Path.GetFileName(ConfigHelper.AppSettingsPath) ?? throw new InvalidOperationException();
         _appSettingsWatcher = new FileSystemWatcher(path, filter)
         {
             NotifyFilter = NotifyFilters.LastWrite,

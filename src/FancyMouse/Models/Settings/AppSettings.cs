@@ -1,5 +1,5 @@
-﻿using FancyMouse.HotKeys;
-using FancyMouse.Models.Styles;
+﻿using FancyMouse.Common.Models.Styles;
+using FancyMouse.HotKeys;
 using Keys = FancyMouse.HotKeys.Keys;
 
 namespace FancyMouse.Models.Settings;
@@ -36,14 +36,14 @@ internal sealed class AppSettings
                     color2: Color.FromArgb(0xFF, 0x03, 0x44, 0xC0)
                 )
             ),
-            screenshotStyle: new(
+            screenStyle: new(
                 marginStyle: new(
                     all: 4
                 ),
                 borderStyle: new(
                     color: Color.FromArgb(0xFF, 0x22, 0x22, 0x22),
-                    all: 10,
-                    depth: 3
+                    all: 12,
+                    depth: 4
                 ),
                 paddingStyle: PaddingStyle.Empty,
                 backgroundStyle: new(

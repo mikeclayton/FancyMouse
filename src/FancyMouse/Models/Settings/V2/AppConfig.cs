@@ -1,4 +1,6 @@
-﻿namespace FancyMouse.Models.Settings.V2;
+﻿using System.Text.Json.Serialization;
+
+namespace FancyMouse.Models.Settings.V2;
 
 /// <summary>
 /// Represents the configuration file format to allow for easier
@@ -8,19 +10,32 @@
 internal sealed class AppConfig
 {
     public AppConfig(
+        int? version,
         string? hotkey,
-        PreviewSettings? preview)
+        PreviewStyleSettings? preview)
     {
+        this.Version = version;
         this.Hotkey = hotkey;
         this.Preview = preview;
     }
 
+    [JsonPropertyName("version")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? Version
+    {
+        get;
+    }
+
+    [JsonPropertyName("hotkey")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Hotkey
     {
         get;
     }
 
-    public PreviewSettings? Preview
+    [JsonPropertyName("preview")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public PreviewStyleSettings? Preview
     {
         get;
     }

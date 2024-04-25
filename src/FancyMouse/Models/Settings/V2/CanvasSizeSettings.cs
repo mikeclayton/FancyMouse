@@ -1,21 +1,27 @@
-﻿namespace FancyMouse.Models.Settings.V2;
+﻿using System.Text.Json.Serialization;
+
+namespace FancyMouse.Models.Settings.V2;
 
 public sealed class CanvasSizeSettings
 {
     public CanvasSizeSettings(
-        int width,
-        int height)
+        int? width,
+        int? height)
     {
         this.Width = width;
         this.Height = height;
     }
 
-    public int Width
+    [JsonPropertyName("width")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? Width
     {
         get;
     }
 
-    public int Height
+    [JsonPropertyName("height")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? Height
     {
         get;
     }

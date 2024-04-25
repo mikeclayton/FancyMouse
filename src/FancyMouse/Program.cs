@@ -7,7 +7,7 @@ namespace FancyMouse;
 internal static class Program
 {
     /// <summary>
-    ///  The main entry point for the application.
+    /// The main entry point for the application.
     /// </summary>
     [STAThread]
     private static void Main()
@@ -60,7 +60,7 @@ internal static class Program
         // load the application settings and start the filesystem watcher
         // so we reload if it changes
         ConfigHelper.LoadAppSettings();
-        ConfigHelper.StartWatcher();
+        ConfigHelper.StartAppSettingsWatcher();
 
         Application.Run();
     }
