@@ -26,15 +26,15 @@ jobs:
       PUBLISH_PATH: ../.build/app
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           # needed for gitversion to work
           fetch-depth: 0
 
       - name: setup
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 7.0.x
+          dotnet-version: 8.0.x
 
       - name: dotnet info
         working-directory: ${{ env.BUILD_PATH }}
@@ -62,7 +62,7 @@ jobs:
       #    & "C:\Program Files\7-Zip\7z.exe" a "FancyMouse-preview-v0.0.0.zip" "${{ env.PUBLISH_PATH }}"
 
       - name: upload release
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: FancyMouse-v0.0.0-preview
           path: .build/app
