@@ -36,7 +36,7 @@ If you just want to dive into some examples to see how it works, here's some pre
 | ![](./legacy_v1_config_t.png) | **[Legacy](./legacy_v1_config.md)** | Config settings that emulate the legacy preview style
 | ![](./gaudy_v2_config_t.png) | **[Gaudy](./gaudy_v2_config.md)** | A ghastly assault on the eyes
 
-> **Note:** If you design an interesting style feel free to share it by raising an [issue](https://github.com/mikeclayton/FancyMouse/issues) with a screenshot and the contents of the config file and I'll and some of them to this gallery.
+> **Note:** If you design an interesting style feel free to share it by raising an [issue](https://github.com/mikeclayton/FancyMouse/issues) with a screenshot and the contents of the config file and I'll add some of them to this gallery.
 
 ## Reference
 
@@ -45,7 +45,7 @@ The table below annotates a sample config file, but check out one of the gallery
 | Key | Description |
 | --- | ----------- |
 | ```{``` |
-| &nbsp;&nbsp;&nbsp;&nbsp;```"version": 2,``` | Indicates the **version** of the config file format used in this file. DIfferent versions will support different settings and this is used where possible to read old formats and apply them to the application's behaviour and visual style.
+| &nbsp;&nbsp;&nbsp;&nbsp;```"version": 2,``` | Indicates the **version** of the config file format used in this file. Different versions will support different settings and this is used where possible to read old formats and apply them to the application's behaviour and visual style.
 | &nbsp;&nbsp;&nbsp;&nbsp;```"hotkey": "CTRL + ALT + SHIFT + F",``` | The key combination that activates the preview popup. You can potentially make it easier to trigger by binding the key combination to a spare button on your mouse if your manufacturer's softwate supports it.
 | &nbsp;&nbsp;&nbsp;&nbsp;```"preview: {``` |
 | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;```"name": "default",``` | Specifies an arbitray **name** for the style in this config file to make it easier to distinguish it when comparing to other config files.

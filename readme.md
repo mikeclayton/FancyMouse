@@ -1,7 +1,7 @@
 ![](wiki/images/fancymouse-banner.png)
 
 ----
-## 2023-03-03 Update
+## 2024-04-25 Update
 
 A modified version of FancyMouse is now incorporated into Microsoft [PowerToys](https://github.com/microsoft/PowerToys) and renamed "Mouse Jump".
 
@@ -16,7 +16,7 @@ FancyMouse is a Windows utility for quickly moving the mouse large distances on 
 See links for additional details:
 
 * [Basic Configuration](./wiki/config/basic_config.md)
-* [Advancedc Configuration](./wiki/config/advanced_config.md)
+* [Advanced Configuration](./wiki/config/advanced_config.md)
 
 ---
 
