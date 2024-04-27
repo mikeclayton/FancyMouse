@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
 using FancyMouse.Common.Imaging;
 using FancyMouse.Common.Models.Drawing;
 using FancyMouse.Common.Models.Layout;
@@ -19,7 +20,7 @@ internal static class DrawingHelper
 
         // initialize the preview image
         var previewBounds = previewLayout.PreviewBounds.OuterBounds.ToRectangle();
-        var previewImage = new Bitmap(previewBounds.Width, previewBounds.Height, System.Drawing.Imaging.PixelFormat.Format32bppPArgb);
+        var previewImage = new Bitmap(previewBounds.Width, previewBounds.Height, PixelFormat.Format32bppPArgb);
         var previewGraphics = Graphics.FromImage(previewImage);
         previewImageCreatedCallback?.Invoke(previewImage);
 
