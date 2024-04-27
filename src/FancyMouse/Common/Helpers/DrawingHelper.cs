@@ -186,7 +186,6 @@ internal static class DrawingHelper
         // it's faster to build a region with the screen areas excluded
         // and fill that than it is to fill the entire bounding rectangle
         var backgroundRegion = new Region(backgroundBounds.ToRectangle());
-        var r = new Region();
         foreach (var exclude in excludeBounds)
         {
             backgroundRegion.Exclude(exclude.ToRectangle());
