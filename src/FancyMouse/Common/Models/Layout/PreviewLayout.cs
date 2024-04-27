@@ -10,7 +10,7 @@ public sealed class PreviewLayout
     {
         public Builder()
         {
-            this.Screens = new();
+            this.Screens = new List<RectangleInfo>();
             this.ScreenshotBounds = new();
         }
 
@@ -26,7 +26,7 @@ public sealed class PreviewLayout
             set;
         }
 
-        public List<RectangleInfo> Screens
+        public IList<RectangleInfo> Screens
         {
             get;
             set;
@@ -72,7 +72,7 @@ public sealed class PreviewLayout
     public PreviewLayout(
         PreviewStyle previewStyle,
         RectangleInfo virtualScreen,
-        List<RectangleInfo> screens,
+        IList<RectangleInfo> screens,
         int activatedScreenIndex,
         RectangleInfo formBounds,
         BoxBounds previewBounds,
@@ -80,15 +80,13 @@ public sealed class PreviewLayout
     {
         this.PreviewStyle = previewStyle ?? throw new ArgumentNullException(nameof(previewStyle));
         this.VirtualScreen = virtualScreen ?? throw new ArgumentNullException(nameof(virtualScreen));
-        this.Screens = new(
-            (screens ?? throw new ArgumentNullException(nameof(screens)))
-            .ToList());
+        this.Screens = (screens ?? throw new ArgumentNullException(nameof(screens)))
+            .ToList().AsReadOnly();
         this.ActivatedScreenIndex = activatedScreenIndex;
         this.FormBounds = formBounds ?? throw new ArgumentNullException(nameof(formBounds));
         this.PreviewBounds = previewBounds ?? throw new ArgumentNullException(nameof(previewBounds));
-        this.ScreenshotBounds = new(
-            (screenshotBounds ?? throw new ArgumentNullException(nameof(screenshotBounds)))
-            .ToList());
+        this.ScreenshotBounds = (screenshotBounds ?? throw new ArgumentNullException(nameof(screenshotBounds)))
+            .ToList().AsReadOnly();
     }
 
     public PreviewStyle PreviewStyle

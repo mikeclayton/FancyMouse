@@ -1,4 +1,4 @@
-using FancyMouse.Helpers;
+using FancyMouse.Internal.Helpers;
 using FancyMouse.UI;
 using NLog;
 

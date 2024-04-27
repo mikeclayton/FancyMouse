@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using FancyMouse.Common.Models.Drawing;
 using FancyMouse.Common.NativeMethods;
 using static FancyMouse.Common.NativeMethods.Core;
+using static FancyMouse.Common.NativeMethods.User32;
 
 namespace FancyMouse.Common.Helpers;
 
@@ -101,18 +102,18 @@ internal static class MouseHelper
         var inputs = new User32.INPUT[]
         {
             new(
-                type: User32.INPUT_TYPE.INPUT_MOUSE,
-                data: new User32.INPUT.DUMMYUNIONNAME(
+                type: INPUT_TYPE.INPUT_MOUSE,
+                data: new INPUT.DUMMYUNIONNAME(
                     mi: new User32.MOUSEINPUT(
                         dx: (int)MouseHelper.CalculateAbsoluteCoordinateX(location.X),
                         dy: (int)MouseHelper.CalculateAbsoluteCoordinateY(location.Y),
-                        mouseData: 0,
+                        mouseData: (DWORD)0,
                         dwFlags: User32.MOUSE_EVENT_FLAGS.MOUSEEVENTF_MOVE | User32.MOUSE_EVENT_FLAGS.MOUSEEVENTF_ABSOLUTE,
                         time: 0,
                         dwExtraInfo: ULONG_PTR.Null))),
         };
         var result = User32.SendInput(
-            (uint)inputs.Length,
+            (UINT)inputs.Length,
             new User32.LPINPUT(inputs),
             User32.INPUT.Size * inputs.Length);
         if (result != inputs.Length)
@@ -126,13 +127,13 @@ internal static class MouseHelper
     {
         // If MOUSEEVENTF_ABSOLUTE value is specified, dx and dy contain normalized absolute coordinates between 0 and 65,535.
         // see https://learn.microsoft.com/en-us/windows/win32/api/winuser/ns-winuser-mouseinput
-        return (x * 65535) / User32.GetSystemMetrics(User32.SYSTEM_METRICS_INDEX.SM_CXSCREEN);
+        return (x * 65535) / User32.GetSystemMetrics(SYSTEM_METRICS_INDEX.SM_CXSCREEN);
     }
 
     private static decimal CalculateAbsoluteCoordinateY(decimal y)
     {
         // If MOUSEEVENTF_ABSOLUTE value is specified, dx and dy contain normalized absolute coordinates between 0 and 65,535.
         // see https://learn.microsoft.com/en-us/windows/win32/api/winuser/ns-winuser-mouseinput
-        return (y * 65535) / User32.GetSystemMetrics(User32.SYSTEM_METRICS_INDEX.SM_CYSCREEN);
+        return (y * 65535) / User32.GetSystemMetrics(SYSTEM_METRICS_INDEX.SM_CYSCREEN);
     }
 }

@@ -25,18 +25,17 @@ internal static class ScreenHelper
     {
         // enumerate the monitors attached to the system
         var hMonitors = new List<HMONITOR>();
-        var result = User32.EnumDisplayMonitors(
-            HDC.Null,
-            LPCRECT.Null,
-            (unnamedParam1, unnamedParam2, unnamedParam3, unnamedParam4) =>
+        var callback = new User32.MONITORENUMPROC(
+            (hMonitor, hdcMonitor, lprcMonitor, dwData) =>
             {
-                hMonitors.Add(unnamedParam1);
+                hMonitors.Add(hMonitor);
                 return true;
-            },
-            LPARAM.Null);
+            });
+        var result = User32.EnumDisplayMonitors(HDC.Null, LPCRECT.Null, callback, LPARAM.Null);
         if (!result)
         {
             throw new Win32Exception(
+                result.Value,
                 $"{nameof(User32.EnumDisplayMonitors)} failed with return code {result.Value}");
         }
 
@@ -44,11 +43,12 @@ internal static class ScreenHelper
         foreach (var hMonitor in hMonitors)
         {
             var monitorInfoPtr = new LPMONITORINFO(
-                new MONITORINFO((uint)MONITORINFO.Size, RECT.Empty, RECT.Empty, 0));
+                new MONITORINFO((DWORD)MONITORINFO.Size, RECT.Empty, RECT.Empty, 0));
             result = User32.GetMonitorInfoW(hMonitor, monitorInfoPtr);
             if (!result)
             {
                 throw new Win32Exception(
+                    result.Value,
                     $"{nameof(User32.GetMonitorInfoW)} failed with return code {result.Value}");
             }
 

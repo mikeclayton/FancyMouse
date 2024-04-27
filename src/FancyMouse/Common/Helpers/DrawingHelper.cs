@@ -1,6 +1,5 @@
 ﻿using System.Diagnostics;
 using System.Drawing.Drawing2D;
-using System.Drawing.Imaging;
 using FancyMouse.Common.Imaging;
 using FancyMouse.Common.Models.Drawing;
 using FancyMouse.Common.Models.Layout;
@@ -10,24 +9,17 @@ namespace FancyMouse.Common.Helpers;
 
 internal static class DrawingHelper
 {
-    internal static Bitmap RenderPreview(
-        PreviewLayout previewLayout,
-        IImageRegionCopyService imageCopyService)
-    {
-        return DrawingHelper.RenderPreview(previewLayout, imageCopyService, null, null);
-    }
-
-    internal static Bitmap RenderPreview(
+    public static Bitmap RenderPreview(
         PreviewLayout previewLayout,
         IImageRegionCopyService imageCopyService,
-        Action<Bitmap>? previewImageCreatedCallback,
-        Action? previewImageUpdatedCallback)
+        Action<Bitmap>? previewImageCreatedCallback = null,
+        Action? previewImageUpdatedCallback = null)
     {
         var stopwatch = Stopwatch.StartNew();
 
         // initialize the preview image
         var previewBounds = previewLayout.PreviewBounds.OuterBounds.ToRectangle();
-        var previewImage = new Bitmap(previewBounds.Width, previewBounds.Height, PixelFormat.Format32bppArgb);
+        var previewImage = new Bitmap(previewBounds.Width, previewBounds.Height, System.Drawing.Imaging.PixelFormat.Format32bppPArgb);
         var previewGraphics = Graphics.FromImage(previewImage);
         previewImageCreatedCallback?.Invoke(previewImage);
 
@@ -36,17 +28,17 @@ internal static class DrawingHelper
             previewGraphics,
             previewLayout.PreviewStyle.CanvasStyle,
             previewLayout.PreviewBounds,
-            Enumerable.Empty<RectangleInfo>());
+            []);
 
         // sort the source and target screen areas into the order we want to
         // draw them, putting the activated screen first (we need to capture
         // and draw the activated screen before we show the form because
         // otherwise we'll capture the form as part of the screenshot!)
         var sourceScreens = new List<RectangleInfo> { previewLayout.Screens[previewLayout.ActivatedScreenIndex] }
-            .Union(previewLayout.Screens.Where((_, idx) => idx != previewLayout.ActivatedScreenIndex))
+            .Concat(previewLayout.Screens.Where((_, idx) => idx != previewLayout.ActivatedScreenIndex))
             .ToList();
         var targetScreens = new List<BoxBounds> { previewLayout.ScreenshotBounds[previewLayout.ActivatedScreenIndex] }
-            .Union(previewLayout.ScreenshotBounds.Where((_, idx) => idx != previewLayout.ActivatedScreenIndex))
+            .Concat(previewLayout.ScreenshotBounds.Where((_, idx) => idx != previewLayout.ActivatedScreenIndex))
             .ToList();
 
         // draw all the screenshot bezels
@@ -99,7 +91,7 @@ internal static class DrawingHelper
         Graphics graphics, BoxStyle boxStyle, BoxBounds boxBounds)
     {
         var borderStyle = boxStyle.BorderStyle;
-        if ((borderStyle.Horizontal == 0) || (borderStyle.Vertical == 0))
+        if ((borderStyle.Horizontal == 0) && (borderStyle.Vertical == 0))
         {
             return;
         }
@@ -115,75 +107,64 @@ internal static class DrawingHelper
         using var highlight = new Pen(Color.FromArgb(0x44, 0xFF, 0xFF, 0xFF));
         using var shadow = new Pen(Color.FromArgb(0x44, 0x00, 0x00, 0x00));
 
+        var outer = (
+            Left: bounds.Left,
+            Top: bounds.Top,
+            Right: bounds.Right - 1,
+            Bottom: bounds.Bottom - 1
+        );
+        var inner = (
+            Left: bounds.Left + (int)borderStyle.Left - 1,
+            Top: bounds.Top + (int)borderStyle.Top - 1,
+            Right: bounds.Right - (int)borderStyle.Right,
+            Bottom: bounds.Bottom - (int)borderStyle.Bottom
+        );
+
         for (var i = 0; i < borderStyle.Depth; i++)
         {
             // left edge
             if (borderStyle.Left >= i * 2)
             {
-                graphics.DrawLine(
-                    highlight,
-                    bounds.Left + i,
-                    bounds.Top + i,
-                    bounds.Left + i,
-                    bounds.Bottom - 1 - i);
-                graphics.DrawLine(
-                    shadow,
-                    bounds.Left + (int)borderStyle.Left - 1 - i,
-                    bounds.Top + (int)borderStyle.Top - 1 - i,
-                    bounds.Left + (int)borderStyle.Left - 1 - i,
-                    bounds.Bottom - (int)borderStyle.Bottom + i);
+                graphics.DrawLine(highlight, outer.Left, outer.Top, outer.Left, outer.Bottom);
+                graphics.DrawLine(shadow, inner.Left, inner.Top, inner.Left, inner.Bottom);
             }
 
             // top edge
             if (borderStyle.Top >= i * 2)
             {
-                graphics.DrawLine(
-                    highlight,
-                    bounds.Left + i,
-                    bounds.Top + i,
-                    bounds.Right - 1 - i,
-                    bounds.Top + i);
-                graphics.DrawLine(
-                    shadow,
-                    bounds.Left + (int)borderStyle.Left - 1 - i,
-                    bounds.Top + (int)borderStyle.Top - 1 - i,
-                    bounds.Right - (int)borderStyle.Right + i,
-                    bounds.Top + (int)borderStyle.Bottom - 1 - i);
+                graphics.DrawLine(highlight, outer.Left, outer.Top, outer.Right, outer.Top);
+                graphics.DrawLine(shadow, inner.Left, inner.Top, inner.Right, inner.Top);
             }
 
             // right edge
             if (borderStyle.Right >= i * 2)
             {
-                graphics.DrawLine(
-                    highlight,
-                    bounds.Right - (int)borderStyle.Right + i,
-                    bounds.Top + (int)borderStyle.Top - 1 - i,
-                    bounds.Right - (int)borderStyle.Right + i,
-                    bounds.Bottom - (int)borderStyle.Bottom + i);
-                graphics.DrawLine(
-                    shadow,
-                    bounds.Right - 1 - i,
-                    bounds.Top + i,
-                    bounds.Right - 1 - i,
-                    bounds.Bottom - 1 - i);
+                graphics.DrawLine(highlight, inner.Right, inner.Top, inner.Right, inner.Bottom);
+                graphics.DrawLine(shadow, outer.Right, outer.Top, outer.Right, outer.Bottom);
             }
 
             // bottom edge
             if (borderStyle.Bottom >= i * 2)
             {
-                graphics.DrawLine(
-                    highlight,
-                    bounds.Left + (int)borderStyle.Left - 1 - i,
-                    bounds.Bottom - (int)borderStyle.Bottom + i,
-                    bounds.Right - (int)borderStyle.Right + i,
-                    bounds.Bottom - (int)borderStyle.Bottom + i);
-                graphics.DrawLine(
-                    shadow,
-                    bounds.Left + i,
-                    bounds.Bottom - 1 - i,
-                    bounds.Right - 1 - i,
-                    bounds.Bottom - 1 - i);
+                graphics.DrawLine(highlight, inner.Left, inner.Bottom, inner.Right, inner.Bottom);
+                graphics.DrawLine(shadow, outer.Left, outer.Bottom, outer.Right, outer.Bottom);
             }
+
+            // shrink the outer border for the next iteration
+            outer = (
+                outer.Left + 1,
+                outer.Top + 1,
+                outer.Right - 1,
+                outer.Bottom - 1
+            );
+
+            // enlarge the inner border for the next iteration
+            inner = (
+                inner.Left - 1,
+                inner.Top - 1,
+                inner.Right + 1,
+                inner.Bottom + 1
+            );
         }
     }
 
@@ -204,6 +185,7 @@ internal static class DrawingHelper
         // it's faster to build a region with the screen areas excluded
         // and fill that than it is to fill the entire bounding rectangle
         var backgroundRegion = new Region(backgroundBounds.ToRectangle());
+        var r = new Region();
         foreach (var exclude in excludeBounds)
         {
             backgroundRegion.Exclude(exclude.ToRectangle());
@@ -228,7 +210,7 @@ internal static class DrawingHelper
             return;
         }
 
-        var brush = new SolidBrush(screenStyle.BackgroundStyle.Color1.Value);
+        using var brush = new SolidBrush(screenStyle.BackgroundStyle.Color1.Value);
         graphics.FillRectangles(brush, screenBounds.Select(bounds => bounds.PaddingBounds.ToRectangle()).ToArray());
     }
 

@@ -3,7 +3,7 @@ using FancyMouse.Common.Helpers;
 using FancyMouse.Common.Imaging;
 using FancyMouse.Common.Models.Drawing;
 using FancyMouse.Common.Models.Layout;
-using FancyMouse.Helpers;
+using FancyMouse.Internal.Helpers;
 using NLog;
 
 namespace FancyMouse.UI;
@@ -47,7 +47,7 @@ internal partial class FancyMouseForm : Form
         var currentLocation = MouseHelper.GetCursorPosition();
         var currentScreenHandle = ScreenHelper.MonitorFromPoint(currentLocation);
         var currentScreen = screens
-            .Single(item => item.Screen.Handle == currentScreenHandle.Value);
+            .Single(item => item.Screen.Handle == currentScreenHandle);
         var targetScreenNumber = default(int?);
 
         switch (e.KeyCode)
@@ -120,10 +120,15 @@ internal partial class FancyMouseForm : Form
 
         if (mouseEventArgs.Button == MouseButtons.Left)
         {
+            // there's no layout data so we can't work out what screen was clicked
+            if (this.PreviewLayout is null)
+            {
+                return;
+            }
+
             // work out which screenshot was clicked
-            var clickedScreenshot = (this.PreviewLayout ?? throw new InvalidOperationException())
-                .ScreenshotBounds
-                .SingleOrDefault(
+            var clickedScreenshot = this.PreviewLayout.ScreenshotBounds
+                .FirstOrDefault(
                     box => box.BorderBounds.Contains(mouseEventArgs.X, mouseEventArgs.Y));
             if (clickedScreenshot is null)
             {

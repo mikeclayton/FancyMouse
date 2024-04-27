@@ -27,9 +27,9 @@ internal static partial class Core
 
         public static explicit operator HBITMAP(IntPtr value) => new(value);
 
-        public static explicit operator HBITMAP(HGDIOBJ value) => new(value.Value);
-
         public static implicit operator HGDIOBJ(HBITMAP value) => new(value.Value);
+
+        public static explicit operator HBITMAP(HGDIOBJ value) => new(value.Value);
 
         public override string ToString()
         {

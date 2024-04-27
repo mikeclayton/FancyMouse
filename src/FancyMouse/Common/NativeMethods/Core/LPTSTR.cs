@@ -41,7 +41,7 @@ internal static partial class Core
 
         public static implicit operator string?(LPTSTR value) => Marshal.PtrToStringUni(value.Value);
 
-        public static implicit operator LPTSTR(string value) => new(value);
+        public static explicit operator LPTSTR(string value) => new(value);
 
         public void Free()
         {
