@@ -107,7 +107,7 @@ internal static class MouseHelper
                     mi: new User32.MOUSEINPUT(
                         dx: (int)MouseHelper.CalculateAbsoluteCoordinateX(location.X),
                         dy: (int)MouseHelper.CalculateAbsoluteCoordinateY(location.Y),
-                        mouseData: (DWORD)0,
+                        mouseData: 0,
                         dwFlags: User32.MOUSE_EVENT_FLAGS.MOUSEEVENTF_MOVE | User32.MOUSE_EVENT_FLAGS.MOUSEEVENTF_ABSOLUTE,
                         time: 0,
                         dwExtraInfo: ULONG_PTR.Null))),
