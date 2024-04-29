@@ -89,7 +89,7 @@ internal static class LayoutHelper
         return builder.Build();
     }
 
-    public static RectangleInfo GetCombinedScreenBounds(List<RectangleInfo> screens)
+    internal static RectangleInfo GetCombinedScreenBounds(List<RectangleInfo> screens)
     {
         return screens.Skip(1).Aggregate(
             seed: screens.First(),
@@ -105,7 +105,7 @@ internal static class LayoutHelper
     /// <returns>A <see cref="BoxBounds"/> object that represents the bounds of the different areas of the box.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="contentBounds"/> or <paramref name="boxStyle"/> is null.</exception>
     /// <exception cref="ArgumentException">Thrown when any of the styles in <paramref name="boxStyle"/> is null.</exception>
-    public static BoxBounds GetBoxBoundsFromContentBounds(
+    internal static BoxBounds GetBoxBoundsFromContentBounds(
         RectangleInfo contentBounds,
         BoxStyle boxStyle)
     {
@@ -133,7 +133,7 @@ internal static class LayoutHelper
     /// <returns>A <see cref="BoxBounds"/> object that represents the bounds of the different areas of the box.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="outerBounds"/> or <paramref name="boxStyle"/> is null.</exception>
     /// <exception cref="ArgumentException">Thrown when any of the styles in <paramref name="boxStyle"/> is null.</exception>
-    public static BoxBounds GetBoxBoundsFromOuterBounds(
+    internal static BoxBounds GetBoxBoundsFromOuterBounds(
         RectangleInfo outerBounds,
         BoxStyle boxStyle)
     {

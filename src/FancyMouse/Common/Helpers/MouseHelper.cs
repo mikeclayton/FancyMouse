@@ -18,7 +18,7 @@ internal static class MouseHelper
     /// or even negative if the primary monitor is not the at the top-left of the
     /// entire desktop rectangle, so results may contain negative coordinates.
     /// </remarks>
-    public static PointInfo GetJumpLocation(PointInfo previewLocation, SizeInfo previewSize, RectangleInfo desktopBounds)
+    internal static PointInfo GetJumpLocation(PointInfo previewLocation, SizeInfo previewSize, RectangleInfo desktopBounds)
     {
         return previewLocation
             .Scale(previewSize.ScaleToFitRatio(desktopBounds.Size))
@@ -28,7 +28,7 @@ internal static class MouseHelper
     /// <summary>
     /// Get the current position of the cursor.
     /// </summary>
-    public static PointInfo GetCursorPosition()
+    internal static PointInfo GetCursorPosition()
     {
         var lpPoint = new LPPOINT(new POINT(0, 0));
         var result = User32.GetCursorPos(lpPoint);
@@ -51,7 +51,7 @@ internal static class MouseHelper
     /// <remarks>
     /// See https://github.com/mikeclayton/FancyMouse/pull/3
     /// </remarks>
-    public static void SetCursorPosition(PointInfo location)
+    internal static void SetCursorPosition(PointInfo location)
     {
         // set the new cursor position *twice* - the cursor sometimes end up in
         // the wrong place if we try to cross the dead space between non-aligned
@@ -97,25 +97,25 @@ internal static class MouseHelper
     /// See https://github.com/microsoft/PowerToys/issues/24523
     ///     https://github.com/microsoft/PowerToys/pull/24527
     /// </remarks>
-    public static void SimulateMouseMovementEvent(PointInfo location)
+    internal static void SimulateMouseMovementEvent(PointInfo location)
     {
         var inputs = new User32.INPUT[]
         {
             new(
                 type: INPUT_TYPE.INPUT_MOUSE,
                 data: new INPUT.DUMMYUNIONNAME(
-                    mi: new User32.MOUSEINPUT(
+                    mi: new MOUSEINPUT(
                         dx: (int)MouseHelper.CalculateAbsoluteCoordinateX(location.X),
                         dy: (int)MouseHelper.CalculateAbsoluteCoordinateY(location.Y),
                         mouseData: 0,
-                        dwFlags: User32.MOUSE_EVENT_FLAGS.MOUSEEVENTF_MOVE | User32.MOUSE_EVENT_FLAGS.MOUSEEVENTF_ABSOLUTE,
+                        dwFlags: MOUSE_EVENT_FLAGS.MOUSEEVENTF_MOVE | MOUSE_EVENT_FLAGS.MOUSEEVENTF_ABSOLUTE,
                         time: 0,
                         dwExtraInfo: ULONG_PTR.Null))),
         };
         var result = User32.SendInput(
             (UINT)inputs.Length,
-            new User32.LPINPUT(inputs),
-            User32.INPUT.Size * inputs.Length);
+            new LPINPUT(inputs),
+            INPUT.Size * inputs.Length);
         if (result != inputs.Length)
         {
             throw new Win32Exception(

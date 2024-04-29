@@ -88,7 +88,7 @@ internal static class DrawingHelper
     /// <summary>
     /// Draws a border shape with an optional raised 3d highlight and shadow effect.
     /// </summary>
-    public static void DrawRaisedBorder(
+    private static void DrawRaisedBorder(
         Graphics graphics, BoxStyle boxStyle, BoxBounds boxBounds)
     {
         var borderStyle = boxStyle.BorderStyle;
@@ -172,7 +172,7 @@ internal static class DrawingHelper
     /// <summary>
     /// Draws a gradient-filled background shape.
     /// </summary>
-    public static void DrawBackgroundFill(
+    private static void DrawBackgroundFill(
         Graphics graphics, BoxStyle boxStyle, BoxBounds boxBounds, IEnumerable<RectangleInfo> excludeBounds)
     {
         var backgroundBounds = boxBounds.PaddingBounds;
@@ -197,7 +197,7 @@ internal static class DrawingHelper
     /// <summary>
     /// Draws placeholder background images for the specified screens on the preview.
     /// </summary>
-    public static void DrawScreenPlaceholders(
+    private static void DrawScreenPlaceholders(
         Graphics graphics, BoxStyle screenStyle, IList<BoxBounds> screenBounds)
     {
         if (screenBounds.Count == 0)

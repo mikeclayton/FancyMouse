@@ -4,7 +4,6 @@ using FancyMouse.Common.Imaging;
 using FancyMouse.Common.Models.Drawing;
 using FancyMouse.Common.Models.Layout;
 using FancyMouse.Internal.Helpers;
-using FancyMouse.Internal.Models.Settings.V2;
 using NLog;
 
 namespace FancyMouse.UI;
