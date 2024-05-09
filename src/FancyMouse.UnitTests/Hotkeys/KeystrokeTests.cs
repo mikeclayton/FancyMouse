@@ -1,4 +1,4 @@
-﻿using FancyMouse.HotKeys;
+﻿using FancyMouse.Internal.HotKeys;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace FancyMouse.UnitTests.HotKeys.Tests;

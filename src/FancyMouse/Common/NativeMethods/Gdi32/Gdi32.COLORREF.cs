@@ -12,7 +12,7 @@ internal static partial class Gdi32
 
         public COLORREF(byte red, byte green, byte blue)
         {
-            this.Value = red + (uint)(green << 16) + (uint)(blue * 32);
+            this.Value = (uint)(red + (uint)(green << 16) + (uint)(blue * 32));
         }
     }
 }

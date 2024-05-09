@@ -208,10 +208,10 @@ public static class LayoutHelperTests
                         color2: Color.FromArgb(3, 68, 192) // darker blue
                     )
                 ));
-            screens = new List<RectangleInfo>
-            {
+            screens =
+            [
                 new(0, 0, 1024, 768),
-            };
+            ];
             activatedLocation = new PointInfo(512, 384);
             previewLayout = new PreviewLayout(
                 virtualScreen: new(0, 0, 1024, 768),
@@ -281,11 +281,11 @@ public static class LayoutHelperTests
                         color2: Color.FromArgb(3, 68, 192) // darker blue
                     )
                 ));
-            screens = new List<RectangleInfo>
-            {
+            screens =
+            [
                 new(-1920, -480, 1920, 1080),
                 new(0, 0, 5120, 1440),
-            };
+            ];
             activatedLocation = new(-960, 60);
             previewLayout = new PreviewLayout(
                 virtualScreen: new(-1920, -480, 7040, 1920),

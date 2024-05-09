@@ -3,7 +3,7 @@ using FancyMouse.Common.Helpers;
 using FancyMouse.Common.Imaging;
 using FancyMouse.Common.Models.Drawing;
 using FancyMouse.Common.Models.Layout;
-using FancyMouse.Helpers;
+using FancyMouse.Internal.Helpers;
 using NLog;
 
 namespace FancyMouse.UI;
@@ -39,58 +39,68 @@ internal partial class FancyMouseForm : Form
             return;
         }
 
-        // map screens to their screen number in "System > Display"
-        var screens = ScreenHelper.GetAllScreens()
-            .Select((screen, index) => new { Screen = screen, Index = index, Number = index + 1 })
-            .ToList();
+        var screens = ScreenHelper.GetAllScreens().ToList();
+        if (screens.Count == 0)
+        {
+            return;
+        }
 
         var currentLocation = MouseHelper.GetCursorPosition();
-        var currentScreenHandle = ScreenHelper.MonitorFromPoint(currentLocation);
-        var currentScreen = screens
-            .Single(item => item.Screen.Handle == currentScreenHandle.Value);
-        var targetScreenNumber = default(int?);
+        var currentScreen = ScreenHelper.GetScreenFromPoint(screens, currentLocation);
+        var currentScreenIndex = screens.IndexOf(currentScreen);
+        var targetScreen = default(ScreenInfo?);
 
         switch (e.KeyCode)
         {
-            case (>= Keys.D1 and <= Keys.D9) or (>= Keys.NumPad1 and <= Keys.NumPad9):
-                // number keys 1-9 or numpad keys 1-9 - move to the numbered screen
-                var screenNumber = e.KeyCode - Keys.D0;
-                if (screenNumber <= screens.Count)
+            case >= Keys.D1 and <= Keys.D9:
                 {
-                    targetScreenNumber = screenNumber;
+                    // number keys 1-9 - move to the numbered screen
+                    var screenNumber = e.KeyCode - Keys.D0;
+                    /* note - screen *numbers* are 1-based, screen *indexes* are 0-based */
+                    targetScreen = (screenNumber <= screens.Count)
+                        ? targetScreen = screens[screenNumber - 1]
+                        : null;
+                    break;
                 }
 
-                break;
+            case >= Keys.NumPad1 and <= Keys.NumPad9:
+                {
+                    // numpad keys 1-9 - move to the numbered screen
+                    var screenNumber = e.KeyCode - Keys.NumPad0;
+                    /* note - screen *numbers* are 1-based, screen *indexes* are 0-based */
+                    targetScreen = (screenNumber <= screens.Count)
+                        ? targetScreen = screens[screenNumber - 1]
+                        : null;
+                    break;
+                }
+
             case Keys.P:
                 // "P" - move to the primary screen
-                targetScreenNumber = screens.Single(item => item.Screen.Primary).Number;
+                targetScreen = screens.Single(screen => screen.Primary);
                 break;
             case Keys.Left:
-                // move to the previous screen
-                targetScreenNumber = currentScreen.Number == 1
-                    ? screens.Count
-                    : currentScreen.Number - 1;
+                // move to the previous screen, looping back to the end if needed
+                var prevIndex = (currentScreenIndex - 1 + screens.Count) % screens.Count;
+                targetScreen = screens[prevIndex];
                 break;
             case Keys.Right:
-                // move to the next screen
-                targetScreenNumber = currentScreen.Number == screens.Count
-                    ? 1
-                    : currentScreen.Number + 1;
+                // move to the next screen, looping round to the start if needed
+                var nextIndex = (currentScreenIndex + 1) % screens.Count;
+                targetScreen = screens[nextIndex];
                 break;
             case Keys.Home:
                 // move to the first screen
-                targetScreenNumber = 1;
+                targetScreen = screens.First();
                 break;
             case Keys.End:
                 // move to the last screen
-                targetScreenNumber = screens.Count;
+                targetScreen = screens.Last();
                 break;
         }
 
-        if (targetScreenNumber.HasValue)
+        if (targetScreen is not null)
         {
-            MouseHelper.SetCursorPosition(
-                screens[targetScreenNumber.Value - 1].Screen.DisplayArea.Midpoint);
+            MouseHelper.SetCursorPosition(targetScreen.DisplayArea.Midpoint);
             this.OnDeactivate(EventArgs.Empty);
         }
     }
@@ -120,10 +130,15 @@ internal partial class FancyMouseForm : Form
 
         if (mouseEventArgs.Button == MouseButtons.Left)
         {
+            // there's no layout data so we can't work out what screen was clicked
+            if (this.PreviewLayout is null)
+            {
+                return;
+            }
+
             // work out which screenshot was clicked
-            var clickedScreenshot = (this.PreviewLayout ?? throw new InvalidOperationException())
-                .ScreenshotBounds
-                .SingleOrDefault(
+            var clickedScreenshot = this.PreviewLayout.ScreenshotBounds
+                .FirstOrDefault(
                     box => box.BorderBounds.Contains(mouseEventArgs.X, mouseEventArgs.Y));
             if (clickedScreenshot is null)
             {
