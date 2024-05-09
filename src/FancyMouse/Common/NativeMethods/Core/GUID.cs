@@ -35,7 +35,7 @@ internal static partial class Core
 
         public static implicit operator Guid(GUID value) => Guid.NewGuid();
 
-        public static implicit operator GUID(Guid value) => new(
+        public static explicit operator GUID(Guid value) => new(
             data1: 0,
             data2: 0,
             data3: 0,
