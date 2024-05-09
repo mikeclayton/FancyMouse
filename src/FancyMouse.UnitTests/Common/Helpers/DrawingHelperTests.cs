@@ -44,12 +44,12 @@ public static class DrawingHelperTests
             {
                 new TestCase(
                     previewStyle: AppSettings.DefaultSettings.PreviewStyle,
-                    screens: new()
+                    screens: new List<RectangleInfo>()
                     {
-                        new RectangleInfo(0, 0, 500, 500),
-                        new RectangleInfo(500, 0, 500, 500),
-                        new RectangleInfo(500, 500, 500, 500),
-                        new RectangleInfo(0, 500, 500, 500),
+                        new(0, 0, 500, 500),
+                        new(500, 0, 500, 500),
+                        new(500, 500, 500, 500),
+                        new(0, 500, 500, 500),
                     },
                     activatedLocation: new(x: 50, y: 50),
                     desktopImageFilename: "Common/Helpers/_test-4grid-desktop.png",
@@ -60,10 +60,10 @@ public static class DrawingHelperTests
             {
                 new TestCase(
                     previewStyle: AppSettings.DefaultSettings.PreviewStyle,
-                    screens: new()
+                    screens: new List<RectangleInfo>()
                     {
-                        new RectangleInfo(5120, 349, 1920, 1080),
-                        new RectangleInfo(0, 0, 5120, 1440),
+                        new(5120, 349, 1920, 1080),
+                        new(0, 0, 5120, 1440),
                     },
                     activatedLocation: new(x: 50, y: 50),
                     desktopImageFilename: "Common/Helpers/_test-win11-desktop.png",
@@ -106,7 +106,7 @@ public static class DrawingHelperTests
             }
 
             var stream = assembly.GetManifestResourceStream(resourceName)
-                         ?? throw new InvalidOperationException();
+                ?? throw new InvalidOperationException();
             var image = (Bitmap)Image.FromStream(stream);
             return image;
         }

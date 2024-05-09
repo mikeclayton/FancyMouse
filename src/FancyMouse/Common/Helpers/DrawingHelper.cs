@@ -56,12 +56,12 @@ internal static class DrawingHelper
                 previewGraphics, previewLayout.PreviewStyle.ScreenStyle, screenshotBounds);
         }
 
-        var imageUpdated = false;
+        var refreshRequired = false;
         var placeholdersDrawn = false;
         for (var i = 0; i < sourceScreens.Count; i++)
         {
             imageCopyService.CopyImageRegion(previewGraphics, sourceScreens[i], targetScreens[i].ContentBounds);
-            imageUpdated = true;
+            refreshRequired = true;
 
             // show the placeholder images and show the form if it looks like it might take
             // a while to capture the remaining screenshot images (but only if there are any)
@@ -78,11 +78,11 @@ internal static class DrawingHelper
                 }
 
                 previewImageUpdatedCallback?.Invoke();
-                imageUpdated = false;
+                refreshRequired = false;
             }
         }
 
-        if (imageUpdated)
+        if (refreshRequired)
         {
             previewImageUpdatedCallback?.Invoke();
         }

@@ -7,30 +7,27 @@ namespace FancyMouse.Common.Helpers;
 internal static class LayoutHelper
 {
     public static PreviewLayout GetPreviewLayout(
-        PreviewStyle previewStyle, IEnumerable<RectangleInfo> screens, PointInfo activatedLocation)
+        PreviewStyle previewStyle, List<RectangleInfo> screens, PointInfo activatedLocation)
     {
         ArgumentNullException.ThrowIfNull(previewStyle);
         ArgumentNullException.ThrowIfNull(screens);
 
-        var allScreens = screens.ToList();
-        if (allScreens.Count == 0)
+        if (screens.Count == 0)
         {
             throw new ArgumentException("Value must contain at least one item.", nameof(screens));
         }
 
         var builder = new PreviewLayout.Builder();
+        builder.Screens = screens.ToList();
 
         // calculate the bounding rectangle for the virtual screen
-        var virtualScreen = LayoutHelper.GetCombinedScreenBounds(allScreens);
-        builder.VirtualScreen = virtualScreen;
-
-        builder.Screens = allScreens;
+        builder.VirtualScreen = LayoutHelper.GetCombinedScreenBounds(builder.Screens);
 
         // find the screen that contains the activated location - this is the
         // one we'll show the preview form on
-        var activatedScreen = allScreens.Single(
+        var activatedScreen = builder.Screens.Single(
             screen => screen.Contains(activatedLocation));
-        builder.ActivatedScreenIndex = allScreens.IndexOf(activatedScreen);
+        builder.ActivatedScreenIndex = builder.Screens.IndexOf(activatedScreen);
 
         // work out the maximum *constrained* form size
         // * can't be bigger than the activated screen
@@ -45,10 +42,14 @@ internal static class LayoutHelper
             .Shrink(previewStyle.CanvasStyle.BorderStyle)
             .Shrink(previewStyle.CanvasStyle.PaddingStyle);
 
+        // scale the virtual screen to fit inside the content area
+        var screenScalingRatio = builder.VirtualScreen.Size
+            .ScaleToFitRatio(maxContentSize);
+
         // position the drawing area on the preview image, offset to
         // allow for any borders and padding
-        var contentBounds = virtualScreen.Size
-            .ScaleToFit(maxContentSize)
+        var contentBounds = builder.VirtualScreen.Size
+            .Scale(screenScalingRatio)
             .Floor()
             .PlaceAt(0, 0)
             .Offset(previewStyle.CanvasStyle.MarginStyle.Left, previewStyle.CanvasStyle.MarginStyle.Top)
@@ -69,17 +70,13 @@ internal static class LayoutHelper
             .Clamp(activatedScreen);
         builder.FormBounds = formBounds;
 
-        // scale the virtual screen to fit inside the preview content bounds
-        var scalingRatio = builder.VirtualScreen.Size
-            .ScaleToFitRatio(contentBounds.Size);
-
         // now calculate the positions of each of the screenshot images on the preview
-        builder.ScreenshotBounds = allScreens
+        builder.ScreenshotBounds = builder.Screens
             .Select(
                 screen => LayoutHelper.GetBoxBoundsFromOuterBounds(
                     screen
-                        .Offset(virtualScreen.Location.ToSize().Negate())
-                        .Scale(scalingRatio)
+                        .Offset(builder.VirtualScreen.Location.ToSize().Negate())
+                        .Scale(screenScalingRatio)
                         .Offset(builder.PreviewBounds.ContentBounds.Location.ToSize())
                         .Truncate(),
                     previewStyle.ScreenStyle))
