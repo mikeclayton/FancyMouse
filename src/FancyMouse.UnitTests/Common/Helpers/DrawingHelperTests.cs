@@ -96,7 +96,7 @@ public static class DrawingHelperTests
 
             // save the actual image so we can pick it up as a build artifact
             var expectedFilename = Path.GetFileNameWithoutExtension(data.ExpectedImageFilename) + "_expected" + Path.GetExtension(data.ExpectedImageFilename);
-            actual.Save(expectedFilename, ImageFormat.Png);
+            expected.Save(expectedFilename, ImageFormat.Png);
 
             // compare the images
             var screens = System.Windows.Forms.Screen.AllScreens;
