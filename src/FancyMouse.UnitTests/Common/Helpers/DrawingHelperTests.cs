@@ -1,4 +1,5 @@
 ﻿using System.Drawing;
+using System.Drawing.Imaging;
 using System.Reflection;
 using FancyMouse.Common.Helpers;
 using FancyMouse.Common.Imaging;
@@ -85,6 +86,9 @@ public static class DrawingHelperTests
                 activatedLocation: data.ActivatedLocation);
             var imageCopyService = new StaticImageRegionCopyService(desktopImage);
             using var actual = DrawingHelper.RenderPreview(previewLayout, imageCopyService);
+
+            var filename = Path.GetFileNameWithoutExtension(data.ExpectedImageFilename) + "_actual" + Path.GetExtension(data.ExpectedImageFilename);
+            actual.Save(filename, ImageFormat.Png);
 
             // load the expected image
             var expected = GetPreviewLayoutTests.LoadImageResource(data.ExpectedImageFilename);

@@ -67,6 +67,13 @@ jobs:
           name: FancyMouse-v0.0.0-preview
           path: .build/app
 
+      - name: upload test images
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-images
+          path: .build/app/*.png
+
       #- name: dotnet tool jb inspectcode
       #  working-directory: ${{ env.BUILD_PATH }}
       #  run: |
