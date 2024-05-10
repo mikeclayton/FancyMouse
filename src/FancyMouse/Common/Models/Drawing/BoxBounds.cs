@@ -22,7 +22,7 @@ public sealed class BoxBounds
 
     */
 
-    public BoxBounds(
+    internal BoxBounds(
         RectangleInfo outerBounds,
         RectangleInfo marginBounds,
         RectangleInfo borderBounds,

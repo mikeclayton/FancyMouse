@@ -92,7 +92,7 @@ internal static class DrawingHelper
         Graphics graphics, BoxStyle boxStyle, BoxBounds boxBounds)
     {
         var borderStyle = boxStyle.BorderStyle;
-        if ((borderStyle.Horizontal == 0) && (borderStyle.Vertical == 0))
+        if ((borderStyle.Horizontal == 0) || (borderStyle.Vertical == 0))
         {
             return;
         }

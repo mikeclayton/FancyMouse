@@ -10,7 +10,7 @@ public sealed class PreviewLayout
     {
         public Builder()
         {
-            this.Screens = new List<RectangleInfo>();
+            this.Screens = new();
             this.ScreenshotBounds = new();
         }
 
@@ -72,7 +72,7 @@ public sealed class PreviewLayout
     public PreviewLayout(
         PreviewStyle previewStyle,
         RectangleInfo virtualScreen,
-        IList<RectangleInfo> screens,
+        List<RectangleInfo> screens,
         int activatedScreenIndex,
         RectangleInfo formBounds,
         BoxBounds previewBounds,
