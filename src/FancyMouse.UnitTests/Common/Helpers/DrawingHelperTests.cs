@@ -87,11 +87,16 @@ public static class DrawingHelperTests
             var imageCopyService = new StaticImageRegionCopyService(desktopImage);
             using var actual = DrawingHelper.RenderPreview(previewLayout, imageCopyService);
 
-            var filename = Path.GetFileNameWithoutExtension(data.ExpectedImageFilename) + "_actual" + Path.GetExtension(data.ExpectedImageFilename);
-            actual.Save(filename, ImageFormat.Png);
+            // save the actual image so we can pick it up as a build artifact
+            var actualFilename = Path.GetFileNameWithoutExtension(data.ExpectedImageFilename) + "_actual" + Path.GetExtension(data.ExpectedImageFilename);
+            actual.Save(actualFilename, ImageFormat.Png);
 
             // load the expected image
             var expected = GetPreviewLayoutTests.LoadImageResource(data.ExpectedImageFilename);
+
+            // save the actual image so we can pick it up as a build artifact
+            var expectedFilename = Path.GetFileNameWithoutExtension(data.ExpectedImageFilename) + "_expected" + Path.GetExtension(data.ExpectedImageFilename);
+            actual.Save(expectedFilename, ImageFormat.Png);
 
             // compare the images
             var screens = System.Windows.Forms.Screen.AllScreens;
