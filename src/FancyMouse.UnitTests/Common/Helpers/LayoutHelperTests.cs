@@ -113,18 +113,19 @@ public static class LayoutHelperTests
                 this.ExpectedResult = expectedResult;
             }
 
-            public PreviewStyle PreviewStyle { get; set; }
+            public PreviewStyle PreviewStyle { get; }
 
-            public List<RectangleInfo> Screens { get; set; }
+            public List<RectangleInfo> Screens { get; }
 
-            public PointInfo ActivatedLocation { get; set; }
+            public PointInfo ActivatedLocation { get; }
 
-            public PreviewLayout ExpectedResult { get; set; }
+            public PreviewLayout ExpectedResult { get; }
         }
 
         public static IEnumerable<object[]> GetTestCases()
         {
-            // happy path - 50% scaling, *has* preview borders but *no* screenshot borders
+            // happy path - single screen with 50% scaling,
+            // *has* a preview borders but *no* screenshot borders
             //
             // +----------------+
             // |                |
@@ -180,7 +181,8 @@ public static class LayoutHelperTests
                 });
             yield return new object[] { new TestCase(previewStyle, screens, activatedLocation, previewLayout) };
 
-            // happy path - 50% scaling, *no* preview borders but *has* screenshot borders
+            // happy path - single screen with 50% scaling,
+            // *no* preview borders but *has* screenshot borders
             //
             // +----------------+
             // |                |

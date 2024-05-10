@@ -65,6 +65,10 @@ public sealed class SizeInfo
     public SizeInfo Invert() =>
         new(-this.Width, -this.Height);
 
+    public SizeInfo Scale(decimal scalingFactor) => new(
+        this.Width * scalingFactor,
+        this.Height * scalingFactor);
+
     public SizeInfo Shrink(BorderStyle border) =>
         new(this.Width - border.Horizontal, this.Height - border.Vertical);
 

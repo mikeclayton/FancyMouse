@@ -18,17 +18,16 @@ internal static class LayoutHelper
         }
 
         var builder = new PreviewLayout.Builder();
+        builder.Screens = screens.ToList();
 
         // calculate the bounding rectangle for the virtual screen
-        var virtualScreen = LayoutHelper.GetCombinedScreenBounds(screens);
-        builder.VirtualScreen = virtualScreen;
-        builder.Screens = screens;
+        builder.VirtualScreen = LayoutHelper.GetCombinedScreenBounds(builder.Screens);
 
         // find the screen that contains the activated location - this is the
         // one we'll show the preview form on
-        var activatedScreen = screens.Single(
+        var activatedScreen = builder.Screens.Single(
             screen => screen.Contains(activatedLocation));
-        builder.ActivatedScreenIndex = screens.IndexOf(activatedScreen);
+        builder.ActivatedScreenIndex = builder.Screens.IndexOf(activatedScreen);
 
         // work out the maximum allowed size of the preview form:
         // * can't be bigger than the activated screen
@@ -43,11 +42,15 @@ internal static class LayoutHelper
             .Shrink(previewStyle.CanvasStyle.BorderStyle)
             .Shrink(previewStyle.CanvasStyle.PaddingStyle);
 
+        // scale the virtual screen to fit inside the content area
+        var screenScalingRatio = builder.VirtualScreen.Size
+            .ScaleToFitRatio(maxContentSize);
+
         // work out the actual size of the "content area" by scaling the virtual screen
         // to fit inside the maximum content area while maintaining its aspect ration.
         // we'll also offset it to allow for any margins, borders and padding
-        var contentBounds = virtualScreen.Size
-            .ScaleToFit(maxContentSize)
+        var contentBounds = builder.VirtualScreen.Size
+            .Scale(screenScalingRatio)
             .Floor()
             .PlaceAt(0, 0)
             .Offset(previewStyle.CanvasStyle.MarginStyle.Left, previewStyle.CanvasStyle.MarginStyle.Top)
@@ -69,18 +72,13 @@ internal static class LayoutHelper
             .Clamp(activatedScreen);
         builder.FormBounds = formBounds;
 
-        // get the scaling factor to draw screenshot images at by scaling the
-        // virtual screen to fit inside the preview content bounds
-        var scalingRatio = builder.VirtualScreen.Size
-            .ScaleToFitRatio(contentBounds.Size);
-
         // now calculate the positions of each of the screenshot images on the preview
-        builder.ScreenshotBounds = screens
+        builder.ScreenshotBounds = builder.Screens
             .Select(
                 screen => LayoutHelper.GetBoxBoundsFromOuterBounds(
                     screen
-                        .Offset(virtualScreen.Location.ToSize().Invert())
-                        .Scale(scalingRatio)
+                        .Offset(builder.VirtualScreen.Location.ToSize().Invert())
+                        .Scale(screenScalingRatio)
                         .Offset(builder.PreviewBounds.ContentBounds.Location.ToSize())
                         .Truncate(),
                     previewStyle.ScreenStyle))
