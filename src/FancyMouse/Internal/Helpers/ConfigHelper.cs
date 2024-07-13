@@ -1,5 +1,5 @@
-﻿using FancyMouse.Internal.HotKeys;
-using FancyMouse.Internal.Models.Settings;
+﻿using FancyMouse.HotKeys;
+using FancyMouse.Settings;
 
 namespace FancyMouse.Internal.Helpers;
 
