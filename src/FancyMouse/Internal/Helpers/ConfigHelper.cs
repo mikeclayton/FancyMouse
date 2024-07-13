@@ -84,7 +84,7 @@ internal static class ConfigHelper
 
         // the file might not have been released yet by the application that saved it
         // and caused the file system event (e.g. notepad) so we need to do a couple
-        // of retries to give it a change to release the lock so we can load the file contents.
+        // of retries to give it a chance to release the lock so we can load the file contents.
         for (var i = 0; i < 3; i++)
         {
             try
