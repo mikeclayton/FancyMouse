@@ -8,7 +8,7 @@ using NLog;
 
 namespace FancyMouse.UI;
 
-internal partial class FancyMouseForm : Form
+internal sealed partial class FancyMouseForm : Form
 {
     public FancyMouseForm(ILogger logger)
     {
@@ -130,9 +130,9 @@ internal partial class FancyMouseForm : Form
 
         if (mouseEventArgs.Button == MouseButtons.Left)
         {
-            // there's no layout data so we can't work out what screen was clicked
             if (this.PreviewLayout is null)
             {
+                // there's no layout data so we can't work out what screen was clicked
                 return;
             }
 
