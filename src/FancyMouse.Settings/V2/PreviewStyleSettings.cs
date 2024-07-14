@@ -2,7 +2,7 @@
 
 namespace FancyMouse.Settings.V2;
 
-internal class PreviewStyleSettings
+internal sealed class PreviewStyleSettings
 {
     public PreviewStyleSettings(
         CanvasSizeSettings? canvasSize,
