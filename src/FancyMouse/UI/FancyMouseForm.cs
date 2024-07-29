@@ -186,7 +186,7 @@ internal sealed partial class FancyMouseForm : Form
 
         var stopwatch = Stopwatch.StartNew();
 
-        var appSettings = ConfigHelper.AppSettings ?? throw new InvalidOperationException();
+        var appSettings = Internal.Helpers.ConfigHelper.AppSettings ?? throw new InvalidOperationException();
         var screens = ScreenHelper.GetAllScreens().Select(screen => screen.DisplayArea).ToList();
         var activatedLocation = MouseHelper.GetCursorPosition();
         this.PreviewLayout = LayoutHelper.GetPreviewLayout(
