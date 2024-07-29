@@ -1,6 +1,4 @@
-﻿using static FancyMouse.Common.NativeMethods.Core;
-
-namespace FancyMouse.Common.Models.Drawing;
+﻿namespace FancyMouse.Common.Models.Drawing;
 
 /// <summary>
 /// Immutable version of a System.Windows.Forms.Screen object so we don't need to

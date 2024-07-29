@@ -44,7 +44,7 @@ public static class DrawingHelperTests
             yield return new object[]
             {
                 new TestCase(
-                    previewStyle: AppSettings.DefaultSettings.PreviewStyle,
+                    previewStyle: StyleHelper.BezelledPreviewStyle,
                     screens: new List<RectangleInfo>()
                     {
                         new(0, 0, 500, 500),
@@ -60,7 +60,7 @@ public static class DrawingHelperTests
             yield return new object[]
             {
                 new TestCase(
-                    previewStyle: AppSettings.DefaultSettings.PreviewStyle,
+                    previewStyle: StyleHelper.BezelledPreviewStyle,
                     screens: new List<RectangleInfo>()
                     {
                         new(5120, 349, 1920, 1080),
@@ -120,7 +120,7 @@ public static class DrawingHelperTests
         }
 
         /// <summary>
-        /// Naive / brute force image comparison - we can optimise this later :-)
+        /// Naive / brute force image comparison - we can optimize this later :-)
         /// </summary>
         private static void AssertImagesEqual(Bitmap expected, Bitmap actual)
         {
