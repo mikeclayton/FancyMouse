@@ -42,16 +42,13 @@ public static class LayoutHelper
             .Shrink(previewStyle.CanvasStyle.BorderStyle)
             .Shrink(previewStyle.CanvasStyle.PaddingStyle);
 
-        // scale the virtual screen to fit inside the content area
-        var screenScalingRatio = builder.VirtualScreen.Size
-            .ScaleToFitRatio(maxContentSize);
-
         // work out the actual size of the "content area" by scaling the virtual screen
         // to fit inside the maximum content area while maintaining its aspect ration.
         // we'll also offset it to allow for any margins, borders and padding
         var contentBounds = builder.VirtualScreen.Size
-            .Scale(screenScalingRatio)
-            .Floor()
+            .ScaleToFit(maxContentSize, out var scalingRatio)
+            .Round()
+            .Clamp(maxContentSize)
             .PlaceAt(0, 0)
             .Offset(previewStyle.CanvasStyle.MarginStyle.Left, previewStyle.CanvasStyle.MarginStyle.Top)
             .Offset(previewStyle.CanvasStyle.BorderStyle.Left, previewStyle.CanvasStyle.BorderStyle.Top)
@@ -73,14 +70,15 @@ public static class LayoutHelper
         builder.FormBounds = formBounds;
 
         // now calculate the positions of each of the screenshot images on the preview
+        // scale the virtual screen to fit inside the content area
         builder.ScreenshotBounds = builder.Screens
             .Select(
                 screen => LayoutHelper.GetBoxBoundsFromOuterBounds(
                     screen
                         .Offset(builder.VirtualScreen.Location.ToSize().Invert())
-                        .Scale(screenScalingRatio)
+                        .Scale(scalingRatio)
                         .Offset(builder.PreviewBounds.ContentBounds.Location.ToSize())
-                        .Truncate(),
+                        .Round(),
                     previewStyle.ScreenStyle))
             .ToList();
 
