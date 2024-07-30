@@ -244,7 +244,7 @@ public static class LayoutHelperTests
             //
             // in this test the preview width is 300 and the desktop is
             // 900, so the scaling factor is 1/3, but this gets rounded
-            // to 0.3333333333333333333333333333, and 990 times this value
+            // to 0.3333333333333333333333333333, and 900 times this value
             // is 299.99999999999999999999999997. if we don't scale correctly
             // the resulting form width might only be 299 pixels instead of 300
             //

@@ -5,7 +5,6 @@ using FancyMouse.Common.Helpers;
 using FancyMouse.Common.Imaging;
 using FancyMouse.Common.Models.Drawing;
 using FancyMouse.Common.Models.Styles;
-using FancyMouse.Settings;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace FancyMouse.Common.UnitTests.Helpers;
