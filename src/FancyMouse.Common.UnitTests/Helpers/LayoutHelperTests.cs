@@ -238,7 +238,7 @@ public static class LayoutHelperTests
                 });
             yield return new object[] { new TestCase(previewStyle, screens, activatedLocation, expectedResult) };
 
-            // rounding error check - single screen with 50% scaling,
+            // rounding error check - single screen with 33% scaling,
             // no borders, check to make sure form scales to exactly
             // fill the canvas size with no rounding errors.
             //

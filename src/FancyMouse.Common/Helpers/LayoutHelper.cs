@@ -70,7 +70,6 @@ public static class LayoutHelper
         builder.FormBounds = formBounds;
 
         // now calculate the positions of each of the screenshot images on the preview
-        // scale the virtual screen to fit inside the content area
         builder.ScreenshotBounds = builder.Screens
             .Select(
                 screen => LayoutHelper.GetBoxBoundsFromOuterBounds(
