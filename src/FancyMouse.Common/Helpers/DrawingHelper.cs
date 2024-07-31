@@ -50,11 +50,6 @@ public static class DrawingHelper
                 previewGraphics, previewLayout.PreviewStyle.ScreenStyle, screenshotBounds);
         }
 
-        // prevent the background bleeding through into screen images
-        // (see https://github.com/mikeclayton/FancyMouse/issues/44)
-        previewGraphics.PixelOffsetMode = PixelOffsetMode.Half;
-        previewGraphics.InterpolationMode = InterpolationMode.NearestNeighbor;
-
         var refreshRequired = false;
         var placeholdersDrawn = false;
         for (var i = 0; i < sourceScreens.Count; i++)

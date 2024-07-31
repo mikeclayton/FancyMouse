@@ -1,4 +1,5 @@
 ﻿using System.Drawing;
+using System.Drawing.Drawing2D;
 using FancyMouse.Common.Models.Drawing;
 
 namespace FancyMouse.Common.Imaging;
@@ -28,6 +29,11 @@ public sealed class StaticImageRegionCopyService : IImageRegionCopyService
         RectangleInfo sourceBounds,
         RectangleInfo targetBounds)
     {
+        // prevent the background bleeding through into screen images
+        // (see https://github.com/mikeclayton/FancyMouse/issues/44)
+        targetGraphics.PixelOffsetMode = PixelOffsetMode.Half;
+        targetGraphics.InterpolationMode = InterpolationMode.NearestNeighbor;
+
         targetGraphics.DrawImage(
             image: this.SourceImage,
             destRect: targetBounds.ToRectangle(),
