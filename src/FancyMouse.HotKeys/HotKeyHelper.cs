@@ -26,7 +26,7 @@ internal static class HotKeyHelper
         // register the window class
         // see https://stackoverflow.com/a/30992796/3156906
         var wndClass = new WNDCLASSEXW(
-            cbSize: (UINT)Marshal.SizeOf(typeof(WNDCLASSEXW)),
+            cbSize: (UINT)WNDCLASSEXW.Size,
             style: 0,
             lpfnWndProc: wndProc,
             cbClsExtra: 0,

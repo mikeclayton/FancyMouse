@@ -30,6 +30,6 @@ internal static partial class User32
         }
 
         public static int Size =>
-            Marshal.SizeOf(typeof(MONITORINFO));
+            Marshal.SizeOf<MONITORINFO>();
     }
 }

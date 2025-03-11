@@ -215,7 +215,7 @@ public static class DrawingHelper
     /// Draws placeholder background images for the specified screens on the preview.
     /// </summary>
     private static void DrawScreenPlaceholders(
-        Graphics graphics, BoxStyle screenStyle, IList<BoxBounds> screenBounds)
+        Graphics graphics, BoxStyle screenStyle, List<BoxBounds> screenBounds)
     {
         if (screenBounds.Count == 0)
         {

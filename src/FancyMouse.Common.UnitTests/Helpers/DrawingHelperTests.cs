@@ -11,7 +11,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace FancyMouse.Common.UnitTests.Helpers;
 
 [TestClass]
-public static class DrawingHelperTests
+public sealed class DrawingHelperTests
 {
     [TestClass]
     public sealed class GetPreviewLayoutTests
@@ -43,10 +43,8 @@ public static class DrawingHelperTests
 
         public static IEnumerable<object[]> GetTestCases()
         {
-            var displayInfo = default(DisplayInfo);
-
             // 4-grid
-            displayInfo = new(
+            var displayInfo = new DisplayInfo(
                 devices: new DeviceInfo[]
                 {
                     new(
@@ -76,8 +74,7 @@ public static class DrawingHelperTests
                                 workingArea: new(0, 500, 500, 500)),
                         }
                     ),
-                }
-            );
+                });
             yield return new object[]
             {
                 new TestCase(
