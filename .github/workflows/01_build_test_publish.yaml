@@ -54,7 +54,7 @@ jobs:
 
       - name: dotnet publish
         working-directory: ${{ env.BUILD_PATH }}
-        run: dotnet publish "./FancyMouse/FancyMouse.csproj" --configuration "${{ env.CONFIG_NAME }}" --no-build --output "${{ env.PUBLISH_PATH }}/net8.0-windows"
+        run: dotnet publish "./FancyMouse/FancyMouse.csproj" --configuration "${{ env.CONFIG_NAME }}" --no-build --output "${{ env.PUBLISH_PATH }}/net9.0-windows"
 
       #- name: zip release
       #  working-directory: ${{ env.BUILD_PATH }}
