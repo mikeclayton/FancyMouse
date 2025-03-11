@@ -567,6 +567,7 @@ public static class LayoutHelperTests
         /// Basic performance test just to avoid any massive regressions.
         /// </summary>
         [TestMethod]
+        [Ignore("Ignore on CI runners - only run locally")]
         public void BasicPerformanceTest()
         {
             // primary monitor not topmost / leftmost - if there are screens
