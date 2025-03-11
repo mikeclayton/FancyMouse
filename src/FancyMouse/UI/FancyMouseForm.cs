@@ -191,20 +191,13 @@ internal sealed partial class FancyMouseForm : Form
 
         var stopwatch = Stopwatch.StartNew();
 
-        var appSettings = Internal.Helpers.ConfigHelper.AppSettings ?? throw new InvalidOperationException();
+        // capture this first so we get an accurate mouse location
+        // (in case the user moves it a few pixels while the form is rendered)
         var activatedLocation = MouseHelper.GetCursorPosition();
-        var displayInfo = new DisplayInfo(
-            devices: new List<DeviceInfo>()
-            {
-                new(
-                    hostname: Environment.MachineName,
-                    localhost: true,
-                    screens: ScreenHelper.GetAllScreens()),
-            });
-        var activatedScreen = displayInfo.Devices
-            .Single(device => device.Localhost)
-            .Screens
-            .Single(screen => screen.DisplayArea.Contains(activatedLocation));
+
+        var appSettings = Internal.Helpers.ConfigHelper.AppSettings ?? throw new InvalidOperationException();
+        var displayInfo = DeviceHelper.GetDisplayInfo();
+        var activatedScreen = DeviceHelper.GetActivatedScreen(displayInfo, activatedLocation);
 
         var formLayout = LayoutHelper.GetFormLayout(
             previewStyle: appSettings.PreviewStyle,
@@ -212,6 +205,8 @@ internal sealed partial class FancyMouseForm : Form
             activatedScreen: activatedScreen,
             activatedLocation: activatedLocation);
 
+        // remember this so we can map the mouse clicks back to
+        // the appropriate device and screen location
         this.FormLayout = formLayout;
 
         this.PositionForm(formLayout.FormBounds);

@@ -1,4 +1,5 @@
-﻿using System.Drawing;
+﻿using System.Diagnostics;
+using System.Drawing;
 using System.Text.Json;
 using FancyMouse.Common.Helpers;
 using FancyMouse.Common.Models.Display;
@@ -560,6 +561,91 @@ public static class LayoutHelperTests
             var actualJson = JsonSerializer.Serialize(actual, options);
             var expectedJson = JsonSerializer.Serialize(expected, options);
             Assert.AreEqual(expectedJson, actualJson);
+        }
+
+        /// <summary>
+        /// Basic performance test just to avoid any massive regressions.
+        /// </summary>
+        [TestMethod]
+        public void BasicPerformanceTest()
+        {
+            // primary monitor not topmost / leftmost - if there are screens
+            // that are further left or higher up than the primary monitor
+            // they'll have negative coordinates which has caused some
+            // issues with calculations in the past. this test will make
+            // sure we handle screens with negative coordinates gracefully
+            //
+            // +-------+
+            // |   0   +----------------+
+            // +-------+                |
+            //         |       1        |
+            //         |                |
+            //         +----------------+
+            var previewStyle = new PreviewStyle(
+                canvasSize: new(
+                    width: 716,
+                    height: 204
+                ),
+                canvasStyle: new(
+                    marginStyle: MarginStyle.Empty,
+                    borderStyle: new(
+                        color: SystemColors.Highlight,
+                        all: 5,
+                        depth: 3),
+                    paddingStyle: new(
+                        all: 1),
+                    backgroundStyle: new(
+                        color1: Color.FromArgb(13, 87, 210), // light blue
+                        color2: Color.FromArgb(3, 68, 192) // darker blue
+                    )
+                ),
+                screenStyle: new(
+                    marginStyle: new(
+                        all: 1),
+                    borderStyle: new(
+                        color: SystemColors.Highlight,
+                        all: 5,
+                        depth: 3),
+                    paddingStyle: PaddingStyle.Empty,
+                    backgroundStyle: new(
+                        color1: Color.FromArgb(13, 87, 210), // light blue
+                        color2: Color.FromArgb(3, 68, 192) // darker blue
+                    )
+                ));
+            var displayInfo = new DisplayInfo(
+                devices: new List<DeviceInfo>
+                {
+                    new(
+                        hostname: "localhost",
+                        localhost: true,
+                        screens: new List<ScreenInfo>
+                        {
+                            new(
+                                handle: 0,
+                                primary: true,
+                                displayArea: new(-1920, -480, 1920, 1080),
+                                workingArea: new(-1920, -480, 1920, 1080)),
+                            new(
+                                handle: 0,
+                                primary: false,
+                                displayArea: new(0, 0, 5120, 1440),
+                                workingArea: new(0, 0, 5120, 1440)),
+                        }
+                    ),
+                });
+            var activatedScreen = displayInfo.Devices[0].Screens[0];
+            var activatedLocation = activatedScreen.DisplayArea.Midpoint;
+
+            var timer = Stopwatch.StartNew();
+            for (var i = 0; i < 10_000; i++)
+            {
+                var formLayout = LayoutHelper.GetFormLayout(previewStyle, displayInfo, activatedScreen, activatedLocation);
+            }
+
+            timer.Stop();
+
+            // runs on my machine in about 180-200ms, so leave a bit of headroom
+            Assert.IsTrue(timer.ElapsedMilliseconds < 250);
         }
     }
 }
