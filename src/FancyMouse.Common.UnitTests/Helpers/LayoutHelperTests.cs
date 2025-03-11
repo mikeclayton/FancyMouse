@@ -446,6 +446,96 @@ public static class LayoutHelperTests
                 ));
             yield return new object[] { new TestCase(previewStyle, displayInfo, activatedScreen, activatedLocation, expectedResult) };
 
+            // two devices side-by-side with a single screen each
+            //
+            //      device 1            device 2
+            // +----------------+  +----------------+
+            // |                |  |                |
+            // |       0        |  |       0        |
+            // |                |  |                |
+            // +----------------+  +----------------+
+            previewStyle = new PreviewStyle(
+                canvasSize: new(
+                    width: 1600,
+                    height: 1200
+                ),
+                canvasStyle: BoxStyle.Empty,
+                screenStyle: BoxStyle.Empty);
+            displayInfo = new DisplayInfo(
+                devices: new List<DeviceInfo>
+                {
+                    new(
+                        hostname: "localhost",
+                        localhost: true,
+                        screens: new List<ScreenInfo>
+                        {
+                            new(
+                                handle: 0,
+                                primary: true,
+                                displayArea: new(0, 0, 5120, 1440),
+                                workingArea: new(0, 0, 5120, 1440)),
+                        }
+                    ),
+                    new(
+                        hostname: "remotehost",
+                        localhost: false,
+                        screens: new List<ScreenInfo>
+                        {
+                            new(
+                                handle: 0,
+                                primary: true,
+                                displayArea: new(0, 0, 5120, 1440),
+                                workingArea: new(0, 0, 5120, 1440)),
+                        }
+                    ),
+                });
+            activatedScreen = displayInfo.Devices[0].Screens[0];
+            activatedLocation = activatedScreen.DisplayArea.Midpoint;
+            expectedResult = new FormViewModel(
+                formBounds: new(1760, 607.5m, 1600, 225),
+                canvasLayout: new(
+                    canvasBounds: BoxBounds.CreateFromOuterBounds(
+                        outerBounds: new(0, 0, 1600, 225),
+                        boxStyle: previewStyle.CanvasStyle),
+                    canvasStyle: previewStyle.CanvasStyle,
+                    deviceLayouts: new List<DeviceViewModel>()
+                    {
+                        new(
+                            deviceInfo: displayInfo.Devices[0],
+                            deviceBounds: BoxBounds.CreateFromOuterBounds(
+                                outerBounds: new(0, 0, 800, 225),
+                                boxStyle: BoxStyle.Empty),
+                            deviceStyle: BoxStyle.Empty,
+                            screenLayouts: new List<ScreenViewModel>()
+                            {
+                                new(
+                                    screenInfo: displayInfo.Devices[0].Screens[0],
+                                    screenBounds: BoxBounds.CreateFromOuterBounds(
+                                        outerBounds: new(0, 0, 800, 225),
+                                        boxStyle: previewStyle.ScreenStyle),
+                                    screenStyle: previewStyle.ScreenStyle),
+                            }
+                        ),
+                        new(
+                            deviceInfo: displayInfo.Devices[1],
+                            deviceBounds: BoxBounds.CreateFromOuterBounds(
+                                outerBounds: new(800, 0, 800, 225),
+                                boxStyle: BoxStyle.Empty),
+                            deviceStyle: BoxStyle.Empty,
+                            screenLayouts: new List<ScreenViewModel>()
+                            {
+                                new(
+                                    screenInfo: displayInfo.Devices[1].Screens[0],
+                                    screenBounds: BoxBounds.CreateFromOuterBounds(
+                                        outerBounds: new(800, 0, 800, 225),
+                                        boxStyle: previewStyle.ScreenStyle),
+                                    screenStyle: previewStyle.ScreenStyle),
+                            }
+                        ),
+                    }
+                ));
+            yield return new object[] { new TestCase(previewStyle, displayInfo, activatedScreen, activatedLocation, expectedResult) };
+
             // TODO: add a test to make sure the form is nudged into the bounds
             // of the screen if it's activated near an edge or corner
         }

@@ -226,7 +226,7 @@ public static class LayoutHelper
                 // work out the scaled coordinates for this grid cell
                 var gridCellBounds = new RectangleInfo(
                     x: scaledColumnCoordinates[columnIndex],
-                    y: scaledRowCoordinates[columnIndex],
+                    y: scaledRowCoordinates[rowIndex],
                     width: scaledColumnCoordinates[columnIndex + 1] - scaledColumnCoordinates[columnIndex],
                     height: scaledRowCoordinates[rowIndex + 1] - scaledRowCoordinates[rowIndex]);
 
