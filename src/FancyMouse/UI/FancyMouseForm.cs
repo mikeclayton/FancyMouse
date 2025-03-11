@@ -1,9 +1,9 @@
 using System.Diagnostics;
 using FancyMouse.Common.Helpers;
 using FancyMouse.Common.Imaging;
+using FancyMouse.Common.Models.Display;
 using FancyMouse.Common.Models.Drawing;
-using FancyMouse.Common.Models.Layout;
-using FancyMouse.Internal.Helpers;
+using FancyMouse.Common.Models.ViewModel;
 using NLog;
 
 namespace FancyMouse.UI;
@@ -21,7 +21,7 @@ internal sealed partial class FancyMouseForm : Form
         get;
     }
 
-    private PreviewLayout? PreviewLayout
+    private FormViewModel? FormLayout
     {
         get;
         set;
@@ -130,17 +130,22 @@ internal sealed partial class FancyMouseForm : Form
 
         if (mouseEventArgs.Button == MouseButtons.Left)
         {
-            if (this.PreviewLayout is null)
+            if (this.FormLayout is null)
             {
                 // there's no layout data so we can't work out what screen was clicked
                 return;
             }
 
             // work out which screenshot was clicked
-            var clickedScreenshot = this.PreviewLayout.ScreenshotBounds
+            var devicePairings = this.FormLayout.CanvasLayout.DeviceLayouts
+                .SelectMany(
+                    deviceLayout => deviceLayout.ScreenLayouts,
+                    (deviceLayout, screenLayout) => new { DeviceLayout = deviceLayout, ScreenLayout = screenLayout })
+                .ToList();
+            var clickedPairing = devicePairings
                 .FirstOrDefault(
-                    box => box.BorderBounds.Contains(mouseEventArgs.X, mouseEventArgs.Y));
-            if (clickedScreenshot is null)
+                    deviceParing => deviceParing.ScreenLayout.ScreenBounds.OuterBounds.Contains(mouseEventArgs.X, mouseEventArgs.Y));
+            if (clickedPairing is null)
             {
                 return;
             }
@@ -148,18 +153,18 @@ internal sealed partial class FancyMouseForm : Form
             // scale up the click onto the physical screen - the aspect ratio of the screenshot
             // might be distorted compared to the physical screen due to the borders around the
             // screenshot, so we need to work out the target location on the physical screen first
-            var clickedScreen =
-                this.PreviewLayout.Screens[this.PreviewLayout.ScreenshotBounds.IndexOf(clickedScreenshot)];
+            var clickedScreen = clickedPairing.ScreenLayout;
+            var clickedDisplayArea = clickedScreen.ScreenInfo.DisplayArea;
             var clickedLocation = new PointInfo(mouseEventArgs.Location)
                 .Stretch(
-                    source: clickedScreenshot.ContentBounds,
-                    target: clickedScreen)
+                    source: clickedScreen.ScreenBounds.ContentBounds,
+                    target: clickedDisplayArea)
                 .Clamp(
                     new(
-                        x: clickedScreen.X + 1,
-                        y: clickedScreen.Y + 1,
-                        width: clickedScreen.Width - 1,
-                        height: clickedScreen.Height - 1
+                        x: clickedDisplayArea.X + 1,
+                        y: clickedDisplayArea.Y + 1,
+                        width: clickedDisplayArea.Width - 1,
+                        height: clickedDisplayArea.Height - 1
                     ))
                 .Truncate();
 
@@ -186,19 +191,31 @@ internal sealed partial class FancyMouseForm : Form
 
         var stopwatch = Stopwatch.StartNew();
 
-        var appSettings = Internal.Helpers.ConfigHelper.AppSettings ?? throw new InvalidOperationException();
-        var screens = ScreenHelper.GetAllScreens().Select(screen => screen.DisplayArea).ToList();
+        // capture this first so we get an accurate mouse location
+        // (in case the user moves it a few pixels while the form is rendered)
         var activatedLocation = MouseHelper.GetCursorPosition();
-        this.PreviewLayout = LayoutHelper.GetPreviewLayout(
+
+        var appSettings = Internal.Helpers.ConfigHelper.AppSettings ?? throw new InvalidOperationException();
+        var displayInfo = DeviceHelper.GetDisplayInfo();
+        var activatedScreen = DeviceHelper.GetActivatedScreen(displayInfo, activatedLocation);
+
+        var formLayout = LayoutHelper.GetFormLayout(
             previewStyle: appSettings.PreviewStyle,
-            screens: screens,
+            displayInfo,
+            activatedScreen: activatedScreen,
             activatedLocation: activatedLocation);
 
-        this.PositionForm(this.PreviewLayout.FormBounds);
+        // remember this so we can map the mouse clicks back to
+        // the appropriate device and screen location
+        this.FormLayout = formLayout;
+
+        this.PositionForm(formLayout.FormBounds);
 
         var imageCopyService = new DesktopImageRegionCopyService();
+
         DrawingHelper.RenderPreview(
-            this.PreviewLayout,
+            this.FormLayout.CanvasLayout,
+            activatedScreen,
             imageCopyService,
             this.OnPreviewImageCreated,
             this.OnPreviewImageUpdated);

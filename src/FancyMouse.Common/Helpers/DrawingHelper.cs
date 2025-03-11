@@ -3,16 +3,18 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using FancyMouse.Common.Imaging;
+using FancyMouse.Common.Models.Display;
 using FancyMouse.Common.Models.Drawing;
-using FancyMouse.Common.Models.Layout;
 using FancyMouse.Common.Models.Styles;
+using FancyMouse.Common.Models.ViewModel;
 
 namespace FancyMouse.Common.Helpers;
 
 public static class DrawingHelper
 {
     public static Bitmap RenderPreview(
-        PreviewLayout previewLayout,
+        CanvasViewModel canvasLayout,
+        ScreenInfo activatedScreen,
         IImageRegionCopyService imageCopyService,
         Action<Bitmap>? previewImageCreatedCallback = null,
         Action? previewImageUpdatedCallback = null)
@@ -20,41 +22,47 @@ public static class DrawingHelper
         var stopwatch = Stopwatch.StartNew();
 
         // initialize the preview image
-        var previewBounds = previewLayout.PreviewBounds.OuterBounds.ToRectangle();
+        var previewBounds = canvasLayout.CanvasBounds.OuterBounds.ToRectangle();
         var previewImage = new Bitmap(previewBounds.Width, previewBounds.Height, PixelFormat.Format32bppPArgb);
         var previewGraphics = Graphics.FromImage(previewImage);
         previewImageCreatedCallback?.Invoke(previewImage);
 
-        DrawingHelper.DrawRaisedBorder(previewGraphics, previewLayout.PreviewStyle.CanvasStyle, previewLayout.PreviewBounds);
+        DrawingHelper.DrawRaisedBorder(previewGraphics, canvasLayout.CanvasBounds, canvasLayout.CanvasStyle);
         DrawingHelper.DrawBackgroundFill(
             previewGraphics,
-            previewLayout.PreviewStyle.CanvasStyle,
-            previewLayout.PreviewBounds,
+            canvasLayout.CanvasStyle,
+            canvasLayout.CanvasBounds,
             []);
 
         // sort the source and target screen areas into the order we want to
         // draw them, putting the activated screen first (we need to capture
         // and draw the activated screen before we show the form because
         // otherwise we'll capture the form as part of the screenshot!)
-        var sourceScreens = new List<RectangleInfo> { previewLayout.Screens[previewLayout.ActivatedScreenIndex] }
-            .Concat(previewLayout.Screens.Where((_, idx) => idx != previewLayout.ActivatedScreenIndex))
-            .ToList();
-        var targetScreens = new List<BoxBounds> { previewLayout.ScreenshotBounds[previewLayout.ActivatedScreenIndex] }
-            .Concat(previewLayout.ScreenshotBounds.Where((_, idx) => idx != previewLayout.ActivatedScreenIndex))
+        var devicePairings = canvasLayout.DeviceLayouts
+            .SelectMany(
+                deviceLayout => deviceLayout.ScreenLayouts,
+                (deviceLayout, screenLayout) => new { DeviceLayout = deviceLayout, ScreenLayout = screenLayout })
+            .OrderByDescending(
+                pair => object.ReferenceEquals(pair.ScreenLayout, activatedScreen))
             .ToList();
 
         // draw all the screenshot bezels
-        foreach (var screenshotBounds in previewLayout.ScreenshotBounds)
+        foreach (var devicePairing in devicePairings)
         {
             DrawingHelper.DrawRaisedBorder(
-                previewGraphics, previewLayout.PreviewStyle.ScreenStyle, screenshotBounds);
+                previewGraphics, devicePairing.ScreenLayout.ScreenBounds, devicePairing.ScreenLayout.ScreenStyle);
         }
 
         var refreshRequired = false;
         var placeholdersDrawn = false;
-        for (var i = 0; i < sourceScreens.Count; i++)
+        for (var i = 0; i < devicePairings.Count; i++)
         {
-            imageCopyService.CopyImageRegion(previewGraphics, sourceScreens[i], targetScreens[i].ContentBounds);
+            var screenLayout = devicePairings[i].ScreenLayout;
+
+            imageCopyService.CopyImageRegion(
+                targetGraphics: previewGraphics,
+                sourceBounds: screenLayout.ScreenInfo.DisplayArea,
+                targetBounds: screenLayout.ScreenBounds.ContentBounds);
             refreshRequired = true;
 
             // show the placeholder images and show the form if it looks like it might take
@@ -66,8 +74,11 @@ public static class DrawingHelper
                 {
                     DrawingHelper.DrawScreenPlaceholders(
                         previewGraphics,
-                        previewLayout.PreviewStyle.ScreenStyle,
-                        targetScreens.GetRange(i + 1, targetScreens.Count - i - 1));
+                        screenLayout.ScreenStyle,
+                        devicePairings
+                            .Skip(i + 1)
+                            .Select(devicePairing => devicePairing.ScreenLayout.ScreenBounds)
+                            .ToList());
                     placeholdersDrawn = true;
                 }
 
@@ -90,10 +101,10 @@ public static class DrawingHelper
     /// Draws a border shape with an optional raised 3d highlight and shadow effect.
     /// </summary>
     private static void DrawRaisedBorder(
-        Graphics graphics, BoxStyle boxStyle, BoxBounds boxBounds)
+        Graphics graphics, BoxBounds boxBounds, BoxStyle boxStyle)
     {
         var borderStyle = boxStyle.BorderStyle;
-        if ((borderStyle.Horizontal == 0) || (borderStyle.Vertical == 0))
+        if ((borderStyle.Horizontal < 1) || (borderStyle.Vertical < 1))
         {
             return;
         }
@@ -204,7 +215,7 @@ public static class DrawingHelper
     /// Draws placeholder background images for the specified screens on the preview.
     /// </summary>
     private static void DrawScreenPlaceholders(
-        Graphics graphics, BoxStyle screenStyle, IList<BoxBounds> screenBounds)
+        Graphics graphics, BoxStyle screenStyle, List<BoxBounds> screenBounds)
     {
         if (screenBounds.Count == 0)
         {

@@ -44,6 +44,6 @@ internal static partial class User32
         }
 
         public static int Size =>
-            Marshal.SizeOf(typeof(MSG));
+            Marshal.SizeOf<MSG>();
     }
 }

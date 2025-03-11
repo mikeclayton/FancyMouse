@@ -1,10 +1,12 @@
-﻿namespace FancyMouse.Common.Models.Drawing;
+﻿using FancyMouse.Common.Models.Drawing;
+
+namespace FancyMouse.Common.Models.Display;
 
 /// <summary>
 /// Immutable version of a System.Windows.Forms.Screen object so we don't need to
 /// take a dependency on WinForms just for screen info.
 /// </summary>
-public sealed class ScreenInfo
+public sealed record ScreenInfo
 {
     public ScreenInfo(int handle, bool primary, RectangleInfo displayArea, RectangleInfo workingArea)
     {

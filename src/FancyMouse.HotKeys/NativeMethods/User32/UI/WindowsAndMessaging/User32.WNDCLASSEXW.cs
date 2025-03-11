@@ -60,6 +60,6 @@ internal static partial class User32
         }
 
         public static int Size =>
-            Marshal.SizeOf(typeof(WNDCLASSEXW));
+            Marshal.SizeOf<WNDCLASSEXW>();
     }
 }

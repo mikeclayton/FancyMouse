@@ -80,7 +80,7 @@ internal static partial class Shell32
         }
 
         public static int Size =>
-            Marshal.SizeOf(typeof(POINT));
+            Marshal.SizeOf<NOTIFYICONDATAW>();
 
         [StructLayout(LayoutKind.Explicit)]
         public readonly struct DUMMYUNIONNAME

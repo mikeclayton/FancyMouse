@@ -58,7 +58,7 @@ public static class RectangleInfoTests
     }
 
     [TestClass]
-    public sealed class ClampTests
+    public sealed class MoveInsideTests
     {
         public sealed class TestCase
         {
@@ -125,7 +125,7 @@ public static class RectangleInfoTests
         [DynamicData(nameof(GetTestCases), DynamicDataSourceType.Method)]
         public void RunTestCases(TestCase data)
         {
-            var actual = data.Inner.Clamp(data.Outer);
+            var actual = data.Inner.MoveInside(data.Outer);
             var expected = data.ExpectedResult;
             Assert.AreEqual(expected.X, actual.X);
             Assert.AreEqual(expected.Y, actual.Y);

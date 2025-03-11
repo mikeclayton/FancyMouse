@@ -3,7 +3,7 @@
 namespace FancyMouse.HotKeys.UnitTests;
 
 [TestClass]
-public static class KeystrokeTests
+public sealed class KeystrokeTests
 {
     [TestClass]
     public sealed class ParseTests

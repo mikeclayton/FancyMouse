@@ -7,7 +7,7 @@ namespace FancyMouse.Common.Models.Drawing;
 /// <summary>
 /// Immutable version of a System.Drawing.Size object with some extra utility methods.
 /// </summary>
-public sealed class SizeInfo
+public sealed record SizeInfo
 {
     public SizeInfo(decimal width, decimal height)
     {
@@ -23,11 +23,13 @@ public sealed class SizeInfo
     public decimal Width
     {
         get;
+        init;
     }
 
     public decimal Height
     {
         get;
+        init;
     }
 
     public SizeInfo Clamp(SizeInfo max)
@@ -91,7 +93,7 @@ public sealed class SizeInfo
     /// <param name="x">The x-coordinate of the upper-left corner of the rectangle.</param>
     /// <param name="y">The y-coordinate of the upper-left corner of the rectangle.</param>
     /// <returns>A new <see cref="RectangleInfo"/> instance representing the positioned rectangle.</returns>
-    public RectangleInfo PlaceAt(decimal x, decimal y) =>
+    public RectangleInfo MoveTo(decimal x, decimal y) =>
         new(x, y, this.Width, this.Height);
 
     public SizeInfo Round() =>
@@ -110,21 +112,31 @@ public sealed class SizeInfo
     /// </summary>
     /// <param name="bounds">The size to fit this size into.</param>
     /// <returns>A new <see cref="SizeInfo"/> instance representing the scaled size.</returns>
-    public SizeInfo ScaleToFit(SizeInfo bounds, out decimal scalingRatio)
+    public SizeInfo ScaleToFit(SizeInfo bounds)
+    {
+        return this.ScaleToFit(bounds, out var _);
+    }
+
+    /// <summary>
+    /// Scales this size to fit within the bounds of another size, while maintaining the aspect ratio.
+    /// </summary>
+    /// <param name="bounds">The size to fit this size into.</param>
+    /// <returns>A new <see cref="SizeInfo"/> instance representing the scaled size.</returns>
+    public SizeInfo ScaleToFit(SizeInfo bounds, out decimal scalingFactor)
     {
         var widthRatio = bounds.Width / this.Width;
         var heightRatio = bounds.Height / this.Height;
         switch (widthRatio.CompareTo(heightRatio))
         {
             case < 0:
-                scalingRatio = widthRatio;
+                scalingFactor = widthRatio;
                 return new(bounds.Width, this.Height * widthRatio);
             case 0:
                 // widthRatio and heightRatio are the same, so just pick one
-                scalingRatio = widthRatio;
+                scalingFactor = widthRatio;
                 return bounds;
             case > 0:
-                scalingRatio = heightRatio;
+                scalingFactor = heightRatio;
                 return new(this.Width * heightRatio, bounds.Height);
         }
     }
