@@ -21,25 +21,6 @@ public static class DeviceHelper
                 localhost: true,
                 screens: ScreenHelper.GetAllScreens()));
 
-        // append a fake device just to see what it looks like
-        devices.Add(
-            new(
-                hostname: "my_remote_machine",
-                localhost: false,
-                screens: new List<ScreenInfo>
-                {
-                    new(
-                        handle: 0,
-                        primary: true,
-                        displayArea: new(-1920, -480, 1920, 1080),
-                        workingArea: new(-1920, -480, 1920, 1080)),
-                    new(
-                        handle: 0,
-                        primary: false,
-                        displayArea: new(0, 0, 5120, 1440),
-                        workingArea: new(0, 0, 5120, 1440)),
-                }));
-
         return new DisplayInfo(
             devices: devices);
     }
