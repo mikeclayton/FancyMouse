@@ -25,18 +25,34 @@ public sealed class BoxStyle
 
     */
 
-    public static readonly BoxStyle Empty = new(MarginStyle.Empty, BorderStyle.Empty, PaddingStyle.Empty, BackgroundStyle.Empty);
+    public static readonly BoxStyle Empty = new BoxStyle(
+        MarginStyle.Empty,
+        BorderStyle.Empty,
+        PaddingStyle.Empty,
+        BackgroundStyle.Empty,
+        isEmpty: true);
 
     public BoxStyle(
         MarginStyle marginStyle,
         BorderStyle borderStyle,
         PaddingStyle paddingStyle,
         BackgroundStyle backgroundStyle)
+        : this(marginStyle, borderStyle, paddingStyle, backgroundStyle, false)
+    {
+    }
+
+    private BoxStyle(
+        MarginStyle marginStyle,
+        BorderStyle borderStyle,
+        PaddingStyle paddingStyle,
+        BackgroundStyle backgroundStyle,
+        bool isEmpty)
     {
         this.MarginStyle = marginStyle ?? throw new ArgumentNullException(nameof(marginStyle));
         this.BorderStyle = borderStyle ?? throw new ArgumentNullException(nameof(borderStyle));
         this.PaddingStyle = paddingStyle ?? throw new ArgumentNullException(nameof(paddingStyle));
         this.BackgroundStyle = backgroundStyle ?? throw new ArgumentNullException(nameof(backgroundStyle));
+        this.IsEmpty = isEmpty;
     }
 
     /// <summary>
@@ -67,6 +83,11 @@ public sealed class BoxStyle
     /// Gets the background fill style for the content area of this layout box.
     /// </summary>
     public BackgroundStyle BackgroundStyle
+    {
+        get;
+    }
+
+    public bool IsEmpty
     {
         get;
     }

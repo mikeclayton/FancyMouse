@@ -3,6 +3,7 @@ using System.Drawing.Imaging;
 using System.Reflection;
 using FancyMouse.Common.Helpers;
 using FancyMouse.Common.Imaging;
+using FancyMouse.Common.Models.Display;
 using FancyMouse.Common.Models.Drawing;
 using FancyMouse.Common.Models.Styles;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -17,10 +18,11 @@ public static class DrawingHelperTests
     {
         public sealed class TestCase
         {
-            public TestCase(PreviewStyle previewStyle, List<RectangleInfo> screens, PointInfo activatedLocation, string desktopImageFilename, string expectedImageFilename)
+            public TestCase(PreviewStyle previewStyle, DisplayInfo displayInfo, ScreenInfo activatedScreen, PointInfo activatedLocation, string desktopImageFilename, string expectedImageFilename)
             {
                 this.PreviewStyle = previewStyle;
-                this.Screens = screens;
+                this.DisplayInfo = displayInfo;
+                this.ActivatedScreen = activatedScreen;
                 this.ActivatedLocation = activatedLocation;
                 this.DesktopImageFilename = desktopImageFilename;
                 this.ExpectedImageFilename = expectedImageFilename;
@@ -28,7 +30,9 @@ public static class DrawingHelperTests
 
             public PreviewStyle PreviewStyle { get; }
 
-            public List<RectangleInfo> Screens { get; }
+            public DisplayInfo DisplayInfo { get; }
+
+            public ScreenInfo ActivatedScreen { get; }
 
             public PointInfo ActivatedLocation { get; }
 
@@ -39,32 +43,81 @@ public static class DrawingHelperTests
 
         public static IEnumerable<object[]> GetTestCases()
         {
-            /* 4-grid */
+            var displayInfo = default(DisplayInfo);
+
+            // 4-grid
+            displayInfo = new(
+                devices: new DeviceInfo[]
+                {
+                    new(
+                        hostname: "localhost",
+                        localhost: true,
+                        screens: new List<ScreenInfo>
+                        {
+                            new(
+                                handle: 0,
+                                primary: true,
+                                displayArea: new(0, 0, 500, 500),
+                                workingArea: new(0, 0, 500, 500)),
+                            new(
+                                handle: 0,
+                                primary: false,
+                                displayArea: new(500, 0, 500, 500),
+                                workingArea: new(500, 0, 500, 500)),
+                            new(
+                                handle: 0,
+                                primary: false,
+                                displayArea: new(500, 500, 500, 500),
+                                workingArea: new(500, 500, 500, 500)),
+                            new(
+                                handle: 0,
+                                primary: false,
+                                displayArea: new(0, 500, 500, 500),
+                                workingArea: new(0, 500, 500, 500)),
+                        }
+                    ),
+                }
+            );
             yield return new object[]
             {
                 new TestCase(
                     previewStyle: StyleHelper.BezelledPreviewStyle,
-                    screens: new List<RectangleInfo>()
-                    {
-                        new(0, 0, 500, 500),
-                        new(500, 0, 500, 500),
-                        new(500, 500, 500, 500),
-                        new(0, 500, 500, 500),
-                    },
+                    displayInfo: displayInfo,
+                    activatedScreen: displayInfo.Devices[0].Screens[0],
                     activatedLocation: new(x: 50, y: 50),
                     desktopImageFilename: "Helpers/_test-4grid-desktop.png",
                     expectedImageFilename: "Helpers/_test-4grid-expected.png"),
             };
-            /* win 11 */
+
+            // win 11
+            displayInfo = new(
+                devices: new DeviceInfo[]
+                {
+                    new(
+                        hostname: "localhost",
+                        localhost: true,
+                        screens: new List<ScreenInfo>
+                        {
+                            new(
+                                handle: 0,
+                                primary: true,
+                                displayArea: new(5120, 349, 1920, 1080),
+                                workingArea: new(5120, 349, 1920, 1080)),
+                            new(
+                                handle: 0,
+                                primary: false,
+                                displayArea: new(0, 0, 5120, 1440),
+                                workingArea: new(0, 0, 5120, 1440)),
+                        }
+                    ),
+                }
+            );
             yield return new object[]
             {
                 new TestCase(
                     previewStyle: StyleHelper.BezelledPreviewStyle,
-                    screens: new List<RectangleInfo>()
-                    {
-                        new(5120, 349, 1920, 1080),
-                        new(0, 0, 5120, 1440),
-                    },
+                    displayInfo: displayInfo,
+                    activatedScreen: displayInfo.Devices[0].Screens[0],
                     activatedLocation: new(x: 50, y: 50),
                     desktopImageFilename: "Helpers/_test-win11-desktop.png",
                     expectedImageFilename: "Helpers/_test-win11-expected.png"),
@@ -79,12 +132,13 @@ public static class DrawingHelperTests
             using var desktopImage = GetPreviewLayoutTests.LoadImageResource(data.DesktopImageFilename);
 
             // draw the preview image
-            var previewLayout = LayoutHelper.GetPreviewLayout(
+            var formLayout = LayoutHelper.GetFormLayout(
                 previewStyle: data.PreviewStyle,
-                screens: data.Screens,
+                displayInfo: data.DisplayInfo,
+                activatedScreen: data.ActivatedScreen,
                 activatedLocation: data.ActivatedLocation);
             var imageCopyService = new StaticImageRegionCopyService(desktopImage);
-            using var actual = DrawingHelper.RenderPreview(previewLayout, imageCopyService);
+            using var actual = DrawingHelper.RenderPreview(formLayout.CanvasLayout, data.ActivatedScreen, imageCopyService);
 
             // save the actual image so we can pick it up as a build artifact
             var actualFilename = Path.GetFileNameWithoutExtension(data.ExpectedImageFilename) + "_actual" + Path.GetExtension(data.ExpectedImageFilename);

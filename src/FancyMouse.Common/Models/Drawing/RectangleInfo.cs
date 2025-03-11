@@ -8,16 +8,22 @@ namespace FancyMouse.Common.Models.Drawing;
 /// <summary>
 /// Immutable version of a System.Drawing.Rectangle object with some extra utility methods.
 /// </summary>
-public sealed class RectangleInfo
+public sealed record RectangleInfo
 {
-    public static readonly RectangleInfo Empty = new(0, 0, 0, 0);
+    public static readonly RectangleInfo Empty = new(0, 0, 0, 0, true);
 
     public RectangleInfo(decimal x, decimal y, decimal width, decimal height)
+        : this(x, y, width, height, false)
+    {
+    }
+
+    public RectangleInfo(decimal x, decimal y, decimal width, decimal height, bool isEmpty)
     {
         this.X = x;
         this.Y = y;
         this.Width = width;
         this.Height = height;
+        this.IsEmpty = true;
     }
 
     public RectangleInfo(Rectangle rectangle)
@@ -25,7 +31,7 @@ public sealed class RectangleInfo
     {
     }
 
-    public RectangleInfo(Point location, SizeInfo size)
+    public RectangleInfo(PointInfo location, SizeInfo size)
         : this(location.X, location.Y, size.Width, size.Height)
     {
     }
@@ -38,19 +44,29 @@ public sealed class RectangleInfo
     public decimal X
     {
         get;
+        init;
     }
 
     public decimal Y
     {
         get;
+        init;
     }
 
     public decimal Width
     {
         get;
+        init;
     }
 
     public decimal Height
+    {
+        get;
+        init;
+    }
+
+    [JsonIgnore]
+    public bool IsEmpty
     {
         get;
     }
@@ -79,6 +95,9 @@ public sealed class RectangleInfo
     public PointInfo Location =>
         new(this.X, this.Y);
 
+    /// <summary>
+    /// Gets the midpoint of the current rectangle.
+    /// </summary>
     [JsonIgnore]
     public PointInfo Midpoint =>
         new(
@@ -99,27 +118,6 @@ public sealed class RectangleInfo
             y: point.Y - (this.Height / 2),
             width: this.Width,
             height: this.Height);
-
-    /// <summary>
-    /// Returns a new <see cref="RectangleInfo"/> that is moved within the bounds of the specified outer rectangle.
-    /// If the current rectangle is larger than the outer rectangle, an exception is thrown.
-    /// </summary>
-    /// <param name="outer">The outer <see cref="RectangleInfo"/> within which to confine this rectangle.</param>
-    /// <returns>A new <see cref="RectangleInfo"/> that is the result of moving this rectangle within the bounds of the outer rectangle.</returns>
-    /// <exception cref="ArgumentException">Thrown when the current rectangle is larger than the outer rectangle.</exception>
-    public RectangleInfo Clamp(RectangleInfo outer)
-    {
-        if ((this.Width > outer.Width) || (this.Height > outer.Height))
-        {
-            throw new ArgumentException($"Value cannot be larger than {nameof(outer)}.");
-        }
-
-        return new(
-            x: Math.Clamp(this.X, outer.X, outer.Right - this.Width),
-            y: Math.Clamp(this.Y, outer.Y, outer.Bottom - this.Height),
-            width: this.Width,
-            height: this.Height);
-    }
 
     /// <remarks>
     /// Adapted from https://github.com/dotnet/runtime
@@ -181,6 +179,53 @@ public sealed class RectangleInfo
             this.Y - padding.Top,
             this.Width + padding.Horizontal,
             this.Height + padding.Vertical);
+
+    public RectangleInfo MoveTo(PointInfo point) =>
+        new(
+            point.X,
+            point.Y,
+            this.Width,
+            this.Height);
+
+    /// <summary>
+    /// Adapted from https://github.com/dotnet/runtime
+    /// See https://github.com/dotnet/runtime/blob/dfd618dc648ba9b11dd0f8034f78113d69f223cd/src/libraries/System.Drawing.Primitives/src/System/Drawing/Rectangle.cs
+    /// </summary>
+    public RectangleInfo Intersect(RectangleInfo other)
+    {
+        var x1 = Math.Max(this.X, other.X);
+        var x2 = Math.Min(this.X + this.Width, other.X + other.Width);
+        var y1 = Math.Max(this.Y, other.Y);
+        var y2 = Math.Min(this.Y + this.Height, other.Y + other.Height);
+
+        if (x2 >= x1 && y2 >= y1)
+        {
+            return new RectangleInfo(x1, y1, x2 - x1, y2 - y1);
+        }
+
+        return RectangleInfo.Empty;
+    }
+
+    /// <summary>
+    /// Returns a new <see cref="RectangleInfo"/> that is moved within the bounds of the specified outer rectangle.
+    /// If the current rectangle is larger than the outer rectangle, an exception is thrown.
+    /// </summary>
+    /// <param name="outer">The outer <see cref="RectangleInfo"/> within which to confine this rectangle.</param>
+    /// <returns>A new <see cref="RectangleInfo"/> that is the result of moving this rectangle within the bounds of the outer rectangle.</returns>
+    /// <exception cref="ArgumentException">Thrown when the current rectangle is larger than the outer rectangle.</exception>
+    public RectangleInfo MoveInside(RectangleInfo outer)
+    {
+        if ((this.Width > outer.Width) || (this.Height > outer.Height))
+        {
+            throw new ArgumentException($"Value cannot be larger than {nameof(outer)}.");
+        }
+
+        return new(
+            x: Math.Clamp(this.X, outer.X, outer.Right - this.Width),
+            y: Math.Clamp(this.Y, outer.Y, outer.Bottom - this.Height),
+            width: this.Width,
+            height: this.Height);
+    }
 
     /// <summary>
     /// Returns a new <see cref="RectangleInfo"/> that is offset by the specified amount.
@@ -283,6 +328,16 @@ public sealed class RectangleInfo
         var y2 = Math.Max(this.Y + this.Height, rect.Y + rect.Height);
 
         return new RectangleInfo(x1, y1, x2 - x1, y2 - y1);
+    }
+
+    public static RectangleInfo Union(IEnumerable<RectangleInfo> rects)
+    {
+        var list = rects.ToList();
+        return (list.Count == 0)
+            ? RectangleInfo.Empty
+            : list.Skip(1).Aggregate(
+                seed: list.First(),
+                (aggr, rect) => aggr.Union(rect));
     }
 
     public Rectangle ToRectangle() =>
