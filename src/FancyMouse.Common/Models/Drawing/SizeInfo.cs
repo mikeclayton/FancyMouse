@@ -1,4 +1,5 @@
 ﻿using System.Drawing;
+using System.Text.Json.Serialization;
 using FancyMouse.Common.Models.Styles;
 using BorderStyle = FancyMouse.Common.Models.Styles.BorderStyle;
 
@@ -9,10 +10,19 @@ namespace FancyMouse.Common.Models.Drawing;
 /// </summary>
 public sealed record SizeInfo
 {
+    public static readonly SizeInfo Empty = new(0, 0, true);
+
+    [JsonConstructor]
     public SizeInfo(decimal width, decimal height)
+        : this(width, height, false)
+    {
+    }
+
+    private SizeInfo(decimal width, decimal height, bool isEmpty)
     {
         this.Width = width;
         this.Height = height;
+        this.IsEmpty = isEmpty;
     }
 
     public SizeInfo(Size size)
@@ -30,6 +40,11 @@ public sealed record SizeInfo
     {
         get;
         init;
+    }
+
+    public bool IsEmpty
+    {
+        get;
     }
 
     public SizeInfo Clamp(SizeInfo max)

@@ -1,4 +1,5 @@
-﻿using FancyMouse.Common.Models.Drawing;
+﻿using System.Text.Json.Serialization;
+using FancyMouse.Common.Models.Drawing;
 
 namespace FancyMouse.Common.Models.Display;
 
@@ -8,32 +9,36 @@ namespace FancyMouse.Common.Models.Display;
 /// </summary>
 public sealed record ScreenInfo
 {
-    public ScreenInfo(int handle, bool primary, RectangleInfo displayArea, RectangleInfo workingArea)
+    public ScreenInfo(int handle, bool primary, RectangleInfo displayArea, RectangleInfo? workingArea)
     {
         // this.Handle is a HMONITOR that has been cast to an int because we don't want
         // to expose the HMONITOR type outside the current assembly.
         this.Handle = handle;
         this.Primary = primary;
         this.DisplayArea = displayArea ?? throw new ArgumentNullException(nameof(displayArea));
-        this.WorkingArea = workingArea ?? throw new ArgumentNullException(nameof(workingArea));
+        this.WorkingArea = workingArea;
     }
 
+    [JsonPropertyName("handle")]
     public int Handle
     {
         get;
     }
 
+    [JsonPropertyName("primary")]
     public bool Primary
     {
         get;
     }
 
+    [JsonPropertyName("displayArea")]
     public RectangleInfo DisplayArea
     {
         get;
     }
 
-    public RectangleInfo WorkingArea
+    [JsonPropertyName("workingArea")]
+    public RectangleInfo? WorkingArea
     {
         get;
     }

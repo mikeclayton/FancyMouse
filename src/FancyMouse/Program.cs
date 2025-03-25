@@ -43,18 +43,20 @@ internal static class Program
         // hotkey message loop
         var previewHwnd = previewForm.Handle;
 
+        var cancellationTokenSource = new CancellationTokenSource();
         ConfigHelper.SetAppSettingsPath(".\\appSettings.json");
         ConfigHelper.SetHotKeyEventHandler(
-            (_, _) =>
+            async (_, _) =>
             {
                 // invoke on the thread the form was created on. this avoids
                 // blocking the calling thread (e.g. the message loop as a
                 // result of hotkey activation)
-                previewForm.BeginInvoke(
-                    () =>
+                await previewForm.InvokeAsync(
+                    async (cancellationToken) =>
                     {
-                        previewForm.ShowPreview();
-                    });
+                        await previewForm.ShowPreview();
+                    },
+                    cancellationTokenSource.Token);
             });
 
         // load the application settings and start the filesystem watcher

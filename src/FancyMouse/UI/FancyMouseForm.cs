@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using System.Linq;
+using System.Reflection.PortableExecutable;
 using FancyMouse.Common.Helpers;
 using FancyMouse.Common.Imaging;
 using FancyMouse.Common.Models.Display;
@@ -176,7 +178,7 @@ internal sealed partial class FancyMouseForm : Form
         this.OnDeactivate(EventArgs.Empty);
     }
 
-    public void ShowPreview()
+    public async Task ShowPreview()
     {
         var logger = this.Logger;
 
@@ -196,7 +198,67 @@ internal sealed partial class FancyMouseForm : Form
         var activatedLocation = MouseHelper.GetCursorPosition();
 
         var appSettings = Internal.Helpers.ConfigHelper.AppSettings ?? throw new InvalidOperationException();
-        var displayInfo = DeviceHelper.GetDisplayInfo();
+
+        var displayInfo = default(DisplayInfo);
+        var mwbIntegrationEnabled = true;
+        if (mwbIntegrationEnabled)
+        {
+            async Task<string[]> GetMachineMatrixOrDefault(MwbClient mwbClient)
+            {
+                try
+                {
+                    return await mwbClient.GetMachineMatrix();
+                }
+                catch (Exception ex)
+                {
+                    var message = ex.Message;
+                    return Array.Empty<string>();
+                }
+            }
+
+            async Task<ScreenInfo[]> GetMachineScreensOrDefault(MwbClient mwbClient, string machineId)
+            {
+                try
+                {
+                    return await mwbClient.GetMachineScreens(machineId);
+                }
+                catch (Exception ex)
+                {
+                    var message = ex.Message;
+                    return Array.Empty<ScreenInfo>();
+                }
+            }
+
+            var mwbClient = new MwbClient();
+            var mwbMatrix = await GetMachineMatrixOrDefault(mwbClient);
+
+            // get screen layouts from all devices in parallel
+            var deviceTasks = mwbMatrix.Select(async machineId =>
+                string.Equals(machineId, Environment.MachineName, StringComparison.OrdinalIgnoreCase)
+                    /* local device */
+                    ? new DeviceInfo(
+                        hostname: Environment.MachineName,
+                        localhost: true,
+                        screens: ScreenHelper.GetAllScreens())
+                    /* remote device */
+                    : new DeviceInfo(
+                        hostname: machineId,
+                        localhost: false,
+                        screens: await GetMachineScreensOrDefault(mwbClient, machineId)));
+            var devices = await Task.WhenAll(deviceTasks);
+            displayInfo = new(devices);
+        }
+        else
+        {
+            displayInfo = new(new DeviceInfo[]
+            {
+                new(
+                    hostname: Environment.MachineName,
+                    localhost: true,
+                    screens: ScreenHelper.GetAllScreens()),
+            });
+        }
+
         var activatedScreen = DeviceHelper.GetActivatedScreen(displayInfo, activatedLocation);
 
         var formLayout = LayoutHelper.GetFormLayout(

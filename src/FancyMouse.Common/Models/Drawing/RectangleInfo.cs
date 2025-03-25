@@ -12,12 +12,13 @@ public sealed record RectangleInfo
 {
     public static readonly RectangleInfo Empty = new(0, 0, 0, 0, true);
 
+    [JsonConstructor]
     public RectangleInfo(decimal x, decimal y, decimal width, decimal height)
         : this(x, y, width, height, false)
     {
     }
 
-    public RectangleInfo(decimal x, decimal y, decimal width, decimal height, bool isEmpty)
+    private RectangleInfo(decimal x, decimal y, decimal width, decimal height, bool isEmpty)
     {
         this.X = x;
         this.Y = y;
@@ -41,24 +42,28 @@ public sealed record RectangleInfo
     {
     }
 
+    [JsonPropertyName("x")]
     public decimal X
     {
         get;
         init;
     }
 
+    [JsonPropertyName("y")]
     public decimal Y
     {
         get;
         init;
     }
 
+    [JsonPropertyName("width")]
     public decimal Width
     {
         get;
         init;
     }
 
+    [JsonPropertyName("height")]
     public decimal Height
     {
         get;
