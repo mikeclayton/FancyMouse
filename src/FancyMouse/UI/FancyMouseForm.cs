@@ -1,24 +1,34 @@
 using System.Diagnostics;
-using System.Linq;
+using System.Net;
+using System.Net.Sockets;
 using System.Reflection.PortableExecutable;
+using System.Text;
+using System.Text.Json;
+
 using FancyMouse.Common.Helpers;
 using FancyMouse.Common.Imaging;
 using FancyMouse.Common.Models.Display;
 using FancyMouse.Common.Models.Drawing;
 using FancyMouse.Common.Models.ViewModel;
-using NLog;
+using FancyMouse.Internal.Imaging;
+using FancyMouse.MwbClient.Models;
+using FancyMouse.MwbClient.Transport;
+using Microsoft.Extensions.Logging;
+using NLog.Targets;
+using Message = FancyMouse.MwbClient.Models.Message;
 
+#pragma warning disable CA1848 // Use the LoggerMethod delegates
 namespace FancyMouse.UI;
 
 internal sealed partial class FancyMouseForm : Form
 {
-    public FancyMouseForm(ILogger logger)
+    public FancyMouseForm(NLog.ILogger logger)
     {
         this.Logger = logger ?? throw new ArgumentNullException(nameof(logger));
         this.InitializeComponent();
     }
 
-    private ILogger Logger
+    private NLog.ILogger Logger
     {
         get;
     }
@@ -199,93 +209,110 @@ internal sealed partial class FancyMouseForm : Form
 
         var appSettings = Internal.Helpers.ConfigHelper.AppSettings ?? throw new InvalidOperationException();
 
-        var displayInfo = default(DisplayInfo);
+        // var displayInfo = default(DisplayInfo);
         var mwbIntegrationEnabled = true;
         if (mwbIntegrationEnabled)
         {
-            async Task<string[]> GetMachineMatrixOrDefault(MwbClient mwbClient)
+            using var loggerFactory = LoggerFactory.Create(builder =>
             {
-                try
-                {
-                    return await mwbClient.GetMachineMatrix();
-                }
-                catch (Exception ex)
-                {
-                    var message = ex.Message;
-                    return Array.Empty<string>();
-                }
-            }
+            });
+            var ilogger = loggerFactory.CreateLogger<Message>();
+            ilogger.LogInformation("Hello, World!");
 
-            async Task<ScreenInfo[]> GetMachineScreensOrDefault(MwbClient mwbClient, string machineId)
-            {
-                try
-                {
-                    return await mwbClient.GetMachineScreens(machineId);
-                }
-                catch (Exception ex)
-                {
-                    var message = ex.Message;
-                    return Array.Empty<ScreenInfo>();
-                }
-            }
+            using var localClient = new MwbApiClient(
+                logger: ilogger,
+                name: "client",
+                serverAddress: IPAddress.Loopback,
+                serverPort: 12345);
 
-            var mwbClient = new MwbClient();
-            var mwbMatrix = await GetMachineMatrixOrDefault(mwbClient);
+            var cancellationTokenSource = new CancellationTokenSource();
+
+            var machineMatrix = await localClient.GetMachineMatrix(cancellationTokenSource.Token);
+
+            var mwbApiClients = machineMatrix.Matrix
+                .ToDictionary(
+                    machineId => machineId,
+                    machineId => new MwbApiClient(
+                        logger: ilogger,
+                        name: $"client_{machineId}",
+                        serverAddress: Dns.GetHostEntry(machineId).AddressList.First(address => address.AddressFamily == AddressFamily.InterNetwork),
+                        serverPort: 12345));
 
             // get screen layouts from all devices in parallel
-            var deviceTasks = mwbMatrix.Select(async machineId =>
-                string.Equals(machineId, Environment.MachineName, StringComparison.OrdinalIgnoreCase)
-                    /* local device */
-                    ? new DeviceInfo(
-                        hostname: Environment.MachineName,
-                        localhost: true,
-                        screens: ScreenHelper.GetAllScreens())
-                    /* remote device */
-                    : new DeviceInfo(
-                        hostname: machineId,
-                        localhost: false,
-                        screens: await GetMachineScreensOrDefault(mwbClient, machineId)));
-            var devices = await Task.WhenAll(deviceTasks);
-            displayInfo = new(devices);
-        }
-        else
-        {
-            displayInfo = new(new DeviceInfo[]
+            var deviceInfoTasks = new List<Task<DeviceInfo>>();
+            foreach (var machineId in machineMatrix.Matrix)
             {
-                new(
-                    hostname: Environment.MachineName,
-                    localhost: true,
-                    screens: ScreenHelper.GetAllScreens()),
-            });
+                if (string.Equals(machineId, Environment.MachineName, StringComparison.OrdinalIgnoreCase))
+                {
+                    /* local device */
+                    deviceInfoTasks.Add(
+                        Task.Run(
+                            () => new DeviceInfo(
+                                hostname: machineId,
+                                localhost: true,
+                                screens: ScreenHelper.GetAllScreens())));
+                }
+                else
+                {
+                    /* remote device */
+                    deviceInfoTasks.Add(
+                        Task.Run(
+                            async () =>
+                            {
+                                return new DeviceInfo(
+                                    hostname: machineId,
+                                    localhost: true,
+                                    screens: await mwbApiClients[machineId].GetRemoteScreenInfo());
+                            }));
+                }
+            }
+
+            var displayInfo = new DisplayInfo(
+                await Task.WhenAll(deviceInfoTasks).ConfigureAwait(false));
+
+            var activatedScreen = DeviceHelper.GetActivatedScreen(displayInfo.Devices[0], activatedLocation);
+
+            var formLayout = LayoutHelper.GetFormLayout(
+                previewStyle: appSettings.PreviewStyle,
+                displayInfo,
+                activatedScreen: activatedScreen,
+                activatedLocation: activatedLocation);
+
+            // remember this so we can map the mouse clicks back to
+            // the appropriate device and screen location
+            this.FormLayout = formLayout;
+
+            this.PositionForm(formLayout.FormBounds);
+
+            var imageCopyServices = displayInfo.Devices
+                .Select(
+                    deviceInfo =>
+                        string.Equals(deviceInfo.Hostname, Environment.MachineName, StringComparison.OrdinalIgnoreCase)
+                            ? (IImageRegionCopyService)new DesktopImageRegionCopyService()
+                            : new RemoteImageRegionCopyService(mwbApiClients[deviceInfo.Hostname]))
+                .ToList();
+
+            DrawingHelper.RenderPreview(
+                this.FormLayout.CanvasLayout,
+                activatedScreen,
+                imageCopyServices,
+                this.OnPreviewImageCreated,
+                this.OnPreviewImageUpdated);
+
+            foreach (var mwbApiClient in mwbApiClients.Values)
+            {
+                mwbApiClient.Dispose();
+            }
+
+            stopwatch.Stop();
+
+            // we have to activate the form to make sure the deactivate event fires
+            this.InvokeOnUiThread(
+                () =>
+                {
+                    this.Activate();
+                });
         }
-
-        var activatedScreen = DeviceHelper.GetActivatedScreen(displayInfo, activatedLocation);
-
-        var formLayout = LayoutHelper.GetFormLayout(
-            previewStyle: appSettings.PreviewStyle,
-            displayInfo,
-            activatedScreen: activatedScreen,
-            activatedLocation: activatedLocation);
-
-        // remember this so we can map the mouse clicks back to
-        // the appropriate device and screen location
-        this.FormLayout = formLayout;
-
-        this.PositionForm(formLayout.FormBounds);
-
-        var imageCopyService = new DesktopImageRegionCopyService();
-
-        DrawingHelper.RenderPreview(
-            this.FormLayout.CanvasLayout,
-            activatedScreen,
-            imageCopyService,
-            this.OnPreviewImageCreated,
-            this.OnPreviewImageUpdated);
-
-        stopwatch.Stop();
-
-        // we have to activate the form to make sure the deactivate event fires
-        this.Activate();
     }
 
     private void ClearPreview()
@@ -304,21 +331,39 @@ internal sealed partial class FancyMouseForm : Form
         GC.Collect();
     }
 
+    private void InvokeOnUiThread(Action action)
+    {
+        // this might be called from a task that we're awaiting
+        // so we need to make sure we use the UI thread
+        if (this.InvokeRequired)
+        {
+            this.Invoke(action);
+        }
+        else
+        {
+            action.Invoke();
+        }
+    }
+
     /// <summary>
     /// Resize and position the specified form.
     /// </summary>
     private void PositionForm(RectangleInfo bounds)
     {
-        // note - do this in two steps rather than "this.Bounds = formBounds" as there
-        // appears to be an issue in WinForms with dpi scaling even when using PerMonitorV2,
-        // where the form scaling uses either the *primary* screen scaling or the *previous*
-        // screen's scaling when the form is moved to a different screen. i've got no idea
-        // *why*, but the exact sequence of calls below seems to be a workaround...
-        // see https://github.com/mikeclayton/FancyMouse/issues/2
-        var rect = bounds.ToRectangle();
-        this.Location = rect.Location;
-        _ = this.PointToScreen(Point.Empty);
-        this.Size = rect.Size;
+        this.InvokeOnUiThread(
+            () =>
+            {
+                // note - do this in two steps rather than "this.Bounds = formBounds" as there
+                // appears to be an issue in WinForms with dpi scaling even when using PerMonitorV2,
+                // where the form scaling uses either the *primary* screen scaling or the *previous*
+                // screen's scaling when the form is moved to a different screen. i've got no idea
+                // *why*, but the exact sequence of calls below seems to be a workaround...
+                // see https://github.com/mikeclayton/FancyMouse/issues/2
+                var rect = bounds.ToRectangle();
+                this.Location = rect.Location;
+                _ = this.PointToScreen(Point.Empty);
+                this.Size = rect.Size;
+            });
     }
 
     private void OnPreviewImageCreated(Bitmap preview)
@@ -329,15 +374,19 @@ internal sealed partial class FancyMouseForm : Form
 
     private void OnPreviewImageUpdated()
     {
-        if (!this.Visible)
-        {
-            // we seem to need to turn off topmost and then re-enable it again
-            // when we show the form, otherwise it doesn't always get shown topmost...
-            this.TopMost = false;
-            this.TopMost = true;
-            this.Show();
-        }
+        this.InvokeOnUiThread(
+            () =>
+            {
+                if (!this.Visible)
+                {
+                    // we seem to need to turn off topmost and then re-enable it again
+                    // when we show the form, otherwise it doesn't always get shown topmost...
+                    this.TopMost = false;
+                    this.TopMost = true;
+                    this.Show();
+                }
 
-        this.Thumbnail.Refresh();
+                this.Thumbnail.Refresh();
+            });
     }
 }

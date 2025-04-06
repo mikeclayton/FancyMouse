@@ -47,7 +47,8 @@ internal static class SettingsConverter
                 width: parts[0],
                 height: parts[1]
             ),
-            canvasStyle: Settings.AppSettings.DefaultSettings.PreviewStyle.CanvasStyle,
-            screenStyle: Settings.AppSettings.DefaultSettings.PreviewStyle.ScreenStyle);
+            canvasStyle: AppSettings.DefaultSettings.PreviewStyle.CanvasStyle,
+            screenStyle: AppSettings.DefaultSettings.PreviewStyle.ScreenStyle,
+            mwbColors: AppSettings.DefaultSettings.PreviewStyle.MwbColors);
     }
 }

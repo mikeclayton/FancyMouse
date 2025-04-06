@@ -12,10 +12,31 @@ namespace FancyMouse.Common.Helpers;
 
 public static class DrawingHelper
 {
+    /// <summary>
+    /// Renders a preview image of the specified canvas layout.
+    /// </summary>
+    /// <param name="canvasLayout">
+    /// The layout of the canvas, including the layout of all devices and screens.
+    /// </param>
+    /// <param name="activatedScreen">
+    /// The screen that is currently activated (i.e. the one that the user is interacting with).
+    /// </param>
+    /// <param name="imageRegionCopyServices">
+    /// A list of IImageRegionCopyService implementations, one for each device in the canvas layout.
+    /// </param>
+    /// <param name="previewImageCreatedCallback">
+    /// A callback that is invoked when the preview image is created.
+    /// </param>
+    /// <param name="previewImageUpdatedCallback">
+    /// A callback that is invoked when the preview image is updated.
+    /// </param>
+    /// <returns>
+    /// A preview image of the canvas layout.
+    /// </returns>
     public static Bitmap RenderPreview(
         CanvasViewModel canvasLayout,
         ScreenInfo activatedScreen,
-        IImageRegionCopyService imageCopyService,
+        List<IImageRegionCopyService> imageRegionCopyServices,
         Action<Bitmap>? previewImageCreatedCallback = null,
         Action? previewImageUpdatedCallback = null)
     {
@@ -38,31 +59,37 @@ public static class DrawingHelper
         // draw them, putting the activated screen first (we need to capture
         // and draw the activated screen before we show the form because
         // otherwise we'll capture the form as part of the screenshot!)
-        var devicePairings = canvasLayout.DeviceLayouts
+        var screenDrawingOps = canvasLayout.DeviceLayouts
             .SelectMany(
-                deviceLayout => deviceLayout.ScreenLayouts,
-                (deviceLayout, screenLayout) => new { DeviceLayout = deviceLayout, ScreenLayout = screenLayout })
+                (deviceLayout, deviceIndex) => deviceLayout.ScreenLayouts.Select(
+                    screenLayout => new
+                    {
+                        DeviceIndex = deviceIndex,
+                        DeviceLayout = deviceLayout,
+                        ScreenLayout = screenLayout,
+                        CopyService = imageRegionCopyServices[deviceIndex],
+                    }))
             .OrderByDescending(
                 pair => object.ReferenceEquals(pair.ScreenLayout, activatedScreen))
             .ToList();
 
         // draw all the screenshot bezels
-        foreach (var devicePairing in devicePairings)
+        foreach (var screenDrawingOp in screenDrawingOps)
         {
             DrawingHelper.DrawRaisedBorder(
-                previewGraphics, devicePairing.ScreenLayout.ScreenBounds, devicePairing.ScreenLayout.ScreenStyle);
+                previewGraphics, screenDrawingOp.ScreenLayout.ScreenBounds, screenDrawingOp.ScreenLayout.ScreenStyle);
         }
 
         var refreshRequired = false;
         var placeholdersDrawn = false;
-        for (var i = 0; i < devicePairings.Count; i++)
+        for (var i = 0; i < screenDrawingOps.Count; i++)
         {
-            var screenLayout = devicePairings[i].ScreenLayout;
+            var screenDrawingOp = screenDrawingOps[i];
 
-            imageCopyService.CopyImageRegion(
+            screenDrawingOp.CopyService.CopyImageRegion(
                 targetGraphics: previewGraphics,
-                sourceBounds: screenLayout.ScreenInfo.DisplayArea,
-                targetBounds: screenLayout.ScreenBounds.ContentBounds);
+                sourceBounds: screenDrawingOp.ScreenLayout.ScreenInfo.DisplayArea,
+                targetBounds: screenDrawingOp.ScreenLayout.ScreenBounds.ContentBounds);
             refreshRequired = true;
 
             // show the placeholder images and show the form if it looks like it might take
@@ -74,10 +101,10 @@ public static class DrawingHelper
                 {
                     DrawingHelper.DrawScreenPlaceholders(
                         previewGraphics,
-                        screenLayout.ScreenStyle,
-                        devicePairings
+                        screenDrawingOp.ScreenLayout.ScreenStyle,
+                        screenDrawingOps
                             .Skip(i + 1)
-                            .Select(devicePairing => devicePairing.ScreenLayout.ScreenBounds)
+                            .Select(drawingOp => drawingOp.ScreenLayout.ScreenBounds)
                             .ToList());
                     placeholdersDrawn = true;
                 }

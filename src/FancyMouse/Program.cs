@@ -23,7 +23,7 @@ internal static class Program
         ApplicationConfiguration.Initialize();
 
         // make sure we're in the right high dpi mode otherwise pixel positions and sizes for
-        // screen captures get distorted and coordinates aren't various calculated correctly.
+        // screen captures get distorted and various coordinates aren't calculated correctly.
         if (Application.HighDpiMode != HighDpiMode.PerMonitorV2)
         {
             throw new InvalidOperationException("high dpi mode is not set to PerMonitorV2");

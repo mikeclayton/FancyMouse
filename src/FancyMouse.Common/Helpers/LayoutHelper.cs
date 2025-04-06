@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using FancyMouse.Common.Models.Display;
 using FancyMouse.Common.Models.Drawing;
@@ -91,6 +92,8 @@ public static class LayoutHelper
             previewStyle.CanvasSize
                 .Clamp(activatedScreen.DisplayArea.Size));
 
+        var screenStyles = LayoutHelper.GetDeviceScreenStyles(previewStyle, displayInfo.Devices.Count).ToList();
+
         // create an initial form layout.
         // this is a nested structure of mutable "builder" objects that can be used to
         // build the final immutable layout objects once all the bounds have been calculated
@@ -104,7 +107,7 @@ public static class LayoutHelper
                     boxStyle: previewStyle.CanvasStyle),
                 CanvasStyle = previewStyle.CanvasStyle,
                 DeviceLayouts = displayInfo.Devices.Select(
-                    deviceInfo => new DeviceViewModel.Builder
+                    (deviceInfo, deviceIndex) => new DeviceViewModel.Builder
                     {
                         DeviceInfo = deviceInfo,
                         DeviceBounds = BoxBounds.Empty,
@@ -114,13 +117,40 @@ public static class LayoutHelper
                             {
                                 ScreenInfo = screenInfo,
                                 ScreenBounds = BoxBounds.Empty,
-                                ScreenStyle = previewStyle.ScreenStyle,
+                                ScreenStyle = screenStyles[deviceIndex],
                             }).ToList(),
                     }).ToList(),
             },
         };
 
         return formLayout;
+    }
+
+    internal static IEnumerable<BoxStyle> GetDeviceScreenStyles(PreviewStyle previewStyle, int screenCount)
+    {
+        // work out the colors to use for the screen borders for each device
+        // (add the default localhost color first and then repeat the mwb colors until we've got enough)
+        var screenBorderColors = new List<Color?> { previewStyle.ScreenStyle.BorderStyle.Color };
+        while (screenBorderColors.Count < screenCount)
+        {
+            if (previewStyle.MwbColors?.Count > 0)
+            {
+                screenBorderColors.AddRange(previewStyle.MwbColors.Cast<Color?>());
+                continue;
+            }
+
+            screenBorderColors.Add(previewStyle.ScreenStyle.BorderStyle.Color);
+        }
+
+        // convert the colors into screen styles
+        return screenBorderColors
+            .Take(screenCount)
+            .Select(
+                color => new BoxStyle(
+                    previewStyle.ScreenStyle.MarginStyle,
+                    previewStyle.ScreenStyle.BorderStyle.WithColor(color),
+                    previewStyle.ScreenStyle.PaddingStyle,
+                    previewStyle.ScreenStyle.BackgroundStyle));
     }
 
     /// <summary>
@@ -133,8 +163,8 @@ public static class LayoutHelper
         var contentBounds = formLayout?.CanvasLayout?.CanvasBounds?.ContentBounds
             ?? throw new InvalidOperationException();
 
-        // build an initial grid at 100% scale. the grid is currently a single row
-        // high with all the devices arranged left to right for the time being.
+        // build an initial grid of devices at 100% scale. the grid is currently a single row
+        // of cells high with all the devices arranged left to right for the time being.
         // we'll enhance this to allow for multiple rows later to support the
         // Mouse Without Borders "square" arrangement.
         var gridRowCount = 1;
@@ -145,8 +175,9 @@ public static class LayoutHelper
             deviceGrid[0, columnIndex] = deviceLayouts[columnIndex];
         }
 
-        // if a device has zero screens we still want to allocate space in the full size grid
-        // so that it doesn't disappear into a zero width or height cell.
+        // if a device has zero screens (or if we failed to connect and read screen layouts) we
+        // still want to allocate space in the full size grid so that it doesn't disappear into
+        // a zero width or height cell.
         var fullSizeGridCellMinSize = new Size(1024, 768);
 
         // find the size of the tallest device in each row and the widest device in each column.
@@ -200,7 +231,8 @@ public static class LayoutHelper
 
         // scale the row and column coordinates by the factor. round coordinates to ensure they
         // don't overlap when rendered as pixel dimensions in the image. we'll also add a final
-        // coordinate to simplify building the end cell of each row and column in the scaled grid.
+        // "fencepost" coordinate to simplify building the end cell of each row and column in the
+        // scaled grid.
         var scaledRowCoordinates = fullSizeRowCoordinates
             .Select(fullSizeRowCoordinate => Math.Round(fullSizeRowCoordinate * scalingFactor))
             .Concat([scaledGridSize.Height])
@@ -258,12 +290,14 @@ public static class LayoutHelper
     }
 
     /// <summary>
-    /// Arranges the screen layouts and scales them to fit inside their parent device layouts.
+    /// Arranges the screen layouts inside their respective device cells and
+    /// scales them to fit inside their parent device layouts.
     /// </summary>
     internal static void ArrangeAndScaleScreenLayouts(FormViewModel.Builder formLayout)
     {
         var deviceLayouts = formLayout?.CanvasLayout?.DeviceLayouts
             ?? throw new InvalidOperationException();
+
         foreach (var deviceLayout in deviceLayouts)
         {
             var deviceInfo = deviceLayout.DeviceInfo ?? throw new InvalidOperationException();

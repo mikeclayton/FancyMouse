@@ -78,7 +78,8 @@ internal static class SettingsConverter
                         color: previewStyle?.ScreenStyle?.BackgroundStyle?.Color2,
                         defaultValue: defaultStyle?.ScreenStyle?.BackgroundStyle?.Color2)
                 )
-            ));
+            ),
+            mwbColors: Array.Empty<Color>());
     }
 
     private static MarginStyle MergeMarginStyles(MarginStyleSettings? marginStyle, MarginStyle? defaultStyle)

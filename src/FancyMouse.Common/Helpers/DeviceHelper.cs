@@ -17,4 +17,15 @@ public static class DeviceHelper
 
         return activatedScreen;
     }
+
+    public static ScreenInfo GetActivatedScreen(DeviceInfo deviceInfo, PointInfo activatedLocation)
+    {
+        ArgumentNullException.ThrowIfNull(deviceInfo);
+        ArgumentNullException.ThrowIfNull(activatedLocation);
+
+        var activatedScreen = deviceInfo.Screens
+            .Single(screen => screen.DisplayArea.Contains(activatedLocation));
+
+        return activatedScreen;
+    }
 }
