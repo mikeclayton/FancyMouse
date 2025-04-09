@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-using FancyMouse.Common.Models.Display;
+using FancyMouse.Models.Display;
 
 namespace FancyMouse.MwbClient.Models;
 

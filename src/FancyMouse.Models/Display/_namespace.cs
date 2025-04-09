@@ -1,4 +1,4 @@
-﻿namespace FancyMouse.Common.Models.Display;
+﻿namespace FancyMouse.Models.Display;
 
 /*
  <summary>

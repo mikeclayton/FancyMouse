@@ -1,4 +1,4 @@
-﻿namespace FancyMouse.Common.Models.Styles;
+﻿namespace FancyMouse.Models.Styles;
 
 /// <summary>
 /// Represents the margin style for a drawing object.

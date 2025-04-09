@@ -1,4 +1,4 @@
-﻿namespace FancyMouse.Common.Models.ViewModel;
+﻿namespace FancyMouse.Models.ViewModel;
 
 /*
  The <see cref="FancyMouse.Common.Models.ViewModel"/> namespace contains view model classes

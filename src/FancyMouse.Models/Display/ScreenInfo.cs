@@ -1,7 +1,7 @@
 ﻿using System.Text.Json.Serialization;
-using FancyMouse.Common.Models.Drawing;
+using FancyMouse.Models.Drawing;
 
-namespace FancyMouse.Common.Models.Display;
+namespace FancyMouse.Models.Display;
 
 /// <summary>
 /// Immutable version of a System.Windows.Forms.Screen object so we don't need to
