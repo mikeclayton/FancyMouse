@@ -30,12 +30,12 @@ public sealed record BoxBounds
     */
 
     public static readonly BoxBounds Empty = new(
-            outerBounds: RectangleInfo.Empty,
-            marginBounds: RectangleInfo.Empty,
-            borderBounds: RectangleInfo.Empty,
-            paddingBounds: RectangleInfo.Empty,
-            contentBounds: RectangleInfo.Empty,
-            isEmpty: true);
+        outerBounds: RectangleInfo.Empty,
+        marginBounds: RectangleInfo.Empty,
+        borderBounds: RectangleInfo.Empty,
+        paddingBounds: RectangleInfo.Empty,
+        contentBounds: RectangleInfo.Empty,
+        isEmpty: true);
 
     public BoxBounds(
         RectangleInfo outerBounds,
