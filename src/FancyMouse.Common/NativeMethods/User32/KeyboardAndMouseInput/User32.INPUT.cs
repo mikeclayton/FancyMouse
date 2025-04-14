@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace FancyMouse.Common.NativeMethods;
 
-internal static partial class User32
+public static partial class User32
 {
     /// <summary>
     /// Used by SendInput to store information for synthesizing input events such as keystrokes, mouse movement, and mouse clicks.

@@ -2,7 +2,7 @@
 
 namespace FancyMouse.Common.NativeMethods;
 
-internal static partial class Gdi32
+public static partial class Gdi32
 {
     /// <summary>
     /// The stretching mode.

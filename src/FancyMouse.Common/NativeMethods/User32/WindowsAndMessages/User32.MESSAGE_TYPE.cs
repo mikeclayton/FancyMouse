@@ -2,7 +2,7 @@
 
 namespace FancyMouse.Common.NativeMethods;
 
-internal static partial class User32
+public static partial class User32
 {
     /// <remarks>
     /// See https://github.com/dotnet/pinvoke/blob/main/src/User32/User32+WindowMessage.cs

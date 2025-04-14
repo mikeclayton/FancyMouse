@@ -3,7 +3,7 @@ using static FancyMouse.Common.NativeMethods.Core;
 
 namespace FancyMouse.Common.NativeMethods;
 
-internal static partial class User32
+public static partial class User32
 {
     /// <summary>
     /// The GetWindowDC function retrieves the device context (DC) for the entire window,

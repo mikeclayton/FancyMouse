@@ -2,7 +2,7 @@
 
 namespace FancyMouse.Common.NativeMethods;
 
-internal static partial class User32
+public static partial class User32
 {
     /// <summary>
     /// A callback function, which you define in your application, that processes messages sent to a window.

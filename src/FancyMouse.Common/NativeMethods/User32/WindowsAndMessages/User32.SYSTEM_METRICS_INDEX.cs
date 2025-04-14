@@ -2,7 +2,7 @@
 
 namespace FancyMouse.Common.NativeMethods;
 
-internal static partial class User32
+public static partial class User32
 {
     [SuppressMessage("ReSharper", "InconsistentNaming", Justification = "Names and values taken from Win32Api")]
     [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Names and values taken from Win32Api")]

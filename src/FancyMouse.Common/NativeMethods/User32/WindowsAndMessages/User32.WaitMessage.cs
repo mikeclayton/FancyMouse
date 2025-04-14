@@ -3,7 +3,7 @@ using static FancyMouse.Common.NativeMethods.Core;
 
 namespace FancyMouse.Common.NativeMethods;
 
-internal static partial class User32
+public static partial class User32
 {
     /// <summary>
     /// Yields control to other threads when a thread has no other messages in its message queue.

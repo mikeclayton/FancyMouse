@@ -3,7 +3,7 @@ using static FancyMouse.Common.NativeMethods.Core;
 
 namespace FancyMouse.Common.NativeMethods;
 
-internal static partial class Gdi32
+public static partial class Gdi32
 {
     /// <summary>
     /// The CreateCompatibleBitmap function creates a bitmap compatible with the device that is associated with the specified device context.

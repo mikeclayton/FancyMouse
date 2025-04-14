@@ -3,7 +3,7 @@ using static FancyMouse.Common.NativeMethods.Core;
 
 namespace FancyMouse.Common.NativeMethods;
 
-internal static partial class Gdi32
+public static partial class Gdi32
 {
     /// <summary>
     /// The TRIVERTEX structure contains color information and position information.

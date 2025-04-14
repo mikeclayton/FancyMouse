@@ -5,7 +5,7 @@ using static FancyMouse.Common.NativeMethods.User32;
 
 namespace FancyMouse.Common.NativeMethods;
 
-internal static partial class User32
+public static partial class User32
 {
     /// <summary>
     /// Contains window class information. It is used with the RegisterClassEx and GetClassInfoEx  functions.

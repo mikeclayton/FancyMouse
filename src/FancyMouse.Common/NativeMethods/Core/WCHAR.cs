@@ -1,6 +1,6 @@
 ﻿namespace FancyMouse.Common.NativeMethods;
 
-internal static partial class Core
+public static partial class Core
 {
     /// <summary>
     /// A 16-bit Unicode character.For more information, see Character Sets Used By Fonts.

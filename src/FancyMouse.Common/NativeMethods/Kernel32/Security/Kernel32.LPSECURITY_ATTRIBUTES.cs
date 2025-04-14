@@ -2,7 +2,7 @@
 
 namespace FancyMouse.Common.NativeMethods;
 
-internal static partial class Kernel32
+public static partial class Kernel32
 {
     /// <remarks>
     /// See https://learn.microsoft.com/en-us/previous-versions/windows/desktop/legacy/aa379560(v=vs.85)

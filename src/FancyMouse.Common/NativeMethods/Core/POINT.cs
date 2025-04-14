@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace FancyMouse.Common.NativeMethods;
 
-internal static partial class Core
+public static partial class Core
 {
     /// <summary>
     /// The POINT structure defines the x- and y-coordinates of a point.

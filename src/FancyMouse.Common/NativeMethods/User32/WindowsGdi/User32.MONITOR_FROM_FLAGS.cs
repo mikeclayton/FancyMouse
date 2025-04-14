@@ -3,7 +3,7 @@
 namespace FancyMouse.Common.NativeMethods;
 
 [SuppressMessage("SA1310", "SA1310:FieldNamesMustNotContainUnderscore", Justification = "Names match Win32 api")]
-internal static partial class User32
+public static partial class User32
 {
     /// <summary>
     /// Determines the function's return value if the point is not contained within any display monitor.

@@ -2,7 +2,7 @@
 
 namespace FancyMouse.Common.NativeMethods;
 
-internal static partial class Shell32
+public static partial class Shell32
 {
     /// <summary>
     /// A value that specifies the action to be taken by Shell_NotifyIconW

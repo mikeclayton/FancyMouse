@@ -2,7 +2,7 @@
 
 namespace FancyMouse.Common.NativeMethods;
 
-internal static partial class Core
+public static partial class Core
 {
     /// <summary>
     /// The red, green, blue (RGB) color value (32 bits). See COLORREF for information on this type.

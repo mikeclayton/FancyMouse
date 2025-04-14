@@ -2,7 +2,7 @@
 
 namespace FancyMouse.Common.NativeMethods;
 
-internal static partial class User32
+public static partial class User32
 {
     /// <summary>
     /// A MonitorEnumProc function is an application-defined callback function that is called by the EnumDisplayMonitors function.

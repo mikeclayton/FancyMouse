@@ -3,7 +3,7 @@ using static FancyMouse.Common.NativeMethods.Core;
 
 namespace FancyMouse.Common.NativeMethods;
 
-internal static partial class Kernel32
+public static partial class Kernel32
 {
     /// <summary>
     /// Creates or opens a named or unnamed event object.

@@ -4,7 +4,7 @@ using static FancyMouse.Common.NativeMethods.Core;
 
 namespace FancyMouse.Common.NativeMethods;
 
-internal static partial class Shell32
+public static partial class Shell32
 {
     /// <summary>
     /// Sends a message to the taskbar's status area.

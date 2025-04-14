@@ -2,7 +2,7 @@
 
 namespace FancyMouse.Common.NativeMethods;
 
-internal static partial class Gdi32
+public static partial class Gdi32
 {
     /// <summary>
     /// A raster-operation code. These codes define how the color data for the source
