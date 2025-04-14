@@ -1,8 +1,9 @@
 ﻿using System.Diagnostics;
 using System.Drawing;
 using System.Text.Json;
-using FancyMouse.Common.Models.Styles;
+
 using FancyMouse.HotKeys;
+using FancyMouse.Models.Styles;
 using FancyMouse.Settings;
 using FancyMouse.UnitTests.Settings.TestUtils;
 using Microsoft.VisualStudio.TestTools.UnitTesting;

@@ -1,10 +1,10 @@
 ﻿using System.Drawing;
 using System.Text.Json;
-using FancyMouse.Common.Models.Drawing;
-using FancyMouse.Common.Models.Styles;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace FancyMouse.Common.UnitTests.Models.Drawing;
+using FancyMouse.Models.Drawing;
+using FancyMouse.Models.Styles;
+
+namespace FancyMouse.Models.UnitTests.Drawing;
 
 [TestClass]
 public static class BoxBoundsTests

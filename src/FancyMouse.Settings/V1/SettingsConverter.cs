@@ -1,8 +1,9 @@
 ﻿using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using FancyMouse.Common.Models.Styles;
+
 using FancyMouse.HotKeys;
+using FancyMouse.Models.Styles;
 
 namespace FancyMouse.Settings.V1;
 

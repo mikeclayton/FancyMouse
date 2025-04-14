@@ -1,7 +1,8 @@
 ﻿using System.Collections.ObjectModel;
-using FancyMouse.Common.Models.Drawing;
 
-namespace FancyMouse.Common.Models.Display;
+using FancyMouse.Models.Drawing;
+
+namespace FancyMouse.Models.Display;
 
 /// <summary>
 /// Represents a device whose screens are rendered in the preview image.

@@ -1,6 +1,6 @@
-﻿using FancyMouse.Common.Models.Drawing;
+﻿using FancyMouse.Models.Drawing;
 
-namespace FancyMouse.Common.Models.ViewModel;
+namespace FancyMouse.Models.ViewModel;
 
 /// <summary>
 /// Defines the preview form size and location.

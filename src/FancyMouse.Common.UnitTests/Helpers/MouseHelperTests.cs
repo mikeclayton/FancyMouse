@@ -1,5 +1,5 @@
 ﻿using FancyMouse.Common.Helpers;
-using FancyMouse.Common.Models.Drawing;
+using FancyMouse.Models.Drawing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace FancyMouse.Common.UnitTests.Helpers;

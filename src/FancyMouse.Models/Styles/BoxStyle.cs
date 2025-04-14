@@ -1,4 +1,4 @@
-﻿namespace FancyMouse.Common.Models.Styles;
+﻿namespace FancyMouse.Models.Styles;
 
 /// <summary>
 /// Represents the styles to apply to a simple box-layout based drawing object.

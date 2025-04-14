@@ -1,9 +1,10 @@
 using System.Diagnostics;
+
 using FancyMouse.Common.Helpers;
 using FancyMouse.Common.Imaging;
-using FancyMouse.Common.Models.Display;
-using FancyMouse.Common.Models.Drawing;
-using FancyMouse.Common.Models.ViewModel;
+using FancyMouse.Models.Display;
+using FancyMouse.Models.Drawing;
+using FancyMouse.Models.ViewModel;
 using NLog;
 
 namespace FancyMouse.UI;

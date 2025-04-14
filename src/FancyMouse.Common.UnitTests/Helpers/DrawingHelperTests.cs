@@ -1,11 +1,12 @@
 ﻿using System.Drawing;
 using System.Drawing.Imaging;
 using System.Reflection;
+
 using FancyMouse.Common.Helpers;
 using FancyMouse.Common.Imaging;
-using FancyMouse.Common.Models.Display;
-using FancyMouse.Common.Models.Drawing;
-using FancyMouse.Common.Models.Styles;
+using FancyMouse.Models.Display;
+using FancyMouse.Models.Drawing;
+using FancyMouse.Models.Styles;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace FancyMouse.Common.UnitTests.Helpers;

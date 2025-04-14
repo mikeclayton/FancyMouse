@@ -1,9 +1,11 @@
 ﻿using System.Drawing;
 using System.Text.Json.Serialization;
-using FancyMouse.Common.Models.Styles;
-using BorderStyle = FancyMouse.Common.Models.Styles.BorderStyle;
 
-namespace FancyMouse.Common.Models.Drawing;
+using FancyMouse.Models.Styles;
+
+using BorderStyle = FancyMouse.Models.Styles.BorderStyle;
+
+namespace FancyMouse.Models.Drawing;
 
 /// <summary>
 /// Immutable version of a System.Drawing.Rectangle object with some extra utility methods.

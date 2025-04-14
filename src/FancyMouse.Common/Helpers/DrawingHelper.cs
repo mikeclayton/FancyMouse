@@ -2,11 +2,12 @@
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
+
 using FancyMouse.Common.Imaging;
-using FancyMouse.Common.Models.Display;
-using FancyMouse.Common.Models.Drawing;
-using FancyMouse.Common.Models.Styles;
-using FancyMouse.Common.Models.ViewModel;
+using FancyMouse.Models.Display;
+using FancyMouse.Models.Drawing;
+using FancyMouse.Models.Styles;
+using FancyMouse.Models.ViewModel;
 
 namespace FancyMouse.Common.Helpers;
 

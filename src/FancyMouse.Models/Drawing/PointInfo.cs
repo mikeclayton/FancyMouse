@@ -1,6 +1,6 @@
 ﻿using System.Drawing;
 
-namespace FancyMouse.Common.Models.Drawing;
+namespace FancyMouse.Models.Drawing;
 
 /// <summary>
 /// Immutable version of a System.Drawing.Point object with some extra utility methods.

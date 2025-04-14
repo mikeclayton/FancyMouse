@@ -1,11 +1,12 @@
 ﻿using System.Diagnostics;
 using System.Drawing;
 using System.Text.Json;
+
 using FancyMouse.Common.Helpers;
-using FancyMouse.Common.Models.Display;
-using FancyMouse.Common.Models.Drawing;
-using FancyMouse.Common.Models.Styles;
-using FancyMouse.Common.Models.ViewModel;
+using FancyMouse.Models.Display;
+using FancyMouse.Models.Drawing;
+using FancyMouse.Models.Styles;
+using FancyMouse.Models.ViewModel;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace FancyMouse.Common.UnitTests.Helpers;

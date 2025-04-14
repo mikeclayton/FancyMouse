@@ -1,6 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 
-namespace FancyMouse.Common.Models.Display;
+namespace FancyMouse.Models.Display;
 
 public sealed record DisplayInfo
 {

@@ -1,8 +1,9 @@
 ﻿using System.Collections.ObjectModel;
-using FancyMouse.Common.Models.Drawing;
-using FancyMouse.Common.Models.Styles;
 
-namespace FancyMouse.Common.Models.ViewModel;
+using FancyMouse.Models.Drawing;
+using FancyMouse.Models.Styles;
+
+namespace FancyMouse.Models.ViewModel;
 
 public sealed class CanvasViewModel
 {

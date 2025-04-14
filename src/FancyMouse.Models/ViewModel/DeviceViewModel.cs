@@ -1,9 +1,10 @@
 ﻿using System.Collections.ObjectModel;
-using FancyMouse.Common.Models.Display;
-using FancyMouse.Common.Models.Drawing;
-using FancyMouse.Common.Models.Styles;
 
-namespace FancyMouse.Common.Models.ViewModel;
+using FancyMouse.Models.Display;
+using FancyMouse.Models.Drawing;
+using FancyMouse.Models.Styles;
+
+namespace FancyMouse.Models.ViewModel;
 
 public sealed class DeviceViewModel
 {

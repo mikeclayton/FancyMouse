@@ -1,6 +1,6 @@
-﻿using FancyMouse.Common.Models.Styles;
+﻿using FancyMouse.Models.Styles;
 
-namespace FancyMouse.Common.Models.Drawing;
+namespace FancyMouse.Models.Drawing;
 
 /// <summary>
 /// Represents the bounds of a layout box, including outer, margin, border, padding,
@@ -37,7 +37,7 @@ public sealed record BoxBounds
             contentBounds: RectangleInfo.Empty,
             isEmpty: true);
 
-    internal BoxBounds(
+    public BoxBounds(
         RectangleInfo outerBounds,
         RectangleInfo marginBounds,
         RectangleInfo borderBounds,

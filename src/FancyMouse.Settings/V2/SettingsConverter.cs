@@ -1,6 +1,7 @@
 ﻿using System.Drawing;
 using System.Text.Json;
-using FancyMouse.Common.Models.Styles;
+
+using FancyMouse.Models.Styles;
 
 namespace FancyMouse.Settings.V2;
 

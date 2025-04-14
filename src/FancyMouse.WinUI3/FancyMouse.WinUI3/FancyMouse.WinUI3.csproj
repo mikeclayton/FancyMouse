@@ -25,7 +25,11 @@
     <PackageReference Include="NLog" Version="5.4.0" />
   </ItemGroup>
 
-    <!-- Publish Properties -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\FancyMouse.Models\FancyMouse.Models.csproj" />
+  </ItemGroup>
+
+  <!-- Publish Properties -->
   <PropertyGroup>
     <PublishReadyToRun Condition="'$(Configuration)' == 'Debug'">False</PublishReadyToRun>
     <PublishReadyToRun Condition="'$(Configuration)' != 'Debug'">True</PublishReadyToRun>
