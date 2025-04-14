@@ -6,6 +6,9 @@ namespace FancyMouse.Common.NativeMethods;
 
 internal static partial class Kernel32
 {
+    /// <remarks>
+    /// See https://learn.microsoft.com/en-us/previous-versions/windows/desktop/legacy/aa379560(v=vs.85)
+    /// </remarks>
     [SuppressMessage("SA1304", "SA1304:NonPrivateReadonlyFieldsMustBeginWithUpperCaseLetter", Justification = "Names match Win32 api")]
     [SuppressMessage("SA1307", "SA1307:AccessibleFieldsMustBeginWithUpperCaseLetter", Justification = "Names match Win32 api")]
     [StructLayout(LayoutKind.Sequential)]

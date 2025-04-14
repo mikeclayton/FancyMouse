@@ -2,8 +2,11 @@
 
 namespace FancyMouse.Common.NativeMethods;
 
-internal static partial class Kernel32
+internal static partial class User32
 {
+    /// <remarks>
+    /// See https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getqueuestatus
+    /// </remarks>
     [Flags]
     [SuppressMessage("ReSharper", "InconsistentNaming", Justification = "Names and values taken from Win32Api")]
     [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Names and values taken from Win32Api")]

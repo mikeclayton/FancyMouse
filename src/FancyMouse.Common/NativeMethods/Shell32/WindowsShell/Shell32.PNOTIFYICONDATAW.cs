@@ -4,6 +4,17 @@ namespace FancyMouse.Common.NativeMethods;
 
 internal static partial class Shell32
 {
+    /// <summary>
+    /// Sends a message to the taskbar's status area.
+    /// </summary>
+    /// <returns>
+    /// Returns TRUE if successful, or FALSE otherwise.
+    /// If dwMessage is set to NIM_SETVERSION, the function returns TRUE if the version
+    /// was successfully changed, or FALSE if the requested version is not supported.
+    /// </returns>
+    /// <remarks>
+    /// See https://learn.microsoft.com/en-us/windows/win32/api/shellapi/ns-shellapi-notifyicondataw
+    /// </remarks>
     internal readonly struct PNOTIFYICONDATAW
     {
         public static readonly PNOTIFYICONDATAW Null = new(IntPtr.Zero);
