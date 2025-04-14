@@ -2,10 +2,11 @@
 using System.Text.Json;
 
 using FancyMouse.Models.Styles;
+using FancyMouse.Settings.V1;
 
 namespace FancyMouse.Settings.V2;
 
-internal static class SettingsConverter
+internal static class SettingsConverterV2
 {
     private static readonly JsonSerializerOptions JsonSerializerOptions = new()
     {
@@ -14,10 +15,11 @@ internal static class SettingsConverter
 
     public static AppSettings ParseAppSettings(string json)
     {
-        var appConfig = JsonSerializer.Deserialize<AppConfig>(json, SettingsConverter.JsonSerializerOptions)
+        var jsonContext = new SerializationContextV2(SettingsConverterV2.JsonSerializerOptions);
+        var appConfig = JsonSerializer.Deserialize<AppConfig>(json, jsonContext.AppConfig)
             ?? throw new InvalidOperationException();
-        var hotkey = V1.SettingsConverter.ConvertToKeystroke(appConfig.Hotkey);
-        var previewStyle = SettingsConverter.MergePreviewStyles(appConfig.Preview, AppSettings.DefaultSettings.PreviewStyle);
+        var hotkey = SettingsConverterV1.ConvertToKeystroke(appConfig.Hotkey);
+        var previewStyle = SettingsConverterV2.MergePreviewStyles(appConfig.Preview, AppSettings.DefaultSettings.PreviewStyle);
         var appSettings = new AppSettings(hotkey, previewStyle);
         return appSettings;
     }
@@ -26,17 +28,17 @@ internal static class SettingsConverter
     {
         if (previewStyle is null)
         {
-            return Settings.AppSettings.DefaultSettings.PreviewStyle;
+            return AppSettings.DefaultSettings.PreviewStyle;
         }
 
         return new PreviewStyle(
             canvasSize: new(
-                width: SettingsConverter.Clamp(
+                width: SettingsConverterV2.Clamp(
                     value: previewStyle?.CanvasSize?.Width,
                     defaultValue: defaultStyle?.CanvasSize?.Width,
                     min: 50,
                     max: 99999),
-                height: SettingsConverter.Clamp(
+                height: SettingsConverterV2.Clamp(
                     value: previewStyle?.CanvasSize?.Height,
                     defaultValue: defaultStyle?.CanvasSize?.Height,
                     min: 50,
@@ -46,36 +48,36 @@ internal static class SettingsConverter
                 marginStyle: new(
                     all: 0
                 ),
-                borderStyle: SettingsConverter.MergeBorderStyles(
+                borderStyle: SettingsConverterV2.MergeBorderStyles(
                     borderStyle: previewStyle?.CanvasStyle?.BorderStyle,
                     defaultStyle: defaultStyle?.CanvasStyle?.BorderStyle),
-                paddingStyle: SettingsConverter.MergePaddingStyles(
+                paddingStyle: SettingsConverterV2.MergePaddingStyles(
                     paddingStyle: previewStyle?.CanvasStyle?.PaddingStyle,
                     defaultStyle: defaultStyle?.CanvasStyle?.PaddingStyle),
                 backgroundStyle: new(
-                    color1: SettingsConverter.MergeColors(
+                    color1: SettingsConverterV2.MergeColors(
                         color: previewStyle?.CanvasStyle?.BackgroundStyle?.Color1,
                         defaultValue: defaultStyle?.CanvasStyle?.BackgroundStyle?.Color1),
-                    color2: SettingsConverter.MergeColors(
+                    color2: SettingsConverterV2.MergeColors(
                         color: previewStyle?.CanvasStyle?.BackgroundStyle?.Color2,
                         defaultValue: defaultStyle?.CanvasStyle?.BackgroundStyle?.Color2)
                 )
             ),
             screenStyle: new(
-                marginStyle: SettingsConverter.MergeMarginStyles(
+                marginStyle: SettingsConverterV2.MergeMarginStyles(
                     marginStyle: previewStyle?.ScreenStyle?.MarginStyle,
                     defaultStyle: defaultStyle?.ScreenStyle?.MarginStyle),
-                borderStyle: SettingsConverter.MergeBorderStyles(
+                borderStyle: SettingsConverterV2.MergeBorderStyles(
                     borderStyle: previewStyle?.ScreenStyle?.BorderStyle,
                     defaultStyle: defaultStyle?.ScreenStyle?.BorderStyle),
                 paddingStyle: new(
                     all: 0
                 ),
                 backgroundStyle: new(
-                    color1: SettingsConverter.MergeColors(
+                    color1: SettingsConverterV2.MergeColors(
                         color: previewStyle?.ScreenStyle?.BackgroundStyle?.Color1,
                         defaultValue: defaultStyle?.ScreenStyle?.BackgroundStyle?.Color1),
-                    color2: SettingsConverter.MergeColors(
+                    color2: SettingsConverterV2.MergeColors(
                         color: previewStyle?.ScreenStyle?.BackgroundStyle?.Color2,
                         defaultValue: defaultStyle?.ScreenStyle?.BackgroundStyle?.Color2)
                 )
@@ -85,22 +87,22 @@ internal static class SettingsConverter
     private static MarginStyle MergeMarginStyles(MarginStyleSettings? marginStyle, MarginStyle? defaultStyle)
     {
         return new(
-            left: SettingsConverter.Clamp(
+            left: SettingsConverterV2.Clamp(
                 value: marginStyle?.Width,
                 defaultValue: defaultStyle?.Left,
                 min: 0,
                 max: 99),
-            top: SettingsConverter.Clamp(
+            top: SettingsConverterV2.Clamp(
                 value: marginStyle?.Width,
                 defaultValue: defaultStyle?.Top,
                 min: 0,
                 max: 99),
-            right: SettingsConverter.Clamp(
+            right: SettingsConverterV2.Clamp(
                 value: marginStyle?.Width,
                 defaultValue: defaultStyle?.Right,
                 min: 0,
                 max: 99),
-            bottom: SettingsConverter.Clamp(
+            bottom: SettingsConverterV2.Clamp(
                 value: marginStyle?.Width,
                 defaultValue: defaultStyle?.Bottom,
                 min: 0,
@@ -111,30 +113,30 @@ internal static class SettingsConverter
     private static BorderStyle MergeBorderStyles(BorderStyleSettings? borderStyle, BorderStyle? defaultStyle)
     {
         return new(
-            color: SettingsConverter.MergeColors(
+            color: SettingsConverterV2.MergeColors(
                 color: borderStyle?.Color,
                 defaultValue: defaultStyle?.Color),
-            left: SettingsConverter.Clamp(
+            left: SettingsConverterV2.Clamp(
                 value: borderStyle?.Width,
                 defaultValue: defaultStyle?.Left,
                 min: 0,
                 max: 99),
-            top: SettingsConverter.Clamp(
+            top: SettingsConverterV2.Clamp(
                 value: borderStyle?.Width,
                 defaultValue: defaultStyle?.Top,
                 min: 0,
                 max: 99),
-            right: SettingsConverter.Clamp(
+            right: SettingsConverterV2.Clamp(
                 value: borderStyle?.Width,
                 defaultValue: defaultStyle?.Right,
                 min: 0,
                 max: 99),
-            bottom: SettingsConverter.Clamp(
+            bottom: SettingsConverterV2.Clamp(
                 value: borderStyle?.Width,
                 defaultValue: defaultStyle?.Bottom,
                 min: 0,
                 max: 99),
-            depth: SettingsConverter.Clamp(
+            depth: SettingsConverterV2.Clamp(
                 value: borderStyle?.Depth,
                 defaultValue: defaultStyle?.Depth,
                 min: 0,
@@ -145,22 +147,22 @@ internal static class SettingsConverter
     private static PaddingStyle MergePaddingStyles(PaddingStyleSettings? paddingStyle, PaddingStyle? defaultStyle)
     {
         return new(
-            left: SettingsConverter.Clamp(
+            left: SettingsConverterV2.Clamp(
                 value: paddingStyle?.Width,
                 defaultValue: defaultStyle?.Left,
                 min: 0,
                 max: 99),
-            top: SettingsConverter.Clamp(
+            top: SettingsConverterV2.Clamp(
                 value: paddingStyle?.Width,
                 defaultValue: defaultStyle?.Top,
                 min: 0,
                 max: 99),
-            right: SettingsConverter.Clamp(
+            right: SettingsConverterV2.Clamp(
                 value: paddingStyle?.Width,
                 defaultValue: defaultStyle?.Right,
                 min: 0,
                 max: 99),
-            bottom: SettingsConverter.Clamp(
+            bottom: SettingsConverterV2.Clamp(
                 value: paddingStyle?.Width,
                 defaultValue: defaultStyle?.Bottom,
                 min: 0,

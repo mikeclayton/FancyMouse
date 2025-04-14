@@ -5,7 +5,7 @@ namespace FancyMouse.Settings.V2;
 /// <summary>
 /// Represents the background fill style for a drawing object.
 /// </summary>
-internal sealed class BackgroundStyleSettings
+public sealed class BackgroundStyleSettings
 {
     public BackgroundStyleSettings(
         string? color1,

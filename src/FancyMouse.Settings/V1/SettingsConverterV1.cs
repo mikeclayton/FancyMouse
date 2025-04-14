@@ -7,28 +7,29 @@ using FancyMouse.Models.Styles;
 
 namespace FancyMouse.Settings.V1;
 
-internal static class SettingsConverter
+internal static class SettingsConverterV1
 {
     private static readonly JsonSerializerOptions JsonSerializerOptions = new()
     {
-        PropertyNameCaseInsensitive = true,
         Converters = { new JsonStringEnumConverter() },
+        PropertyNameCaseInsensitive = true,
     };
 
-    public static Settings.AppSettings ParseAppSettings(string json)
+    public static AppSettings ParseAppSettings(string json)
     {
-        var appConfig = JsonSerializer.Deserialize<AppConfig>(json, SettingsConverter.JsonSerializerOptions)
+        var jsonContext = new SerializationContextV1(SettingsConverterV1.JsonSerializerOptions);
+        var appConfig = JsonSerializer.Deserialize<AppConfig>(json, jsonContext.AppConfig)
             ?? throw new InvalidOperationException();
-        var hotkey = SettingsConverter.ConvertToKeystroke(appConfig?.FancyMouse?.Hotkey);
-        var previewStyle = SettingsConverter.ConvertToPreviewStyle(appConfig?.FancyMouse?.PreviewSize);
-        var appSettings = new Settings.AppSettings(hotkey, previewStyle);
+        var hotkey = SettingsConverterV1.ConvertToKeystroke(appConfig?.FancyMouse?.Hotkey);
+        var previewStyle = SettingsConverterV1.ConvertToPreviewStyle(appConfig?.FancyMouse?.PreviewSize);
+        var appSettings = new AppSettings(hotkey, previewStyle);
         return appSettings;
     }
 
     public static Keystroke ConvertToKeystroke(string? hotkey)
     {
         return (hotkey == null)
-            ? Settings.AppSettings.DefaultSettings.Hotkey
+            ? AppSettings.DefaultSettings.Hotkey
             : Keystroke.Parse(hotkey);
     }
 
@@ -36,7 +37,7 @@ internal static class SettingsConverter
     {
         if (previewSize is null)
         {
-            return Settings.AppSettings.DefaultSettings.PreviewStyle;
+            return AppSettings.DefaultSettings.PreviewStyle;
         }
 
         var parts = previewSize.Split("x")
@@ -48,7 +49,7 @@ internal static class SettingsConverter
                 width: parts[0],
                 height: parts[1]
             ),
-            canvasStyle: Settings.AppSettings.DefaultSettings.PreviewStyle.CanvasStyle,
-            screenStyle: Settings.AppSettings.DefaultSettings.PreviewStyle.ScreenStyle);
+            canvasStyle: AppSettings.DefaultSettings.PreviewStyle.CanvasStyle,
+            screenStyle: AppSettings.DefaultSettings.PreviewStyle.ScreenStyle);
     }
 }
