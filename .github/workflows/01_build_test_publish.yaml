@@ -42,6 +42,9 @@ jobs:
             Install-Module -Name "VSSetup" -Scope "CurrentUser" -Force
             (Get-VSSetupInstance | Select-VSSetupInstance -Product *).packages | Select-Object -ExpandProperty Id | Sort-Object
 
+            $vsWhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+            & $vsWhere -all
+
       - name: dotnet info
         working-directory: ${{ env.BUILD_PATH }}
         run: dotnet --info
