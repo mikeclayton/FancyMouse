@@ -40,18 +40,31 @@ jobs:
         working-directory: ${{ env.BUILD_PATH }}
         run: |
             Install-Module -Name "VSSetup" -Scope "CurrentUser" -Force
-            (Get-VSSetupInstance | Select-VSSetupInstance -Product *).packages | Select-Object -ExpandProperty Id | Sort-Object
 
             $vsWhere     = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
             $vsInstaller = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vs_installer.exe"
 
-            $installationPath = & $vsWhere -latest -property installationPath
+            write-host "components before"
+            write-host "-----------------"
+            (Get-VSSetupInstance | Select-VSSetupInstance -Product *).packages | Select-Object -ExpandProperty Id | Sort-Object
 
+            $installationPath = & $vsWhere -latest -property installationPath
             & $vsInstaller modify --installPath $installationPath --add Microsoft.VisualStudio.Workload.Universal --noUpdateInstaller --quiet
+
+            write-host "components after"
+            write-host "----------------"
+            (Get-VSSetupInstance | Select-VSSetupInstance -Product *).packages | Select-Object -ExpandProperty Id | Sort-Object
 
       - name: dotnet info
         working-directory: ${{ env.BUILD_PATH }}
-        run: dotnet --info
+        run: |
+            dotnet --info
+            dotnet workload list
+
+      - name: dotnet workload list
+        working-directory: ${{ env.BUILD_PATH }}
+        run: |
+            dotnet workload list
 
       - name: dotnet restore
         working-directory: ${{ env.BUILD_PATH }}
