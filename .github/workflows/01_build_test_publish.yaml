@@ -42,8 +42,12 @@ jobs:
             Install-Module -Name "VSSetup" -Scope "CurrentUser" -Force
             (Get-VSSetupInstance | Select-VSSetupInstance -Product *).packages | Select-Object -ExpandProperty Id | Sort-Object
 
-            $vsWhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
-            & $vsWhere -all
+            $vsWhere     = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+            $vsInstaller = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vs_installer.exe"
+
+            $installationPath = & $vsWhere -latest -property installationPath
+
+            & $vsInstaller modify --installPath $installationPath --add Microsoft.VisualStudio.Workload.Universal --noUpdateInstaller --quiet
 
       - name: dotnet info
         working-directory: ${{ env.BUILD_PATH }}
