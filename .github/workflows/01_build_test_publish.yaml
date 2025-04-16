@@ -51,7 +51,12 @@ jobs:
             $installationPath = & $vsWhere -latest -property installationPath
             & $vsInstaller modify --installPath $installationPath --add maui-windows --noUpdateInstaller --passive
             & $vsInstaller modify --installPath $installationPath --add Microsoft.VisualStudio.ComponentGroup.UWP.Support --noUpdateInstaller --passive
-            & $vsInstaller modify --installPath $installationPath --add Microsoft.VisualStudio.Workload.Universal --noUpdateInstaller --passive
+
+            # Workload
+            # WinUI application development
+            # ID: Microsoft.VisualStudio.Workload.Universal
+            # Description: Build applications for the Windows platform using WinUI with C# or optionally C?+?+.
+            & $vsInstaller modify --installPath $installationPath --add Microsoft.VisualStudio.Workload.Universal --includeRecommended --includeOptional --noUpdateInstaller --passive
 
             write-host "components after"
             write-host "----------------"
