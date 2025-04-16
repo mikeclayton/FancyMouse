@@ -59,12 +59,16 @@ jobs:
         working-directory: ${{ env.BUILD_PATH }}
         run: |
             dotnet --info
-            dotnet workload list
 
       - name: dotnet workload list
         working-directory: ${{ env.BUILD_PATH }}
         run: |
             dotnet workload list
+
+      - name: dotnet workload search
+        working-directory: ${{ env.BUILD_PATH }}
+        run: |
+            dotnet workload search
 
       - name: dotnet restore
         working-directory: ${{ env.BUILD_PATH }}
