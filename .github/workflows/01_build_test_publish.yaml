@@ -49,8 +49,9 @@ jobs:
             (Get-VSSetupInstance | Select-VSSetupInstance -Product *).packages | Select-Object -ExpandProperty Id | Sort-Object
 
             $installationPath = & $vsWhere -latest -property installationPath
-            & $vsInstaller modify --installPath $installationPath --add Microsoft.VisualStudio.Workload.Universal --noUpdateInstaller --passive
             & $vsInstaller modify --installPath $installationPath --add maui-windows --noUpdateInstaller --passive
+            & $vsInstaller modify --installPath $installationPath --add Microsoft.VisualStudio.ComponentGroup.UWP.Support --noUpdateInstaller --passive
+            & $vsInstaller modify --installPath $installationPath --add Microsoft.VisualStudio.Workload.Universal --noUpdateInstaller --passive
 
             write-host "components after"
             write-host "----------------"
