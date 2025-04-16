@@ -36,6 +36,12 @@ jobs:
         with:
           dotnet-version: 9.0.x
 
+      - name: get vs components
+        working-directory: ${{ env.BUILD_PATH }}
+        run: |
+            Install-Module -Name "VSSetup" -Scope "CurrentUser" -Force
+            (Get-VSSetupInstance | Select-VSSetupInstance -Product *).packages | Select-Object -ExpandProperty Id | Sort-Object
+
       - name: dotnet info
         working-directory: ${{ env.BUILD_PATH }}
         run: dotnet --info
