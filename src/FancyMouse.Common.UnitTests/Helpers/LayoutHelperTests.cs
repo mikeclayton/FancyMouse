@@ -156,7 +156,8 @@ public static class LayoutHelperTests
                         color2: Color.FromArgb(3, 68, 192) // darker blue
                     )
                 ),
-                screenStyle: BoxStyle.Empty);
+                screenStyle: BoxStyle.Empty,
+                extraColors: Array.Empty<Color>());
             var displayInfo = new DisplayInfo(
                 devices: new List<DeviceInfo>
                 {
@@ -229,8 +230,8 @@ public static class LayoutHelperTests
                     backgroundStyle: new(
                         color1: Color.FromArgb(13, 87, 210), // light blue
                         color2: Color.FromArgb(3, 68, 192) // darker blue
-                    )
-                ));
+                    )),
+                extraColors: Array.Empty<Color>());
             displayInfo = new DisplayInfo(
                 devices: new List<DeviceInfo>
                 {
@@ -299,7 +300,8 @@ public static class LayoutHelperTests
                     height: 200
                 ),
                 canvasStyle: BoxStyle.Empty,
-                screenStyle: BoxStyle.Empty);
+                screenStyle: BoxStyle.Empty,
+                extraColors: Array.Empty<Color>());
             displayInfo = new DisplayInfo(
                 devices: new List<DeviceInfo>
                 {
@@ -388,8 +390,8 @@ public static class LayoutHelperTests
                     backgroundStyle: new(
                         color1: Color.FromArgb(13, 87, 210), // light blue
                         color2: Color.FromArgb(3, 68, 192) // darker blue
-                    )
-                ));
+                    )),
+                extraColors: Array.Empty<Color>());
             displayInfo = new DisplayInfo(
                 devices: new List<DeviceInfo>
                 {
@@ -462,7 +464,8 @@ public static class LayoutHelperTests
                     height: 1200
                 ),
                 canvasStyle: BoxStyle.Empty,
-                screenStyle: BoxStyle.Empty);
+                screenStyle: BoxStyle.Empty,
+                extraColors: Array.Empty<Color>());
             displayInfo = new DisplayInfo(
                 devices: new List<DeviceInfo>
                 {
@@ -612,8 +615,8 @@ public static class LayoutHelperTests
                     backgroundStyle: new(
                         color1: Color.FromArgb(13, 87, 210), // light blue
                         color2: Color.FromArgb(3, 68, 192) // darker blue
-                    )
-                ));
+                    )),
+                extraColors: Array.Empty<Color>());
             var displayInfo = new DisplayInfo(
                 devices: new List<DeviceInfo>
                 {

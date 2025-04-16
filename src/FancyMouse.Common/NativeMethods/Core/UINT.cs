@@ -10,9 +10,13 @@ public static partial class Core
     /// <remarks>
     /// See https://learn.microsoft.com/en-us/windows/win32/winprog/windows-data-types
     /// </remarks>
-    internal readonly struct UINT
+#pragma warning disable CA1720 // Identifier contains type name
+    public readonly struct UINT
+#pragma warning restore CA1720 // Identifier contains type name
     {
+#pragma warning disable CA1051 // Do not declare visible instance fields
         public readonly uint Value;
+#pragma warning restore CA1051 // Do not declare visible instance fields
 
         public UINT(uint value)
         {

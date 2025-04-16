@@ -44,7 +44,13 @@ public static class StyleHelper
                 color1: Color.MidnightBlue,
                 color2: Color.MidnightBlue
             )
-        )
+        ),
+        extraColors: new[]
+        {
+            Color.Red,
+            Color.Blue,
+            Color.Green,
+        }
     );
 
     /// <summary>
@@ -84,7 +90,13 @@ public static class StyleHelper
                 color1: Color.MidnightBlue,
                 color2: Color.MidnightBlue
             )
-        )
+        ),
+        extraColors: new[]
+        {
+            Color.Red,
+            Color.Blue,
+            Color.Green,
+        }
     );
 
     public static PreviewStyle WithCanvasSize(this PreviewStyle previewStyle, SizeInfo canvasSize)
@@ -94,6 +106,7 @@ public static class StyleHelper
         return new PreviewStyle(
             canvasSize: canvasSize,
             canvasStyle: previewStyle.CanvasStyle,
-            screenStyle: previewStyle.ScreenStyle);
+            screenStyle: previewStyle.ScreenStyle,
+            extraColors: previewStyle.ExtraColors);
     }
 }

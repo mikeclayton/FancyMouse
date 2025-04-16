@@ -31,11 +31,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Libraries", "Libraries", "{
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FancyMouse.Models", "FancyMouse.Models\FancyMouse.Models.csproj", "{9C265FA2-1830-5978-A6EA-A9F5AD477F5A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FancyMouse.Models.UnitTests", "FancyMouse.Models.UnitTests\FancyMouse.Models.UnitTests.csproj", "{5D2A14E7-F870-4169-AB57-E708CF6F44D5}"
+EndProject
 Project("{C7167F0D-BC9F-4E6E-AFE1-012C56B48DB5}") = "FancyMouse.WinUI3 (Package)", "FancyMouse.WinUI3\FancyMouse.WinUI3 (Package)\FancyMouse.WinUI3 (Package).wapproj", "{D0EA9CBF-027A-4C2A-B24E-9AAC02E391EE}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FancyMouse.WinUI3", "FancyMouse.WinUI3\FancyMouse.WinUI3\FancyMouse.WinUI3.csproj", "{6F573335-3BB0-448C-B606-4895B2195EC1}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FancyMouse.Models.UnitTests", "FancyMouse.Models.UnitTests\FancyMouse.Models.UnitTests.csproj", "{5D2A14E7-F870-4169-AB57-E708CF6F44D5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

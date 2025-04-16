@@ -8,11 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Models\Display\DesktopInfo.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="System.Drawing.Common" Version="9.0.2" />
+    <PackageReference Include="System.Drawing.Common" Version="9.0.4" />
   </ItemGroup>
 
   <ItemGroup>

@@ -125,8 +125,8 @@ public sealed class AppSettingsReaderTests
                         height: 600
                     ),
                     canvasStyle: AppSettings.DefaultSettings.PreviewStyle.CanvasStyle,
-                    screenStyle: AppSettings.DefaultSettings.PreviewStyle.ScreenStyle
-                ));
+                    screenStyle: AppSettings.DefaultSettings.PreviewStyle.ScreenStyle,
+                    extraColors: Array.Empty<Color>()));
             Assert.AreEqual(
                 JsonSerializer.Serialize(expected),
                 JsonSerializer.Serialize(actual));
@@ -242,8 +242,8 @@ public sealed class AppSettingsReaderTests
                             color1: Color.Yellow,
                             color2: Color.Pink
                         )
-                    )
-                ));
+                    ),
+                    extraColors: Array.Empty<Color>()));
             Assert.AreEqual(
                 JsonSerializer.Serialize(expected),
                 JsonSerializer.Serialize(actual));

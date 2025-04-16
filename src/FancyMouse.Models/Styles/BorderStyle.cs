@@ -61,6 +61,11 @@ public sealed class BorderStyle
 
     public decimal Vertical => this.Top + this.Bottom;
 
+    public BorderStyle WithColor(Color? color)
+    {
+        return new BorderStyle(color, this.Left, this.Top, this.Right, this.Bottom, this.Depth);
+    }
+
     public override string ToString()
     {
         return "{" +

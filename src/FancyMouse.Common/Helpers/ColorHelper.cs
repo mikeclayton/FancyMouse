@@ -3,7 +3,7 @@ using System.Globalization;
 
 namespace FancyMouse.Common.Helpers;
 
-public static class ConfigHelper
+public static class ColorHelper
 {
     public static Color? ToUnnamedColor(Color? value)
     {

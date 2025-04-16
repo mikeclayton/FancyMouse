@@ -53,7 +53,13 @@ public sealed class AppSettings
                     color1: Color.MidnightBlue,
                     color2: Color.MidnightBlue
                 )
-            )
+            ),
+            extraColors: new[]
+            {
+                Color.Red,
+                Color.Blue,
+                Color.Green,
+            }
         )
     );
 

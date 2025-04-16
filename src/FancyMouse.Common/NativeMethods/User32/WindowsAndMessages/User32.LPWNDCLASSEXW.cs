@@ -4,6 +4,12 @@ namespace FancyMouse.Common.NativeMethods;
 
 public static partial class User32
 {
+    /// <summary>
+    /// Contains window class information. It is used with the RegisterClassEx and GetClassInfoEx functions.
+    /// </summary>
+    /// <remarks>
+    /// See https://learn.microsoft.com/en-us/windows/win32/api/winuser/ns-winuser-wndclassexw
+    /// </remarks>
     internal readonly struct LPWNDCLASSEXW
     {
         public static readonly LPWNDCLASSEXW Null = new(IntPtr.Zero);

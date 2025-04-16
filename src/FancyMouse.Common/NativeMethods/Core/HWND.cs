@@ -12,14 +12,16 @@ public static partial class Core
     /// <remarks>
     /// See https://learn.microsoft.com/en-us/windows/win32/winprog/windows-data-types
     /// </remarks>
-    internal readonly struct HWND
+    public readonly struct HWND
     {
         public static readonly HWND Null = new(IntPtr.Zero);
 
         [SuppressMessage("SA1310", "SA1310:FieldNamesMustNotContainUnderscore", Justification = "Names match Win32 api")]
         public static readonly HWND HWND_MESSAGE = new(-3);
 
+#pragma warning disable CA1051 // Do not declare visible instance fields
         public readonly IntPtr Value;
+#pragma warning restore CA1051 // Do not declare visible instance fields
 
         public HWND(IntPtr value)
         {
@@ -27,6 +29,10 @@ public static partial class Core
         }
 
         public bool IsNull => this.Value == HWND.Null.Value;
+
+        public static implicit operator IntPtr(HWND value) => value.Value;
+
+        public static explicit operator HWND(IntPtr value) => new(value);
 
         public override string ToString()
         {

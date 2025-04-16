@@ -5,7 +5,7 @@ namespace FancyMouse.Common.NativeMethods;
 public static partial class User32
 {
     /// <remarks>
-    /// See https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-sendinput
+    /// See https://learn.microsoft.com/en-us/windows/win32/api/winuser/ns-winuser-monitorinfo
     /// </remarks>
     internal readonly struct LPMONITORINFO
     {

@@ -50,6 +50,7 @@ internal static class SettingsConverterV1
                 height: parts[1]
             ),
             canvasStyle: AppSettings.DefaultSettings.PreviewStyle.CanvasStyle,
-            screenStyle: AppSettings.DefaultSettings.PreviewStyle.ScreenStyle);
+            screenStyle: AppSettings.DefaultSettings.PreviewStyle.ScreenStyle,
+            extraColors: AppSettings.DefaultSettings.PreviewStyle.ExtraColors);
     }
 }

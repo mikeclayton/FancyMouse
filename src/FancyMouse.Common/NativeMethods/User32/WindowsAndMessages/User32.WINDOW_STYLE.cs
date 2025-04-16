@@ -8,9 +8,10 @@ public static partial class User32
     /// See https://learn.microsoft.com/en-us/windows/win32/winmsg/window-styles
     ///     https://github.com/dotnet/pinvoke/blob/main/src/User32/User32+WindowStyles.cs
     /// </remarks>
+    [Flags]
     [SuppressMessage("ReSharper", "InconsistentNaming", Justification = "Names and values taken from Win32Api")]
     [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Names and values taken from Win32Api")]
-    internal enum WINDOW_STYLE : uint
+    public enum WINDOW_STYLE : uint
     {
         /// <summary>
         /// The window has a thin-line border

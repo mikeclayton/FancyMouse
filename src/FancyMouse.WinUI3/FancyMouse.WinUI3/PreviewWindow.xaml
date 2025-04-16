@@ -9,6 +9,7 @@
     mc:Ignorable="d"
     Title="FancyMouse.WinUI3">
     <StackPanel
+        x:Name="StackPanel"
         HorizontalAlignment="Stretch"
         VerticalAlignment="Stretch">
         <Image

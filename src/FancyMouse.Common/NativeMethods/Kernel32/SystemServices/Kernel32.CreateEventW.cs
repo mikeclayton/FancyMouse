@@ -17,7 +17,7 @@ public static partial class Kernel32
     /// To get extended error information, call GetLastError.
     /// </returns>
     /// <remarks>
-    /// See https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-enumdisplaymonitors
+    /// See https://learn.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-createeventw
     /// </remarks>
     [LibraryImport(Libraries.Kernel32, StringMarshalling = StringMarshalling.Utf16, SetLastError = true)]
     internal static partial HANDLE CreateEventW(

@@ -124,19 +124,24 @@ public sealed class DrawingHelperTests
 
         [TestMethod]
         [DynamicData(nameof(GetTestCases), DynamicDataSourceType.Method)]
-        public void RunTestCases(TestCase data)
+        public async Task RunTestCases(TestCase data)
         {
             // load the fake desktop image
             using var desktopImage = GetPreviewLayoutTests.LoadImageResource(data.DesktopImageFilename);
 
-            // draw the preview image
             var formLayout = LayoutHelper.GetFormLayout(
                 previewStyle: data.PreviewStyle,
                 displayInfo: data.DisplayInfo,
                 activatedScreen: data.ActivatedScreen,
                 activatedLocation: data.ActivatedLocation);
-            var imageCopyService = new StaticImageRegionCopyService(desktopImage);
-            using var actual = DrawingHelper.RenderPreview(formLayout.CanvasLayout, data.ActivatedScreen, imageCopyService);
+
+            var imageCopyServices = formLayout.CanvasLayout.DeviceLayouts
+                .Select(
+                    deviceLayout => (IImageRegionCopyService)new StaticImageRegionCopyService(desktopImage))
+                .ToList();
+
+            // draw the preview image
+            using var actual = await DrawingHelper.RenderPreviewAsync(formLayout.CanvasLayout, data.ActivatedScreen, imageCopyServices);
 
             // save the actual image so we can pick it up as a build artifact
             var actualFilename = Path.GetFileNameWithoutExtension(data.ExpectedImageFilename) + "_actual" + Path.GetExtension(data.ExpectedImageFilename);

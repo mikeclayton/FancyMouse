@@ -77,8 +77,12 @@ public static class MouseHelper
             var result = User32.SetCursorPos(target.X, target.Y);
             if (!result)
             {
-                throw new Win32Exception(
-                    Marshal.GetLastWin32Error());
+                // SetLastError has been known to return zero, but the last error code indicates success
+                var lastError = Marshal.GetLastWin32Error();
+                if (lastError != 0)
+                {
+                    throw new Win32Exception(lastError);
+                }
             }
 
             var current = MouseHelper.GetCursorPosition();

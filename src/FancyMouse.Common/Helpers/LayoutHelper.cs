@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Drawing;
 
 using FancyMouse.Models.Display;
 using FancyMouse.Models.Drawing;
@@ -14,110 +15,16 @@ public static class LayoutHelper
     {
         ArgumentNullException.ThrowIfNull(previewStyle);
         ArgumentNullException.ThrowIfNull(displayInfo);
+        ArgumentNullException.ThrowIfNull(activatedScreen);
+        ArgumentNullException.ThrowIfNull(activatedLocation);
 
         /*
 
-           +----------------------------[form]----------------------------+
-           |▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒[canvas]▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒|
-           |▒▒▓▓▓▓▓▓▓▓▓▓▓▓▓▓[device 1]▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓[device 2]▓▓▓▓▓▓▒▒|
-           |▒▒▓▓░░░░[screen 1]░░░░░░[screen 2]░░░░▓▓░░░░[screen 1]░░░░▓▓▒▒|
-           |▒▒▓▓░░              ░░              ░░▓▓░░              ░░▓▓▒▒|
-           |▒▒▓▓░░              ░░              ░░▓▓░░              ░░▓▓▒▒|
-           |▒▒▓▓░░              ░░              ░░▓▓░░              ░░▓▓▒▒|
-           |▒▒▓▓░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░▓▓░░░░░░░░░░░░░░░░░░▓▓▒▒|
-           |▒▒▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░[screen 2]░░░░▓▓▒▒|
-           |▒▒                                    ▓▓░░              ░░▓▓▒▒|
-           |▒▒                                    ▓▓░░              ░░▓▓▒▒|
-           |▒▒                                    ▓▓░░              ░░▓▓▒▒|
-           |▒▒                                    ▓▓░░░░░░░░░░░░░░░░░░▓▓▒▒|
-           |▒▒                                    ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▒▒|
-           |▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒|
-           +--------------------------------------------------------------+
-
-        */
-
-        // check we have at least one device
-        if (displayInfo.Devices.Count == 0)
-        {
-            throw new ArgumentException("Value must contain at least one device.", nameof(displayInfo));
-        }
-
-        // check each device has at least one screen.
-        for (var deviceIndex = 0; deviceIndex < displayInfo.Devices.Count; deviceIndex++)
-        {
-            var device = displayInfo.Devices[deviceIndex];
-            if (device.Screens.Count == 0)
-            {
-                throw new ArgumentException($"{nameof(displayInfo)}.{nameof(displayInfo.Devices)}[{deviceIndex}] must contain at least one screen.", nameof(displayInfo));
-            }
-        }
-
-        // work out the maximum allowed size of the preview form:
-        // * can't be bigger than the activated screen
-        // * can't be bigger than the configured canvas size
-        var formMaxBounds = new RectangleInfo(
-            previewStyle.CanvasSize
-                .Clamp(activatedScreen.DisplayArea.Size));
-
-        // create an initial form layout.
-        // this is a nested structure of mutable "builder" objects that can be used to
-        // build the final immutable layout objects once all the bounds have been calculated
-        var formLayout = new FormViewModel.Builder
-        {
-            FormBounds = RectangleInfo.Empty,
-            CanvasLayout = new()
-            {
-                CanvasBounds = BoxBounds.CreateFromOuterBounds(
-                    outerBounds: formMaxBounds,
-                    boxStyle: previewStyle.CanvasStyle),
-                CanvasStyle = previewStyle.CanvasStyle,
-                DeviceLayouts = displayInfo.Devices.Select(
-                    deviceInfo => new DeviceViewModel.Builder
-                    {
-                        DeviceInfo = deviceInfo,
-                        DeviceBounds = BoxBounds.Empty,
-                        DeviceStyle = BoxStyle.Empty,
-                        ScreenLayouts = deviceInfo.Screens.Select(
-                            screenInfo => new ScreenViewModel.Builder
-                            {
-                                ScreenInfo = screenInfo,
-                                ScreenBounds = BoxBounds.Empty,
-                                ScreenStyle = previewStyle.ScreenStyle,
-                            }).ToList(),
-                    }).ToList(),
-            },
-        };
-
-        // arrange the devices, screens and canvas
-        LayoutHelper.ArrangeAndScaleDeviceLayouts(formLayout);
-        LayoutHelper.ArrangeAndScaleScreenLayouts(formLayout);
-        LayoutHelper.ArrangeAndScaleCanvasLayout(formLayout);
-
-        // resize and center the form on the activated location
-        formLayout.FormBounds = formLayout.CanvasLayout.CanvasBounds.OuterBounds
-            .Center(activatedLocation)
-            .MoveInside(activatedScreen.DisplayArea);
-
-        return formLayout.Build();
-    }
-
-    /// <summary>
-    /// Arranges the device layouts into a non-overlapping grid and scales them to fit inside the specified content bounds.
-    /// </summary>
-    internal static void ArrangeAndScaleDeviceLayouts(FormViewModel.Builder formLayout)
-    {
-        var deviceLayouts = formLayout?.CanvasLayout?.DeviceLayouts
-            ?? throw new InvalidOperationException();
-        var contentBounds = formLayout?.CanvasLayout?.CanvasBounds?.ContentBounds
-            ?? throw new InvalidOperationException();
-
-        /*
-
-           example device layout grid:
+           example layout:
 
            +-------------------------------[form]------------------------------+
            |▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒[canvas]▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒|
-           |▒▒+--------------------------------------+----------------------+▒▒|
+           |▒▒+----------------------------[grid]----+----------------------+▒▒|
            |▒▒|                                      |▓▓▓▓▓▓[device 2]▓▓▓▓▓▓|▒▒|
            |▒▒|                                      |▓▓░░░░[screen 1]░░░░▓▓|▒▒|
            |▒▒|▓▓▓▓▓▓▓▓▓▓▓▓▓▓[device 1]▓▓▓▓▓▓▓▓▓▓▓▓▓▓|▓▓░░              ░░▓▓|▒▒|
@@ -149,8 +56,120 @@ public static class LayoutHelper
 
         */
 
-        // build an initial grid at 100% scale. the grid is currently a single row
-        // high with all the devices arranged left to right for the time being.
+        // arrange the form, canvas, devices and screens
+        var formLayout = LayoutHelper.CreateInitialFormLayout(previewStyle, displayInfo, activatedScreen);
+        LayoutHelper.ArrangeAndScaleDeviceLayouts(formLayout);
+        LayoutHelper.ArrangeAndScaleScreenLayouts(formLayout);
+        LayoutHelper.ArrangeAndResizeCanvasLayout(formLayout);
+        LayoutHelper.ArrangeAndResizeFormLayout(formLayout, activatedScreen, activatedLocation);
+
+        return formLayout.Build();
+    }
+
+    internal static FormViewModel.Builder CreateInitialFormLayout(
+        PreviewStyle previewStyle, DisplayInfo displayInfo, ScreenInfo activatedScreen)
+    {
+        ArgumentNullException.ThrowIfNull(previewStyle);
+        ArgumentNullException.ThrowIfNull(displayInfo);
+
+        // check we have at least one device
+        if (displayInfo.Devices.Count == 0)
+        {
+            throw new ArgumentException("Value must contain at least one device.", nameof(displayInfo));
+        }
+
+        /*
+        // check each device has at least one screen.
+        for (var deviceIndex = 0; deviceIndex < displayInfo.Devices.Count; deviceIndex++)
+        {
+            var device = displayInfo.Devices[deviceIndex];
+            if (device.Screens.Count == 0)
+            {
+                throw new ArgumentException($"{nameof(displayInfo)}.{nameof(displayInfo.Devices)}[{deviceIndex}] must contain at least one screen.", nameof(displayInfo));
+            }
+        }
+        */
+
+        // work out the maximum allowed size of the preview form:
+        // * can't be bigger than the activated screen
+        // * can't be bigger than the configured canvas size
+        var formMaxBounds = new RectangleInfo(
+            previewStyle.CanvasSize
+                .Clamp(activatedScreen.DisplayArea.Size));
+
+        var screenStyles = LayoutHelper.GetDeviceScreenStyles(previewStyle, displayInfo.Devices.Count).ToList();
+
+        // create an initial form layout.
+        // this is a nested structure of mutable "builder" objects that can be used to
+        // build the final immutable layout objects once all the bounds have been calculated
+        var formLayout = new FormViewModel.Builder
+        {
+            FormBounds = RectangleInfo.Empty,
+            CanvasLayout = new()
+            {
+                CanvasBounds = BoxBounds.CreateFromOuterBounds(
+                    outerBounds: formMaxBounds,
+                    boxStyle: previewStyle.CanvasStyle),
+                CanvasStyle = previewStyle.CanvasStyle,
+                DeviceLayouts = displayInfo.Devices.Select(
+                    (deviceInfo, deviceIndex) => new DeviceViewModel.Builder
+                    {
+                        DeviceInfo = deviceInfo,
+                        DeviceBounds = BoxBounds.Empty,
+                        DeviceStyle = BoxStyle.Empty,
+                        ScreenLayouts = deviceInfo.Screens.Select(
+                            screenInfo => new ScreenViewModel.Builder
+                            {
+                                ScreenInfo = screenInfo,
+                                ScreenBounds = BoxBounds.Empty,
+                                ScreenStyle = screenStyles[deviceIndex],
+                            }).ToList(),
+                    }).ToList(),
+            },
+        };
+
+        return formLayout;
+    }
+
+    internal static IEnumerable<BoxStyle> GetDeviceScreenStyles(PreviewStyle previewStyle, int screenCount)
+    {
+        // work out the colors to use for the screen borders for each device
+        // (add the default localhost color first and then loop over the extra colors until we've got enough)
+        var screenBorderColors = new List<Color?> { previewStyle.ScreenStyle.BorderStyle.Color };
+        while (screenBorderColors.Count < screenCount)
+        {
+            if (previewStyle.ExtraColors?.Count > 0)
+            {
+                screenBorderColors.AddRange(previewStyle.ExtraColors.Cast<Color?>());
+                continue;
+            }
+
+            screenBorderColors.Add(previewStyle.ScreenStyle.BorderStyle.Color);
+        }
+
+        // convert the colors into screen styles
+        return screenBorderColors
+            .Take(screenCount)
+            .Select(
+                color => new BoxStyle(
+                    previewStyle.ScreenStyle.MarginStyle,
+                    previewStyle.ScreenStyle.BorderStyle.WithColor(color),
+                    previewStyle.ScreenStyle.PaddingStyle,
+                    previewStyle.ScreenStyle.BackgroundStyle));
+    }
+
+    /// <summary>
+    /// Arranges the device layouts into a non-overlapping grid and scales them to fit inside the specified content bounds.
+    /// </summary>
+    internal static void ArrangeAndScaleDeviceLayouts(FormViewModel.Builder formLayout)
+    {
+        var deviceLayouts = formLayout?.CanvasLayout?.DeviceLayouts
+            ?? throw new InvalidOperationException();
+        var contentBounds = formLayout?.CanvasLayout?.CanvasBounds?.ContentBounds
+            ?? throw new InvalidOperationException();
+
+        // build an initial grid of devices at 100% scale. the grid is currently a single row
+        // of cells high with all the devices arranged left to right for the time being.
         // we'll enhance this to allow for multiple rows later to support the
         // Mouse Without Borders "square" arrangement.
         var gridRowCount = 1;
@@ -161,9 +180,14 @@ public static class LayoutHelper
             deviceGrid[0, columnIndex] = deviceLayouts[columnIndex];
         }
 
+        // if a device has zero screens (or if we failed to connect and read screen layouts) we
+        // still want to allocate space in the full size grid so that it doesn't disappear into
+        // a zero width or height cell.
+        var fullSizeGridCellMinSize = new Size(1024, 768);
+
         // find the size of the tallest device in each row and the widest device in each column.
         // this tells us how tall each row needs to be and how wide each column needs to be.
-        var fullSizeBounds = new RectangleInfo[gridRowCount, gridColumnCount];
+        var fullSizeGridCellBounds = new RectangleInfo[gridRowCount, gridColumnCount];
         var fullSizeRowHeights = new decimal[gridRowCount];
         var fullSizeColumnWidths = new decimal[gridColumnCount];
         for (var rowIndex = 0; rowIndex < gridRowCount; rowIndex++)
@@ -172,9 +196,14 @@ public static class LayoutHelper
             {
                 var deviceInfo = deviceGrid[rowIndex, columnIndex].DeviceInfo ?? throw new InvalidOperationException();
                 var deviceBounds = deviceInfo.GetCombinedDisplayArea();
-                fullSizeBounds[rowIndex, columnIndex] = deviceBounds;
-                fullSizeRowHeights[rowIndex] = Math.Max(fullSizeRowHeights[rowIndex], deviceBounds.Height);
-                fullSizeColumnWidths[columnIndex] = Math.Max(fullSizeColumnWidths[columnIndex], deviceBounds.Width);
+                var fullSizeGridCell = deviceBounds with
+                {
+                    Width = Math.Max(deviceBounds.Width, fullSizeGridCellMinSize.Width),
+                    Height = Math.Max(deviceBounds.Height, fullSizeGridCellMinSize.Height),
+                };
+                fullSizeGridCellBounds[rowIndex, columnIndex] = fullSizeGridCell;
+                fullSizeRowHeights[rowIndex] = Math.Max(fullSizeRowHeights[rowIndex], fullSizeGridCell.Height);
+                fullSizeColumnWidths[columnIndex] = Math.Max(fullSizeColumnWidths[columnIndex], fullSizeGridCell.Width);
             }
         }
 
@@ -207,7 +236,8 @@ public static class LayoutHelper
 
         // scale the row and column coordinates by the factor. round coordinates to ensure they
         // don't overlap when rendered as pixel dimensions in the image. we'll also add a final
-        // coordinate to simplify building the end cell of each row and column in the scaled grid.
+        // "fencepost" coordinate to simplify building the end cell of each row and column in the
+        // scaled grid.
         var scaledRowCoordinates = fullSizeRowCoordinates
             .Select(fullSizeRowCoordinate => Math.Round(fullSizeRowCoordinate * scalingFactor))
             .Concat([scaledGridSize.Height])
@@ -224,8 +254,16 @@ public static class LayoutHelper
         {
             for (var columnIndex = 0; columnIndex < gridColumnCount; columnIndex++)
             {
+                var fullSizeCellSize = fullSizeGridCellBounds[rowIndex, columnIndex].Size;
+                if ((fullSizeCellSize.Width == 0) || (fullSizeCellSize.Height == 0))
+                {
+                    // if the full size bounds are zero width or height, it probably means there aren't any
+                    // screens available for this device so we can't scale it to fit inside the grid cell
+                    continue;
+                }
+
                 // work out the scaled coordinates for this grid cell
-                var gridCellBounds = new RectangleInfo(
+                var scaledGridCellBounds = new RectangleInfo(
                     x: scaledColumnCoordinates[columnIndex],
                     y: scaledRowCoordinates[rowIndex],
                     width: scaledColumnCoordinates[columnIndex + 1] - scaledColumnCoordinates[columnIndex],
@@ -235,10 +273,10 @@ public static class LayoutHelper
                 var deviceLayout = deviceGrid[rowIndex, columnIndex];
                 deviceLayout.DeviceBounds = BoxBounds.CreateFromOuterBounds(
                     outerBounds: new RectangleInfo(
-                            size: fullSizeBounds[rowIndex, columnIndex].Size.ScaleToFit(gridCellBounds.Size))
-                        .Center(gridCellBounds.Midpoint)
+                            size: fullSizeCellSize.ScaleToFit(scaledGridCellBounds.Size))
+                        .Center(scaledGridCellBounds.Midpoint)
                         .Round()
-                        .Intersect(gridCellBounds.Round()),
+                        .Intersect(scaledGridCellBounds.Round()),
                     boxStyle: deviceLayout.DeviceStyle);
             }
         }
@@ -257,20 +295,28 @@ public static class LayoutHelper
     }
 
     /// <summary>
-    /// Arranges the screen layouts and scales them to fit inside their parent device layouts.
+    /// Arranges the screen layouts inside their respective device cells and
+    /// scales them to fit inside their parent device layouts.
     /// </summary>
     internal static void ArrangeAndScaleScreenLayouts(FormViewModel.Builder formLayout)
     {
         var deviceLayouts = formLayout?.CanvasLayout?.DeviceLayouts
             ?? throw new InvalidOperationException();
+
         foreach (var deviceLayout in deviceLayouts)
         {
             var deviceInfo = deviceLayout.DeviceInfo ?? throw new InvalidOperationException();
             var screenLayouts = deviceLayout.ScreenLayouts ?? throw new InvalidOperationException();
-            var contentBounds = deviceLayout.DeviceBounds.ContentBounds;
+            if (screenLayouts.Count == 0)
+            {
+                // nothing to arrange or scale, and we'll get a divide by zero error
+                // in ScaleToFitRatio if we don't quit early
+                continue;
+            }
 
             // work out the scaling factor that will fit the screen layouts into the content bounds
             var fullSizeDisplayArea = deviceInfo.GetCombinedDisplayArea();
+            var contentBounds = deviceLayout.DeviceBounds.ContentBounds;
             var scalingFactor = fullSizeDisplayArea.Size.ScaleToFitRatio(contentBounds.Size);
 
             foreach (var screenLayout in screenLayouts)
@@ -300,7 +346,7 @@ public static class LayoutHelper
         }
     }
 
-    internal static void ArrangeAndScaleCanvasLayout(FormViewModel.Builder formLayout)
+    internal static void ArrangeAndResizeCanvasLayout(FormViewModel.Builder formLayout)
     {
         var canvasLayout = formLayout?.CanvasLayout ?? throw new InvalidOperationException();
 
@@ -320,5 +366,16 @@ public static class LayoutHelper
         canvasLayout.CanvasBounds = BoxBounds.CreateFromOuterBounds(
             outerBounds: positionedOuterBounds,
             boxStyle: formLayout.CanvasLayout.CanvasStyle);
+    }
+
+    internal static void ArrangeAndResizeFormLayout(FormViewModel.Builder formLayout, ScreenInfo activatedScreen, PointInfo activatedLocation)
+    {
+        var canvasOuterBounds = formLayout?.CanvasLayout?.CanvasBounds?.OuterBounds
+            ?? throw new InvalidOperationException();
+
+        // resize and center the form on the activated location
+        formLayout.FormBounds = canvasOuterBounds
+            .Center(activatedLocation)
+            .MoveInside(activatedScreen.DisplayArea);
     }
 }
