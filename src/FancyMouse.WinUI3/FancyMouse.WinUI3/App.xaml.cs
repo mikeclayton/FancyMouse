@@ -1,4 +1,6 @@
-﻿using FancyMouse.Common.Helpers;
+﻿using System.Globalization;
+
+using FancyMouse.Common.Helpers;
 using FancyMouse.Models.Display;
 using FancyMouse.WinUI3.Internal.Helpers;
 using Microsoft.UI.Xaml;
@@ -6,29 +8,36 @@ using NLog;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
-namespace FancyMouse.WinUI3
+namespace FancyMouse.WinUI3;
+
+/// <summary>
+/// Provides application-specific behavior to supplement the default Application class.
+/// </summary>
+public partial class App : Application
 {
     /// <summary>
-    /// Provides application-specific behavior to supplement the default Application class.
+    /// Initializes a new instance of the <see cref="App"/> class.
+    /// Initializes the singleton application object.  This is the first line of authored code
+    /// executed, and as such is the logical equivalent of main() or WinMain().
     /// </summary>
-    public partial class App : Application
+    public App()
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="App"/> class.
-        /// Initializes the singleton application object.  This is the first line of authored code
-        /// executed, and as such is the logical equivalent of main() or WinMain().
-        /// </summary>
-        public App()
-        {
-            this.InitializeComponent();
-        }
+        this.InitializeComponent();
+    }
 
-        /// <summary>
-        /// Invoked when the application is launched.
-        /// </summary>
-        /// <param name="args">Details about the launch request and process.</param>
-        protected override void OnLaunched(LaunchActivatedEventArgs args)
+    /// <summary>
+    /// Invoked when the application is launched.
+    /// </summary>
+    /// <param name="args">Details about the launch request and process.</param>
+    protected override void OnLaunched(LaunchActivatedEventArgs args)
+    {
+        var logger = LogManager.GetCurrentClassLogger();
+        logger.Info("app launched");
+
+        try
         {
+            var previewWindow = new PreviewWindow(logger: logger);
+
             // run Logitech SetPoint as admin for hotkeys to get activated from custom mouse bindings
             // when an Office application or Visual Studio is the active window. (SetPoint *keyboard*
             // bindings work fine when running as a normal user in Office, but *mouse* bindings only
@@ -37,19 +46,22 @@ namespace FancyMouse.WinUI3
 
             // make sure we're in the right high dpi mode otherwise pixel positions and sizes for
             // screen captures get distorted and various coordinates aren't calculated correctly.
-            if (DpiModeHelper.HighDpiMode != HighDpiMode.PerMonitorV2)
-            {
-                throw new InvalidOperationException($"high dpi mode is not set to {nameof(HighDpiMode.PerMonitorV2)}");
-            }
+            logger.Info("checking high dpi mode");
+            DpiModeHelper.EnsurePerMonitorV2Enabled();
+            logger.Info("high dpi mode is ok");
 
-            var appSettingsPath = "C:\\src\\github\\mikeclayton\\FancyMouse\\src\\FancyMouse\\appSettings.json";
+            var appSettingsPath = ".\\appSettings.json";
+            logger.Info(CultureInfo.InvariantCulture, "settings path = {appSettingsPath}", appSettingsPath);
             ConfigHelper.SetAppSettingsPath(appSettingsPath);
 
-            /* ConfigHelper.SetAppSettingsPath(".\\appSettings.json"); */
+            // load the application settings and start the filesystem watcher
+            // so we reload if it changes
+            logger.Info(CultureInfo.InvariantCulture, "loading app settings", appSettingsPath);
+            ConfigHelper.LoadAppSettings();
+            ConfigHelper.StartAppSettingsWatcher();
+            logger.Info(CultureInfo.InvariantCulture, "load app settings", appSettingsPath);
 
-            var previewWindow = new PreviewWindow(
-                logger: LogManager.CreateNullLogger());
-
+            logger.Info("starting hotkey handler");
             ConfigHelper.SetHotKeyEventHandler(
                 (_, _) =>
                 {
@@ -62,11 +74,13 @@ namespace FancyMouse.WinUI3
                             await previewWindow.ShowPreview();
                         });
                 });
-
-            // load the application settings and start the filesystem watcher
-            // so we reload if it changes
-            ConfigHelper.LoadAppSettings();
-            ConfigHelper.StartAppSettingsWatcher();
+            logger.Info("started hotkey handler");
+        }
+        catch (Exception ex)
+        {
+            logger.Error(ex);
+            LogManager.Flush();
+            throw;
         }
     }
 }

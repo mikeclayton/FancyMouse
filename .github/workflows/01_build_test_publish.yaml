@@ -52,10 +52,9 @@ jobs:
             & $vsInstaller modify --installPath $installationPath --add maui-windows --noUpdateInstaller --passive
             & $vsInstaller modify --installPath $installationPath --add Microsoft.VisualStudio.ComponentGroup.UWP.Support --noUpdateInstaller --passive
 
-            # Workload
-            # WinUI application development
-            # ID: Microsoft.VisualStudio.Workload.Universal
-            # Description: Build applications for the Windows platform using WinUI with C# or optionally C?+?+.
+            # Workload:    WinUI application development
+            # ID:          Microsoft.VisualStudio.Workload.Universal
+            # Description: Build applications for the Windows platform using WinUI with C# or optionally C++.
             & $vsInstaller modify --installPath $installationPath --add Microsoft.VisualStudio.Workload.Universal --includeRecommended --includeOptional --noUpdateInstaller --passive
 
             write-host "components after"
@@ -79,7 +78,8 @@ jobs:
 
       - name: dotnet restore
         working-directory: ${{ env.BUILD_PATH }}
-        run: dotnet restore
+        run: |
+            dotnet restore
 
       - name: dotnet build
         working-directory: ${{ env.BUILD_PATH }}

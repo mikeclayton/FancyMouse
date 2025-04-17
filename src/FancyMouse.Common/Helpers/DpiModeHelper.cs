@@ -1,8 +1,5 @@
-﻿using System.Diagnostics;
+﻿using FancyMouse.Common.NativeMethods;
 
-using FancyMouse.Common.NativeMethods;
-
-using static FancyMouse.Common.NativeMethods.Core;
 using static FancyMouse.Common.NativeMethods.User32;
 
 namespace FancyMouse.Common.Helpers;
@@ -21,84 +18,32 @@ public static class DpiModeHelper
         => OperatingSystem.IsWindowsVersionAtLeast(major: 10, build: 14393);
 
     /// <summary>
-    /// See https://github.com/dotnet/winforms/blob/bd91bfb26ce90ac31e950c01dcb2b6e0776453a7/src/System.Private.Windows.Core/src/System/Private/Windows/OsVersion.cs#L9
-    /// </summary>
-    private static bool IsWindows8_1OrGreater()
-        => OperatingSystem.IsWindowsVersionAtLeast(major: 6, minor: 3);
-
-    /// <summary>
-    /// See https://github.com/dotnet/winforms/blob/1c324d074280ab5de6342d973069faa687f2c165/src/System.Windows.Forms.Primitives/src/Windows/Win32/UI/HiDpi/DPI_AWARENESS_CONTEXT.cs#L17
-    /// </summary>
-    internal static bool AreEquivalent(DPI_AWARENESS_CONTEXT dpiContextA, DPI_AWARENESS_CONTEXT dpiContextB) =>
-        DpiModeHelper.IsWindows10_1607OrGreater() && User32.AreDpiAwarenessContextsEqual(dpiContextA, dpiContextB);
-
-    /// <remarks>
-    /// See https://github.com/dotnet/winforms/blob/bd91bfb26ce90ac31e950c01dcb2b6e0776453a7/src/System.Windows.Forms/System/Windows/Forms/Application.cs#L18
-    /// </remarks>
-    public static Models.Display.HighDpiMode HighDpiMode
-        => DpiModeHelper.GetThreadHighDpiMode();
-
-    /// <summary>
-    /// Gets the DPI mode for the current thread.
+    /// Ensures that the application is running in per-monitor v2 DPI awareness mode.
     /// </summary>
     /// <remarks>
     /// See https://github.com/dotnet/winforms/blob/bd91bfb26ce90ac31e950c01dcb2b6e0776453a7/src/System.Windows.Forms.Primitives/src/System/Windows/Forms/Internals/ScaleHelper.cs#L368
     /// </remarks>
-    private static Models.Display.HighDpiMode GetThreadHighDpiMode()
+    public static void EnsurePerMonitorV2Enabled()
     {
-        // For Windows 10 RS2 and above
-        if (DpiModeHelper.IsWindows10_1607OrGreater())
+        // PowerToys supports the following operating systems:
+        //
+        // * Windows 11 or Windows 10 version 2004 (code name 20H1 / build number 19041) or newer.
+        //
+        // so we'll do the same(ish)
+        if (!DpiModeHelper.IsWindows10_1607OrGreater())
         {
-            var dpiAwareness = User32.GetThreadDpiAwarenessContext();
-
-            if (DpiModeHelper.AreEquivalent(dpiAwareness, DPI_AWARENESS_CONTEXT.DPI_AWARENESS_CONTEXT_SYSTEM_AWARE))
-            {
-                return Models.Display.HighDpiMode.SystemAware;
-            }
-
-            if (DpiModeHelper.AreEquivalent(dpiAwareness, DPI_AWARENESS_CONTEXT.DPI_AWARENESS_CONTEXT_UNAWARE))
-            {
-                return Models.Display.HighDpiMode.DpiUnaware;
-            }
-
-            if (DpiModeHelper.AreEquivalent(dpiAwareness, DPI_AWARENESS_CONTEXT.DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2))
-            {
-                return Models.Display.HighDpiMode.PerMonitorV2;
-            }
-
-            if (DpiModeHelper.AreEquivalent(dpiAwareness, DPI_AWARENESS_CONTEXT.DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE))
-            {
-                return Models.Display.HighDpiMode.PerMonitor;
-            }
-
-            if (DpiModeHelper.AreEquivalent(dpiAwareness, DPI_AWARENESS_CONTEXT.DPI_AWARENESS_CONTEXT_UNAWARE_GDISCALED))
-            {
-                return Models.Display.HighDpiMode.DpiUnawareGdiScaled;
-            }
-        }
-        else if (DpiModeHelper.IsWindows8_1OrGreater())
-        {
-            User32.GetProcessDpiAwareness(HANDLE.Null, out var processDpiAwareness);
-            switch (processDpiAwareness)
-            {
-                case PROCESS_DPI_AWARENESS.PROCESS_DPI_UNAWARE:
-                    return Models.Display.HighDpiMode.DpiUnaware;
-                case PROCESS_DPI_AWARENESS.PROCESS_SYSTEM_DPI_AWARE:
-                    return Models.Display.HighDpiMode.SystemAware;
-                case PROCESS_DPI_AWARENESS.PROCESS_PER_MONITOR_DPI_AWARE:
-                    return Models.Display.HighDpiMode.PerMonitor;
-            }
-        }
-        else
-        {
-            // Available on Vista and higher.
-            return User32.IsProcessDPIAware()
-                ? Models.Display.HighDpiMode.SystemAware
-                : Models.Display.HighDpiMode.DpiUnaware;
+            throw new PlatformNotSupportedException(
+                "Windows 10 version1607 or higher is required to use this application.");
         }
 
-        // We should never get here.
-        Debug.Fail("Unexpected DPI state.");
-        return Models.Display.HighDpiMode.DpiUnaware;
+        // there's a weird problem where AreDpiAwarenessContextsEqual was returning TRUE in debug mode
+        // but FALSE in release mode and i couldn't work out why, so we can't do it the *right* way.
+        // we'll just use GetAwarenessFromDpiAwarenessContext instead as a near-enough workaround.
+        var dpiAwarenessContext = User32.GetThreadDpiAwarenessContext();
+        var dpiAwareness = User32.GetAwarenessFromDpiAwarenessContext(dpiAwarenessContext);
+        if (dpiAwareness != DPI_AWARENESS.DPI_AWARENESS_PER_MONITOR_AWARE)
+        {
+            throw new InvalidOperationException($"high dpi mode is not set to {nameof(DPI_AWARENESS.DPI_AWARENESS_PER_MONITOR_AWARE)}");
+        }
     }
 }
