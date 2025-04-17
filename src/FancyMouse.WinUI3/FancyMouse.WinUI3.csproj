@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <Import Project="..\..\Common.Dotnet.CsWinRT.props" />
-  <Import Project="..\..\Common.SelfContained.props" />
+  <Import Project="..\Common.Dotnet.CsWinRT.props" />
+  <Import Project="..\Common.SelfContained.props" />
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -33,9 +33,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\FancyMouse.Common\FancyMouse.Common.csproj" />
-    <ProjectReference Include="..\..\FancyMouse.Models\FancyMouse.Models.csproj" />
-    <ProjectReference Include="..\..\FancyMouse.Settings\FancyMouse.Settings.csproj" />
+    <ProjectReference Include="..\FancyMouse.Common\FancyMouse.Common.csproj" />
+    <ProjectReference Include="..\FancyMouse.Models\FancyMouse.Models.csproj" />
+    <ProjectReference Include="..\FancyMouse.Settings\FancyMouse.Settings.csproj" />
   </ItemGroup>
 
   <ItemGroup>
