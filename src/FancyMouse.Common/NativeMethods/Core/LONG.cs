@@ -1,6 +1,6 @@
 ﻿namespace FancyMouse.Common.NativeMethods;
 
-internal static partial class Core
+public static partial class Core
 {
     /// <summary>
     /// A 32-bit signed integer.The range is -2147483648 through 2147483647 decimal.
@@ -10,9 +10,15 @@ internal static partial class Core
     /// <remarks>
     /// See https://learn.microsoft.com/en-us/windows/win32/winprog/windows-data-types
     /// </remarks>
-    internal readonly struct LONG
+#pragma warning disable CA1716 // Identifiers should not match keywords
+#pragma warning disable CA1720 // Identifier contains type name
+    public readonly struct LONG
+#pragma warning restore CA1720 // Identifier contains type name
+#pragma warning restore CA1716 // Identifiers should not match keywords
     {
+#pragma warning disable CA1051 // Do not declare visible instance fields
         public readonly int Value;
+#pragma warning restore CA1051 // Do not declare visible instance fields
 
         public LONG(int value)
         {

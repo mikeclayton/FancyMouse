@@ -1,8 +1,9 @@
 ﻿using System.Diagnostics;
 using System.Drawing;
 using System.Text.Json;
-using FancyMouse.Common.Models.Styles;
+
 using FancyMouse.HotKeys;
+using FancyMouse.Models.Styles;
 using FancyMouse.Settings;
 using FancyMouse.UnitTests.Settings.TestUtils;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -124,8 +125,8 @@ public sealed class AppSettingsReaderTests
                         height: 600
                     ),
                     canvasStyle: AppSettings.DefaultSettings.PreviewStyle.CanvasStyle,
-                    screenStyle: AppSettings.DefaultSettings.PreviewStyle.ScreenStyle
-                ));
+                    screenStyle: AppSettings.DefaultSettings.PreviewStyle.ScreenStyle,
+                    extraColors: AppSettings.DefaultSettings.PreviewStyle.ExtraColors));
             Assert.AreEqual(
                 JsonSerializer.Serialize(expected),
                 JsonSerializer.Serialize(actual));
@@ -241,8 +242,8 @@ public sealed class AppSettingsReaderTests
                             color1: Color.Yellow,
                             color2: Color.Pink
                         )
-                    )
-                ));
+                    ),
+                    extraColors: Array.Empty<Color>()));
             Assert.AreEqual(
                 JsonSerializer.Serialize(expected),
                 JsonSerializer.Serialize(actual));

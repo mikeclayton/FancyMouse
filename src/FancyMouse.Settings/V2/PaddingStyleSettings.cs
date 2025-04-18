@@ -5,7 +5,7 @@ namespace FancyMouse.Settings.V2;
 /// <summary>
 /// Represents the margin style for a drawing object.
 /// </summary>
-internal sealed class PaddingStyleSettings
+public sealed class PaddingStyleSettings
 {
     public PaddingStyleSettings(int? width)
     {

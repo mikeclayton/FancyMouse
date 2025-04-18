@@ -1,7 +1,9 @@
 ﻿using System.ComponentModel;
-using FancyMouse.Common.Models.Display;
-using FancyMouse.Common.Models.Drawing;
+
 using FancyMouse.Common.NativeMethods;
+using FancyMouse.Models.Display;
+using FancyMouse.Models.Drawing;
+
 using static FancyMouse.Common.NativeMethods.Core;
 using static FancyMouse.Common.NativeMethods.User32;
 

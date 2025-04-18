@@ -36,13 +36,50 @@ jobs:
         with:
           dotnet-version: 9.0.x
 
+      - name: get vs components
+        working-directory: ${{ env.BUILD_PATH }}
+        run: |
+            Install-Module -Name "VSSetup" -Scope "CurrentUser" -Force
+
+            $vsWhere     = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+            $vsInstaller = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vs_installer.exe"
+
+            write-host "components before"
+            write-host "-----------------"
+            (Get-VSSetupInstance | Select-VSSetupInstance -Product *).packages | Select-Object -ExpandProperty Id | Sort-Object
+
+            $installationPath = & $vsWhere -latest -property installationPath
+            & $vsInstaller modify --installPath $installationPath --add maui-windows --noUpdateInstaller --passive
+            & $vsInstaller modify --installPath $installationPath --add Microsoft.VisualStudio.ComponentGroup.UWP.Support --noUpdateInstaller --passive
+
+            # Workload:    WinUI application development
+            # ID:          Microsoft.VisualStudio.Workload.Universal
+            # Description: Build applications for the Windows platform using WinUI with C# or optionally C++.
+            & $vsInstaller modify --installPath $installationPath --add Microsoft.VisualStudio.Workload.Universal --includeRecommended --includeOptional --noUpdateInstaller --passive
+
+            write-host "components after"
+            write-host "----------------"
+            (Get-VSSetupInstance | Select-VSSetupInstance -Product *).packages | Select-Object -ExpandProperty Id | Sort-Object
+
       - name: dotnet info
         working-directory: ${{ env.BUILD_PATH }}
-        run: dotnet --info
+        run: |
+            dotnet --info
+
+      - name: dotnet workload list
+        working-directory: ${{ env.BUILD_PATH }}
+        run: |
+            dotnet workload list
+
+      - name: dotnet workload search
+        working-directory: ${{ env.BUILD_PATH }}
+        run: |
+            dotnet workload search
 
       - name: dotnet restore
         working-directory: ${{ env.BUILD_PATH }}
-        run: dotnet restore
+        run: |
+            dotnet restore
 
       - name: dotnet build
         working-directory: ${{ env.BUILD_PATH }}

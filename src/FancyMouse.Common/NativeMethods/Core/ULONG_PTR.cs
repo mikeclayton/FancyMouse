@@ -1,6 +1,6 @@
 ﻿namespace FancyMouse.Common.NativeMethods;
 
-internal static partial class Core
+public static partial class Core
 {
     /// <summary>
     /// An unsigned LONG_PTR.

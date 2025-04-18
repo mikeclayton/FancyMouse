@@ -1,6 +1,6 @@
 ﻿namespace FancyMouse.Common.NativeMethods;
 
-internal static partial class Core
+public static partial class Core
 {
     /// <summary>
     /// A 16-bit unsigned integer.The range is 0 through 65535 decimal.

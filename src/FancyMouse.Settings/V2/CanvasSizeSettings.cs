@@ -2,7 +2,7 @@
 
 namespace FancyMouse.Settings.V2;
 
-internal sealed class CanvasSizeSettings
+public sealed class CanvasSizeSettings
 {
     public CanvasSizeSettings(
         int? width,

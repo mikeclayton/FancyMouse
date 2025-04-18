@@ -1,6 +1,8 @@
 ﻿using System.Drawing;
-using FancyMouse.Common.Models.Styles;
+
 using FancyMouse.HotKeys;
+using FancyMouse.Models.Styles;
+
 using Keys = FancyMouse.HotKeys.Keys;
 
 namespace FancyMouse.Settings;
@@ -51,7 +53,13 @@ public sealed class AppSettings
                     color1: Color.MidnightBlue,
                     color2: Color.MidnightBlue
                 )
-            )
+            ),
+            extraColors: new[]
+            {
+                Color.Red,
+                Color.Blue,
+                Color.Green,
+            }
         )
     );
 

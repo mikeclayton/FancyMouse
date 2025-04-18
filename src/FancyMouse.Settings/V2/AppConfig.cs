@@ -7,7 +7,7 @@ namespace FancyMouse.Settings.V2;
 /// serialization / deserialization. This needs to be converted
 /// into an AppSettings object for the main application to use.
 /// </summary>
-internal sealed class AppConfig
+public sealed class AppConfig
 {
     public AppConfig(
         int? version,

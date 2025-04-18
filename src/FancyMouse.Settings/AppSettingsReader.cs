@@ -1,5 +1,8 @@
 ﻿using System.Text.Json.Nodes;
 
+using FancyMouse.Settings.V1;
+using FancyMouse.Settings.V2;
+
 namespace FancyMouse.Settings;
 
 public static class AppSettingsReader
@@ -34,8 +37,8 @@ public static class AppSettingsReader
 
         var appSettings = configVersion switch
         {
-            1 => V1.SettingsConverter.ParseAppSettings(configJson),
-            2 => V2.SettingsConverter.ParseAppSettings(configJson),
+            1 => SettingsConverterV1.ParseAppSettings(configJson),
+            2 => SettingsConverterV2.ParseAppSettings(configJson),
             _ => AppSettings.DefaultSettings,
         };
         return appSettings;

@@ -5,7 +5,7 @@ namespace FancyMouse.Settings.V2;
 /// <summary>
 /// Represents the border style for a drawing object.
 /// </summary>
-internal sealed class BorderStyleSettings
+public sealed class BorderStyleSettings
 {
     public BorderStyleSettings(string? color, decimal? width, decimal? depth)
     {

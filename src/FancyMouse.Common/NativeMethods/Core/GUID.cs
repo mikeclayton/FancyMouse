@@ -1,6 +1,6 @@
 ﻿namespace FancyMouse.Common.NativeMethods;
 
-internal static partial class Core
+public static partial class Core
 {
     /// <summary>
     /// A 32-bit signed integer.The range is -2147483648 through 2147483647 decimal.

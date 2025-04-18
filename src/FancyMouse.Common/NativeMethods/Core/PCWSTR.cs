@@ -2,7 +2,7 @@
 
 namespace FancyMouse.Common.NativeMethods;
 
-internal static partial class Core
+public static partial class Core
 {
     /// <summary>
     /// A pointer to a constant null-terminated string of 16-bit Unicode characters. For more information, see Character Sets Used By Fonts.

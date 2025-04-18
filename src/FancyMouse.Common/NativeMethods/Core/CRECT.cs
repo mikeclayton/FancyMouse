@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace FancyMouse.Common.NativeMethods;
 
-internal static partial class Core
+public static partial class Core
 {
     /// <summary>
     /// The CRECT structure defines a rectangle by the coordinates of its upper-left and lower-right corners.
