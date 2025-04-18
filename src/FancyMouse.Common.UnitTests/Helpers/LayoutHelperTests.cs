@@ -108,14 +108,17 @@ public static class LayoutHelperTests
     {
         public sealed class TestCase
         {
-            public TestCase(PreviewStyle previewStyle, DisplayInfo displayInfo, ScreenInfo activatedScreen, PointInfo activatedLocation, FormViewModel expectedResult)
+            public TestCase(string testName, PreviewStyle previewStyle, DisplayInfo displayInfo, ScreenInfo activatedScreen, PointInfo activatedLocation, FormViewModel expectedResult)
             {
+                this.TestName = testName;
                 this.PreviewStyle = previewStyle;
                 this.DisplayInfo = displayInfo;
                 this.ActivatedLocation = activatedLocation;
                 this.ActivatedScreen = activatedScreen;
                 this.ExpectedResult = expectedResult;
             }
+
+            public string TestName { get; }
 
             public PreviewStyle PreviewStyle { get; }
 
@@ -138,6 +141,7 @@ public static class LayoutHelperTests
             // |       0        |
             // |                |
             // +----------------+
+            var testName = "Test 1 - Happy Path";
             var previewStyle = new PreviewStyle(
                 canvasSize: new(
                     width: (1024 / 2) + (5 * 2) + (1 * 2), // half the screen size, plus additional room for canvas border and padding
@@ -203,7 +207,7 @@ public static class LayoutHelperTests
                         ),
                     }
                 ));
-            yield return new object[] { new TestCase(previewStyle, displayInfo, activatedScreen, activatedLocation, expectedResult) };
+            yield return new object[] { new TestCase(testName, previewStyle, displayInfo, activatedScreen, activatedLocation, expectedResult) };
 
             // happy path - single device with screen and 50% scaling,
             // *no* preview borders but *has* screenshot borders
@@ -213,6 +217,7 @@ public static class LayoutHelperTests
             // |       0        |
             // |                |
             // +----------------+
+            testName = "Test 2 - Happy Path";
             previewStyle = new PreviewStyle(
                 canvasSize: new(
                     width: 1024 / 2, // half the screen size
@@ -277,7 +282,7 @@ public static class LayoutHelperTests
                         ),
                     }
                 ));
-            yield return new object[] { new TestCase(previewStyle, displayInfo, activatedScreen, activatedLocation, expectedResult) };
+            yield return new object[] { new TestCase(testName, previewStyle, displayInfo, activatedScreen, activatedLocation, expectedResult) };
 
             // rounding error check - single screen with 33% scaling,
             // no borders, check to make sure form scales to exactly
@@ -294,6 +299,7 @@ public static class LayoutHelperTests
             // |       0        |
             // |                |
             // +----------------+
+            testName = "Test 3 - Rounding Error Check";
             previewStyle = new PreviewStyle(
                 canvasSize: new(
                     width: 300,
@@ -347,7 +353,7 @@ public static class LayoutHelperTests
                         ),
                     }
                 ));
-            yield return new object[] { new TestCase(previewStyle, displayInfo, activatedScreen, activatedLocation, expectedResult) };
+            yield return new object[] { new TestCase(testName, previewStyle, displayInfo, activatedScreen, activatedLocation, expectedResult) };
 
             // primary monitor not topmost / leftmost - if there are screens
             // that are further left or higher up than the primary monitor
@@ -361,6 +367,7 @@ public static class LayoutHelperTests
             //         |       1        |
             //         |                |
             //         +----------------+
+            testName = "Test 4 - Negative Coordinates";
             previewStyle = new PreviewStyle(
                 canvasSize: new(
                     width: 716,
@@ -448,7 +455,7 @@ public static class LayoutHelperTests
                         ),
                     }
                 ));
-            yield return new object[] { new TestCase(previewStyle, displayInfo, activatedScreen, activatedLocation, expectedResult) };
+            yield return new object[] { new TestCase(testName, previewStyle, displayInfo, activatedScreen, activatedLocation, expectedResult) };
 
             // two devices side-by-side with a single screen each
             //
@@ -458,6 +465,7 @@ public static class LayoutHelperTests
             // |       0        |  |       0        |
             // |                |  |                |
             // +----------------+  +----------------+
+            testName = "Test 5 - Two Devices Side-by-Side";
             previewStyle = new PreviewStyle(
                 canvasSize: new(
                     width: 1600,
@@ -539,7 +547,7 @@ public static class LayoutHelperTests
                         ),
                     }
                 ));
-            yield return new object[] { new TestCase(previewStyle, displayInfo, activatedScreen, activatedLocation, expectedResult) };
+            yield return new object[] { new TestCase(testName, previewStyle, displayInfo, activatedScreen, activatedLocation, expectedResult) };
 
             // TODO: add a test to make sure the form is nudged into the bounds
             // of the screen if it's activated near an edge or corner
@@ -571,7 +579,6 @@ public static class LayoutHelperTests
         /// Basic performance test just to avoid any massive regressions.
         /// </summary>
         [TestMethod]
-        [Ignore("Ignore on CI runners - only run locally")]
         public void BasicPerformanceTest()
         {
             // primary monitor not topmost / leftmost - if there are screens
@@ -650,7 +657,7 @@ public static class LayoutHelperTests
             timer.Stop();
 
             // runs on my machine in about 180-200ms, so leave a bit of headroom
-            Assert.IsTrue(timer.ElapsedMilliseconds < 250);
+            Assert.IsTrue(timer.ElapsedMilliseconds < 225);
         }
     }
 }

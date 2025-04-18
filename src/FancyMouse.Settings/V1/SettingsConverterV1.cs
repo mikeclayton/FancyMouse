@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -15,10 +16,11 @@ internal static class SettingsConverterV1
         PropertyNameCaseInsensitive = true,
     };
 
+    private static readonly SerializationContextV1 JsonSerializationContext = new(SettingsConverterV1.JsonSerializerOptions);
+
     public static AppSettings ParseAppSettings(string json)
     {
-        var jsonContext = new SerializationContextV1(SettingsConverterV1.JsonSerializerOptions);
-        var appConfig = JsonSerializer.Deserialize<AppConfig>(json, jsonContext.AppConfig)
+        var appConfig = JsonSerializer.Deserialize<AppConfig>(json, SettingsConverterV1.JsonSerializationContext.AppConfig)
             ?? throw new InvalidOperationException();
         var hotkey = SettingsConverterV1.ConvertToKeystroke(appConfig?.FancyMouse?.Hotkey);
         var previewStyle = SettingsConverterV1.ConvertToPreviewStyle(appConfig?.FancyMouse?.PreviewSize);

@@ -9,21 +9,15 @@ namespace FancyMouse.Models.Drawing;
 /// <summary>
 /// Immutable version of a System.Drawing.Size object with some extra utility methods.
 /// </summary>
-public sealed record SizeInfo
+public sealed class SizeInfo
 {
-    public static readonly SizeInfo Empty = new(0, 0, true);
+    public static readonly SizeInfo Empty = new(0, 0);
 
     [JsonConstructor]
     public SizeInfo(decimal width, decimal height)
-        : this(width, height, false)
-    {
-    }
-
-    private SizeInfo(decimal width, decimal height, bool isEmpty)
     {
         this.Width = width;
         this.Height = height;
-        this.IsEmpty = isEmpty;
     }
 
     public SizeInfo(Size size)
@@ -34,18 +28,19 @@ public sealed record SizeInfo
     public decimal Width
     {
         get;
-        init;
     }
 
     public decimal Height
     {
         get;
-        init;
     }
 
     public bool IsEmpty
     {
-        get;
+        get
+        {
+            return object.ReferenceEquals(this, SizeInfo.Empty);
+        }
     }
 
     public SizeInfo Clamp(SizeInfo max)

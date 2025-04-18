@@ -5,7 +5,7 @@ namespace FancyMouse.Models.Drawing;
 /// <summary>
 /// Immutable version of a System.Drawing.Point object with some extra utility methods.
 /// </summary>
-public sealed record PointInfo
+public sealed class PointInfo
 {
     public PointInfo(decimal x, decimal y)
     {
@@ -21,13 +21,11 @@ public sealed record PointInfo
     public decimal X
     {
         get;
-        init;
     }
 
     public decimal Y
     {
         get;
-        init;
     }
 
     /// <summary>

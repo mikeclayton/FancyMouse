@@ -126,7 +126,7 @@ public sealed class AppSettingsReaderTests
                     ),
                     canvasStyle: AppSettings.DefaultSettings.PreviewStyle.CanvasStyle,
                     screenStyle: AppSettings.DefaultSettings.PreviewStyle.ScreenStyle,
-                    extraColors: Array.Empty<Color>()));
+                    extraColors: AppSettings.DefaultSettings.PreviewStyle.ExtraColors));
             Assert.AreEqual(
                 JsonSerializer.Serialize(expected),
                 JsonSerializer.Serialize(actual));

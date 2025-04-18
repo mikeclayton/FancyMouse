@@ -10,23 +10,17 @@ namespace FancyMouse.Models.Drawing;
 /// <summary>
 /// Immutable version of a System.Drawing.Rectangle object with some extra utility methods.
 /// </summary>
-public sealed record RectangleInfo
+public sealed class RectangleInfo
 {
-    public static readonly RectangleInfo Empty = new(0, 0, 0, 0, true);
+    public static readonly RectangleInfo Empty = new(0, 0, 0, 0);
 
     [JsonConstructor]
     public RectangleInfo(decimal x, decimal y, decimal width, decimal height)
-        : this(x, y, width, height, false)
-    {
-    }
-
-    private RectangleInfo(decimal x, decimal y, decimal width, decimal height, bool isEmpty)
     {
         this.X = x;
         this.Y = y;
         this.Width = width;
         this.Height = height;
-        this.IsEmpty = true;
     }
 
     public RectangleInfo(Rectangle rectangle)
@@ -48,34 +42,33 @@ public sealed record RectangleInfo
     public decimal X
     {
         get;
-        init;
     }
 
     [JsonPropertyName("y")]
     public decimal Y
     {
         get;
-        init;
     }
 
     [JsonPropertyName("width")]
     public decimal Width
     {
         get;
-        init;
     }
 
     [JsonPropertyName("height")]
     public decimal Height
     {
         get;
-        init;
     }
 
     [JsonIgnore]
     public bool IsEmpty
     {
-        get;
+        get
+        {
+            return object.ReferenceEquals(this, RectangleInfo.Empty);
+        }
     }
 
     [JsonIgnore]
@@ -250,6 +243,9 @@ public sealed record RectangleInfo
     /// <returns>A new <see cref="RectangleInfo"/> that is offset by the specified X and Y distances.</returns>
     public RectangleInfo Offset(decimal dx, decimal dy) =>
         new(this.X + dx, this.Y + dy, this.Width, this.Height);
+
+    public RectangleInfo Resize(decimal width, decimal height) =>
+        new(this.X, this.Y, width, height);
 
     public RectangleInfo Round() =>
         this.Round(0);

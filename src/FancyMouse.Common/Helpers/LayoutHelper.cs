@@ -148,14 +148,19 @@ public static class LayoutHelper
         }
 
         // convert the colors into screen styles
+        // note - only create a new ScreenStyle if the border color is different.
+        // (this is to preserve a reference to ScreenStyle.Empty - and
+        // "ScreenStyle.IsEmpty == true" - if the new border color is Transparent)
         return screenBorderColors
             .Take(screenCount)
             .Select(
-                color => new BoxStyle(
-                    previewStyle.ScreenStyle.MarginStyle,
-                    previewStyle.ScreenStyle.BorderStyle.WithColor(color),
-                    previewStyle.ScreenStyle.PaddingStyle,
-                    previewStyle.ScreenStyle.BackgroundStyle));
+                color => previewStyle.ScreenStyle.BorderStyle.Color == color
+                    ? previewStyle.ScreenStyle
+                    : new BoxStyle(
+                        previewStyle.ScreenStyle.MarginStyle,
+                        previewStyle.ScreenStyle.BorderStyle.WithColor(color),
+                        previewStyle.ScreenStyle.PaddingStyle,
+                        previewStyle.ScreenStyle.BackgroundStyle));
     }
 
     /// <summary>
@@ -196,11 +201,15 @@ public static class LayoutHelper
             {
                 var deviceInfo = deviceGrid[rowIndex, columnIndex].DeviceInfo ?? throw new InvalidOperationException();
                 var deviceBounds = deviceInfo.GetCombinedDisplayArea();
-                var fullSizeGridCell = deviceBounds with
-                {
-                    Width = Math.Max(deviceBounds.Width, fullSizeGridCellMinSize.Width),
-                    Height = Math.Max(deviceBounds.Height, fullSizeGridCellMinSize.Height),
-                };
+
+                // if the device bounds are empty, it probably means there aren't any
+                // screens available for this device so we can't scale it to fit inside the grid cell
+                var fullSizeGridCell = deviceBounds.IsEmpty
+                    ? deviceBounds.Resize(
+                        width: Math.Max(deviceBounds.Width, fullSizeGridCellMinSize.Width),
+                        height: Math.Max(deviceBounds.Height, fullSizeGridCellMinSize.Height))
+                    : deviceBounds;
+
                 fullSizeGridCellBounds[rowIndex, columnIndex] = fullSizeGridCell;
                 fullSizeRowHeights[rowIndex] = Math.Max(fullSizeRowHeights[rowIndex], fullSizeGridCell.Height);
                 fullSizeColumnWidths[columnIndex] = Math.Max(fullSizeColumnWidths[columnIndex], fullSizeGridCell.Width);

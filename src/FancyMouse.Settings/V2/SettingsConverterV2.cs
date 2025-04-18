@@ -13,10 +13,11 @@ internal static class SettingsConverterV2
         PropertyNameCaseInsensitive = true,
     };
 
+    private static readonly SerializationContextV2 JsonSerializationContext = new(SettingsConverterV2.JsonSerializerOptions);
+
     public static AppSettings ParseAppSettings(string json)
     {
-        var jsonContext = new SerializationContextV2(SettingsConverterV2.JsonSerializerOptions);
-        var appConfig = JsonSerializer.Deserialize<AppConfig>(json, jsonContext.AppConfig)
+        var appConfig = JsonSerializer.Deserialize<AppConfig>(json, SettingsConverterV2.JsonSerializationContext.AppConfig)
             ?? throw new InvalidOperationException();
         var hotkey = SettingsConverterV1.ConvertToKeystroke(appConfig.Hotkey);
         var previewStyle = SettingsConverterV2.MergePreviewStyles(appConfig.Preview, AppSettings.DefaultSettings.PreviewStyle);

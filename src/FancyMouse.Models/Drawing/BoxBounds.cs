@@ -7,7 +7,7 @@ namespace FancyMouse.Models.Drawing;
 /// and content bounds. This class is used to model the box layout as described
 /// in the CSS box model.
 /// </summary>
-public sealed record BoxBounds
+public sealed class BoxBounds
 {
     /*
 
@@ -75,25 +75,21 @@ public sealed record BoxBounds
     public RectangleInfo OuterBounds
     {
         get;
-        init;
     }
 
     public RectangleInfo MarginBounds
     {
         get;
-        init;
     }
 
     public RectangleInfo BorderBounds
     {
         get;
-        init;
     }
 
     public RectangleInfo PaddingBounds
     {
         get;
-        init;
     }
 
     /// <summary>
@@ -102,13 +98,11 @@ public sealed record BoxBounds
     public RectangleInfo ContentBounds
     {
         get;
-        init;
     }
 
     public bool IsEmpty
     {
         get;
-        init;
     }
 
     /// <summary>
