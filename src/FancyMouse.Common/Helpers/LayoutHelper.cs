@@ -203,11 +203,12 @@ public static class LayoutHelper
                 var deviceBounds = deviceInfo.GetCombinedDisplayArea();
 
                 // if the device bounds are empty, it probably means there aren't any
-                // screens available for this device so we can't scale it to fit inside the grid cell
+                // screens available for this device so we'll use the minimum size instead
+                // for the grid cell size
                 var fullSizeGridCell = deviceBounds.IsEmpty
                     ? deviceBounds.Resize(
-                        width: Math.Max(deviceBounds.Width, fullSizeGridCellMinSize.Width),
-                        height: Math.Max(deviceBounds.Height, fullSizeGridCellMinSize.Height))
+                        width: fullSizeGridCellMinSize.Width,
+                        height: fullSizeGridCellMinSize.Height)
                     : deviceBounds;
 
                 fullSizeGridCellBounds[rowIndex, columnIndex] = fullSizeGridCell;
