@@ -1,7 +1,7 @@
 ![](wiki/images/fancymouse-banner.png)
 
 ----
-## 2024-04-25 Update
+## 2025-04-27 Update
 
 A modified version of FancyMouse is now incorporated into Microsoft [PowerToys](https://github.com/microsoft/PowerToys) and renamed "Mouse Jump".
 
