@@ -32,19 +32,8 @@ public static class MouseHelper
     /// </summary>
     public static PointInfo GetCursorPosition()
     {
-        var lpPoint = new LPPOINT(new POINT(0, 0));
-        var result = User32.GetCursorPos(lpPoint);
-        if (!result)
-        {
-            throw new Win32Exception(
-                Marshal.GetLastPInvokeError());
-        }
-
-        var point = lpPoint.ToStructure();
-        lpPoint.Free();
-
-        return new PointInfo(
-            point.x, point.y);
+        var point = Win32Helper.User32.GetCursorPos();
+        return new PointInfo(point.x, point.y);
     }
 
     /// <summary>
@@ -85,8 +74,8 @@ public static class MouseHelper
                 }
             }
 
-            var current = MouseHelper.GetCursorPosition();
-            if ((current.X == target.X) || (current.Y == target.Y))
+            var currentLocation = MouseHelper.GetCursorPosition();
+            if ((currentLocation.X == target.X) || (currentLocation.Y == target.Y))
             {
                 break;
             }

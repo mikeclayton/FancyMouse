@@ -782,6 +782,144 @@ public static partial class User32
 
         #endregion
 
+        #region Keyboard Accelerators / Keyboard Accelerator Reference / Keyboard Accelerator Messages
+        // see https://learn.microsoft.com/en-us/windows/win32/menurc/keyboard-accelerator-messages
+
+        /// <summary>
+        /// An application sends the WM_CHANGEUISTATE message to indicate that the UI state should be changed.
+        /// </summary>
+        /// <remarks>
+        /// See https://learn.microsoft.com/en-us/windows/win32/menurc/wm-changeuistate
+        /// </remarks>
+        WM_CHANGEUISTATE = 0x0127,
+
+        /// <summary>
+        /// Sent when a menu is about to become active. It occurs when the user clicks an item on the menu bar
+        /// or presses a menu key. This allows the application to modify the menu before it is displayed.
+        ///
+        /// A window receives this message through its WindowProc function.
+        /// </summary>
+        /// <remarks>
+        /// See https://learn.microsoft.com/en-us/windows/win32/menurc/wm-initmenu
+        /// </remarks>
+        WM_INITMENU = 0x0116,
+
+        /// <summary>
+        /// An application sends the WM_QUERYUISTATE message to retrieve the UI state for a window.
+        /// </summary>
+        /// <remarks>
+        /// See https://learn.microsoft.com/en-us/windows/win32/menurc/wm-queryuistate
+        /// </remarks>
+        WM_QUERYUISTATE = 0x0129,
+
+        /// <summary>
+        /// An application sends the WM_UPDATEUISTATE message to change the UI state for the
+        /// specified window and all its child windows.
+        /// </summary>
+        /// <remarks>
+        /// See https://learn.microsoft.com/en-us/windows/win32/menurc/wm-updateuistate
+        /// </remarks>
+        WM_UPDATEUISTATE = 0x0128,
+
+        #endregion
+
+        #region Menus / Menu Reference / Menu Notifications
+        // see https://learn.microsoft.com/en-us/windows/win32/menurc/menu-notifications
+
+        /// <summary>
+        /// Sent when the user selects a command item from a menu, when a control sends a notification message
+        /// to its parent window, or when an accelerator keystroke is translated.
+        /// </summary>
+        /// <remarks>
+        /// See https://learn.microsoft.com/en-us/windows/win32/menurc/wm-command
+        /// </remarks>
+        WM_COMMAND = 0x0111,
+
+        /// <summary>
+        /// Notifies a window that the user desires a context menu to appear. The user may have
+        /// clicked the right mouse button (right-clicked) in the window, pressed Shift+F10 or
+        /// pressed the applications key (context menu key) available on some keyboards.
+        /// </summary>
+        /// <remarks>
+        /// See https://learn.microsoft.com/en-us/windows/win32/menurc/wm-contextmenu
+        /// </remarks>
+        WM_CONTEXTMENU = 0x007b,
+
+        /// <summary>
+        /// Notifies an application's main window procedure that a menu modal loop has been entered.
+        /// </summary>
+        /// <remarks>
+        /// See https://learn.microsoft.com/en-us/windows/win32/menurc/wm-entermenuloop
+        /// </remarks>
+        WM_ENTERMENULOOP = 0x0211,
+
+        /// <summary>
+        /// Notifies an application's main window procedure that a menu modal loop has been exited.
+        /// </summary>
+        /// <remarks>
+        /// See https://learn.microsoft.com/en-us/windows/win32/menurc/wm-exitmenuloop
+        /// </remarks>
+        WM_EXITMENULOOP = 0x0212,
+
+        /// <summary>
+        /// Sent to request extended title bar information. A window receives this message through its WindowProc function.
+        /// </summary>
+        /// <remarks>
+        /// See https://learn.microsoft.com/en-us/windows/win32/menurc/wm-gettitlebarinfoex
+        /// </remarks>
+        WM_GETTITLEBARINFOEX = 0x033f,
+
+        /// <summary>
+        /// Sent when the user makes a selection from a menu.
+        /// </summary>
+        /// <remarks>
+        /// See https://learn.microsoft.com/en-us/windows/win32/menurc/wm-menucommand
+        /// </remarks>
+        WM_MENUCOMMAND = 0x0126,
+
+        /// <summary>
+        /// Sent to the owner of a drag-and-drop menu when the user drags a menu item.
+        /// </summary>
+        /// <remarks>
+        /// See https://learn.microsoft.com/en-us/windows/win32/menurc/wm-menudrag
+        /// </remarks>
+        WM_MENUDRAG = 0x0123,
+
+        /// <summary>
+        /// Sent to the owner of a drag-and-drop menu when the mouse cursor enters a menu item
+        /// or moves from the center of the item to the top or bottom of the item.
+        /// </summary>
+        /// <remarks>
+        /// See https://learn.microsoft.com/en-us/windows/win32/menurc/wm-menugetobject
+        /// </remarks>
+        WM_MENUGETOBJECT = 0x0124,
+
+        /// <summary>
+        /// Sent when the user releases the right mouse button while the cursor is on a menu item.
+        /// </summary>
+        /// <remarks>
+        /// See https://learn.microsoft.com/en-us/windows/win32/menurc/wm-menurbuttonup
+        /// </remarks>
+        WM_MENURBUTTONUP = 0x0122,
+
+        /// <summary>
+        /// Sent to an application when the right or left arrow key is used to switch between the menu bar and the system menu.
+        /// </summary>
+        /// <remarks>
+        /// See https://learn.microsoft.com/en-us/windows/win32/menurc/wm-nextmenu
+        /// </remarks>
+        WM_NEXTMENU = 0x0213,
+
+        /// <summary>
+        /// Sent when a drop-down menu or submenu has been destroyed.
+        /// </summary>
+        /// <remarks>
+        /// See https://learn.microsoft.com/en-us/windows/win32/menurc/wm-uninitmenupopup
+        /// </remarks>
+        WM_UNINITMENUPOPUP = 0x0125,
+
+    #endregion
+
         #endregion
 
         #region Learn / Windows / Apps / Win32 / Desktop Technologies / Desktop App User Interface / Windows and Messages
@@ -1227,6 +1365,34 @@ public static partial class User32
 
         #endregion
 
+        #region Learn / Windows / Apps / Win32 / Desktop Technologies / Desktop App User Interface / Windows Controls
+        // see https://learn.microsoft.com/en-us/windows/win32/controls/window-controls
+
+        #region General Control Reference / Control Messages
+        // see https://learn.microsoft.com/en-us/windows/win32/controls/bumper-general-control-reference-messages
+
+        /// <summary>
+        /// Sent by a common control to its parent window when an event has occurred or the control requires some information.
+        /// </summary>
+        /// <remarks>
+        /// See https://learn.microsoft.com/en-us/windows/win32/controls/wm-notify
+        /// </remarks>
+        WM_NOTIFY = 0x004e,
+
+        /// <summary>
+        /// Determines if a window accepts ANSI or Unicode structures in the WM_NOTIFY notification message.
+        /// WM_NOTIFYFORMAT messages are sent from a common control to its parent window and from the parent
+        /// window to the common control.
+        /// </summary>
+        /// <remarks>
+        /// See https://learn.microsoft.com/en-us/windows/win32/controls/wm-notifyformat
+        /// </remarks>
+        WM_NOTIFYFORMAT = 0x0055,
+
+    #endregion
+
+    #endregion
+
         #region Learn / Windows / Apps / Win32 / Desktop Technologies / Graphics and Gaming / Windows GDI
         // see https://learn.microsoft.com/en-us/windows/win32/gdi/windows-gdi
 
@@ -1306,8 +1472,22 @@ public static partial class User32
         /// </remarks>
         WM_SYNCPAINT = 0x0088,
 
-    #endregion
+        #endregion
 
-    #endregion
-}
+        #endregion
+
+        #region UNDOCUMENTED
+
+        /// <summary>
+        /// UNDOCUMENTED
+        /// </summary>
+        WM_UAHINITMENU = 0x0093,
+
+        /// <summary>
+        /// UNDOCUMENTED
+        /// </summary>
+        WM_UAHMEASUREMENUITEM = 0x0094,
+
+        #endregion
+    }
 }

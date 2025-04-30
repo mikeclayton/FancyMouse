@@ -6,8 +6,6 @@ using FancyMouse.WinUI3.UI;
 using Microsoft.UI.Xaml;
 using NLog;
 
-using static FancyMouse.Common.NativeMethods.Core;
-
 using Application = Microsoft.UI.Xaml.Application;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -27,6 +25,12 @@ public partial class App : Application
     public App()
     {
         this.InitializeComponent();
+        this.TrayIcon = new TrayIcon();
+    }
+
+    private TrayIcon TrayIcon
+    {
+        get;
     }
 
     /// <summary>
@@ -55,16 +59,7 @@ public partial class App : Application
             logger.Info("high dpi mode is ok");
 
             // create the system tray icon
-            var window = Win32Helper.User32.CreateMessageOnlyWindow(
-                "FancyMouseTrayIconClass",
-                "FancyMouseTrayIconWindow",
-                (hWnd, msg, wParam, lParam) =>
-                {
-                    return Win32Helper.User32.DefWindowProc(hWnd, msg, wParam, lParam);
-                });
-            var trayIconResource = TrayIcon.GetTrayIconResource();
-            var trayIcon = new TrayIcon(trayIconResource);
-            trayIcon.Create(window.Hwnd);
+            this.TrayIcon.Initialize();
 
             var appSettingsPath = ".\\appSettings.json";
             logger.Info(CultureInfo.InvariantCulture, "settings path = {appSettingsPath}", appSettingsPath);
