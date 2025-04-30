@@ -14,10 +14,10 @@ public static partial class Shell32
     [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Names and values taken from Win32Api")]
     internal enum NOTIFY_ICON_MESSAGE : uint
     {
-        NIM_ADD = 0U,
-        NIM_MODIFY = 1U,
-        NIM_DELETE = 2U,
-        NIM_SETFOCUS = 3U,
-        NIM_SETVERSION = 4U,
+        NIM_ADD = 0x00000000,
+        NIM_MODIFY = 0x00000001,
+        NIM_DELETE = 0x00000002,
+        NIM_SETFOCUS = 0x00000003,
+        NIM_SETVERSION = 0x00000004,
     }
 }

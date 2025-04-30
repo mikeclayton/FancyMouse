@@ -1,8 +1,10 @@
 ﻿using System.ComponentModel;
 using System.Runtime.InteropServices;
-using FancyMouse.HotKeys.NativeMethods;
-using static FancyMouse.HotKeys.NativeMethods.Core;
-using static FancyMouse.HotKeys.NativeMethods.User32;
+
+using FancyMouse.Common.Helpers;
+
+using static FancyMouse.Common.NativeMethods.Core;
+using static FancyMouse.Common.NativeMethods.User32;
 
 namespace FancyMouse.HotKeys;
 
@@ -84,7 +86,7 @@ internal sealed class MessageLoop
         // start a new internal message loop thread
         this.MessageLoopThread = new Thread(() =>
         {
-            this.NativeThreadId = Kernel32.GetCurrentThreadId();
+            this.NativeThreadId = Win32Helper.Kernel32.GetCurrentThreadId();
             this.Hwnd = this.HwndCallback.Invoke();
             this.RunMessageLoop();
         })
@@ -120,7 +122,7 @@ internal sealed class MessageLoop
             }
 
             var hwnd = this.Hwnd ?? throw new InvalidOperationException();
-            var result = User32.GetMessageW(
+            var result = Win32Helper.User32.GetMessage(
                 lpMsg: lpMsg,
                 hWnd: hwnd,
                 wMsgFilterMin: 0,
@@ -137,8 +139,8 @@ internal sealed class MessageLoop
                 break;
             }
 
-            _ = User32.TranslateMessage(msg);
-            _ = User32.DispatchMessageW(msg);
+            _ = Win32Helper.User32.TranslateMessage(msg);
+            _ = Win32Helper.User32.DispatchMessage(msg);
         }
 
         // clean up
@@ -165,18 +167,11 @@ internal sealed class MessageLoop
         // and exit the loop...
         // (see https://devblogs.microsoft.com/oldnewthing/20050405-46/?p=35973)
         var hwnd = this.Hwnd ?? throw new InvalidOperationException();
-        var result = User32.PostMessageW(
+        Win32Helper.User32.PostMessage(
             hWnd: hwnd,
-            Msg: MESSAGE_TYPE.WM_NULL,
+            msg: MESSAGE_TYPE.WM_NULL,
             wParam: WPARAM.Null,
             lParam: LPARAM.Null);
-        if (result == 0)
-        {
-            var lastWin32Error = Marshal.GetLastWin32Error();
-            throw new InvalidOperationException(
-                $"{nameof(User32.PostThreadMessageW)} failed with result {result}. GetLastWin32Error returned '{lastWin32Error}'.",
-                new Win32Exception(lastWin32Error));
-        }
 
         // wait for the internal message loop to actually stop before we exit
         this.RunningSemaphore.Wait();

@@ -37,7 +37,7 @@ public static class MouseHelper
         if (!result)
         {
             throw new Win32Exception(
-                Marshal.GetLastWin32Error());
+                Marshal.GetLastPInvokeError());
         }
 
         var point = lpPoint.ToStructure();
@@ -78,7 +78,7 @@ public static class MouseHelper
             if (!result)
             {
                 // SetLastError has been known to return zero, but the last error code indicates success
-                var lastError = Marshal.GetLastWin32Error();
+                var lastError = Marshal.GetLastPInvokeError();
                 if (lastError != 0)
                 {
                     throw new Win32Exception(lastError);
@@ -125,7 +125,7 @@ public static class MouseHelper
         if (result != inputs.Length)
         {
             throw new Win32Exception(
-                Marshal.GetLastWin32Error());
+                Marshal.GetLastPInvokeError());
         }
     }
 

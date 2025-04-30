@@ -7,11 +7,13 @@ public static partial class User32
     /// <remarks>
     /// See https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getmessagew
     /// </remarks>
-    internal readonly struct LPMSG
+    public readonly struct LPMSG
     {
         public static readonly LPMSG Null = new(IntPtr.Zero);
 
+#pragma warning disable CA1051 // Do not declare visible instance fields
         public readonly IntPtr Value;
+#pragma warning restore CA1051 // Do not declare visible instance fields
 
         public LPMSG(IntPtr value)
         {

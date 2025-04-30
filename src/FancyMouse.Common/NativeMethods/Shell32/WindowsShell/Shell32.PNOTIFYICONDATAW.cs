@@ -15,6 +15,7 @@ public static partial class Shell32
     /// <remarks>
     /// See https://learn.microsoft.com/en-us/windows/win32/api/shellapi/ns-shellapi-notifyicondataw
     /// </remarks>
+    [StructLayout(LayoutKind.Sequential)]
     internal readonly struct PNOTIFYICONDATAW
     {
         public static readonly PNOTIFYICONDATAW Null = new(IntPtr.Zero);

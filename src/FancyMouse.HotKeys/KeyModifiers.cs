@@ -1,4 +1,4 @@
-﻿using FancyMouse.HotKeys.NativeMethods;
+﻿using static FancyMouse.Common.NativeMethods.User32;
 
 namespace FancyMouse.HotKeys;
 
@@ -6,9 +6,9 @@ namespace FancyMouse.HotKeys;
 public enum KeyModifiers
 {
     None = 0,
-    Alt = (int)User32.HOT_KEY_MODIFIERS.MOD_ALT,
-    Control = (int)User32.HOT_KEY_MODIFIERS.MOD_CONTROL,
-    Shift = (int)User32.HOT_KEY_MODIFIERS.MOD_SHIFT,
-    Windows = (int)User32.HOT_KEY_MODIFIERS.MOD_WIN,
-    NoRepeat = (int)User32.HOT_KEY_MODIFIERS.MOD_NOREPEAT,
+    Alt = (int)HOT_KEY_MODIFIERS.MOD_ALT,
+    Control = (int)HOT_KEY_MODIFIERS.MOD_CONTROL,
+    Shift = (int)HOT_KEY_MODIFIERS.MOD_SHIFT,
+    Windows = (int)HOT_KEY_MODIFIERS.MOD_WIN,
+    NoRepeat = (int)HOT_KEY_MODIFIERS.MOD_NOREPEAT,
 }

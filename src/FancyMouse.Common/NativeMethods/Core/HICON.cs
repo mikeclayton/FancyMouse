@@ -10,11 +10,13 @@ public static partial class Core
     /// <remarks>
     /// See https://learn.microsoft.com/en-us/windows/win32/winprog/windows-data-types
     /// </remarks>
-    internal readonly struct HICON
+    public readonly struct HICON
     {
         public static readonly HICON Null = new(IntPtr.Zero);
 
+#pragma warning disable CA1051 // Do not declare visible instance fields
         public readonly IntPtr Value;
+#pragma warning restore CA1051 // Do not declare visible instance fields
 
         public HICON(IntPtr value)
         {
@@ -22,6 +24,10 @@ public static partial class Core
         }
 
         public bool IsNull => this.Value == HICON.Null.Value;
+
+        public static implicit operator IntPtr(HICON value) => value.Value;
+
+        public static explicit operator HICON(IntPtr value) => new(value);
 
         public override string ToString()
         {

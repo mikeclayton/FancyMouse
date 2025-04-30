@@ -10,7 +10,7 @@ public static partial class User32
     [Flags]
     [SuppressMessage("ReSharper", "InconsistentNaming", Justification = "Names and values taken from Win32Api")]
     [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Names and values taken from Win32Api")]
-    internal enum HOT_KEY_MODIFIERS : uint
+    public enum HOT_KEY_MODIFIERS : uint
     {
         /// <summary>
         /// Either ALT key must be held down.

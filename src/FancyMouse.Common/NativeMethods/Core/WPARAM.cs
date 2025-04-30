@@ -10,11 +10,13 @@ public static partial class Core
     /// <remarks>
     /// See https://learn.microsoft.com/en-us/windows/win32/winprog/windows-data-types
     /// </remarks>
-    internal readonly struct WPARAM
+    public readonly struct WPARAM
     {
         public static readonly WPARAM Null = new(UIntPtr.Zero);
 
+#pragma warning disable CA1051 // Do not declare visible instance fields
         public readonly UIntPtr Value;
+#pragma warning restore CA1051 // Do not declare visible instance fields
 
         public WPARAM(UIntPtr value)
         {

@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <None Remove="appSettings.json" />
+    <None Remove="images\icon.ico" />
   </ItemGroup>
 
   <ItemGroup>
@@ -42,6 +43,10 @@
     <Content Include="NLog.config">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="images\icon.ico" />
   </ItemGroup>
 
   <ItemGroup>

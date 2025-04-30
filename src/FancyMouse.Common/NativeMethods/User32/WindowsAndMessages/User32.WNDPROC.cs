@@ -18,7 +18,7 @@ public static partial class User32
     /// See https://learn.microsoft.com/en-us/windows/win32/api/winuser/nc-winuser-wndproc
     ///     https://github.com/dotnet/runtime/blob/main/src/libraries/Common/src/Interop/Windows/User32/Interop.WndProc.cs
     /// </remarks>
-    internal delegate LRESULT WNDPROC(
+    public delegate LRESULT WNDPROC(
         HWND hWnd,
         MESSAGE_TYPE msg,
         WPARAM wParam,

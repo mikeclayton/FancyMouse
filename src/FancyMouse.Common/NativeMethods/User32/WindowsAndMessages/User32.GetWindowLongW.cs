@@ -23,7 +23,7 @@ public static partial class User32
     /// See https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getwindowlongw
     /// </remarks>
     [LibraryImport(Libraries.User32, SetLastError = true)]
-    internal static partial int GetWindowLongW(
+    internal static partial LONG GetWindowLongW(
         HWND hWnd,
         WINDOW_LONG_PTR_INDEX nIndex);
 }

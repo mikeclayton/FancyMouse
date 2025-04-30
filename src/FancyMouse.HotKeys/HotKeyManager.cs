@@ -1,6 +1,6 @@
-﻿using FancyMouse.HotKeys.NativeMethods;
-using static FancyMouse.HotKeys.NativeMethods.Core;
-using static FancyMouse.HotKeys.NativeMethods.User32;
+﻿using FancyMouse.Common.Helpers;
+using static FancyMouse.Common.NativeMethods.Core;
+using static FancyMouse.Common.NativeMethods.User32;
 
 namespace FancyMouse.HotKeys;
 
@@ -25,7 +25,8 @@ public sealed class HotKeyManager
             {
                 if (this.Hwnd.IsNull)
                 {
-                    (this.WndClass, this.Hwnd) = HotKeyHelper.CreateWindow(this.WndProc);
+                    (this.WndClass, this.Hwnd) = Win32Helper.User32.CreateMessageOnlyWindow(
+                        "FancyMouseMessageClass", "FancyMouseMessageWindow", this.WndProc);
                 }
 
                 return this.Hwnd;
@@ -74,7 +75,8 @@ public sealed class HotKeyManager
         // do we need to unregister the existing hotkey first?
         if ((this.HotKey is not null) && hwnd.HasValue)
         {
-            HotKeyHelper.PostPrivateMessage(hwnd.Value, HotKeyHelper.WM_PRIV_UNREGISTER_HOTKEY);
+            Win32Helper.User32.PostMessage(
+                hwnd.Value, HotKeyHelper.WM_PRIV_UNREGISTER_HOTKEY, WPARAM.Null, LPARAM.Null);
             this.MessageSemaphore.Wait();
         }
 
@@ -83,7 +85,7 @@ public sealed class HotKeyManager
         // register the new hotkey
         if ((this.HotKey is not null) && hwnd.HasValue)
         {
-            HotKeyHelper.PostPrivateMessage(hwnd.Value, HotKeyHelper.WM_PRIV_REGISTER_HOTKEY);
+            Win32Helper.User32.PostMessage(hwnd.Value, HotKeyHelper.WM_PRIV_REGISTER_HOTKEY, WPARAM.Null, LPARAM.Null);
             this.MessageSemaphore.Wait();
         }
     }
@@ -104,27 +106,29 @@ public sealed class HotKeyManager
                 break;
             }
 
-            case (MESSAGE_TYPE)HotKeyHelper.WM_PRIV_REGISTER_HOTKEY:
+            case HotKeyHelper.WM_PRIV_REGISTER_HOTKEY:
             {
-                var hwnd = this.MessageLoop.Hwnd ?? throw new InvalidOperationException();
-                HotKeyHelper.RegisterHotKey(hwnd, this.HotKey!, 1);
+                Win32Helper.User32.RegisterHotKey(
+                    hWnd: this.MessageLoop.Hwnd ?? throw new InvalidOperationException(),
+                    id: 1,
+                    fsModifiers: (HOT_KEY_MODIFIERS)(this.HotKey ?? throw new InvalidOperationException()).Modifiers,
+                    vk: (uint)this.HotKey.Key);
                 this.MessageSemaphore.Release();
                 break;
             }
 
-            case (MESSAGE_TYPE)HotKeyHelper.WM_PRIV_UNREGISTER_HOTKEY:
+            case HotKeyHelper.WM_PRIV_UNREGISTER_HOTKEY:
             {
-                var hwnd = this.MessageLoop.Hwnd ?? throw new InvalidOperationException();
-                HotKeyHelper.UnregisterHotKey(hwnd, 1);
+                Win32Helper.User32.UnregisterHotKey(
+                    hWnd: this.MessageLoop.Hwnd ?? throw new InvalidOperationException(),
+                    id: 1);
                 this.MessageSemaphore.Release();
                 break;
             }
         }
 
-        {
-            var result = User32.DefWindowProcW(hWnd, msg, wParam, lParam);
-            return result;
-        }
+        var result = Win32Helper.User32.DefWindowProc(hWnd, msg, wParam, lParam);
+        return result;
     }
 
     private void OnHotKeyPressed(HotKeyEventArgs e)

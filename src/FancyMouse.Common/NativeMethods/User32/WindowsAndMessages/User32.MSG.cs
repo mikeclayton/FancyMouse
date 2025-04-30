@@ -15,7 +15,7 @@ public static partial class User32
     /// </remarks>
     [SuppressMessage("SA1307", "SA1307:AccessibleFieldsMustBeginWithUpperCaseLetter", Justification = "Names match Win32 api")]
     [StructLayout(LayoutKind.Sequential)]
-    internal readonly struct MSG
+    public readonly struct MSG
     {
         public readonly HWND hwnd;
         public readonly MESSAGE_TYPE message;
