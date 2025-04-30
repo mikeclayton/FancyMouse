@@ -157,8 +157,6 @@ public sealed class TrayIcon
                     throw new InvalidOperationException();
                 }
 
-
-
                 break;
             case MESSAGE_TYPE.WM_KILLFOCUS:
                 break;
