@@ -89,7 +89,7 @@ jobs:
 
       - name: dotnet test
         working-directory: ${{ env.BUILD_PATH }}
-        run: dotnet test --configuration "${{ env.CONFIG_NAME }}" --no-build --filter "TestCategory!=Performance"
+        run: dotnet test --configuration "${{ env.CONFIG_NAME }}" --property:Platform="${{ env.PLATFORM_NAME }}" --no-build --filter "TestCategory!=Performance"
 
       - name: dotnet publish (winforms)
         working-directory: ${{ env.BUILD_PATH }}
