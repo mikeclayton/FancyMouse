@@ -89,20 +89,25 @@ jobs:
         working-directory: ${{ env.BUILD_PATH }}
         run: dotnet test --configuration "${{ env.CONFIG_NAME }}" --no-build --filter "TestCategory!=Performance"
 
-      - name: dotnet publish
+      - name: dotnet publish (winforms)
         working-directory: ${{ env.BUILD_PATH }}
-        run: dotnet publish "./FancyMouse/FancyMouse.csproj" --configuration "${{ env.CONFIG_NAME }}" --no-build --output "${{ env.PUBLISH_PATH }}/net9.0-windows"
+        run: dotnet publish "./FancyMouse/FancyMouse.csproj" --configuration "${{ env.CONFIG_NAME }}" --no-build --output "${{ env.PUBLISH_PATH }}/net9.0-windows/FancyMouse.WinForms"
 
-      #- name: zip release
-      #  working-directory: ${{ env.BUILD_PATH }}
-      #  run: |
-      #    & "C:\Program Files\7-Zip\7z.exe" a "FancyMouse-preview-v0.0.0.zip" "${{ env.PUBLISH_PATH }}"
+      - name: dotnet publish (winforms)
+        working-directory: ${{ env.BUILD_PATH }}
+        run: dotnet publish "./FancyMouse/FancyMouse.WinUI3.csproj" --configuration "${{ env.CONFIG_NAME }}" --no-build --output "${{ env.PUBLISH_PATH }}/net9.0-windows/FancyMouse.WinUI3"
 
-      - name: upload release
+      - name: upload release (winforms)
         uses: actions/upload-artifact@v4
         with:
           name: FancyMouse-v0.0.0-preview
-          path: .build/app
+          path: ${{ env.PUBLISH_PATH }}/net9.0-windows/FancyMouse.WinForms
+
+      - name: upload release (winforms)
+        uses: actions/upload-artifact@v4
+        with:
+          name: FancyMouse.WinUI3-v0.0.0-preview
+          path: ${{ env.PUBLISH_PATH }}/net9.0-windows/FancyMouse.WinUI3
 
       - name: upload test images
         if: always()
