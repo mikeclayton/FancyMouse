@@ -93,9 +93,9 @@ jobs:
         working-directory: ${{ env.BUILD_PATH }}
         run: dotnet publish "./FancyMouse/FancyMouse.csproj" --configuration "${{ env.CONFIG_NAME }}" --no-build --output "${{ env.PUBLISH_PATH }}/net9.0-windows/FancyMouse.WinForms"
 
-      - name: dotnet publish (winforms)
+      - name: dotnet publish (winui3)
         working-directory: ${{ env.BUILD_PATH }}
-        run: dotnet publish "./FancyMouse/FancyMouse.WinUI3.csproj" --configuration "${{ env.CONFIG_NAME }}" --no-build --output "${{ env.PUBLISH_PATH }}/net9.0-windows/FancyMouse.WinUI3"
+        run: dotnet publish "./FancyMouse.WinUI3/FancyMouse.WinUI3.csproj" --configuration "${{ env.CONFIG_NAME }}" --no-build --output "${{ env.PUBLISH_PATH }}/net9.0-windows/FancyMouse.WinUI3"
 
       - name: upload release (winforms)
         uses: actions/upload-artifact@v4
@@ -103,7 +103,7 @@ jobs:
           name: FancyMouse-v0.0.0-preview
           path: ${{ env.PUBLISH_PATH }}/net9.0-windows/FancyMouse.WinForms
 
-      - name: upload release (winforms)
+      - name: upload release (winui3)
         uses: actions/upload-artifact@v4
         with:
           name: FancyMouse.WinUI3-v0.0.0-preview
