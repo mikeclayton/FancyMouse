@@ -6,8 +6,6 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net9.0-windows10.0.26100.0</TargetFramework>
     <TargetPlatformMinVersion>10.0.26100.0</TargetPlatformMinVersion>
-    <!--<TargetFramework>net9.0-windows.10.0.26100.0</TargetFramework>-->
-    <!--<TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>-->
     <RootNamespace>FancyMouse.WinUI3</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <Platforms>x86;x64</Platforms>

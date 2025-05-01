@@ -13,9 +13,13 @@ namespace FancyMouse.Common.Helpers;
 public sealed class TrayIcon
 {
 #pragma warning disable SA1310 // Field names should not contain underscore
-    public const MESSAGE_TYPE WM_TRAYICON_SHOWCONTEXTMENU = MESSAGE_TYPE.WM_USER + 100;
-    public const MESSAGE_TYPE WM_TRAYICON_EXITCOMMAND = MESSAGE_TYPE.WM_USER + 101;
+    private const MESSAGE_TYPE WM_TRAYICON_SHOWCONTEXTMENU = MESSAGE_TYPE.WM_USER + 100;
+    private const MESSAGE_TYPE WM_TRAYICON_EXITCOMMAND = MESSAGE_TYPE.WM_USER + 101;
 #pragma warning restore SA1310 // Field names should not contain underscore
+
+    // initialise with an empty delegate so we don't get complaints about
+    // it being null when the constructor exits.
+    public event EventHandler<EventArgs> ExitCommandClicked = (sender, e) => { };
 
     public TrayIcon()
     {
@@ -33,46 +37,47 @@ public sealed class TrayIcon
         set;
     }
 
-    private HMENU Menu
+    private HMENU ContextMenu
     {
         get;
         set;
     }
 
+    private void OnExitCommandClicked(EventArgs e)
+    {
+        this.ExitCommandClicked?.Invoke(this, e);
+    }
+
     public void Initialize()
+    {
+        this.InitializeTrayWindow();
+        this.InitializeTrayIcon();
+        this.InitializeTrayMenu();
+    }
+
+    private void InitializeTrayWindow()
     {
         var window = Win32Helper.User32.CreateMessageOnlyWindow(
             className: "FancyMouseTrayIconClass",
             windowName: "FancyMouseTrayIconWindow",
             wndProc: this.TrayIconWndProc);
         this.Window = window;
-
-        var hIcon = TrayIcon.GetTrayIconResource();
-        this.Icon = hIcon;
-
-        TrayIcon.InitializeTrayIcon(window.Hwnd, (HICON)hIcon.Handle);
-        this.Menu = TrayIcon.InitializeTrayMenu(window.Hwnd);
     }
 
-    private static Icon GetTrayIconResource()
+    private void InitializeTrayIcon()
     {
-        var assembly = Assembly.GetExecutingAssembly();
-        var resourceName = "FancyMouse.Common.images.icon.ico";
-        using var stream = assembly.GetManifestResourceStream(resourceName)
-            ?? throw new InvalidOperationException();
-        var icon = new Icon(stream);
-        return icon;
-    }
+        var hWnd = this.Window?.Hwnd ?? throw new InvalidOperationException();
 
-    private static void InitializeTrayIcon(HWND hWnd, HICON hIcon)
-    {
+        var icon = TrayIcon.GetTrayIconResource();
+        this.Icon = icon;
+
         var notifyIconData = new NOTIFYICONDATAW(
             cbSize: (DWORD)NOTIFYICONDATAW.Size,
             hWnd: hWnd,
             uID: 1,
             uFlags: NOTIFY_ICON_DATA_FLAGS.NIF_MESSAGE | NOTIFY_ICON_DATA_FLAGS.NIF_ICON | NOTIFY_ICON_DATA_FLAGS.NIF_TIP,
             uCallbackMessage: TrayIcon.WM_TRAYICON_SHOWCONTEXTMENU,
-            hIcon: hIcon,
+            hIcon: (HICON)icon.Handle,
             szTip: "FancyMouse",
             dwState: 0,
             dwStateMask: 0,
@@ -82,16 +87,17 @@ public sealed class TrayIcon
             dwInfoFlags: 0,
             guidItem: GUID.Empty,
             hBalloonIcon: HICON.Null);
+
         var iconDataPtr = new PNOTIFYICONDATAW(notifyIconData);
         var result = Shell32.Shell_NotifyIconW(NOTIFY_ICON_MESSAGE.NIM_ADD, iconDataPtr);
         iconDataPtr.Free();
         if (!result)
         {
-            throw new InvalidOperationException();
+            throw Win32Helper.NewWin32Exception((UINT)result.Value, nameof(Shell32.Shell_NotifyIconW));
         }
     }
 
-    private static HMENU InitializeTrayMenu(HWND hWnd)
+    private void InitializeTrayMenu()
     {
         var hMenu = User32.CreatePopupMenu();
         if (hMenu.IsNull)
@@ -105,39 +111,51 @@ public sealed class TrayIcon
             throw Win32Helper.NewWin32Exception((UINT)hResult.Value, Marshal.GetLastPInvokeError(), nameof(User32.AppendMenuW));
         }
 
-        return hMenu;
+        this.ContextMenu = hMenu;
+    }
+
+    private static Icon GetTrayIconResource()
+    {
+        var assembly = Assembly.GetExecutingAssembly();
+        var resourceName = "FancyMouse.Common.images.icon.ico";
+        using var stream = assembly.GetManifestResourceStream(resourceName)
+            ?? throw new InvalidOperationException();
+        var icon = new Icon(stream);
+        return icon;
     }
 
     public LRESULT TrayIconWndProc(HWND hWnd, MESSAGE_TYPE msg, WPARAM wParam, LPARAM lParam)
     {
         switch (msg)
         {
+            // tray icon callback message
             case TrayIcon.WM_TRAYICON_SHOWCONTEXTMENU:
                 if ((MESSAGE_TYPE)lParam.Value is MESSAGE_TYPE.WM_LBUTTONDOWN or MESSAGE_TYPE.WM_RBUTTONDOWN)
                 {
                     // show the context menu associated with the tray icon
-                    TrayIcon.ShowTrayIconContextMenu(hWnd, this.Menu);
+                    TrayIcon.ShowTrayIconContextMenu(hWnd, this.ContextMenu);
                 }
 
                 break;
-            case MESSAGE_TYPE.WM_NOTIFY:
-                break;
 
+            /* received during tray icon create */
             case MESSAGE_TYPE.WM_GETMINMAXINFO:
             case MESSAGE_TYPE.WM_NCCREATE:
             case MESSAGE_TYPE.WM_NCCALCSIZE:
-            case MESSAGE_TYPE.WM_NCACTIVATE:
             case MESSAGE_TYPE.WM_CREATE:
                 break;
 
+            /* context menu display */
             case MESSAGE_TYPE.WM_WINDOWPOSCHANGING:
             case MESSAGE_TYPE.WM_WINDOWPOSCHANGED:
+            case MESSAGE_TYPE.WM_NCACTIVATE:
             case MESSAGE_TYPE.WM_ACTIVATE:
             case MESSAGE_TYPE.WM_IME_SETCONTEXT:
             case MESSAGE_TYPE.WM_IME_NOTIFY:
             case MESSAGE_TYPE.WM_SETFOCUS:
                 break;
 
+            /* context menu message loop */
             case MESSAGE_TYPE.WM_ENTERMENULOOP:
             case MESSAGE_TYPE.WM_SETCURSOR:
             case MESSAGE_TYPE.WM_INITMENU:
@@ -145,20 +163,25 @@ public sealed class TrayIcon
             case MESSAGE_TYPE.WM_UAHINITMENU:
             case MESSAGE_TYPE.WM_UAHMEASUREMENUITEM:
             case MESSAGE_TYPE.WM_ENTERIDLE:
-            case MESSAGE_TYPE.WM_UNINITMENUPOPUP:
             case MESSAGE_TYPE.WM_MENUSELECT:
+            case MESSAGE_TYPE.WM_UNINITMENUPOPUP:
             case MESSAGE_TYPE.WM_EXITMENULOOP:
+            case MESSAGE_TYPE.WM_KILLFOCUS:
                 break;
 
+            /* menu item clicked */
             case MESSAGE_TYPE.WM_COMMAND:
-                var commandIndex = (MESSAGE_TYPE)(((IntPtr)wParam.Value).ToInt64() & 0x0000FFFF);
-                if (commandIndex != TrayIcon.WM_TRAYICON_EXITCOMMAND)
+                const long lowWordMask = 0x0000FFFF;
+                var commandIndex = (MESSAGE_TYPE)(((IntPtr)wParam.Value).ToInt64() & lowWordMask);
+                switch (commandIndex)
                 {
-                    throw new InvalidOperationException();
+                    case TrayIcon.WM_TRAYICON_EXITCOMMAND:
+                        this.OnExitCommandClicked(EventArgs.Empty);
+                        break;
+                    default:
+                        throw new InvalidOperationException();
                 }
 
-                break;
-            case MESSAGE_TYPE.WM_KILLFOCUS:
                 break;
 
             default:

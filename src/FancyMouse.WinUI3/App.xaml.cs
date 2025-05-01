@@ -25,12 +25,12 @@ public partial class App : Application
     public App()
     {
         this.InitializeComponent();
-        this.TrayIcon = new TrayIcon();
     }
 
-    private TrayIcon TrayIcon
+    private TrayIcon? TrayIcon
     {
         get;
+        set;
     }
 
     /// <summary>
@@ -58,19 +58,16 @@ public partial class App : Application
             DpiModeHelper.EnsurePerMonitorV2Enabled();
             logger.Info("high dpi mode is ok");
 
-            // create the system tray icon
-            this.TrayIcon.Initialize();
-
             var appSettingsPath = ".\\appSettings.json";
             logger.Info(CultureInfo.InvariantCulture, "settings path = {appSettingsPath}", appSettingsPath);
             ConfigHelper.SetAppSettingsPath(appSettingsPath);
 
             // load the application settings and start the filesystem watcher
             // so we reload if it changes
-            logger.Info(CultureInfo.InvariantCulture, "loading app settings", appSettingsPath);
+            logger.Info("loading app settings");
             ConfigHelper.LoadAppSettings();
             ConfigHelper.StartAppSettingsWatcher();
-            logger.Info(CultureInfo.InvariantCulture, "load app settings", appSettingsPath);
+            logger.Info("loaded app settings");
 
             logger.Info("starting hotkey handler");
             ConfigHelper.SetHotKeyEventHandler(
@@ -86,6 +83,15 @@ public partial class App : Application
                         });
                 });
             logger.Info("started hotkey handler");
+
+            // create the system tray icon
+            var trayIcon = new TrayIcon();
+            trayIcon.ExitCommandClicked += (sender, e) =>
+            {
+                App.Current.Exit();
+            };
+            trayIcon.Initialize();
+            this.TrayIcon = trayIcon;
         }
         catch (Exception ex)
         {
