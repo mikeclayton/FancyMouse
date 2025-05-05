@@ -35,13 +35,13 @@ internal static class SettingsConverterV2
         return new PreviewStyle(
             canvasSize: new(
                 width: SettingsConverterV2.Clamp(
-                    value: previewStyle?.CanvasSize?.Width,
-                    defaultValue: defaultStyle?.CanvasSize?.Width,
+                    value: previewStyle.CanvasSize?.Width,
+                    defaultValue: defaultStyle.CanvasSize?.Width,
                     min: 50,
                     max: 99999),
                 height: SettingsConverterV2.Clamp(
-                    value: previewStyle?.CanvasSize?.Height,
-                    defaultValue: defaultStyle?.CanvasSize?.Height,
+                    value: previewStyle.CanvasSize?.Height,
+                    defaultValue: defaultStyle.CanvasSize?.Height,
                     min: 50,
                     max: 99999)
             ),
@@ -50,37 +50,37 @@ internal static class SettingsConverterV2
                     all: 0
                 ),
                 borderStyle: SettingsConverterV2.MergeBorderStyles(
-                    borderStyle: previewStyle?.CanvasStyle?.BorderStyle,
-                    defaultStyle: defaultStyle?.CanvasStyle?.BorderStyle),
+                    borderStyle: previewStyle.CanvasStyle?.BorderStyle,
+                    defaultStyle: defaultStyle.CanvasStyle?.BorderStyle),
                 paddingStyle: SettingsConverterV2.MergePaddingStyles(
-                    paddingStyle: previewStyle?.CanvasStyle?.PaddingStyle,
-                    defaultStyle: defaultStyle?.CanvasStyle?.PaddingStyle),
+                    paddingStyle: previewStyle.CanvasStyle?.PaddingStyle,
+                    defaultStyle: defaultStyle.CanvasStyle?.PaddingStyle),
                 backgroundStyle: new(
                     color1: SettingsConverterV2.MergeColors(
-                        color: previewStyle?.CanvasStyle?.BackgroundStyle?.Color1,
-                        defaultValue: defaultStyle?.CanvasStyle?.BackgroundStyle?.Color1),
+                        color: previewStyle.CanvasStyle?.BackgroundStyle?.Color1,
+                        defaultValue: defaultStyle.CanvasStyle?.BackgroundStyle?.Color1),
                     color2: SettingsConverterV2.MergeColors(
-                        color: previewStyle?.CanvasStyle?.BackgroundStyle?.Color2,
-                        defaultValue: defaultStyle?.CanvasStyle?.BackgroundStyle?.Color2)
+                        color: previewStyle.CanvasStyle?.BackgroundStyle?.Color2,
+                        defaultValue: defaultStyle.CanvasStyle?.BackgroundStyle?.Color2)
                 )
             ),
             screenStyle: new(
                 marginStyle: SettingsConverterV2.MergeMarginStyles(
-                    marginStyle: previewStyle?.ScreenStyle?.MarginStyle,
-                    defaultStyle: defaultStyle?.ScreenStyle?.MarginStyle),
+                    marginStyle: previewStyle.ScreenStyle?.MarginStyle,
+                    defaultStyle: defaultStyle.ScreenStyle?.MarginStyle),
                 borderStyle: SettingsConverterV2.MergeBorderStyles(
-                    borderStyle: previewStyle?.ScreenStyle?.BorderStyle,
-                    defaultStyle: defaultStyle?.ScreenStyle?.BorderStyle),
+                    borderStyle: previewStyle.ScreenStyle?.BorderStyle,
+                    defaultStyle: defaultStyle.ScreenStyle?.BorderStyle),
                 paddingStyle: new(
                     all: 0
                 ),
                 backgroundStyle: new(
                     color1: SettingsConverterV2.MergeColors(
-                        color: previewStyle?.ScreenStyle?.BackgroundStyle?.Color1,
-                        defaultValue: defaultStyle?.ScreenStyle?.BackgroundStyle?.Color1),
+                        color: previewStyle.ScreenStyle?.BackgroundStyle?.Color1,
+                        defaultValue: defaultStyle.ScreenStyle?.BackgroundStyle?.Color1),
                     color2: SettingsConverterV2.MergeColors(
-                        color: previewStyle?.ScreenStyle?.BackgroundStyle?.Color2,
-                        defaultValue: defaultStyle?.ScreenStyle?.BackgroundStyle?.Color2)
+                        color: previewStyle.ScreenStyle?.BackgroundStyle?.Color2,
+                        defaultValue: defaultStyle.ScreenStyle?.BackgroundStyle?.Color2)
                 )
             ),
             extraColors: Array.Empty<Color>());

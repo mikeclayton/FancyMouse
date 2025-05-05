@@ -25,7 +25,7 @@ public sealed class BoxStyle
 
     */
 
-    public static readonly BoxStyle Empty = new BoxStyle(
+    public static readonly BoxStyle Empty = new(
         MarginStyle.Empty,
         BorderStyle.Empty,
         PaddingStyle.Empty,

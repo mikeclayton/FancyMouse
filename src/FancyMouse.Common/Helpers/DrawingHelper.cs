@@ -257,7 +257,7 @@ public static class DrawingHelper
             return;
         }
 
-        if (screenStyle?.BackgroundStyle?.Color1 == null)
+        if (screenStyle.BackgroundStyle.Color1 == null)
         {
             return;
         }

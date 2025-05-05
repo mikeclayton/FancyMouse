@@ -21,16 +21,16 @@ public static class BoxBoundsTests
                 this.ExpectedResult = expectedResult;
             }
 
-            public RectangleInfo ContentBounds { get; set; }
+            public RectangleInfo ContentBounds { get; }
 
-            public BoxStyle BoxStyle { get; set; }
+            public BoxStyle BoxStyle { get; }
 
-            public BoxBounds ExpectedResult { get; set; }
+            public BoxBounds ExpectedResult { get; }
         }
 
         public static IEnumerable<object[]> GetTestCases()
         {
-            yield return new[]
+            yield return new object[]
             {
                 new TestCase(
                     contentBounds: new(100, 100, 800, 600),
@@ -72,16 +72,16 @@ public static class BoxBoundsTests
                 this.ExpectedResult = expectedResult;
             }
 
-            public RectangleInfo OuterBounds { get; set; }
+            public RectangleInfo OuterBounds { get; }
 
-            public BoxStyle BoxStyle { get; set; }
+            public BoxStyle BoxStyle { get; }
 
-            public BoxBounds ExpectedResult { get; set; }
+            public BoxBounds ExpectedResult { get; }
         }
 
         public static IEnumerable<object[]> GetTestCases()
         {
-            yield return new[]
+            yield return new object[]
             {
                 new TestCase(
                     outerBounds: new(85, 85, 830, 630),

@@ -58,7 +58,7 @@ internal static class ConfigHelper
         _hotKeyManager.SetHoKey(null);
         _appSettings = AppSettingsReader.ReadFile(ConfigHelper.AppSettingsPath
             ?? throw new InvalidOperationException("AppSettings cannot be null"));
-        _hotKeyManager.SetHoKey(_appSettings?.Hotkey
+        _hotKeyManager.SetHoKey(_appSettings.Hotkey
             ?? throw new InvalidOperationException($"{nameof(_appSettings.Hotkey)} cannot be null"));
     }
 

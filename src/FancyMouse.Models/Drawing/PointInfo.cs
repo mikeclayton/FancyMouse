@@ -51,7 +51,7 @@ public sealed class PointInfo
     /// it currently is in sourceBounds
     /// </summary>
     public PointInfo Stretch(RectangleInfo source, RectangleInfo target) =>
-        new PointInfo(
+        new(
             x: ((this.X - source.X) / source.Width * target.Width) + target.X,
             y: ((this.Y - source.Y) / source.Height * target.Height) + target.Y);
 

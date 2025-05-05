@@ -22,8 +22,8 @@ internal static class SettingsConverterV1
     {
         var appConfig = JsonSerializer.Deserialize<AppConfig>(json, SettingsConverterV1.JsonSerializationContext.AppConfig)
             ?? throw new InvalidOperationException();
-        var hotkey = SettingsConverterV1.ConvertToKeystroke(appConfig?.FancyMouse?.Hotkey);
-        var previewStyle = SettingsConverterV1.ConvertToPreviewStyle(appConfig?.FancyMouse?.PreviewSize);
+        var hotkey = SettingsConverterV1.ConvertToKeystroke(appConfig.FancyMouse?.Hotkey);
+        var previewStyle = SettingsConverterV1.ConvertToPreviewStyle(appConfig.FancyMouse?.PreviewSize);
         var appSettings = new AppSettings(hotkey, previewStyle);
         return appSettings;
     }

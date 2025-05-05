@@ -1,5 +1,4 @@
-﻿using System.ComponentModel;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 using static FancyMouse.Common.NativeMethods.Core;
@@ -21,8 +20,8 @@ public static partial class Win32Helper
         /// </remarks>
         public static (ATOM ClassAtom, HWND Hwnd) CreateMessageOnlyWindow(string className, string windowName, WNDPROC wndProc)
         {
-            ArgumentNullException.ThrowIfNullOrEmpty(className);
-            ArgumentNullException.ThrowIfNullOrEmpty(windowName);
+            ArgumentException.ThrowIfNullOrEmpty(className);
+            ArgumentException.ThrowIfNullOrEmpty(windowName);
 
             // see https://learn.microsoft.com/en-us/windows/win32/winmsg/using-messages-and-message-queues
             var hInstance = (HINSTANCE)Process.GetCurrentProcess().Handle;

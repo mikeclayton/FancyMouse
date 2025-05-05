@@ -45,7 +45,7 @@ public sealed class TrayIcon
 
     private void OnExitCommandClicked(EventArgs e)
     {
-        this.ExitCommandClicked?.Invoke(this, e);
+        this.ExitCommandClicked.Invoke(this, e);
     }
 
     public void Initialize()

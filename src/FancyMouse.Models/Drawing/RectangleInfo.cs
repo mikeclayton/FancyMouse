@@ -63,13 +63,8 @@ public sealed class RectangleInfo
     }
 
     [JsonIgnore]
-    public bool IsEmpty
-    {
-        get
-        {
-            return object.ReferenceEquals(this, RectangleInfo.Empty);
-        }
-    }
+    public bool IsEmpty =>
+        object.ReferenceEquals(this, RectangleInfo.Empty);
 
     [JsonIgnore]
     public decimal Left =>

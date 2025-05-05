@@ -37,7 +37,6 @@ public sealed class HotKeyManager
     private WNDPROC WndProc
     {
         get;
-        set;
     }
 
     private ATOM? WndClass

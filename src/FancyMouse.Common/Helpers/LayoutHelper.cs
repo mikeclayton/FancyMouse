@@ -168,9 +168,9 @@ public static class LayoutHelper
     /// </summary>
     internal static void ArrangeAndScaleDeviceLayouts(FormViewModel.Builder formLayout)
     {
-        var deviceLayouts = formLayout?.CanvasLayout?.DeviceLayouts
+        var deviceLayouts = formLayout.CanvasLayout?.DeviceLayouts
             ?? throw new InvalidOperationException();
-        var contentBounds = formLayout?.CanvasLayout?.CanvasBounds?.ContentBounds
+        var contentBounds = formLayout.CanvasLayout.CanvasBounds?.ContentBounds
             ?? throw new InvalidOperationException();
 
         // build an initial grid of devices at 100% scale. the grid is currently a single row
@@ -310,7 +310,7 @@ public static class LayoutHelper
     /// </summary>
     internal static void ArrangeAndScaleScreenLayouts(FormViewModel.Builder formLayout)
     {
-        var deviceLayouts = formLayout?.CanvasLayout?.DeviceLayouts
+        var deviceLayouts = formLayout.CanvasLayout?.DeviceLayouts
             ?? throw new InvalidOperationException();
 
         foreach (var deviceLayout in deviceLayouts)
@@ -358,7 +358,7 @@ public static class LayoutHelper
 
     internal static void ArrangeAndResizeCanvasLayout(FormViewModel.Builder formLayout)
     {
-        var canvasLayout = formLayout?.CanvasLayout ?? throw new InvalidOperationException();
+        var canvasLayout = formLayout.CanvasLayout ?? throw new InvalidOperationException();
 
         // work out how big the canvas needs to be in order to contain the device layouts
         var canvasContentBounds = RectangleInfo.Union(
@@ -380,7 +380,7 @@ public static class LayoutHelper
 
     internal static void ArrangeAndResizeFormLayout(FormViewModel.Builder formLayout, ScreenInfo activatedScreen, PointInfo activatedLocation)
     {
-        var canvasOuterBounds = formLayout?.CanvasLayout?.CanvasBounds?.OuterBounds
+        var canvasOuterBounds = formLayout.CanvasLayout?.CanvasBounds?.OuterBounds
             ?? throw new InvalidOperationException();
 
         // resize and center the form on the activated location

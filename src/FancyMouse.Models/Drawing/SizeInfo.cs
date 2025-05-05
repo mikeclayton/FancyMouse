@@ -35,13 +35,8 @@ public sealed class SizeInfo
         get;
     }
 
-    public bool IsEmpty
-    {
-        get
-        {
-            return object.ReferenceEquals(this, SizeInfo.Empty);
-        }
-    }
+    public bool IsEmpty =>
+        object.ReferenceEquals(this, SizeInfo.Empty);
 
     public SizeInfo Clamp(SizeInfo max)
     {
