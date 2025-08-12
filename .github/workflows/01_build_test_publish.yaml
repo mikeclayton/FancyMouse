@@ -24,14 +24,12 @@ jobs:
 
     env:
 
-      BUILD_PATH: ./src
+      BUILD_PATH:    ${{ github.workspace }}/src
+      PUBLISH_PATH:  ${{ github.workspace }}/.build/app/net9.0-windows
 
       CONFIG_NAME:   Release
       PLATFORM_NAME: x64
       RUNTIME_NAME:  win-x64
-
-      # relative to BUILD_PATH
-      PUBLISH_PATH: ../.build/app
 
     steps:
       - uses: actions/checkout@v4
@@ -117,7 +115,7 @@ jobs:
                 --p:Platform="${{ env.PLATFORM_NAME }}" `
                 --p:RuntimeIdentifier="${{ env.RUNTIME_NAME }}" `
                 --no-build `
-                --output "${{ env.PUBLISH_PATH }}/net9.0-windows/FancyMouse.WinForms"
+                --output "${{ env.PUBLISH_PATH }}/FancyMouse.WinForms"
 
       - name: dotnet publish (winui3)
         working-directory: ${{ env.BUILD_PATH }}
@@ -127,19 +125,19 @@ jobs:
                 --p:Platform="${{ env.PLATFORM_NAME }}" `
                 --p:RuntimeIdentifier="${{ env.RUNTIME_NAME }}" `
                 --no-build `
-                --output "${{ env.PUBLISH_PATH }}/net9.0-windows/FancyMouse.WinUI3"
+                --output "${{ env.PUBLISH_PATH }}/FancyMouse.WinUI3"
 
       - name: upload release (winforms)
         uses: actions/upload-artifact@v4
         with:
           name: FancyMouse-v0.0.0-preview
-          path: ${{ env.PUBLISH_PATH }}/net9.0-windows/FancyMouse.WinForms
+          path: ${{ env.PUBLISH_PATH }}/FancyMouse.WinForms
 
       - name: upload release (winui3)
         uses: actions/upload-artifact@v4
         with:
           name: FancyMouse.WinUI3-v0.0.0-preview
-          path: ${{ env.PUBLISH_PATH }}/net9.0-windows/FancyMouse.WinUI3
+          path: ${{ env.PUBLISH_PATH }}/FancyMouse.WinUI3
 
       - name: upload test images
         if: always()
