@@ -10,6 +10,12 @@ on:
 
 jobs:
   build_test_publish:
+
+    # prevent duplicate builds for a commit which is a pull request
+    # (this is needed because the workflow is triggered on both push and pull_request events)
+    # we do this by making sure that the pull request ref is null when the event is a push
+    if: github.event_name != 'push' || github.event.pull_request == null
+
     runs-on: windows-latest
 
     defaults:
@@ -40,6 +46,7 @@ jobs:
 
       - name: get vs components
         working-directory: ${{ env.BUILD_PATH }}
+        if: false # disabled by default - enable for debugging
         run: |
             Install-Module -Name "VSSetup" -Scope "CurrentUser" -Force
 
@@ -81,22 +88,24 @@ jobs:
       - name: dotnet restore
         working-directory: ${{ env.BUILD_PATH }}
         run: |
-            dotnet restore
+            dotnet restore `
+                --p:PublishReadyToRun=true `
+                --p:RuntimeIdentifier="${{ env.RUNTIME_NAME }}"
 
       - name: dotnet build
         working-directory: ${{ env.BUILD_PATH }}
         run: |
             dotnet build `
-                --property:Configuration="${{ env.CONFIG_NAME }}" `
-                --property:Platform="${{ env.PLATFORM_NAME }}" `
+                --p:Configuration="${{ env.CONFIG_NAME }}" `
+                --p:Platform="${{ env.PLATFORM_NAME }}" `
                 --no-restore
 
       - name: dotnet test
         working-directory: ${{ env.BUILD_PATH }}
         run: |
             dotnet test `
-                --property:Configuration="${{ env.CONFIG_NAME }}" `
-                --property:Platform="${{ env.PLATFORM_NAME }}" `
+                --p:Configuration="${{ env.CONFIG_NAME }}" `
+                --p:Platform="${{ env.PLATFORM_NAME }}" `
                 --no-build `
                 --filter "TestCategory!=Performance"
 
@@ -104,9 +113,9 @@ jobs:
         working-directory: ${{ env.BUILD_PATH }}
         run: |
             dotnet publish "./FancyMouse/FancyMouse.csproj" `
-                --property:Configuration="${{ env.CONFIG_NAME }}" `
-                --property:Platform="${{ env.PLATFORM_NAME }}" `
-                --property:RuntimeIdentifier="${{ env.RUNTIME_NAME }}" `
+                --p:Configuration="${{ env.CONFIG_NAME }}" `
+                --p:Platform="${{ env.PLATFORM_NAME }}" `
+                --p:RuntimeIdentifier="${{ env.RUNTIME_NAME }}" `
                 --no-build `
                 --output "${{ env.PUBLISH_PATH }}/net9.0-windows/FancyMouse.WinForms"
 
@@ -114,9 +123,9 @@ jobs:
         working-directory: ${{ env.BUILD_PATH }}
         run: |
             dotnet publish "./FancyMouse.WinUI3/FancyMouse.WinUI3.csproj" `
-                --property:Configuration="${{ env.CONFIG_NAME }}" `
-                --property:Platform="${{ env.PLATFORM_NAME }}" `
-                --property:RuntimeIdentifier="${{ env.RUNTIME_NAME }}" `
+                --p:Configuration="${{ env.CONFIG_NAME }}" `
+                --p:Platform="${{ env.PLATFORM_NAME }}" `
+                --p:RuntimeIdentifier="${{ env.RUNTIME_NAME }}" `
                 --no-build `
                 --output "${{ env.PUBLISH_PATH }}/net9.0-windows/FancyMouse.WinUI3"
 
