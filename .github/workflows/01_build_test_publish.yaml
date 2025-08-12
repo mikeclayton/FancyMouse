@@ -87,7 +87,7 @@ jobs:
         working-directory: ${{ env.BUILD_PATH }}
         run: |
             dotnet build `
-                --configuration "${{ env.CONFIG_NAME }}" `
+                --property:Configuration="${{ env.CONFIG_NAME }}" `
                 --property:Platform="${{ env.PLATFORM_NAME }}" `
                 --no-restore
 
@@ -95,28 +95,30 @@ jobs:
         working-directory: ${{ env.BUILD_PATH }}
         run: |
             dotnet test `
-                --configuration "${{ env.CONFIG_NAME }}" `
+                --property:Configuration="${{ env.CONFIG_NAME }}" `
                 --property:Platform="${{ env.PLATFORM_NAME }}" `
                 --no-build `
-                --filter        "TestCategory!=Performance"
+                --filter "TestCategory!=Performance"
 
       - name: dotnet publish (winforms)
         working-directory: ${{ env.BUILD_PATH }}
         run: |
             dotnet publish "./FancyMouse/FancyMouse.csproj" `
-                --configuration "${{ env.CONFIG_NAME }}" `
-                --runtime       "${{ env.RUNTIME_NAME }}" `
+                --property:Configuration="${{ env.CONFIG_NAME }}" `
+                --property:Platform="${{ env.PLATFORM_NAME }}" `
+                --property:RuntimeIdentifier="${{ env.RUNTIME_NAME }}" `
                 --no-build `
-                --output        "${{ env.PUBLISH_PATH }}/net9.0-windows/FancyMouse.WinForms"
+                --output "${{ env.PUBLISH_PATH }}/net9.0-windows/FancyMouse.WinForms"
 
       - name: dotnet publish (winui3)
         working-directory: ${{ env.BUILD_PATH }}
         run: |
             dotnet publish "./FancyMouse.WinUI3/FancyMouse.WinUI3.csproj" `
-                --configuration "${{ env.CONFIG_NAME }}" `
-                --runtime       "${{ env.RUNTIME_NAME }}" `
+                --property:Configuration="${{ env.CONFIG_NAME }}" `
+                --property:Platform="${{ env.PLATFORM_NAME }}" `
+                --property:RuntimeIdentifier="${{ env.RUNTIME_NAME }}" `
                 --no-build `
-                --output        "${{ env.PUBLISH_PATH }}/net9.0-windows/FancyMouse.WinUI3"
+                --output "${{ env.PUBLISH_PATH }}/net9.0-windows/FancyMouse.WinUI3"
 
       - name: upload release (winforms)
         uses: actions/upload-artifact@v4
