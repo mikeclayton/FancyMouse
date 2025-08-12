@@ -24,12 +24,13 @@ jobs:
 
     env:
 
-      BUILD_PATH:    ${{ github.workspace }}/src
-      PUBLISH_PATH:  ${{ github.workspace }}/.build/app/net9.0-windows
+      BUILD_PATH:       ${{ github.workspace }}/src
+      PUBLISH_PATH:     ${{ github.workspace }}/.build/app/net9.0-windows
 
-      CONFIG_NAME:   Release
-      PLATFORM_NAME: x64
-      RUNTIME_NAME:  win-x64
+      TARGET_FRAMEWORK: net9.0-windows
+      CONFIG_NAME:      Release
+      PLATFORM_NAME:    x64
+      RUNTIME_NAME:     win-x64
 
     steps:
       - uses: actions/checkout@v4
@@ -144,7 +145,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: test-images
-          path: ./src/FancyMouse.UnitTests
+          path: ${{ env.BUILD_PATH }}/FancyMouse.Common.UnitTests/${{ env.PLATFORM_NAME }}/${{ env.CONFIG_NAME }}/${{ env.TARGET_FRAMEWORK }}/*_actual.png
 
       #- name: dotnet tool jb inspectcode
       #  working-directory: ${{ env.BUILD_PATH }}
