@@ -125,7 +125,7 @@ jobs:
                 --p:Configuration="${{ env.CONFIG_NAME }}" `
                 --p:Platform="${{ env.PLATFORM_NAME }}" `
                 --p:RuntimeIdentifier="${{ env.RUNTIME_NAME }}" `
-                --p:PublishTrimmed=false
+                --p:PublishTrimmed=false `
                 --no-build `
                 --output "${{ env.PUBLISH_PATH }}/FancyMouse.WinUI3"
 
