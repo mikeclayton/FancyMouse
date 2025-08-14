@@ -97,6 +97,10 @@ jobs:
             dotnet build `
                 --p:Configuration="${{ env.CONFIG_NAME }}" `
                 --p:Platform="${{ env.PLATFORM_NAME }}" `
+                --p:WindowsAppSDKSelfContained=true `
+                --p:PublishSingleFile=false `
+                --p:PublishReadyToRun=false `
+                --p:PublishTrimmed=false `
                 --no-restore
 
       - name: dotnet test
@@ -115,7 +119,6 @@ jobs:
                 --p:Configuration="${{ env.CONFIG_NAME }}" `
                 --p:Platform="${{ env.PLATFORM_NAME }}" `
                 --p:RuntimeIdentifier="${{ env.RUNTIME_NAME }}" `
-                --no-build `
                 --output "${{ env.PUBLISH_PATH }}/FancyMouse.WinForms"
 
       - name: dotnet publish (winui3)
@@ -125,8 +128,11 @@ jobs:
                 --p:Configuration="${{ env.CONFIG_NAME }}" `
                 --p:Platform="${{ env.PLATFORM_NAME }}" `
                 --p:RuntimeIdentifier="${{ env.RUNTIME_NAME }}" `
+                --p:WindowsAppSDKSelfContained=true `
+                --p:PublishSingleFile=false `
+                --p:PublishReadyToRun=false `
                 --p:PublishTrimmed=false `
-                --no-build `
+                --self-contained true
                 --output "${{ env.PUBLISH_PATH }}/FancyMouse.WinUI3"
 
       - name: upload release (winforms)
