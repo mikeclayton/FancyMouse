@@ -1,7 +1,9 @@
 ﻿using System.ComponentModel;
 using System.Runtime.InteropServices;
-using FancyMouse.Common.Models.Drawing;
+
 using FancyMouse.Common.NativeMethods;
+using FancyMouse.Models.Drawing;
+
 using static FancyMouse.Common.NativeMethods.Core;
 using static FancyMouse.Common.NativeMethods.User32;
 
@@ -30,19 +32,8 @@ public static class MouseHelper
     /// </summary>
     public static PointInfo GetCursorPosition()
     {
-        var lpPoint = new LPPOINT(new POINT(0, 0));
-        var result = User32.GetCursorPos(lpPoint);
-        if (!result)
-        {
-            throw new Win32Exception(
-                Marshal.GetLastWin32Error());
-        }
-
-        var point = lpPoint.ToStructure();
-        lpPoint.Free();
-
-        return new PointInfo(
-            point.x, point.y);
+        var point = Win32Helper.User32.GetCursorPos();
+        return new PointInfo(point.x, point.y);
     }
 
     /// <summary>
@@ -75,12 +66,16 @@ public static class MouseHelper
             var result = User32.SetCursorPos(target.X, target.Y);
             if (!result)
             {
-                throw new Win32Exception(
-                    Marshal.GetLastWin32Error());
+                // SetLastError has been known to return zero, but the last error code indicates success
+                var lastError = Marshal.GetLastPInvokeError();
+                if (lastError != 0)
+                {
+                    throw new Win32Exception(lastError);
+                }
             }
 
-            var current = MouseHelper.GetCursorPosition();
-            if ((current.X == target.X) || (current.Y == target.Y))
+            var currentLocation = MouseHelper.GetCursorPosition();
+            if ((currentLocation.X == target.X) || (currentLocation.Y == target.Y))
             {
                 break;
             }
@@ -119,7 +114,7 @@ public static class MouseHelper
         if (result != inputs.Length)
         {
             throw new Win32Exception(
-                Marshal.GetLastWin32Error());
+                Marshal.GetLastPInvokeError());
         }
     }
 

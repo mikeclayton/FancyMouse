@@ -2,22 +2,44 @@
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
+
 using FancyMouse.Common.Imaging;
-using FancyMouse.Common.Models.Display;
-using FancyMouse.Common.Models.Drawing;
-using FancyMouse.Common.Models.Styles;
-using FancyMouse.Common.Models.ViewModel;
+using FancyMouse.Models.Display;
+using FancyMouse.Models.Drawing;
+using FancyMouse.Models.Styles;
+using FancyMouse.Models.ViewModel;
 
 namespace FancyMouse.Common.Helpers;
 
 public static class DrawingHelper
 {
-    public static Bitmap RenderPreview(
+    /// <summary>
+    /// Renders a preview image of the specified canvas layout.
+    /// </summary>
+    /// <param name="canvasLayout">
+    /// The layout of the canvas, including the layout of all devices and screens.
+    /// </param>
+    /// <param name="activatedScreen">
+    /// The screen that is currently activated (i.e. the one that the user is interacting with).
+    /// </param>
+    /// <param name="imageRegionCopyServices">
+    /// A list of IImageRegionCopyService implementations, one for each device in the canvas layout.
+    /// </param>
+    /// <param name="previewImageCreatedCallback">
+    /// A callback that is invoked when the preview image is created.
+    /// </param>
+    /// <param name="previewImageUpdatedCallback">
+    /// A callback that is invoked when the preview image is updated.
+    /// </param>
+    /// <returns>
+    /// A preview image of the canvas layout.
+    /// </returns>
+    public static async Task<Bitmap> RenderPreviewAsync(
         CanvasViewModel canvasLayout,
         ScreenInfo activatedScreen,
-        IImageRegionCopyService imageCopyService,
-        Action<Bitmap>? previewImageCreatedCallback = null,
-        Action? previewImageUpdatedCallback = null)
+        List<IImageRegionCopyService> imageRegionCopyServices,
+        Func<Bitmap, Task>? previewImageCreatedCallback = null,
+        Func<Bitmap, Task>? previewImageUpdatedCallback = null)
     {
         var stopwatch = Stopwatch.StartNew();
 
@@ -25,7 +47,10 @@ public static class DrawingHelper
         var previewBounds = canvasLayout.CanvasBounds.OuterBounds.ToRectangle();
         var previewImage = new Bitmap(previewBounds.Width, previewBounds.Height, PixelFormat.Format32bppPArgb);
         var previewGraphics = Graphics.FromImage(previewImage);
-        previewImageCreatedCallback?.Invoke(previewImage);
+        if (previewImageCreatedCallback != null)
+        {
+            await previewImageCreatedCallback(previewImage);
+        }
 
         DrawingHelper.DrawRaisedBorder(previewGraphics, canvasLayout.CanvasBounds, canvasLayout.CanvasStyle);
         DrawingHelper.DrawBackgroundFill(
@@ -38,31 +63,37 @@ public static class DrawingHelper
         // draw them, putting the activated screen first (we need to capture
         // and draw the activated screen before we show the form because
         // otherwise we'll capture the form as part of the screenshot!)
-        var devicePairings = canvasLayout.DeviceLayouts
+        var screenDrawingOps = canvasLayout.DeviceLayouts
             .SelectMany(
-                deviceLayout => deviceLayout.ScreenLayouts,
-                (deviceLayout, screenLayout) => new { DeviceLayout = deviceLayout, ScreenLayout = screenLayout })
+                (deviceLayout, deviceIndex) => deviceLayout.ScreenLayouts.Select(
+                    screenLayout => new
+                    {
+                        DeviceIndex = deviceIndex,
+                        DeviceLayout = deviceLayout,
+                        ScreenLayout = screenLayout,
+                        CopyService = imageRegionCopyServices[deviceIndex],
+                    }))
             .OrderByDescending(
                 pair => object.ReferenceEquals(pair.ScreenLayout, activatedScreen))
             .ToList();
 
         // draw all the screenshot bezels
-        foreach (var devicePairing in devicePairings)
+        foreach (var screenDrawingOp in screenDrawingOps)
         {
             DrawingHelper.DrawRaisedBorder(
-                previewGraphics, devicePairing.ScreenLayout.ScreenBounds, devicePairing.ScreenLayout.ScreenStyle);
+                previewGraphics, screenDrawingOp.ScreenLayout.ScreenBounds, screenDrawingOp.ScreenLayout.ScreenStyle);
         }
 
         var refreshRequired = false;
         var placeholdersDrawn = false;
-        for (var i = 0; i < devicePairings.Count; i++)
+        for (var i = 0; i < screenDrawingOps.Count; i++)
         {
-            var screenLayout = devicePairings[i].ScreenLayout;
+            var screenDrawingOp = screenDrawingOps[i];
 
-            imageCopyService.CopyImageRegion(
+            screenDrawingOp.CopyService.CopyImageRegion(
                 targetGraphics: previewGraphics,
-                sourceBounds: screenLayout.ScreenInfo.DisplayArea,
-                targetBounds: screenLayout.ScreenBounds.ContentBounds);
+                sourceBounds: screenDrawingOp.ScreenLayout.ScreenInfo.DisplayArea,
+                targetBounds: screenDrawingOp.ScreenLayout.ScreenBounds.ContentBounds);
             refreshRequired = true;
 
             // show the placeholder images and show the form if it looks like it might take
@@ -74,22 +105,26 @@ public static class DrawingHelper
                 {
                     DrawingHelper.DrawScreenPlaceholders(
                         previewGraphics,
-                        screenLayout.ScreenStyle,
-                        devicePairings
+                        screenDrawingOp.ScreenLayout.ScreenStyle,
+                        screenDrawingOps
                             .Skip(i + 1)
-                            .Select(devicePairing => devicePairing.ScreenLayout.ScreenBounds)
+                            .Select(drawingOp => drawingOp.ScreenLayout.ScreenBounds)
                             .ToList());
                     placeholdersDrawn = true;
                 }
 
-                previewImageUpdatedCallback?.Invoke();
+                if (previewImageUpdatedCallback != null)
+                {
+                    await previewImageUpdatedCallback(previewImage);
+                }
+
                 refreshRequired = false;
             }
         }
 
         if (refreshRequired)
         {
-            previewImageUpdatedCallback?.Invoke();
+            previewImageUpdatedCallback?.Invoke(previewImage);
         }
 
         stopwatch.Stop();
@@ -222,7 +257,7 @@ public static class DrawingHelper
             return;
         }
 
-        if (screenStyle?.BackgroundStyle?.Color1 == null)
+        if (screenStyle.BackgroundStyle.Color1 == null)
         {
             return;
         }

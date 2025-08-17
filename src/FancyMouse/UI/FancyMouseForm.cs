@@ -1,9 +1,10 @@
 using System.Diagnostics;
+
 using FancyMouse.Common.Helpers;
 using FancyMouse.Common.Imaging;
-using FancyMouse.Common.Models.Display;
-using FancyMouse.Common.Models.Drawing;
-using FancyMouse.Common.Models.ViewModel;
+using FancyMouse.Models.Display;
+using FancyMouse.Models.Drawing;
+using FancyMouse.Models.ViewModel;
 using NLog;
 
 namespace FancyMouse.UI;
@@ -176,7 +177,7 @@ internal sealed partial class FancyMouseForm : Form
         this.OnDeactivate(EventArgs.Empty);
     }
 
-    public void ShowPreview()
+    public async Task ShowPreview()
     {
         var logger = this.Logger;
 
@@ -197,7 +198,7 @@ internal sealed partial class FancyMouseForm : Form
 
         var appSettings = Internal.Helpers.ConfigHelper.AppSettings ?? throw new InvalidOperationException();
         var displayInfo = DeviceHelper.GetDisplayInfo();
-        var activatedScreen = DeviceHelper.GetActivatedScreen(displayInfo, activatedLocation);
+        var activatedScreen = DeviceHelper.GetActivatedScreen(displayInfo.Devices[0], activatedLocation);
 
         var formLayout = LayoutHelper.GetFormLayout(
             previewStyle: appSettings.PreviewStyle,
@@ -209,21 +210,24 @@ internal sealed partial class FancyMouseForm : Form
         // the appropriate device and screen location
         this.FormLayout = formLayout;
 
-        this.PositionForm(formLayout.FormBounds);
+        await this.PositionFormAsync(formLayout.FormBounds);
 
-        var imageCopyService = new DesktopImageRegionCopyService();
+        var imageCopyServices = displayInfo.Devices
+            .Select(
+                deviceInfo => (IImageRegionCopyService)new DesktopImageRegionCopyService())
+            .ToList();
 
-        DrawingHelper.RenderPreview(
+        await DrawingHelper.RenderPreviewAsync(
             this.FormLayout.CanvasLayout,
             activatedScreen,
-            imageCopyService,
-            this.OnPreviewImageCreated,
-            this.OnPreviewImageUpdated);
+            imageCopyServices,
+            this.OnPreviewImageCreatedAsync,
+            this.OnPreviewImageUpdatedAsync);
 
         stopwatch.Stop();
 
         // we have to activate the form to make sure the deactivate event fires
-        this.Activate();
+        await this.ActivateAsync();
     }
 
     private void ClearPreview()
@@ -245,37 +249,58 @@ internal sealed partial class FancyMouseForm : Form
     /// <summary>
     /// Resize and position the specified form.
     /// </summary>
-    private void PositionForm(RectangleInfo bounds)
+    private async Task PositionFormAsync(RectangleInfo bounds)
     {
-        // note - do this in two steps rather than "this.Bounds = formBounds" as there
-        // appears to be an issue in WinForms with dpi scaling even when using PerMonitorV2,
-        // where the form scaling uses either the *primary* screen scaling or the *previous*
-        // screen's scaling when the form is moved to a different screen. i've got no idea
-        // *why*, but the exact sequence of calls below seems to be a workaround...
-        // see https://github.com/mikeclayton/FancyMouse/issues/2
-        var rect = bounds.ToRectangle();
-        this.Location = rect.Location;
-        _ = this.PointToScreen(Point.Empty);
-        this.Size = rect.Size;
+        await this.InvokeAsync(
+            () =>
+            {
+                // note - do this in two steps rather than "this.Bounds = formBounds" as there
+                // appears to be an issue in WinForms with dpi scaling even when using PerMonitorV2,
+                // where the form scaling uses either the *primary* screen scaling or the *previous*
+                // screen's scaling when the form is moved to a different screen. i've got no idea
+                // *why*, but the exact sequence of calls below seems to be a workaround...
+                // see https://github.com/mikeclayton/FancyMouse/issues/2
+                var rect = bounds.ToRectangle();
+                this.Location = rect.Location;
+                _ = this.PointToScreen(Point.Empty);
+                this.Size = rect.Size;
+            });
     }
 
-    private void OnPreviewImageCreated(Bitmap preview)
+    private async Task ActivateAsync()
     {
-        this.ClearPreview();
-        this.Thumbnail.Image = preview;
+        await this.InvokeAsync(
+            () =>
+            {
+                this.Activate();
+            });
     }
 
-    private void OnPreviewImageUpdated()
+    private async Task OnPreviewImageCreatedAsync(Bitmap preview)
     {
-        if (!this.Visible)
-        {
-            // we seem to need to turn off topmost and then re-enable it again
-            // when we show the form, otherwise it doesn't always get shown topmost...
-            this.TopMost = false;
-            this.TopMost = true;
-            this.Show();
-        }
+        await this.InvokeAsync(
+            () =>
+            {
+                this.ClearPreview();
+                this.Thumbnail.Image = preview;
+            });
+    }
 
-        this.Thumbnail.Refresh();
+    private async Task OnPreviewImageUpdatedAsync(Bitmap preview)
+    {
+        await this.InvokeAsync(
+            () =>
+            {
+                if (!this.Visible)
+                {
+                    // we seem to need to turn off topmost and then re-enable it again
+                    // when we show the form, otherwise it doesn't always get shown topmost...
+                    this.TopMost = false;
+                    this.TopMost = true;
+                    this.Show();
+                }
+
+                this.Thumbnail.Refresh();
+            });
     }
 }

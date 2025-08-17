@@ -4,11 +4,12 @@
     <TargetFramework>net9.0-windows</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\FancyMouse.Common\FancyMouse.Common.csproj" />
     <ProjectReference Include="..\FancyMouse.HotKeys\FancyMouse.HotKeys.csproj" />
+    <ProjectReference Include="..\FancyMouse.Models\FancyMouse.Models.csproj" />
   </ItemGroup>
 
   <ItemGroup>

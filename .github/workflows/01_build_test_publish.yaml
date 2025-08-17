@@ -10,6 +10,12 @@ on:
 
 jobs:
   build_test_publish:
+
+    # prevent duplicate builds for a commit which is a pull request
+    # (this is needed because the workflow is triggered on both push and pull_request events)
+    # we do this by making sure that the pull request ref is null when the event is a push
+    if: github.event_name != 'push' || github.event.pull_request == null
+
     runs-on: windows-latest
 
     defaults:
@@ -18,12 +24,13 @@ jobs:
 
     env:
 
-      BUILD_PATH: ./src
+      BUILD_PATH:       ${{ github.workspace }}/src
+      PUBLISH_PATH:     ${{ github.workspace }}/.build/app/net9.0-windows
 
-      CONFIG_NAME: Release
-
-      # relative to BUILD_PATH
-      PUBLISH_PATH: ../.build/app
+      TARGET_FRAMEWORK: net9.0-windows
+      CONFIG_NAME:      Release
+      PLATFORM_NAME:    x64
+      RUNTIME_NAME:     win-x64
 
     steps:
       - uses: actions/checkout@v4
@@ -36,43 +43,116 @@ jobs:
         with:
           dotnet-version: 9.0.x
 
+      - name: get vs components
+        working-directory: ${{ env.BUILD_PATH }}
+        if: false # disabled by default - enable for debugging
+        run: |
+            Install-Module -Name "VSSetup" -Scope "CurrentUser" -Force
+
+            $vsWhere     = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+            $vsInstaller = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vs_installer.exe"
+
+            write-host "components before"
+            write-host "-----------------"
+            (Get-VSSetupInstance | Select-VSSetupInstance -Product *).packages | Select-Object -ExpandProperty Id | Sort-Object
+
+            $installationPath = & $vsWhere -latest -property installationPath
+            & $vsInstaller modify --installPath $installationPath --add maui-windows --noUpdateInstaller --passive
+            & $vsInstaller modify --installPath $installationPath --add Microsoft.VisualStudio.ComponentGroup.UWP.Support --noUpdateInstaller --passive
+
+            # Workload:    WinUI application development
+            # ID:          Microsoft.VisualStudio.Workload.Universal
+            # Description: Build applications for the Windows platform using WinUI with C# or optionally C++.
+            & $vsInstaller modify --installPath $installationPath --add Microsoft.VisualStudio.Workload.Universal --includeRecommended --includeOptional --noUpdateInstaller --passive
+
+            write-host "components after"
+            write-host "----------------"
+            (Get-VSSetupInstance | Select-VSSetupInstance -Product *).packages | Select-Object -ExpandProperty Id | Sort-Object
+
       - name: dotnet info
         working-directory: ${{ env.BUILD_PATH }}
-        run: dotnet --info
+        run: |
+            dotnet --info
+
+      - name: dotnet workload list
+        working-directory: ${{ env.BUILD_PATH }}
+        run: |
+            dotnet workload list
+
+      - name: dotnet workload search
+        working-directory: ${{ env.BUILD_PATH }}
+        run: |
+            dotnet workload search
 
       - name: dotnet restore
         working-directory: ${{ env.BUILD_PATH }}
-        run: dotnet restore
+        run: |
+            dotnet restore `
+                --p:PublishReadyToRun=true `
+                --p:RuntimeIdentifier="${{ env.RUNTIME_NAME }}"
 
       - name: dotnet build
         working-directory: ${{ env.BUILD_PATH }}
-        run: dotnet build --configuration "${{ env.CONFIG_NAME }}" --no-restore
+        run: |
+            dotnet build `
+                --p:Configuration="${{ env.CONFIG_NAME }}" `
+                --p:Platform="${{ env.PLATFORM_NAME }}" `
+                --p:WindowsAppSDKSelfContained=false `
+                --p:PublishSingleFile=false `
+                --p:PublishReadyToRun=false `
+                --p:PublishTrimmed=false `
+                --no-restore
 
       - name: dotnet test
         working-directory: ${{ env.BUILD_PATH }}
-        run: dotnet test --configuration "${{ env.CONFIG_NAME }}" --no-build --filter "TestCategory!=Performance"
+        run: |
+            dotnet test `
+                --p:Configuration="${{ env.CONFIG_NAME }}" `
+                --p:Platform="${{ env.PLATFORM_NAME }}" `
+                --no-build `
+                --filter "TestCategory!=Performance"
 
-      - name: dotnet publish
+      - name: dotnet publish (winforms)
         working-directory: ${{ env.BUILD_PATH }}
-        run: dotnet publish "./FancyMouse/FancyMouse.csproj" --configuration "${{ env.CONFIG_NAME }}" --no-build --output "${{ env.PUBLISH_PATH }}/net9.0-windows"
+        run: |
+            dotnet publish "./FancyMouse/FancyMouse.csproj" `
+                --p:Configuration="${{ env.CONFIG_NAME }}" `
+                --p:Platform="${{ env.PLATFORM_NAME }}" `
+                --p:RuntimeIdentifier="${{ env.RUNTIME_NAME }}" `
+                --output "${{ env.PUBLISH_PATH }}/FancyMouse.WinForms"
 
-      #- name: zip release
-      #  working-directory: ${{ env.BUILD_PATH }}
-      #  run: |
-      #    & "C:\Program Files\7-Zip\7z.exe" a "FancyMouse-preview-v0.0.0.zip" "${{ env.PUBLISH_PATH }}"
+      - name: dotnet publish (winui3)
+        working-directory: ${{ env.BUILD_PATH }}
+        run: |
+            dotnet publish "./FancyMouse.WinUI3/FancyMouse.WinUI3.csproj" `
+                --p:Configuration="${{ env.CONFIG_NAME }}" `
+                --p:Platform="${{ env.PLATFORM_NAME }}" `
+                --p:RuntimeIdentifier="${{ env.RUNTIME_NAME }}" `
+                --p:WindowsAppSDKSelfContained=false `
+                --p:PublishSingleFile=false `
+                --p:PublishReadyToRun=false `
+                --p:PublishTrimmed=false `
+                --self-contained false `
+                --output "${{ env.PUBLISH_PATH }}/FancyMouse.WinUI3"
 
-      - name: upload release
+      - name: upload release (winforms)
         uses: actions/upload-artifact@v4
         with:
           name: FancyMouse-v0.0.0-preview
-          path: .build/app
+          path: ${{ env.PUBLISH_PATH }}/FancyMouse.WinForms
+
+      - name: upload release (winui3)
+        uses: actions/upload-artifact@v4
+        with:
+          name: FancyMouse.WinUI3-v0.0.0-preview
+          path: ${{ env.PUBLISH_PATH }}/FancyMouse.WinUI3
 
       - name: upload test images
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-images
-          path: ./src/FancyMouse.UnitTests
+          path: ${{ env.BUILD_PATH }}/FancyMouse.Common.UnitTests/${{ env.PLATFORM_NAME }}/${{ env.CONFIG_NAME }}/${{ env.TARGET_FRAMEWORK }}/*_actual.png
 
       #- name: dotnet tool jb inspectcode
       #  working-directory: ${{ env.BUILD_PATH }}

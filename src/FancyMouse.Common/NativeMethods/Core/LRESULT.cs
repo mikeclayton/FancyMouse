@@ -1,6 +1,6 @@
 ﻿namespace FancyMouse.Common.NativeMethods;
 
-internal static partial class Core
+public static partial class Core
 {
     /// <summary>
     /// Signed result of message processing.
@@ -10,11 +10,13 @@ internal static partial class Core
     /// <remarks>
     /// See https://learn.microsoft.com/en-us/windows/win32/winprog/windows-data-types
     /// </remarks>
-    internal readonly struct LRESULT
+    public readonly struct LRESULT
     {
         public static readonly LRESULT Null = new(IntPtr.Zero);
 
+#pragma warning disable CA1051 // Do not declare visible instance fields
         public readonly IntPtr Value;
+#pragma warning restore CA1051 // Do not declare visible instance fields
 
         public LRESULT(IntPtr value)
         {

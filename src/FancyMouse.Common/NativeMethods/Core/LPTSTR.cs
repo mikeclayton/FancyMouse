@@ -2,7 +2,7 @@
 
 namespace FancyMouse.Common.NativeMethods;
 
-internal static partial class Core
+public static partial class Core
 {
     /// <summary>
     /// An LPWSTR if UNICODE is defined, an LPSTR otherwise. For more information, see Windows Data Types for Strings.

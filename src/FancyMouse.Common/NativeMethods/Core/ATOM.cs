@@ -2,7 +2,7 @@
 
 namespace FancyMouse.Common.NativeMethods;
 
-internal static partial class Core
+public static partial class Core
 {
     /// <summary>
     /// An atom. For more information, see About Atom Tables.
@@ -12,10 +12,12 @@ internal static partial class Core
     /// <remarks>
     /// See https://learn.microsoft.com/en-us/windows/win32/winprog/windows-data-types
     /// </remarks>
-    internal readonly struct ATOM
+    public readonly struct ATOM
     {
         [MarshalAs(UnmanagedType.U2)]
+#pragma warning disable CA1051 // Do not declare visible instance fields
         public readonly ushort Value;
+#pragma warning restore CA1051 // Do not declare visible instance fields
 
         public ATOM(ushort value)
         {

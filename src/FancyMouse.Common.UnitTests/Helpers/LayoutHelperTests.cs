@@ -1,11 +1,12 @@
 ﻿using System.Diagnostics;
 using System.Drawing;
 using System.Text.Json;
+
 using FancyMouse.Common.Helpers;
-using FancyMouse.Common.Models.Display;
-using FancyMouse.Common.Models.Drawing;
-using FancyMouse.Common.Models.Styles;
-using FancyMouse.Common.Models.ViewModel;
+using FancyMouse.Models.Display;
+using FancyMouse.Models.Drawing;
+using FancyMouse.Models.Styles;
+using FancyMouse.Models.ViewModel;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace FancyMouse.Common.UnitTests.Helpers;
@@ -107,14 +108,17 @@ public static class LayoutHelperTests
     {
         public sealed class TestCase
         {
-            public TestCase(PreviewStyle previewStyle, DisplayInfo displayInfo, ScreenInfo activatedScreen, PointInfo activatedLocation, FormViewModel expectedResult)
+            public TestCase(string testName, PreviewStyle previewStyle, DisplayInfo displayInfo, ScreenInfo activatedScreen, PointInfo activatedLocation, FormViewModel expectedResult)
             {
+                this.TestName = testName;
                 this.PreviewStyle = previewStyle;
                 this.DisplayInfo = displayInfo;
                 this.ActivatedLocation = activatedLocation;
                 this.ActivatedScreen = activatedScreen;
                 this.ExpectedResult = expectedResult;
             }
+
+            public string TestName { get; }
 
             public PreviewStyle PreviewStyle { get; }
 
@@ -137,6 +141,7 @@ public static class LayoutHelperTests
             // |       0        |
             // |                |
             // +----------------+
+            var testName = "Test 1 - Happy Path";
             var previewStyle = new PreviewStyle(
                 canvasSize: new(
                     width: (1024 / 2) + (5 * 2) + (1 * 2), // half the screen size, plus additional room for canvas border and padding
@@ -155,7 +160,8 @@ public static class LayoutHelperTests
                         color2: Color.FromArgb(3, 68, 192) // darker blue
                     )
                 ),
-                screenStyle: BoxStyle.Empty);
+                screenStyle: BoxStyle.Empty,
+                extraColors: Array.Empty<Color>());
             var displayInfo = new DisplayInfo(
                 devices: new List<DeviceInfo>
                 {
@@ -201,7 +207,7 @@ public static class LayoutHelperTests
                         ),
                     }
                 ));
-            yield return new object[] { new TestCase(previewStyle, displayInfo, activatedScreen, activatedLocation, expectedResult) };
+            yield return new object[] { new TestCase(testName, previewStyle, displayInfo, activatedScreen, activatedLocation, expectedResult) };
 
             // happy path - single device with screen and 50% scaling,
             // *no* preview borders but *has* screenshot borders
@@ -211,6 +217,7 @@ public static class LayoutHelperTests
             // |       0        |
             // |                |
             // +----------------+
+            testName = "Test 2 - Happy Path";
             previewStyle = new PreviewStyle(
                 canvasSize: new(
                     width: 1024 / 2, // half the screen size
@@ -228,8 +235,8 @@ public static class LayoutHelperTests
                     backgroundStyle: new(
                         color1: Color.FromArgb(13, 87, 210), // light blue
                         color2: Color.FromArgb(3, 68, 192) // darker blue
-                    )
-                ));
+                    )),
+                extraColors: Array.Empty<Color>());
             displayInfo = new DisplayInfo(
                 devices: new List<DeviceInfo>
                 {
@@ -275,7 +282,7 @@ public static class LayoutHelperTests
                         ),
                     }
                 ));
-            yield return new object[] { new TestCase(previewStyle, displayInfo, activatedScreen, activatedLocation, expectedResult) };
+            yield return new object[] { new TestCase(testName, previewStyle, displayInfo, activatedScreen, activatedLocation, expectedResult) };
 
             // rounding error check - single screen with 33% scaling,
             // no borders, check to make sure form scales to exactly
@@ -292,13 +299,15 @@ public static class LayoutHelperTests
             // |       0        |
             // |                |
             // +----------------+
+            testName = "Test 3 - Rounding Error Check";
             previewStyle = new PreviewStyle(
                 canvasSize: new(
                     width: 300,
                     height: 200
                 ),
                 canvasStyle: BoxStyle.Empty,
-                screenStyle: BoxStyle.Empty);
+                screenStyle: BoxStyle.Empty,
+                extraColors: Array.Empty<Color>());
             displayInfo = new DisplayInfo(
                 devices: new List<DeviceInfo>
                 {
@@ -344,7 +353,7 @@ public static class LayoutHelperTests
                         ),
                     }
                 ));
-            yield return new object[] { new TestCase(previewStyle, displayInfo, activatedScreen, activatedLocation, expectedResult) };
+            yield return new object[] { new TestCase(testName, previewStyle, displayInfo, activatedScreen, activatedLocation, expectedResult) };
 
             // primary monitor not topmost / leftmost - if there are screens
             // that are further left or higher up than the primary monitor
@@ -358,6 +367,7 @@ public static class LayoutHelperTests
             //         |       1        |
             //         |                |
             //         +----------------+
+            testName = "Test 4 - Negative Coordinates";
             previewStyle = new PreviewStyle(
                 canvasSize: new(
                     width: 716,
@@ -387,8 +397,8 @@ public static class LayoutHelperTests
                     backgroundStyle: new(
                         color1: Color.FromArgb(13, 87, 210), // light blue
                         color2: Color.FromArgb(3, 68, 192) // darker blue
-                    )
-                ));
+                    )),
+                extraColors: Array.Empty<Color>());
             displayInfo = new DisplayInfo(
                 devices: new List<DeviceInfo>
                 {
@@ -445,7 +455,7 @@ public static class LayoutHelperTests
                         ),
                     }
                 ));
-            yield return new object[] { new TestCase(previewStyle, displayInfo, activatedScreen, activatedLocation, expectedResult) };
+            yield return new object[] { new TestCase(testName, previewStyle, displayInfo, activatedScreen, activatedLocation, expectedResult) };
 
             // two devices side-by-side with a single screen each
             //
@@ -455,13 +465,15 @@ public static class LayoutHelperTests
             // |       0        |  |       0        |
             // |                |  |                |
             // +----------------+  +----------------+
+            testName = "Test 5 - Two Devices Side-by-Side";
             previewStyle = new PreviewStyle(
                 canvasSize: new(
                     width: 1600,
                     height: 1200
                 ),
                 canvasStyle: BoxStyle.Empty,
-                screenStyle: BoxStyle.Empty);
+                screenStyle: BoxStyle.Empty,
+                extraColors: Array.Empty<Color>());
             displayInfo = new DisplayInfo(
                 devices: new List<DeviceInfo>
                 {
@@ -535,7 +547,7 @@ public static class LayoutHelperTests
                         ),
                     }
                 ));
-            yield return new object[] { new TestCase(previewStyle, displayInfo, activatedScreen, activatedLocation, expectedResult) };
+            yield return new object[] { new TestCase(testName, previewStyle, displayInfo, activatedScreen, activatedLocation, expectedResult) };
 
             // TODO: add a test to make sure the form is nudged into the bounds
             // of the screen if it's activated near an edge or corner
@@ -611,8 +623,8 @@ public static class LayoutHelperTests
                     backgroundStyle: new(
                         color1: Color.FromArgb(13, 87, 210), // light blue
                         color2: Color.FromArgb(3, 68, 192) // darker blue
-                    )
-                ));
+                    )),
+                extraColors: Array.Empty<Color>());
             var displayInfo = new DisplayInfo(
                 devices: new List<DeviceInfo>
                 {
@@ -646,7 +658,7 @@ public static class LayoutHelperTests
             timer.Stop();
 
             // runs on my machine in about 180-200ms, so leave a bit of headroom
-            Assert.IsTrue(timer.ElapsedMilliseconds < 250);
+            Assert.IsTrue(timer.ElapsedMilliseconds < 225);
         }
     }
 }

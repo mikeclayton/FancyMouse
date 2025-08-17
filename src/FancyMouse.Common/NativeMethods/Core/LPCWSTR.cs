@@ -2,7 +2,7 @@
 
 namespace FancyMouse.Common.NativeMethods;
 
-internal static partial class Core
+public static partial class Core
 {
     /// <summary>
     /// A pointer to a constant null-terminated string of 16-bit Unicode characters.For more information, see Character Sets Used By Fonts.
@@ -34,7 +34,7 @@ internal static partial class Core
 
         public static explicit operator LPCWSTR(IntPtr value) => new(value);
 
-        public static implicit operator string?(LPCWSTR value) => Marshal.PtrToStringUni(value.Value);
+        public static implicit operator string?(LPCWSTR value) => Marshal.PtrToStringAuto(value.Value);
 
         public static explicit operator LPCWSTR(string value) => new(value);
 

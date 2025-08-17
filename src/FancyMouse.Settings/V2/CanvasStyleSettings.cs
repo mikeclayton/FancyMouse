@@ -6,7 +6,7 @@ namespace FancyMouse.Settings.V2;
 /// Doesn't have a MarginStyle setting like the BoxStyle class does - we don't
 /// support configuring this in app settings.
 /// </remarks>
-internal sealed class CanvasStyleSettings
+public sealed class CanvasStyleSettings
 {
     public CanvasStyleSettings(
         BorderStyleSettings? borderStyle,

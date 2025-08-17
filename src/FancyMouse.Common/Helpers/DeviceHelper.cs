@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using FancyMouse.Common.Models.Display;
-using FancyMouse.Common.Models.Drawing;
+﻿using FancyMouse.Models.Display;
+using FancyMouse.Models.Drawing;
 
 namespace FancyMouse.Common.Helpers;
 
@@ -25,14 +20,12 @@ public static class DeviceHelper
             devices: devices);
     }
 
-    public static ScreenInfo GetActivatedScreen(DisplayInfo displayInfo, PointInfo activatedLocation)
+    public static ScreenInfo GetActivatedScreen(DeviceInfo deviceInfo, PointInfo activatedLocation)
     {
-        ArgumentNullException.ThrowIfNull(displayInfo);
+        ArgumentNullException.ThrowIfNull(deviceInfo);
         ArgumentNullException.ThrowIfNull(activatedLocation);
 
-        var activatedScreen = displayInfo.Devices
-            .Single(device => device.Localhost)
-            .Screens
+        var activatedScreen = deviceInfo.Screens
             .Single(screen => screen.DisplayArea.Contains(activatedLocation));
 
         return activatedScreen;
