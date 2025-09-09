@@ -14,6 +14,7 @@ using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media.Imaging;
+using NLog;
 using Windows.Graphics;
 using Windows.System;
 
@@ -185,7 +186,7 @@ public sealed partial class PreviewWindow : Window
             '\n',
             "Reporting mouse event args",
             $"\tleft button = {pointerPoint.Properties.IsLeftButtonPressed}",
-            $"\right button = {pointerPoint.Properties.IsRightButtonPressed}",
+            $"\tright button = {pointerPoint.Properties.IsRightButtonPressed}",
             $"\tlocation = {pointerPoint.Position}"));
 
         if (pointerPoint.Properties.IsLeftButtonPressed)
@@ -248,71 +249,80 @@ public sealed partial class PreviewWindow : Window
     public async Task ShowPreview()
     {
         var logger = this.Logger;
+        logger.Info($"entering {nameof(PreviewWindow.ShowPreview)}");
 
-        logger.Info(string.Join(
-            '\n',
-            "-----------",
-            nameof(PreviewWindow.ShowPreview),
-            "-----------"));
+        await Task.Delay(25);
 
-        // hide the form while we redraw it...
-        await this.HideWindowAsync()
-            .ConfigureAwait(false);
+        try
+        {
+            // hide the form while we redraw it...
+            await this.HideWindowAsync()
+                .ConfigureAwait(false);
 
-        var stopwatch = Stopwatch.StartNew();
+            var stopwatch = Stopwatch.StartNew();
 
-        // capture this first so we get an accurate mouse location
-        // (in case the user moves it a few pixels while the form is rendered)
-        var activatedLocation = MouseHelper.GetCursorPosition();
+            // capture this first so we get an accurate mouse location
+            // (in case the user moves it a few pixels while the form is rendered)
+            var activatedLocation = MouseHelper.GetCursorPosition();
 
-        var appSettings = ConfigHelper.AppSettings ?? throw new InvalidOperationException();
+            var appSettings = ConfigHelper.AppSettings ?? throw new InvalidOperationException();
 
-        /* local device */
-        var displayInfo = new DisplayInfo(
-            new List<DeviceInfo>
-            {
-                new(
-                    hostname: Environment.MachineName,
-                    localhost: true,
-                    screens: ScreenHelper.GetAllScreens()),
-            });
+            // local device
+            var displayInfo = new DisplayInfo(
+                new List<DeviceInfo>
+                {
+                    new(
+                        hostname: Environment.MachineName,
+                        localhost: true,
+                        screens: ScreenHelper.GetAllScreens()),
+                });
 
-        var activatedScreen = DeviceHelper.GetActivatedScreen(displayInfo.Devices[0], activatedLocation);
+            var activatedScreen = DeviceHelper.GetActivatedScreen(displayInfo.Devices[0], activatedLocation);
 
-        var formLayout = LayoutHelper.GetFormLayout(
-            previewStyle: appSettings.PreviewStyle,
-            displayInfo,
-            activatedScreen: activatedScreen,
-            activatedLocation: activatedLocation);
+            var formLayout = LayoutHelper.GetFormLayout(
+                previewStyle: appSettings.PreviewStyle,
+                displayInfo,
+                activatedScreen: activatedScreen,
+                activatedLocation: activatedLocation);
 
-        // remember this so we can map the mouse clicks back to
-        // the appropriate device and screen location
-        this.FormLayout = formLayout;
+            // remember this so we can map the mouse clicks back to
+            // the appropriate device and screen location
+            this.FormLayout = formLayout;
 
-        await this.PositionWindowAsync(formLayout.FormBounds)
-            .ConfigureAwait(false);
+            await this.PositionWindowAsync(formLayout.FormBounds)
+                .ConfigureAwait(false);
 
-        var imageCopyServices = displayInfo.Devices
-            .Select(
-                deviceInfo => (IImageRegionCopyService)new DesktopImageRegionCopyService())
-            .ToList();
+            var imageCopyServices = displayInfo.Devices
+                .Select(
+                    deviceInfo => (IImageRegionCopyService)new DesktopImageRegionCopyService())
+                .ToList();
 
-        await DrawingHelper.RenderPreviewAsync(
-                this.FormLayout.CanvasLayout,
-                activatedScreen,
-                imageCopyServices,
-                this.OnPreviewImageCreatedAsync,
-                this.OnPreviewImageUpdatedAsync)
-            .ConfigureAwait(false);
+            var previewImage = await DrawingHelper.RenderPreviewAsync(
+                    this.FormLayout.CanvasLayout,
+                    activatedScreen,
+                    imageCopyServices,
+                    this.OnPreviewImageCreatedAsync,
+                    this.OnPreviewImageUpdatedAsync)
+                .ConfigureAwait(false);
 
-        stopwatch.Stop();
+            stopwatch.Stop();
 
-        await this.ShowWindowAsync()
-            .ConfigureAwait(false);
+            await this.ShowWindowAsync()
+                .ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            logger.Error(ex);
+            LogManager.Flush();
+            throw;
+        }
+
+        logger.Info($"leaving {nameof(PreviewWindow.ShowPreview)}");
     }
 
     private void ClearPreview()
     {
+        /*
         if (this.PreviewImage.Source is null)
         {
             return;
@@ -324,6 +334,7 @@ public sealed partial class PreviewWindow : Window
         // all the disposed images can pile up without being GC'ed
         GC.Collect();
         GC.WaitForPendingFinalizers();
+        */
     }
 
     /// <summary>
@@ -337,13 +348,13 @@ public sealed partial class PreviewWindow : Window
         return scalingRatio;
     }
 
-    private async Task InvokeOnUiThreadAsync(Action action)
+    private static async Task InvokeOnUiThreadAsync(Window window, Action action)
     {
         // this might be called from a task that we're awaiting
         // so we need to make sure we use the UI thread
         var tcs = new TaskCompletionSource<bool>();
 
-        this.DispatcherQueue.TryEnqueue(
+        var result = window.DispatcherQueue.TryEnqueue(
             () =>
             {
                 try
@@ -357,8 +368,46 @@ public sealed partial class PreviewWindow : Window
                 }
             });
 
+        if (!result)
+        {
+            tcs.SetException(
+                new InvalidOperationException("Failed to enqueue to DispatcherQueue"));
+            return;
+        }
+
         // wait for the task to complete
-        await tcs.Task.ConfigureAwait(false);
+        await tcs.Task;
+    }
+
+    private static async Task InvokeOnUiThreadAsync(DependencyObject uiObject, Action action)
+    {
+        // this might be called from a task that we're awaiting
+        // so we need to make sure we use the UI thread
+        var tcs = new TaskCompletionSource<bool>();
+
+        var result = uiObject.DispatcherQueue.TryEnqueue(
+            () =>
+            {
+                try
+                {
+                    action();
+                    tcs.SetResult(true);
+                }
+                catch (Exception ex)
+                {
+                    tcs.SetException(ex);
+                }
+            });
+
+        if (!result)
+        {
+            tcs.SetException(
+                new InvalidOperationException("Failed to enqueue to DispatcherQueue"));
+            return;
+        }
+
+        // wait for the task to complete
+        await tcs.Task;
     }
 
     private void HideWindow()
@@ -369,7 +418,8 @@ public sealed partial class PreviewWindow : Window
 
     private async Task HideWindowAsync()
     {
-        await this.InvokeOnUiThreadAsync(
+        await PreviewWindow.InvokeOnUiThreadAsync(
+            this,
             () =>
             {
                 this.HideWindow();
@@ -378,7 +428,8 @@ public sealed partial class PreviewWindow : Window
 
     private async Task ShowWindowAsync()
     {
-        await this.InvokeOnUiThreadAsync(
+        await PreviewWindow.InvokeOnUiThreadAsync(
+            this,
             () =>
             {
                 var presenter = this.AppWindow.Presenter as OverlappedPresenter
@@ -405,7 +456,8 @@ public sealed partial class PreviewWindow : Window
     /// </summary>
     private async Task PositionWindowAsync(RectangleInfo bounds)
     {
-        await this.InvokeOnUiThreadAsync(
+        await PreviewWindow.InvokeOnUiThreadAsync(
+            this,
             () =>
             {
                 // note - do this with two calls to MoveAndResize rather than one as there appears to
@@ -430,7 +482,9 @@ public sealed partial class PreviewWindow : Window
 
     private async Task OnPreviewImageCreatedAsync(Bitmap preview)
     {
-        await this.InvokeOnUiThreadAsync(
+        await Task.Delay(25);
+        await PreviewWindow.InvokeOnUiThreadAsync(
+            this.PreviewImage,
             () =>
             {
                 this.ClearPreview();
@@ -440,25 +494,25 @@ public sealed partial class PreviewWindow : Window
 
                 this.PreviewImage.Width = preview.Width * highDpiScalingRatio;
                 this.PreviewImage.Height = preview.Height * highDpiScalingRatio;
-            }).ConfigureAwait(false);
+            });
     }
 
     private async Task OnPreviewImageUpdatedAsync(Bitmap preview)
     {
-        await this.InvokeOnUiThreadAsync(
+        await Task.Delay(25);
+        await PreviewWindow.InvokeOnUiThreadAsync(
+            this.PreviewImage,
             () =>
             {
                 this.ClearPreview();
 
                 var bitmapImage = new BitmapImage();
-                using (var stream = new MemoryStream())
-                {
-                    preview.Save(stream, ImageFormat.Png);
-                    stream.Position = 0;
-                    bitmapImage.SetSource(stream.AsRandomAccessStream());
-                }
+                using var stream = new MemoryStream();
+                preview.Save(stream, ImageFormat.Png);
+                stream.Position = 0;
+                bitmapImage.SetSource(stream.AsRandomAccessStream());
 
                 this.PreviewImage.Source = bitmapImage;
-            }).ConfigureAwait(false);
+            });
     }
 }

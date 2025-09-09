@@ -39,6 +39,8 @@ public partial class App : Application
     /// <param name="args">Details about the launch request and process.</param>
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
+        base.OnLaunched(args);
+
         var logger = LogManager.GetCurrentClassLogger();
         logger.Info("app launched");
 
@@ -85,11 +87,8 @@ public partial class App : Application
             logger.Info("started hotkey handler");
 
             // create the system tray icon
-            var trayIcon = new TrayIcon();
-            trayIcon.ExitCommandClicked += (sender, e) =>
-            {
-                App.Current.Exit();
-            };
+            var trayIcon = new TrayIcon(logger);
+            trayIcon.ExitCommandClicked += App.TrayIcon_ExitCommandClicked;
             trayIcon.Initialize();
             this.TrayIcon = trayIcon;
         }
@@ -99,5 +98,23 @@ public partial class App : Application
             LogManager.Flush();
             throw;
         }
+    }
+
+    private static void TrayIcon_ExitCommandClicked(object? sender, EventArgs e)
+    {
+        var logger = LogManager.GetCurrentClassLogger();
+        logger.Info("entering ExitCommandClicked");
+        try
+        {
+            App.Current.Exit();
+        }
+        catch (Exception ex)
+        {
+            logger.Error(ex);
+            LogManager.Flush();
+            throw;
+        }
+
+        logger.Info("leaving ExitCommandClicked");
     }
 }

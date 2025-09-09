@@ -46,8 +46,9 @@ public static class DrawingHelper
         // initialize the preview image
         var previewBounds = canvasLayout.CanvasBounds.OuterBounds.ToRectangle();
         var previewImage = new Bitmap(previewBounds.Width, previewBounds.Height, PixelFormat.Format32bppPArgb);
-        var previewGraphics = Graphics.FromImage(previewImage);
-        if (previewImageCreatedCallback != null)
+        using var previewGraphics = Graphics.FromImage(previewImage);
+
+        if (previewImageCreatedCallback is not null)
         {
             await previewImageCreatedCallback(previewImage);
         }
@@ -84,7 +85,7 @@ public static class DrawingHelper
                 previewGraphics, screenDrawingOp.ScreenLayout.ScreenBounds, screenDrawingOp.ScreenLayout.ScreenStyle);
         }
 
-        var refreshRequired = false;
+        var refreshRequired = true;
         var placeholdersDrawn = false;
         for (var i = 0; i < screenDrawingOps.Count; i++)
         {
@@ -113,7 +114,7 @@ public static class DrawingHelper
                     placeholdersDrawn = true;
                 }
 
-                if (previewImageUpdatedCallback != null)
+                if (previewImageUpdatedCallback is not null)
                 {
                     await previewImageUpdatedCallback(previewImage);
                 }
@@ -122,9 +123,9 @@ public static class DrawingHelper
             }
         }
 
-        if (refreshRequired)
+        if (refreshRequired && (previewImageUpdatedCallback is not null))
         {
-            previewImageUpdatedCallback?.Invoke(previewImage);
+            await previewImageUpdatedCallback(previewImage);
         }
 
         stopwatch.Stop();
