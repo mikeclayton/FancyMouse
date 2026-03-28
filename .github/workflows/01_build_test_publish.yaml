@@ -149,6 +149,7 @@ jobs:
 
       # where have the test result images gone?
       - name: dotnet publish (winui3)
+        if: always()
         working-directory: ${{ env.BUILD_PATH }}
         run: |
           dir -recursive
