@@ -148,11 +148,11 @@ jobs:
           path: ${{ env.PUBLISH_PATH }}/FancyMouse.WinUI3
 
       # where have the test result images gone?
-      - name: dotnet publish (winui3)
+      - name: directory listing
         if: always()
         working-directory: ${{ env.BUILD_PATH }}
         run: |
-          dir -recursive
+          dir -recurse -filter "*_actual.png"
 
       - name: upload test images
         if: always()
