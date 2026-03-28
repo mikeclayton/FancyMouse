@@ -54,7 +54,7 @@ public static class MouseHelperTests
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestCases), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestCases))]
         public void RunTestCases(TestCase data)
         {
             var actual = MouseHelper.GetJumpLocation(

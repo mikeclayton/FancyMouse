@@ -554,7 +554,7 @@ public static class LayoutHelperTests
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestCases), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestCases))]
         public void RunTestCases(TestCase data)
         {
             // note - even if values are within 0.0001M of each other they could

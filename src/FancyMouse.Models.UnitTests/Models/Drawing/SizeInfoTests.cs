@@ -45,7 +45,7 @@ public static class SizeInfoTests
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestCases), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestCases))]
         public void RunTestCases(TestCase data)
         {
             var actual = data.Source.ScaleToFit(data.Bounds, out var scalingRatio);
@@ -93,7 +93,7 @@ public static class SizeInfoTests
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestCases), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestCases))]
         public void RunTestCases(TestCase data)
         {
             var actual = data.Obj.ScaleToFitRatio(data.Bounds);
