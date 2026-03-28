@@ -147,6 +147,12 @@ jobs:
           name: FancyMouse.WinUI3-v0.0.0-preview
           path: ${{ env.PUBLISH_PATH }}/FancyMouse.WinUI3
 
+      # where have the test result images gone?
+      - name: dotnet publish (winui3)
+        working-directory: ${{ env.BUILD_PATH }}
+        run: |
+          dir -recursive
+
       - name: upload test images
         if: always()
         uses: actions/upload-artifact@v4
