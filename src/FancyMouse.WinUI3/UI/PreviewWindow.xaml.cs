@@ -4,10 +4,10 @@ using System.Drawing.Imaging;
 
 using FancyMouse.Common.Helpers;
 using FancyMouse.Common.Imaging;
-using FancyMouse.Common.NativeMethods;
 using FancyMouse.Models.Display;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.ViewModel;
+using FancyMouse.Win32.Interop;
 using FancyMouse.WinUI3.Internal.Helpers;
 using Microsoft.UI.Input;
 using Microsoft.UI.Windowing;
@@ -17,8 +17,8 @@ using Microsoft.UI.Xaml.Media.Imaging;
 using Windows.Graphics;
 using Windows.System;
 
-using static FancyMouse.Common.NativeMethods.Core;
-using static FancyMouse.Common.NativeMethods.User32;
+using static FancyMouse.Win32.NativeMethods.Core;
+using static FancyMouse.Win32.NativeMethods.User32;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -58,15 +58,15 @@ public sealed partial class PreviewWindow : Window
         {
             // set the window to be borderless, with no title bar, and hide all of the max / min / close buttons
             var hWnd = (HWND)WinRT.Interop.WindowNative.GetWindowHandle(this);
-            var style = (WINDOW_STYLE)Win32Helper.User32.GetWindowLong(hWnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE).Value;
+            var style = (WINDOW_STYLE)User32.GetWindowLong(hWnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE).Value;
             style &= ~WINDOW_STYLE.WS_OVERLAPPEDWINDOW;
             style |= WINDOW_STYLE.WS_POPUP;
-            Win32Helper.User32.SetWindowLong(hWnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE, (int)style);
+            User32.SetWindowLong(hWnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE, (int)style);
 
-            var exStyle = (WINDOW_EX_STYLE)Win32Helper.User32.GetWindowLong(hWnd, WINDOW_LONG_PTR_INDEX.GWL_EXSTYLE).Value;
+            var exStyle = (WINDOW_EX_STYLE)User32.GetWindowLong(hWnd, WINDOW_LONG_PTR_INDEX.GWL_EXSTYLE).Value;
             exStyle |= WINDOW_EX_STYLE.WS_EX_TOOLWINDOW; // hide the taskbar icon
             exStyle |= WINDOW_EX_STYLE.WS_EX_TOPMOST;    // make topmost
-            Win32Helper.User32.SetWindowLong(hWnd, WINDOW_LONG_PTR_INDEX.GWL_EXSTYLE, (int)exStyle);
+            User32.SetWindowLong(hWnd, WINDOW_LONG_PTR_INDEX.GWL_EXSTYLE, (int)exStyle);
         }
 
         this.Activated += this.PreviewWindow_Activated;
@@ -332,8 +332,8 @@ public sealed partial class PreviewWindow : Window
     private double GetHighDpiScalingRatio()
     {
         var hWnd = (HWND)WinRT.Interop.WindowNative.GetWindowHandle(this);
-        var windowDpi = Win32Helper.User32.GetDpiForWindow(hWnd).Value;
-        var scalingRatio = (double)User32.USER_DEFAULT_SCREEN_DPI / windowDpi;
+        var windowDpi = User32.GetDpiForWindow(hWnd).Value;
+        var scalingRatio = (double)FancyMouse.Win32.NativeMethods.User32.USER_DEFAULT_SCREEN_DPI / windowDpi;
         return scalingRatio;
     }
 

@@ -1,11 +1,10 @@
 ﻿using System.ComponentModel;
 
-using FancyMouse.Common.NativeMethods;
 using FancyMouse.Models.Display;
 using FancyMouse.Models.Drawing;
-
-using static FancyMouse.Common.NativeMethods.Core;
-using static FancyMouse.Common.NativeMethods.User32;
+using FancyMouse.Win32.Interop;
+using static FancyMouse.Win32.NativeMethods.Core;
+using static FancyMouse.Win32.NativeMethods.User32;
 
 namespace FancyMouse.Common.Helpers;
 
@@ -28,7 +27,7 @@ public static class ScreenHelper
     {
         // enumerate the monitors attached to the system
         var hMonitors = new List<HMONITOR>();
-        var callback = new User32.MONITORENUMPROC(
+        var callback = new MONITORENUMPROC(
             (hMonitor, hdcMonitor, lprcMonitor, dwData) =>
             {
                 hMonitors.Add(hMonitor);
@@ -47,12 +46,12 @@ public static class ScreenHelper
         {
             var monitorInfoPtr = new LPMONITORINFO(
                 new MONITORINFO((DWORD)MONITORINFO.Size, RECT.Empty, RECT.Empty, 0));
-            result = User32.GetMonitorInfoW(hMonitor, monitorInfoPtr);
+            result = User32.GetMonitorInfo(hMonitor, monitorInfoPtr);
             if (!result)
             {
                 throw new Win32Exception(
                     result.Value,
-                    $"{nameof(User32.GetMonitorInfoW)} failed with return code {result.Value}");
+                    $"{nameof(User32.GetMonitorInfo)} failed with return code {result.Value}");
             }
 
             var monitorInfo = monitorInfoPtr.ToStructure();
@@ -60,7 +59,7 @@ public static class ScreenHelper
 
             yield return new ScreenInfo(
                 handle: hMonitor,
-                primary: monitorInfo.dwFlags.HasFlag(User32.MONITOR_INFO_FLAGS.MONITORINFOF_PRIMARY),
+                primary: monitorInfo.dwFlags.HasFlag(MONITOR_INFO_FLAGS.MONITORINFOF_PRIMARY),
                 displayArea: new RectangleInfo(
                     monitorInfo.rcMonitor.left,
                     monitorInfo.rcMonitor.top,
@@ -81,7 +80,7 @@ public static class ScreenHelper
         // get the monitor handle from the point
         var hMonitor = User32.MonitorFromPoint(
             new((int)pt.X, (int)pt.Y),
-            User32.MONITOR_FROM_FLAGS.MONITOR_DEFAULTTONEAREST);
+            MONITOR_FROM_FLAGS.MONITOR_DEFAULTTONEAREST);
         if (hMonitor.IsNull)
         {
             throw new InvalidOperationException($"no monitor found for point {pt}");

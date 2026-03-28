@@ -1,11 +1,10 @@
 ﻿using System.ComponentModel;
 using System.Runtime.InteropServices;
 
-using FancyMouse.Common.NativeMethods;
 using FancyMouse.Models.Drawing;
-
-using static FancyMouse.Common.NativeMethods.Core;
-using static FancyMouse.Common.NativeMethods.User32;
+using FancyMouse.Win32.Interop;
+using static FancyMouse.Win32.NativeMethods.Core;
+using static FancyMouse.Win32.NativeMethods.User32;
 
 namespace FancyMouse.Common.Helpers;
 
@@ -32,7 +31,7 @@ public static class MouseHelper
     /// </summary>
     public static PointInfo GetCursorPosition()
     {
-        var point = Win32Helper.User32.GetCursorPos();
+        var point = User32.GetCursorPos();
         return new PointInfo(point.x, point.y);
     }
 
@@ -94,7 +93,7 @@ public static class MouseHelper
     /// </remarks>
     private static void SimulateMouseMovementEvent(PointInfo location)
     {
-        var inputs = new User32.INPUT[]
+        var inputs = new INPUT[]
         {
             new(
                 type: INPUT_TYPE.INPUT_MOUSE,

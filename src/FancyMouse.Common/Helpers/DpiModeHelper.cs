@@ -1,6 +1,5 @@
-﻿using FancyMouse.Common.NativeMethods;
-
-using static FancyMouse.Common.NativeMethods.User32;
+﻿using FancyMouse.Win32.Interop;
+using static FancyMouse.Win32.NativeMethods.User32;
 
 namespace FancyMouse.Common.Helpers;
 

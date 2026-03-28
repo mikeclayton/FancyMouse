@@ -1,6 +1,8 @@
 ﻿using FancyMouse.Common.Helpers;
-using static FancyMouse.Common.NativeMethods.Core;
-using static FancyMouse.Common.NativeMethods.User32;
+using FancyMouse.Win32.Interop;
+
+using static FancyMouse.Win32.NativeMethods.Core;
+using static FancyMouse.Win32.NativeMethods.User32;
 
 namespace FancyMouse.HotKeys;
 
@@ -25,7 +27,7 @@ public sealed class HotKeyManager
             {
                 if (this.Hwnd.IsNull)
                 {
-                    (this.WndClass, this.Hwnd) = Win32Helper.User32.CreateMessageOnlyWindow(
+                    (this.WndClass, this.Hwnd) = Win32Helper.CreateMessageOnlyWindow(
                         "FancyMouseMessageClass", "FancyMouseMessageWindow", this.WndProc);
                 }
 
@@ -74,7 +76,7 @@ public sealed class HotKeyManager
         // do we need to unregister the existing hotkey first?
         if ((this.HotKey is not null) && hwnd.HasValue)
         {
-            Win32Helper.User32.PostMessage(
+            User32.PostMessage(
                 hwnd.Value, HotKeyHelper.WM_PRIV_UNREGISTER_HOTKEY, WPARAM.Null, LPARAM.Null);
             this.MessageSemaphore.Wait();
         }
@@ -84,7 +86,7 @@ public sealed class HotKeyManager
         // register the new hotkey
         if ((this.HotKey is not null) && hwnd.HasValue)
         {
-            Win32Helper.User32.PostMessage(hwnd.Value, HotKeyHelper.WM_PRIV_REGISTER_HOTKEY, WPARAM.Null, LPARAM.Null);
+            User32.PostMessage(hwnd.Value, HotKeyHelper.WM_PRIV_REGISTER_HOTKEY, WPARAM.Null, LPARAM.Null);
             this.MessageSemaphore.Wait();
         }
     }
@@ -107,7 +109,7 @@ public sealed class HotKeyManager
 
             case HotKeyHelper.WM_PRIV_REGISTER_HOTKEY:
             {
-                Win32Helper.User32.RegisterHotKey(
+                User32.RegisterHotKey(
                     hWnd: this.MessageLoop.Hwnd ?? throw new InvalidOperationException(),
                     id: 1,
                     fsModifiers: (HOT_KEY_MODIFIERS)(this.HotKey ?? throw new InvalidOperationException()).Modifiers,
@@ -118,7 +120,7 @@ public sealed class HotKeyManager
 
             case HotKeyHelper.WM_PRIV_UNREGISTER_HOTKEY:
             {
-                Win32Helper.User32.UnregisterHotKey(
+                User32.UnregisterHotKey(
                     hWnd: this.MessageLoop.Hwnd ?? throw new InvalidOperationException(),
                     id: 1);
                 this.MessageSemaphore.Release();
@@ -126,7 +128,7 @@ public sealed class HotKeyManager
             }
         }
 
-        var result = Win32Helper.User32.DefWindowProc(hWnd, msg, wParam, lParam);
+        var result = User32.DefWindowProc(hWnd, msg, wParam, lParam);
         return result;
     }
 

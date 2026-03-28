@@ -1,0 +1,39 @@
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Runtime.InteropServices;
+using static FancyMouse.Win32.NativeMethods.Core;
+
+namespace FancyMouse.Win32.NativeMethods;
+
+public static partial class User32
+{
+    /// <summary>
+    /// Contains information about a simulated keyboard event.
+    /// </summary>
+    /// <remarks>
+    /// See https://learn.microsoft.com/en-us/windows/win32/api/winuser/ns-winuser-keybdinput
+    /// </remarks>
+    [SuppressMessage("SA1307", "SA1307:AccessibleFieldsMustBeginWithUpperCaseLetter", Justification = "Parameter name matches Win32 api")]
+    [StructLayout(LayoutKind.Sequential)]
+    public readonly struct KEYBDINPUT
+    {
+        public readonly WORD wVk;
+        public readonly WORD wScan;
+        public readonly DWORD dwFlags;
+        public readonly DWORD time;
+        public readonly ULONG_PTR dwExtraInfo;
+
+        public KEYBDINPUT(
+            WORD wVk,
+            WORD wScan,
+            DWORD dwFlags,
+            DWORD time,
+            ULONG_PTR dwExtraInfo)
+        {
+            this.wVk = wVk;
+            this.wScan = wScan;
+            this.dwFlags = dwFlags;
+            this.time = time;
+            this.dwExtraInfo = dwExtraInfo;
+        }
+    }
+}

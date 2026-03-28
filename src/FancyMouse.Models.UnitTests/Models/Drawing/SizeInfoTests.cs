@@ -1,6 +1,6 @@
 ﻿using FancyMouse.Models.Drawing;
 
-namespace FancyMouse.Models.UnitTests.Drawing;
+namespace FancyMouse.Models.UnitTests.Models.Drawing;
 
 [TestClass]
 public static class SizeInfoTests

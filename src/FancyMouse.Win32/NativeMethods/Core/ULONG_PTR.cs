@@ -1,0 +1,40 @@
+﻿namespace FancyMouse.Win32.NativeMethods;
+
+public static partial class Core
+{
+    /// <summary>
+    /// An unsigned LONG_PTR.
+    /// This type is declared in BaseTsd.h as follows:
+    /// C++
+    /// #if defined(_WIN64)
+    ///  typedef unsigned __int64 ULONG_PTR;
+    /// #else
+    ///  typedef unsigned long ULONG_PTR;
+    /// #endif
+    /// </summary>
+    /// <remarks>
+    /// See https://learn.microsoft.com/en-us/windows/win32/winprog/windows-data-types
+    /// </remarks>
+    public readonly struct ULONG_PTR
+    {
+        public static readonly ULONG_PTR Null = new(UIntPtr.Zero);
+
+#pragma warning disable CA1051 // Do not declare visible instance fields
+        public readonly UIntPtr Value;
+#pragma warning restore CA1051 // Do not declare visible instance fields
+
+        public ULONG_PTR(UIntPtr value)
+        {
+            this.Value = value;
+        }
+
+        public static implicit operator UIntPtr(ULONG_PTR value) => value.Value;
+
+        public static explicit operator ULONG_PTR(UIntPtr value) => new(value);
+
+        public override string ToString()
+        {
+            return $"{this.GetType().Name}({this.Value})";
+        }
+    }
+}

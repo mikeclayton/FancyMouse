@@ -1,11 +1,6 @@
-﻿using System.ComponentModel;
-using System.Diagnostics.CodeAnalysis;
-using System.Runtime.InteropServices;
+﻿using System.Diagnostics.CodeAnalysis;
 
-using FancyMouse.Common.Helpers;
-
-using static FancyMouse.Common.NativeMethods.Core;
-using static FancyMouse.Common.NativeMethods.User32;
+using static FancyMouse.Win32.NativeMethods.User32;
 
 namespace FancyMouse.HotKeys;
 

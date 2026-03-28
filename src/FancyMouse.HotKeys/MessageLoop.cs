@@ -1,10 +1,7 @@
-﻿using System.ComponentModel;
-using System.Runtime.InteropServices;
+﻿using FancyMouse.Win32.Interop;
 
-using FancyMouse.Common.Helpers;
-
-using static FancyMouse.Common.NativeMethods.Core;
-using static FancyMouse.Common.NativeMethods.User32;
+using static FancyMouse.Win32.NativeMethods.Core;
+using static FancyMouse.Win32.NativeMethods.User32;
 
 namespace FancyMouse.HotKeys;
 
@@ -86,7 +83,7 @@ internal sealed class MessageLoop
         // start a new internal message loop thread
         this.MessageLoopThread = new Thread(() =>
         {
-            this.NativeThreadId = Win32Helper.Kernel32.GetCurrentThreadId();
+            this.NativeThreadId = Kernel32.GetCurrentThreadId();
             this.Hwnd = this.HwndCallback.Invoke();
             this.RunMessageLoop();
         })
@@ -122,7 +119,7 @@ internal sealed class MessageLoop
             }
 
             var hwnd = this.Hwnd ?? throw new InvalidOperationException();
-            var result = Win32Helper.User32.GetMessage(
+            var result = User32.GetMessage(
                 lpMsg: lpMsg,
                 hWnd: hwnd,
                 wMsgFilterMin: 0,
@@ -139,8 +136,8 @@ internal sealed class MessageLoop
                 break;
             }
 
-            _ = Win32Helper.User32.TranslateMessage(msg);
-            _ = Win32Helper.User32.DispatchMessage(msg);
+            _ = User32.TranslateMessage(msg);
+            _ = User32.DispatchMessage(msg);
         }
 
         // clean up
@@ -167,7 +164,7 @@ internal sealed class MessageLoop
         // and exit the loop...
         // (see https://devblogs.microsoft.com/oldnewthing/20050405-46/?p=35973)
         var hwnd = this.Hwnd ?? throw new InvalidOperationException();
-        Win32Helper.User32.PostMessage(
+        User32.PostMessage(
             hWnd: hwnd,
             msg: MESSAGE_TYPE.WM_NULL,
             wParam: WPARAM.Null,

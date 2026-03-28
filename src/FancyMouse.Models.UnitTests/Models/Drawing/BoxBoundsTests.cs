@@ -4,7 +4,7 @@ using System.Text.Json;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Styles;
 
-namespace FancyMouse.Models.UnitTests.Drawing;
+namespace FancyMouse.Models.UnitTests.Models.Drawing;
 
 [TestClass]
 public static class BoxBoundsTests

@@ -5,8 +5,7 @@ using System.Text.Json;
 using FancyMouse.HotKeys;
 using FancyMouse.Models.Styles;
 using FancyMouse.Settings;
-using FancyMouse.UnitTests.Settings.TestUtils;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using FancyMouse.UnitTests.TestUtils;
 
 namespace FancyMouse.UnitTests.Settings;
 
@@ -315,7 +314,7 @@ public sealed class AppSettingsReaderTests
             var averageMs = (decimal)times.Sum() / times.Count / ticksPerMs;
             Console.WriteLine($"{averageMs} ms");
 
-            Assert.IsTrue(averageMs < 1.5M);
+            Assert.IsLessThan(1.5M, averageMs);
         }
     }
 }

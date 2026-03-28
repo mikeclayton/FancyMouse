@@ -658,7 +658,7 @@ public static class LayoutHelperTests
             timer.Stop();
 
             // runs on my machine in about 180-200ms, so leave a bit of headroom
-            Assert.IsTrue(timer.ElapsedMilliseconds < 225);
+            Assert.IsLessThan(225, timer.ElapsedMilliseconds);
         }
     }
 }
