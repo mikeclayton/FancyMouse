@@ -27,7 +27,7 @@ jobs:
       BUILD_PATH:       ${{ github.workspace }}/src
       PUBLISH_PATH:     ${{ github.workspace }}/.build/app/net9.0-windows
 
-      TARGET_FRAMEWORK: net9.0-windows
+      TARGET_FRAMEWORK: net10.0-windows
       CONFIG_NAME:      Release
       PLATFORM_NAME:    x64
       RUNTIME_NAME:     win-x64
