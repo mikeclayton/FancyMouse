@@ -1,8 +1,8 @@
 name: "01 - Build, Test, Publish"
 
 on:
-  push:
-    # run on all commits
+  #push:
+  #  # run on all commits
   pull_request:
     # run on all pull requests
   workflow_dispatch:
