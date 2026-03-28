@@ -1,7 +1,7 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace FancyMouse.UnitTests.Settings.TestUtils;
+namespace FancyMouse.UnitTests.TestUtils;
 
 internal static class SerializationUtils
 {

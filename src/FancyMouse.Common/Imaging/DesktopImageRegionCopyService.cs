@@ -1,10 +1,11 @@
 ﻿using System.Diagnostics;
 using System.Drawing;
 
-using FancyMouse.Common.NativeMethods;
 using FancyMouse.Models.Drawing;
+using FancyMouse.Win32.Interop;
 
-using static FancyMouse.Common.NativeMethods.Core;
+using static FancyMouse.Win32.NativeMethods.Core;
+using static FancyMouse.Win32.NativeMethods.Gdi32;
 
 namespace FancyMouse.Common.Imaging;
 
@@ -26,7 +27,7 @@ public sealed class DesktopImageRegionCopyService : IImageRegionCopyService
         var stopwatch = Stopwatch.StartNew();
         var (desktopHwnd, desktopHdc) = DesktopImageRegionCopyService.GetDesktopDeviceContext();
         var previewHdc = DesktopImageRegionCopyService.GetGraphicsDeviceContext(
-            targetGraphics, Gdi32.STRETCH_BLT_MODE.STRETCH_HALFTONE);
+            targetGraphics, STRETCH_BLT_MODE.STRETCH_HALFTONE);
         stopwatch.Stop();
 
         var source = sourceBounds.ToRectangle();
@@ -42,7 +43,7 @@ public sealed class DesktopImageRegionCopyService : IImageRegionCopyService
             source.Y,
             source.Width,
             source.Height,
-            Gdi32.ROP_CODE.SRCCOPY);
+            ROP_CODE.SRCCOPY);
         if (!result)
         {
             throw new InvalidOperationException(
@@ -90,7 +91,7 @@ public sealed class DesktopImageRegionCopyService : IImageRegionCopyService
     /// Checks if the target device context handle exists, and creates a new one from the
     /// specified Graphics object if not.
     /// </summary>
-    private static HDC GetGraphicsDeviceContext(Graphics graphics, Gdi32.STRETCH_BLT_MODE mode)
+    private static HDC GetGraphicsDeviceContext(Graphics graphics, STRETCH_BLT_MODE mode)
     {
         var graphicsHdc = (HDC)graphics.GetHdc();
 

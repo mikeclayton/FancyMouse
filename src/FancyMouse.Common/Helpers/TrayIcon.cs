@@ -2,11 +2,11 @@
 using System.Reflection;
 using System.Runtime.InteropServices;
 
-using FancyMouse.Common.NativeMethods;
+using FancyMouse.Win32.Interop;
 
-using static FancyMouse.Common.NativeMethods.Core;
-using static FancyMouse.Common.NativeMethods.Shell32;
-using static FancyMouse.Common.NativeMethods.User32;
+using static FancyMouse.Win32.NativeMethods.Core;
+using static FancyMouse.Win32.NativeMethods.Shell32;
+using static FancyMouse.Win32.NativeMethods.User32;
 
 namespace FancyMouse.Common.Helpers;
 
@@ -23,6 +23,13 @@ public sealed class TrayIcon
 
     public TrayIcon()
     {
+        // cache the window proc delegate so it doesn't get garbage-collected
+        this.WndProc = this.WindowProc;
+    }
+
+    private WNDPROC WndProc
+    {
+        get;
     }
 
     private Icon? Icon
@@ -57,10 +64,10 @@ public sealed class TrayIcon
 
     private void InitializeTrayWindow()
     {
-        var window = Win32Helper.User32.CreateMessageOnlyWindow(
+        var window = Win32Helper.CreateMessageOnlyWindow(
             className: "FancyMouseTrayIconClass",
             windowName: "FancyMouseTrayIconWindow",
-            wndProc: this.TrayIconWndProc);
+            wndProc: this.WndProc);
         this.Window = window;
     }
 
@@ -89,28 +96,18 @@ public sealed class TrayIcon
             hBalloonIcon: HICON.Null);
 
         var iconDataPtr = new PNOTIFYICONDATAW(notifyIconData);
-        var result = Shell32.Shell_NotifyIconW(NOTIFY_ICON_MESSAGE.NIM_ADD, iconDataPtr);
+        var result = Shell32.Shell_NotifyIcon(NOTIFY_ICON_MESSAGE.NIM_ADD, iconDataPtr);
         iconDataPtr.Free();
         if (!result)
         {
-            throw Win32Helper.NewWin32Exception((UINT)result.Value, nameof(Shell32.Shell_NotifyIconW));
+            throw Win32Helper.NewWin32Exception((UINT)result.Value, nameof(Shell32.Shell_NotifyIcon));
         }
     }
 
     private void InitializeTrayMenu()
     {
         var hMenu = User32.CreatePopupMenu();
-        if (hMenu.IsNull)
-        {
-            throw Win32Helper.NewWin32Exception((UINT)hMenu.Value, Marshal.GetLastPInvokeError(), nameof(User32.CreatePopupMenu));
-        }
-
-        var hResult = User32.AppendMenuW(hMenu, MENU_ITEM_FLAGS.MF_STRING, (UINT_PTR)(uint)TrayIcon.WM_TRAYICON_EXITCOMMAND, (LPCWSTR)"Exit");
-        if (!hResult)
-        {
-            throw Win32Helper.NewWin32Exception((UINT)hResult.Value, Marshal.GetLastPInvokeError(), nameof(User32.AppendMenuW));
-        }
-
+        var hResult = User32.AppendMenu(hMenu, MENU_ITEM_FLAGS.MF_STRING, (UINT_PTR)(uint)TrayIcon.WM_TRAYICON_EXITCOMMAND, (LPCWSTR)"Exit");
         this.ContextMenu = hMenu;
     }
 
@@ -124,7 +121,7 @@ public sealed class TrayIcon
         return icon;
     }
 
-    public LRESULT TrayIconWndProc(HWND hWnd, MESSAGE_TYPE msg, WPARAM wParam, LPARAM lParam)
+    public LRESULT WindowProc(HWND hWnd, MESSAGE_TYPE msg, WPARAM wParam, LPARAM lParam)
     {
         switch (msg)
         {
@@ -188,7 +185,7 @@ public sealed class TrayIcon
                 break;
         }
 
-        return Win32Helper.User32.DefWindowProc(hWnd, msg, wParam, lParam);
+        return User32.DefWindowProc(hWnd, msg, wParam, lParam);
     }
 
     private static void ShowTrayIconContextMenu(HWND hWnd, HMENU hMenu)
@@ -200,21 +197,11 @@ public sealed class TrayIcon
 
         User32.SetForegroundWindow(hWnd);
 
-        var boolResult = default(BOOL);
+        var result = default(BOOL);
 
         // Get cursor position and convert it to client coordinates
-        var cursorLocation = new POINT(0, 0);
-        var lpCursorLocation = new LPPOINT(cursorLocation);
-        boolResult = User32.GetCursorPos(lpCursorLocation);
-        if (!boolResult)
-        {
-            lpCursorLocation.Free();
-            throw Win32Helper.NewWin32Exception((UINT)boolResult.Value, Marshal.GetLastPInvokeError(), nameof(User32.GetCursorPos));
-        }
-
-        User32.ScreenToClient(hWnd, lpCursorLocation);
-        cursorLocation = lpCursorLocation.ToStructure();
-        lpCursorLocation.Free();
+        var cursorLocation = User32.GetCursorPos();
+        User32.ScreenToClient(hWnd, cursorLocation);
 
         // Set menu information
         var lpcMenuInfo = new LPCMENUINFO(
@@ -226,24 +213,16 @@ public sealed class TrayIcon
                 hbrBack: HBRUSH.Null,
                 dwContextHelpID: 0,
                 dwMenuData: ULONG_PTR.Null));
-        boolResult = User32.SetMenuInfo(hMenu, lpcMenuInfo);
+        result = User32.SetMenuInfo(hMenu, lpcMenuInfo);
         lpcMenuInfo.Free();
-        if (!boolResult)
-        {
-            throw Win32Helper.NewWin32Exception((UINT)boolResult.Value, Marshal.GetLastPInvokeError(), nameof(User32.SetMenuInfo));
-        }
 
         // Display the context menu at the cursor position
-        boolResult = User32.TrackPopupMenuEx(
+        result = User32.TrackPopupMenuEx(
               hMenu,
               TRACK_POPUP_MENU_FLAGS.TPM_LEFTALIGN | TRACK_POPUP_MENU_FLAGS.TPM_BOTTOMALIGN | TRACK_POPUP_MENU_FLAGS.TPM_LEFTBUTTON,
               cursorLocation.x,
               cursorLocation.y,
               hWnd,
               LPTPMPARAMS.Null);
-        if (!boolResult)
-        {
-            throw Win32Helper.NewWin32Exception((UINT)boolResult.Value, Marshal.GetLastPInvokeError(), nameof(User32.TrackPopupMenuEx));
-        }
     }
 }

@@ -1,4 +1,4 @@
-﻿using static FancyMouse.Common.NativeMethods.User32;
+﻿using static FancyMouse.Win32.NativeMethods.User32;
 
 namespace FancyMouse.HotKeys;
 
