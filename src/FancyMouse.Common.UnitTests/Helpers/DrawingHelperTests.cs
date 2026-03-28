@@ -44,6 +44,22 @@ public sealed class DrawingHelperTests
 
         public static IEnumerable<object[]> GetTestCases()
         {
+            // colors like "SystemColors.Highlight" can change between versions of windows,
+            // so we'll use hard-coded colors instead to reduce false test failures
+            var systemHighlight = Color.FromArgb(0, 120, 215);
+            var previewStyle = StyleHelper.BezelledPreviewStyle;
+            previewStyle = new(
+                canvasSize: previewStyle.CanvasSize,
+                canvasStyle: new(
+                    marginStyle: previewStyle.CanvasStyle.MarginStyle,
+                    borderStyle: previewStyle.CanvasStyle.BorderStyle.WithColor(systemHighlight),
+                    paddingStyle: previewStyle.CanvasStyle.PaddingStyle,
+                    backgroundStyle: previewStyle.CanvasStyle.BackgroundStyle
+                ),
+                screenStyle: previewStyle.ScreenStyle,
+                extraColors: previewStyle.ExtraColors
+            );
+
             // 4-grid
             var displayInfo = new DisplayInfo(
                 devices: new DeviceInfo[]
@@ -79,7 +95,7 @@ public sealed class DrawingHelperTests
             yield return new object[]
             {
                 new TestCase(
-                    previewStyle: StyleHelper.BezelledPreviewStyle,
+                    previewStyle: previewStyle,
                     displayInfo: displayInfo,
                     activatedScreen: displayInfo.Devices[0].Screens[0],
                     activatedLocation: new(x: 50, y: 50),
@@ -113,7 +129,7 @@ public sealed class DrawingHelperTests
             yield return new object[]
             {
                 new TestCase(
-                    previewStyle: StyleHelper.BezelledPreviewStyle,
+                    previewStyle: previewStyle,
                     displayInfo: displayInfo,
                     activatedScreen: displayInfo.Devices[0].Screens[0],
                     activatedLocation: new(x: 50, y: 50),
