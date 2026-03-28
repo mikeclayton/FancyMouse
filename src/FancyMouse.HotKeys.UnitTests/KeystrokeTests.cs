@@ -40,7 +40,7 @@ public sealed class KeystrokeTests
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestCases), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestCases))]
         public void RunTestCases(TestCase data)
         {
             var expected = data.ExpectedResult;

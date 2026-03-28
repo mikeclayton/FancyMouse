@@ -49,7 +49,7 @@ public static class BoxBoundsTests
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestCases), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestCases))]
         public void RunTestCases(TestCase data)
         {
             var actual = BoxBounds.CreateFromContentBounds(data.ContentBounds, data.BoxStyle);
@@ -100,7 +100,7 @@ public static class BoxBoundsTests
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestCases), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestCases))]
         public void RunTestCases(TestCase data)
         {
             var actual = BoxBounds.CreateFromOuterBounds(data.OuterBounds, data.BoxStyle);

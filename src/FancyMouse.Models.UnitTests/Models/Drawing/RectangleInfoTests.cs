@@ -44,7 +44,7 @@ public static class RectangleInfoTests
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestCases), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestCases))]
         public void RunTestCases(TestCase data)
         {
             var actual = data.Rectangle.Center(data.Point);
@@ -121,7 +121,7 @@ public static class RectangleInfoTests
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestCases), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestCases))]
         public void RunTestCases(TestCase data)
         {
             var actual = data.Inner.MoveInside(data.Outer);

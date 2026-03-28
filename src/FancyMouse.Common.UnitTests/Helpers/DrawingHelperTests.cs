@@ -139,7 +139,7 @@ public sealed class DrawingHelperTests
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestCases), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestCases))]
         public async Task RunTestCases(TestCase data)
         {
             // load the fake desktop image
