@@ -23,6 +23,13 @@ public sealed class TrayIcon
 
     public TrayIcon()
     {
+        // cache the window proc delegate so it doesn't get garbage-collected
+        this.WndProc = this.WindowProc;
+    }
+
+    private WNDPROC WndProc
+    {
+        get;
     }
 
     private Icon? Icon
@@ -60,7 +67,7 @@ public sealed class TrayIcon
         var window = Win32Helper.User32.CreateMessageOnlyWindow(
             className: "FancyMouseTrayIconClass",
             windowName: "FancyMouseTrayIconWindow",
-            wndProc: this.TrayIconWndProc);
+            wndProc: this.WndProc);
         this.Window = window;
     }
 
@@ -124,7 +131,7 @@ public sealed class TrayIcon
         return icon;
     }
 
-    public LRESULT TrayIconWndProc(HWND hWnd, MESSAGE_TYPE msg, WPARAM wParam, LPARAM lParam)
+    public LRESULT WindowProc(HWND hWnd, MESSAGE_TYPE msg, WPARAM wParam, LPARAM lParam)
     {
         switch (msg)
         {
