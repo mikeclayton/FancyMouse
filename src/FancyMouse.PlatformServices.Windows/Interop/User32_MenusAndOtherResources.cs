@@ -8,7 +8,7 @@ internal static partial class User32
     {
         var lpPoint = new LPPOINT(new POINT(0, 0));
         var result = NativeMethods.User32.GetCursorPos(lpPoint);
-        ResultHandler.ThrowIfNotZero(result.Value, getLastError: true);
+        ResultHandler.ThrowIfZero(result.Value, getLastError: true);
 
         var point = lpPoint.ToStructure();
         lpPoint.Free();

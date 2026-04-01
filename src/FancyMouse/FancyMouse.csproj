@@ -64,6 +64,7 @@
   <ItemGroup>
     <ProjectReference Include="..\FancyMouse.Common\FancyMouse.Common.csproj" />
     <ProjectReference Include="..\FancyMouse.HotKeys\FancyMouse.HotKeys.csproj" />
+    <ProjectReference Include="..\FancyMouse.PlatformServices.Windows\FancyMouse.PlatformServices.Windows.csproj" />
     <ProjectReference Include="..\FancyMouse.Settings\FancyMouse.Settings.csproj" />
   </ItemGroup>
 

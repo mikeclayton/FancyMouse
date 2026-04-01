@@ -6,7 +6,7 @@ internal static partial class User32
 {
     internal static int GetSystemMetrics(SYSTEM_METRICS_INDEX smIndex)
     {
-        var result = User32.GetSystemMetrics(smIndex);
+        var result = NativeMethods.User32.GetSystemMetrics(smIndex);
         ResultHandler.ThrowIfZero(result, getLastError: false);
         return result;
     }

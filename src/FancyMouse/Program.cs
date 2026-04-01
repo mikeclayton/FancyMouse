@@ -1,4 +1,5 @@
 using FancyMouse.Internal.Helpers;
+using FancyMouse.PlatformServices.Windows;
 using FancyMouse.UI;
 using NLog;
 
@@ -33,7 +34,8 @@ internal static class Program
         var notifyForm = new FancyMouseNotify();
 
         var previewForm = new FancyMouseForm(
-            logger: LogManager.CreateNullLogger());
+            logger: LogManager.CreateNullLogger(),
+            platformServices: new WindowsPlatformServices());
 
         // touch the form handle - this will force the handle to be created if it hasn't
         // been already (we'll get an error from previewForm.BeginInvoke() if the form

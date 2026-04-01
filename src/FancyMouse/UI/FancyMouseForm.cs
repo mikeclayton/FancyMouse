@@ -2,24 +2,39 @@ using System.Diagnostics;
 
 using FancyMouse.Common.Helpers;
 using FancyMouse.Common.Imaging;
+using FancyMouse.Internal.Helpers;
 using FancyMouse.Models.Display;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.ViewModel;
+using FancyMouse.PlatformServices.Abstractions;
 using NLog;
 
 namespace FancyMouse.UI;
 
 internal sealed partial class FancyMouseForm : Form
 {
-    public FancyMouseForm(ILogger logger)
+    public FancyMouseForm(ILogger logger, IPlatformServices platformServices)
     {
         this.Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        this.PlatformServices = platformServices ?? throw new ArgumentNullException(nameof(platformServices));
+        this.Screens = new();
         this.InitializeComponent();
     }
 
     private ILogger Logger
     {
         get;
+    }
+
+    private IPlatformServices PlatformServices
+    {
+        get;
+    }
+
+    private List<ScreenInfo> Screens
+    {
+        get;
+        set;
     }
 
     private FormViewModel? FormLayout
@@ -40,14 +55,22 @@ internal sealed partial class FancyMouseForm : Form
             return;
         }
 
-        var screens = ScreenHelper.GetAllScreens().ToList();
-        if (screens.Count == 0)
+        // filter out any keys we don't handle below
+        var handledKeys = new List<Keys>
+        {
+            Keys.D1, Keys.D2, Keys.D3, Keys.D4, Keys.D5, Keys.D6, Keys.D7, Keys.D8, Keys.D9,
+            Keys.NumPad1, Keys.NumPad2, Keys.NumPad3, Keys.NumPad4, Keys.NumPad5, Keys.NumPad6, Keys.NumPad7, Keys.NumPad8, Keys.NumPad9,
+            Keys.P, Keys.Left, Keys.Right, Keys.Home, Keys.End,
+        };
+        if (!handledKeys.Contains(e.KeyCode))
         {
             return;
         }
 
-        var currentLocation = MouseHelper.GetCursorPosition();
-        var currentScreen = ScreenHelper.GetScreenFromPoint(screens, currentLocation);
+        // calculate some values used in the key handlers
+        var screens = this.Screens;
+        var currentLocation = this.PlatformServices.Mouse.GetCursorPosition();
+        var currentScreen = ScreenHelper.GetScreenFromPoint(this.Screens, new(currentLocation.X, currentLocation.Y));
         var currentScreenIndex = screens.IndexOf(currentScreen);
         var targetScreen = default(ScreenInfo?);
 
@@ -101,7 +124,9 @@ internal sealed partial class FancyMouseForm : Form
 
         if (targetScreen is not null)
         {
-            MouseHelper.SetCursorPosition(targetScreen.DisplayArea.Midpoint);
+            var midpoint = targetScreen.DisplayArea.Midpoint;
+            this.PlatformServices.Mouse.SetCursorPosition(
+                new((int)midpoint.X, (int)midpoint.Y));
             this.OnDeactivate(EventArgs.Empty);
         }
     }
@@ -148,6 +173,8 @@ internal sealed partial class FancyMouseForm : Form
                     deviceParing => deviceParing.ScreenLayout.ScreenBounds.OuterBounds.Contains(mouseEventArgs.X, mouseEventArgs.Y));
             if (clickedPairing is null)
             {
+                // no screenshot was clicked - must have clicked the background or window border
+                // so we'll do nothing, and leave the form visible
                 return;
             }
 
@@ -171,7 +198,8 @@ internal sealed partial class FancyMouseForm : Form
 
             // move mouse pointer
             logger.Info($"clicked location = {clickedLocation}");
-            MouseHelper.SetCursorPosition(clickedLocation);
+            this.PlatformServices.Mouse.SetCursorPosition(
+                new((int)clickedLocation.X, (int)clickedLocation.Y));
         }
 
         this.OnDeactivate(EventArgs.Empty);
@@ -190,13 +218,26 @@ internal sealed partial class FancyMouseForm : Form
         // hide the form while we redraw it...
         this.Visible = false;
 
+        // snapshot the current screen configuraiton. we'll
+        // assume it doesn't change for the duration of the preview,
+        // and we'll verify any click is still valid before we try
+        // to move the mouse to the clicked location
+        this.Screens = ScreenHelper.GetAllScreens().ToList();
+
+        // don't show the preview if there are no screens connected
+        if (this.Screens.Count == 0)
+        {
+            return;
+        }
+
         var stopwatch = Stopwatch.StartNew();
 
         // capture this first so we get an accurate mouse location
         // (in case the user moves it a few pixels while the form is rendered)
-        var activatedLocation = MouseHelper.GetCursorPosition();
+        var cursorPosition = this.PlatformServices.Mouse.GetCursorPosition();
+        var activatedLocation = new PointInfo(cursorPosition.X, cursorPosition.Y);
 
-        var appSettings = Internal.Helpers.ConfigHelper.AppSettings ?? throw new InvalidOperationException();
+        var appSettings = ConfigHelper.AppSettings ?? throw new InvalidOperationException();
         var displayInfo = DeviceHelper.GetDisplayInfo();
         var activatedScreen = DeviceHelper.GetActivatedScreen(displayInfo.Devices[0], activatedLocation);
 
