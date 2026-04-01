@@ -1,6 +1,7 @@
 ﻿using System.Globalization;
 
 using FancyMouse.Common.Helpers;
+using FancyMouse.PlatformServices.Windows;
 using FancyMouse.WinUI3.Internal.Helpers;
 using FancyMouse.WinUI3.UI;
 using Microsoft.UI.Xaml;
@@ -44,7 +45,9 @@ public partial class App : Application
 
         try
         {
-            var previewWindow = new PreviewWindow(logger: logger);
+            var previewWindow = new PreviewWindow(
+                logger: logger,
+                platformServices: new WindowsPlatformServices());
 
             // run Logitech SetPoint as admin for hotkeys to get activated from custom mouse bindings
             // when an Office application or Visual Studio is the active window. (SetPoint *keyboard*

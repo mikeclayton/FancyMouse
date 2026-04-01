@@ -1,10 +1,10 @@
-﻿using FancyMouse.PlatformServices.Models;
+﻿using FancyMouse.Models.Drawing;
 
 namespace FancyMouse.PlatformServices.Abstractions;
 
 public interface IMouseProvider
 {
-    public Point GetCursorPosition();
+    public PointInfo GetCursorPosition();
 
-    public void SetCursorPosition(Point position);
+    public void SetCursorPosition(PointInfo position);
 }

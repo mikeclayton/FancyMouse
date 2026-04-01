@@ -12,7 +12,7 @@ internal static partial class Core
     /// <remarks>
     /// See https://learn.microsoft.com/en-us/windows/win32/winprog/windows-data-types
     /// </remarks>
-    public readonly struct DWORD
+    internal readonly struct DWORD
     {
 #pragma warning disable CA1051 // Do not declare visible instance fields
         public readonly uint Value;

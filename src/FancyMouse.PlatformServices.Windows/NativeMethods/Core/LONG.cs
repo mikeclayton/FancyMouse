@@ -12,7 +12,7 @@ internal static partial class Core
     /// </remarks>
 #pragma warning disable CA1716 // Identifiers should not match keywords
 #pragma warning disable CA1720 // Identifier contains type name
-    public readonly struct LONG
+    internal readonly struct LONG
 #pragma warning restore CA1720 // Identifier contains type name
 #pragma warning restore CA1716 // Identifiers should not match keywords
     {

@@ -289,7 +289,7 @@ public sealed partial class PreviewWindow : Window
         // assume it doesn't change for the duration of the preview,
         // and we'll verify any click is still valid before we try
         // to move the mouse to the clicked location
-        this.Screens = ScreenHelper.GetAllScreens().ToList();
+        this.Screens = this.PlatformServices.Screens.GetAllScreens().ToList();
 
         // don't show the preview if there are no screens connected
         if (this.Screens.Count == 0)
@@ -313,7 +313,7 @@ public sealed partial class PreviewWindow : Window
                 new(
                     hostname: Environment.MachineName,
                     localhost: true,
-                    screens: ScreenHelper.GetAllScreens()),
+                    screens: this.Screens),
             });
 
         var activatedScreen = DeviceHelper.GetActivatedScreen(displayInfo.Devices[0], activatedLocation);

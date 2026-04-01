@@ -6,7 +6,8 @@ public sealed class WindowsPlatformServices : IPlatformServices
 {
     public WindowsPlatformServices()
     {
-        this.LazyMouse = new Lazy<IMouseProvider>(() => new WindowsMouseProvider());
+        this.LazyMouse = new(() => new WindowsMouseProvider());
+        this.LazyScreens = new(() => new WindowsScreenProvider());
     }
 
     private Lazy<IMouseProvider> LazyMouse
@@ -17,5 +18,15 @@ public sealed class WindowsPlatformServices : IPlatformServices
     public IMouseProvider Mouse
     {
         get => this.LazyMouse.Value;
+    }
+
+    private Lazy<IScreenProvider> LazyScreens
+    {
+        get;
+    }
+
+    public IScreenProvider Screens
+    {
+        get => this.LazyScreens.Value;
     }
 }

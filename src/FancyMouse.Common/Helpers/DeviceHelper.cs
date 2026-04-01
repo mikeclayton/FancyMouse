@@ -5,8 +5,10 @@ namespace FancyMouse.Common.Helpers;
 
 public static class DeviceHelper
 {
-    public static DisplayInfo GetDisplayInfo()
+    public static DisplayInfo GetDisplayInfo(IEnumerable<ScreenInfo> screens)
     {
+        ArgumentNullException.ThrowIfNull(screens);
+
         var devices = new List<DeviceInfo>();
 
         // add the local devices
@@ -14,7 +16,7 @@ public static class DeviceHelper
             new(
                 hostname: Environment.MachineName,
                 localhost: true,
-                screens: ScreenHelper.GetAllScreens()));
+                screens: screens.ToList()));
 
         return new DisplayInfo(
             devices: devices);

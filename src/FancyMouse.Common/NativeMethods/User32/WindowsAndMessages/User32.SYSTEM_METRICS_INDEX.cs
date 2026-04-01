@@ -42,7 +42,14 @@ public static partial class User32
         SM_CXSIZEFRAME = SM_CXFRAME,
         SM_CXSMICON = 49,
         SM_CXSMSIZE = 52,
+
+        /// <summary>
+        /// The width of the virtual screen, in pixels.
+        /// The virtual screen is the bounding rectangle of all display monitors.
+        /// The SM_XVIRTUALSCREEN metric is the coordinates for the left side of the virtual screen.
+        /// </summary>
         SM_CXVIRTUALSCREEN = 78,
+
         SM_CXVSCROLL = 2,
         SM_CYBORDER = 6,
         SM_CYCAPTION = 4,
@@ -74,7 +81,14 @@ public static partial class User32
         SM_CYSMCAPTION = 51,
         SM_CYSMICON = 50,
         SM_CYSMSIZE = 53,
+
+        /// <summary>
+        /// The height of the virtual screen, in pixels.
+        /// The virtual screen is the bounding rectangle of all display monitors.
+        /// The SM_YVIRTUALSCREEN metric is the coordinates for the top of the virtual screen.
+        /// </summary>
         SM_CYVIRTUALSCREEN = 79,
+
         SM_CYVSCROLL = 20,
         SM_CYVTHUMB = 9,
         SM_DBCSENABLED = 42,
@@ -102,7 +116,19 @@ public static partial class User32
         SM_SWAPBUTTON = 23,
         SM_SYSTEMDOCKED = 0x2004,
         SM_TABLETPC = 86,
+
+        /// <summary>
+        /// The coordinates for the left side of the virtual screen.
+        /// The virtual screen is the bounding rectangle of all display monitors.
+        /// The SM_CXVIRTUALSCREEN metric is the width of the virtual screen.
+        /// </summary>
         SM_XVIRTUALSCREEN = 76,
+
+        /// <summary>
+        /// The coordinates for the top of the virtual screen.
+        /// The virtual screen is the bounding rectangle of all display monitors.
+        /// The SM_CYVIRTUALSCREEN metric is the height of the virtual screen
+        /// </summary>
         SM_YVIRTUALSCREEN = 77,
     }
 }

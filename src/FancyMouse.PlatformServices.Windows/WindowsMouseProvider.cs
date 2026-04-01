@@ -1,7 +1,7 @@
 ﻿using System.Runtime.InteropServices;
 
+using FancyMouse.Models.Drawing;
 using FancyMouse.PlatformServices.Abstractions;
-using FancyMouse.PlatformServices.Models;
 using FancyMouse.PlatformServices.Windows.Interop;
 
 using static FancyMouse.PlatformServices.Windows.NativeMethods.Core;
@@ -11,13 +11,13 @@ namespace FancyMouse.PlatformServices.Windows;
 
 internal sealed class WindowsMouseProvider : IMouseProvider
 {
-    public Point GetCursorPosition()
+    public PointInfo GetCursorPosition()
     {
         var result = User32.GetCursorPos();
         return new(result.x, result.y);
     }
 
-    public void SetCursorPosition(Point position)
+    public void SetCursorPosition(PointInfo position)
     {
         WindowsMouseProvider.SetCursorPositioInternal(position);
 
@@ -25,7 +25,7 @@ internal sealed class WindowsMouseProvider : IMouseProvider
         WindowsMouseProvider.SimulateMouseMovementEvent(position);
     }
 
-    private static void SetCursorPositioInternal(Point position)
+    private static void SetCursorPositioInternal(PointInfo position)
     {
         // set the new cursor position *twice* - the cursor sometimes end up in
         // the wrong place if we try to cross the dead space between non-aligned
@@ -44,11 +44,12 @@ internal sealed class WindowsMouseProvider : IMouseProvider
         //
         // setting the position a second time seems to fix this and moves the
         // cursor to the expected location (b)
+        var cursorPosition = position.ToPoint();
         for (var i = 0; i < 2; i++)
         {
             // SetCursorPos has been known to return zero (i.e. an error),
             // *but* GetLastError result also returns zeo to indicate success
-            var result = NativeMethods.User32.SetCursorPos(position.X, position.Y);
+            var result = NativeMethods.User32.SetCursorPos(cursorPosition.X, cursorPosition.Y);
             if (result == 0)
             {
                 var lastError = Marshal.GetLastPInvokeError();
@@ -74,7 +75,7 @@ internal sealed class WindowsMouseProvider : IMouseProvider
     /// See https://github.com/microsoft/PowerToys/issues/24523
     ///     https://github.com/microsoft/PowerToys/pull/24527
     /// </remarks>
-    private static void SimulateMouseMovementEvent(Point location)
+    private static void SimulateMouseMovementEvent(PointInfo location)
     {
         var inputs = new NativeMethods.User32.INPUT[]
         {

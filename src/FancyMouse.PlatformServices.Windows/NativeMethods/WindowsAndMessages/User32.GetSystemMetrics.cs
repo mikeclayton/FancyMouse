@@ -17,6 +17,6 @@ internal static partial class User32
     /// See https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getsystemmetrics
     /// </remarks>
     [LibraryImport(Libraries.User32)]
-    internal static partial int GetSystemMetrics(
+    public static partial int GetSystemMetrics(
         SYSTEM_METRICS_INDEX smIndex);
 }

@@ -1,6 +1,4 @@
-﻿using static FancyMouse.PlatformServices.Windows.NativeMethods.Core;
-
-namespace FancyMouse.PlatformServices.Windows.Interop;
+﻿namespace FancyMouse.PlatformServices.Windows.Interop;
 
 internal static class SuccessResult
 {

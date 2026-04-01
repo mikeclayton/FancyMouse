@@ -6,4 +6,9 @@ public interface IPlatformServices
     {
         get;
     }
+
+    public IScreenProvider Screens
+    {
+        get;
+    }
 }
