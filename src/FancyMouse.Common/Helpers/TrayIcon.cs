@@ -1,20 +1,26 @@
-﻿using System.Drawing;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Drawing;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
-using FancyMouse.Common.NativeMethods;
+using FancyMouse.Common.Interop;
 
-using static FancyMouse.Common.NativeMethods.Core;
-using static FancyMouse.Common.NativeMethods.Shell32;
-using static FancyMouse.Common.NativeMethods.User32;
+using Windows.Win32;
+using Windows.Win32.Foundation;
+using Windows.Win32.Graphics.Gdi;
+using Windows.Win32.UI.Shell;
+using Windows.Win32.UI.WindowsAndMessaging;
 
 namespace FancyMouse.Common.Helpers;
 
 public sealed class TrayIcon
 {
 #pragma warning disable SA1310 // Field names should not contain underscore
-    private const MESSAGE_TYPE WM_TRAYICON_SHOWCONTEXTMENU = MESSAGE_TYPE.WM_USER + 100;
-    private const MESSAGE_TYPE WM_TRAYICON_EXITCOMMAND = MESSAGE_TYPE.WM_USER + 101;
+    private const uint WM_TRAYICON_SHOWCONTEXTMENU = PInvoke.WM_USER + 100;
+    private const uint WM_TRAYICON_EXITCOMMAND = PInvoke.WM_USER + 101;
+
+    private const uint WM_UAHINITMENU = 0x0093;
+    private const uint WM_UAHMEASUREMENUITEM = 0x0094;
 #pragma warning restore SA1310 // Field names should not contain underscore
 
     // initialise with an empty delegate so we don't get complaints about
@@ -23,22 +29,16 @@ public sealed class TrayIcon
 
     public TrayIcon()
     {
-        // cache the window proc delegate so it doesn't get garbage-collected
-        this.WndProc = this.WindowProc;
+        this.Initialize();
     }
 
-    private WNDPROC WndProc
-    {
-        get;
-    }
-
-    private Icon? Icon
+    private Win32Window Window
     {
         get;
         set;
     }
 
-    private (ATOM ClassAtom, HWND Hwnd)? Window
+    private Icon Icon
     {
         get;
         set;
@@ -55,68 +55,65 @@ public sealed class TrayIcon
         this.ExitCommandClicked.Invoke(this, e);
     }
 
-    public void Initialize()
+    private HWND GetHwndOrThrow()
+    {
+        return (HWND)(this.Window?.Hwnd ?? throw new InvalidOperationException());
+    }
+
+    [MemberNotNull(nameof(Window))]
+    [MemberNotNull(nameof(Icon))]
+    private void Initialize()
     {
         this.InitializeTrayWindow();
         this.InitializeTrayIcon();
         this.InitializeTrayMenu();
     }
 
+    [MemberNotNull(nameof(Window))]
     private void InitializeTrayWindow()
     {
-        var window = Win32Helper.User32.CreateMessageOnlyWindow(
+        this.Window = Win32Helper.CreateMessageOnlyWindow(
             className: "FancyMouseTrayIconClass",
             windowName: "FancyMouseTrayIconWindow",
-            wndProc: this.WndProc);
-        this.Window = window;
+            windowProcDelegate: this.WindowProc);
     }
 
+    [MemberNotNull(nameof(Icon))]
     private void InitializeTrayIcon()
     {
-        var hWnd = this.Window?.Hwnd ?? throw new InvalidOperationException();
-
         var icon = TrayIcon.GetTrayIconResource();
         this.Icon = icon;
 
-        var notifyIconData = new NOTIFYICONDATAW(
-            cbSize: (DWORD)NOTIFYICONDATAW.Size,
-            hWnd: hWnd,
-            uID: 1,
-            uFlags: NOTIFY_ICON_DATA_FLAGS.NIF_MESSAGE | NOTIFY_ICON_DATA_FLAGS.NIF_ICON | NOTIFY_ICON_DATA_FLAGS.NIF_TIP,
-            uCallbackMessage: TrayIcon.WM_TRAYICON_SHOWCONTEXTMENU,
-            hIcon: (HICON)icon.Handle,
-            szTip: "FancyMouse",
-            dwState: 0,
-            dwStateMask: 0,
-            szInfo: string.Empty,
-            union: new NOTIFYICONDATAW.DUMMYUNIONNAME(0),
-            szInfoTitle: string.Empty,
-            dwInfoFlags: 0,
-            guidItem: GUID.Empty,
-            hBalloonIcon: HICON.Null);
-
-        var iconDataPtr = new PNOTIFYICONDATAW(notifyIconData);
-        var result = Shell32.Shell_NotifyIconW(NOTIFY_ICON_MESSAGE.NIM_ADD, iconDataPtr);
-        iconDataPtr.Free();
-        if (!result)
+        var notifyIconData = new NOTIFYICONDATAW
         {
-            throw Win32Helper.NewWin32Exception((UINT)result.Value, nameof(Shell32.Shell_NotifyIconW));
-        }
+            cbSize = (uint)Marshal.SizeOf<NOTIFYICONDATAW>(),
+            hWnd = this.GetHwndOrThrow(),
+            uID = 1,
+            uFlags = NOTIFY_ICON_DATA_FLAGS.NIF_MESSAGE | NOTIFY_ICON_DATA_FLAGS.NIF_ICON | NOTIFY_ICON_DATA_FLAGS.NIF_TIP,
+            uCallbackMessage = TrayIcon.WM_TRAYICON_SHOWCONTEXTMENU,
+            hIcon = (HICON)icon.Handle,
+            szTip = "FancyMouse",
+            dwState = 0,
+            dwStateMask = 0,
+            szInfo = string.Empty,
+            Anonymous = default,
+            szInfoTitle = string.Empty,
+            dwInfoFlags = 0,
+            guidItem = Guid.Empty,
+            hBalloonIcon = HICON.Null,
+        };
+        var result = PInvoke.Shell_NotifyIcon(NOTIFY_ICON_MESSAGE.NIM_ADD, notifyIconData);
+        ResultHandler.ThrowIfZero(result, getLastError: true, nameof(PInvoke.Shell_NotifyIcon));
     }
 
     private void InitializeTrayMenu()
     {
-        var hMenu = User32.CreatePopupMenu();
-        if (hMenu.IsNull)
-        {
-            throw Win32Helper.NewWin32Exception((UINT)hMenu.Value, Marshal.GetLastPInvokeError(), nameof(User32.CreatePopupMenu));
-        }
+        var hMenu = PInvoke.CreatePopupMenu();
+        ResultHandler.ThrowIfZero(hMenu, getLastError: true, nameof(PInvoke.CreatePopupMenu));
 
-        var hResult = User32.AppendMenuW(hMenu, MENU_ITEM_FLAGS.MF_STRING, (UINT_PTR)(uint)TrayIcon.WM_TRAYICON_EXITCOMMAND, (LPCWSTR)"Exit");
-        if (!hResult)
-        {
-            throw Win32Helper.NewWin32Exception((UINT)hResult.Value, Marshal.GetLastPInvokeError(), nameof(User32.AppendMenuW));
-        }
+        using var safeMenuHandle = new Win32SafeHandle(hMenu);
+        var result = PInvoke.AppendMenu(safeMenuHandle, MENU_ITEM_FLAGS.MF_STRING, TrayIcon.WM_TRAYICON_EXITCOMMAND, "Exit");
+        ResultHandler.ThrowIfZero(hMenu, getLastError: true, nameof(PInvoke.AppendMenu));
 
         this.ContextMenu = hMenu;
     }
@@ -131,55 +128,55 @@ public sealed class TrayIcon
         return icon;
     }
 
-    public LRESULT WindowProc(HWND hWnd, MESSAGE_TYPE msg, WPARAM wParam, LPARAM lParam)
+    private nint WindowProc(nint hWnd, uint msg, nuint wParam, nint lParam)
     {
         switch (msg)
         {
             // tray icon callback message
             case TrayIcon.WM_TRAYICON_SHOWCONTEXTMENU:
-                if ((MESSAGE_TYPE)lParam.Value is MESSAGE_TYPE.WM_LBUTTONDOWN or MESSAGE_TYPE.WM_RBUTTONDOWN)
+                if ((uint)lParam is PInvoke.WM_LBUTTONDOWN or PInvoke.WM_RBUTTONDOWN)
                 {
                     // show the context menu associated with the tray icon
-                    TrayIcon.ShowTrayIconContextMenu(hWnd, this.ContextMenu);
+                    TrayIcon.ShowTrayIconContextMenu((HWND)hWnd, this.ContextMenu);
                 }
 
                 break;
 
             /* received during tray icon create */
-            case MESSAGE_TYPE.WM_GETMINMAXINFO:
-            case MESSAGE_TYPE.WM_NCCREATE:
-            case MESSAGE_TYPE.WM_NCCALCSIZE:
-            case MESSAGE_TYPE.WM_CREATE:
+            case PInvoke.WM_GETMINMAXINFO:
+            case PInvoke.WM_NCCREATE:
+            case PInvoke.WM_NCCALCSIZE:
+            case PInvoke.WM_CREATE:
                 break;
 
             /* context menu display */
-            case MESSAGE_TYPE.WM_WINDOWPOSCHANGING:
-            case MESSAGE_TYPE.WM_WINDOWPOSCHANGED:
-            case MESSAGE_TYPE.WM_NCACTIVATE:
-            case MESSAGE_TYPE.WM_ACTIVATE:
-            case MESSAGE_TYPE.WM_IME_SETCONTEXT:
-            case MESSAGE_TYPE.WM_IME_NOTIFY:
-            case MESSAGE_TYPE.WM_SETFOCUS:
+            case PInvoke.WM_WINDOWPOSCHANGING:
+            case PInvoke.WM_WINDOWPOSCHANGED:
+            case PInvoke.WM_NCACTIVATE:
+            case PInvoke.WM_ACTIVATE:
+            case PInvoke.WM_IME_SETCONTEXT:
+            case PInvoke.WM_IME_NOTIFY:
+            case PInvoke.WM_SETFOCUS:
                 break;
 
             /* context menu message loop */
-            case MESSAGE_TYPE.WM_ENTERMENULOOP:
-            case MESSAGE_TYPE.WM_SETCURSOR:
-            case MESSAGE_TYPE.WM_INITMENU:
-            case MESSAGE_TYPE.WM_INITMENUPOPUP:
-            case MESSAGE_TYPE.WM_UAHINITMENU:
-            case MESSAGE_TYPE.WM_UAHMEASUREMENUITEM:
-            case MESSAGE_TYPE.WM_ENTERIDLE:
-            case MESSAGE_TYPE.WM_MENUSELECT:
-            case MESSAGE_TYPE.WM_UNINITMENUPOPUP:
-            case MESSAGE_TYPE.WM_EXITMENULOOP:
-            case MESSAGE_TYPE.WM_KILLFOCUS:
+            case PInvoke.WM_ENTERMENULOOP:
+            case PInvoke.WM_SETCURSOR:
+            case PInvoke.WM_INITMENU:
+            case PInvoke.WM_INITMENUPOPUP:
+            case TrayIcon.WM_UAHINITMENU:
+            case TrayIcon.WM_UAHMEASUREMENUITEM:
+            case PInvoke.WM_ENTERIDLE:
+            case PInvoke.WM_MENUSELECT:
+            case PInvoke.WM_UNINITMENUPOPUP:
+            case PInvoke.WM_EXITMENULOOP:
+            case PInvoke.WM_KILLFOCUS:
                 break;
 
             /* menu item clicked */
-            case MESSAGE_TYPE.WM_COMMAND:
+            case PInvoke.WM_COMMAND:
                 const long lowWordMask = 0x0000FFFF;
-                var commandIndex = (MESSAGE_TYPE)(((IntPtr)wParam.Value).ToInt64() & lowWordMask);
+                var commandIndex = wParam & lowWordMask;
                 switch (commandIndex)
                 {
                     case TrayIcon.WM_TRAYICON_EXITCOMMAND:
@@ -195,7 +192,7 @@ public sealed class TrayIcon
                 break;
         }
 
-        return Win32Helper.User32.DefWindowProc(hWnd, msg, wParam, lParam);
+        return PInvoke.DefWindowProc((HWND)hWnd, msg, wParam, lParam);
     }
 
     private static void ShowTrayIconContextMenu(HWND hWnd, HMENU hMenu)
@@ -205,52 +202,40 @@ public sealed class TrayIcon
             throw new InvalidOperationException();
         }
 
-        User32.SetForegroundWindow(hWnd);
+        var result = PInvoke.SetForegroundWindow(hWnd);
+        ResultHandler.ThrowIfZero(result, getLastError: false, nameof(PInvoke.SetForegroundWindow));
 
-        var boolResult = default(BOOL);
+        // get the current cursor position
+        result = PInvoke.GetCursorPos(out var cursorPos);
+        ResultHandler.ThrowIfZero(result, getLastError: true, nameof(PInvoke.GetCursorPos));
 
-        // Get cursor position and convert it to client coordinates
-        var cursorLocation = new POINT(0, 0);
-        var lpCursorLocation = new LPPOINT(cursorLocation);
-        boolResult = User32.GetCursorPos(lpCursorLocation);
-        if (!boolResult)
+        // convert it into client coordinates
+        result = PInvoke.ScreenToClient(hWnd, ref cursorPos);
+        ResultHandler.ThrowIfZero(result, getLastError: true, nameof(PInvoke.ScreenToClient));
+
+        // set menu information
+        var menuInfo = new MENUINFO
         {
-            lpCursorLocation.Free();
-            throw Win32Helper.NewWin32Exception((UINT)boolResult.Value, Marshal.GetLastPInvokeError(), nameof(User32.GetCursorPos));
-        }
+            cbSize = (uint)Marshal.SizeOf<MENUINFO>(),
+            fMask = MENUINFO_MASK.MIM_STYLE,
+            dwStyle = 0,
+            cyMax = 0,
+            hbrBack = HBRUSH.Null,
+            dwContextHelpID = 0,
+            dwMenuData = nuint.Zero,
+        };
+        using var safeMenuHandle = new Win32SafeHandle(hMenu);
+        result = PInvoke.SetMenuInfo(safeMenuHandle, menuInfo);
+        ResultHandler.ThrowIfZero(result, getLastError: true, nameof(PInvoke.SetMenuInfo));
 
-        User32.ScreenToClient(hWnd, lpCursorLocation);
-        cursorLocation = lpCursorLocation.ToStructure();
-        lpCursorLocation.Free();
-
-        // Set menu information
-        var lpcMenuInfo = new LPCMENUINFO(
-            new MENUINFO(
-                cbSize: (DWORD)MENUINFO.Size,
-                fMask: MENUINFO_MASK.MIM_STYLE,
-                dwStyle: 0,
-                cyMax: 0,
-                hbrBack: HBRUSH.Null,
-                dwContextHelpID: 0,
-                dwMenuData: ULONG_PTR.Null));
-        boolResult = User32.SetMenuInfo(hMenu, lpcMenuInfo);
-        lpcMenuInfo.Free();
-        if (!boolResult)
-        {
-            throw Win32Helper.NewWin32Exception((UINT)boolResult.Value, Marshal.GetLastPInvokeError(), nameof(User32.SetMenuInfo));
-        }
-
-        // Display the context menu at the cursor position
-        boolResult = User32.TrackPopupMenuEx(
-              hMenu,
-              TRACK_POPUP_MENU_FLAGS.TPM_LEFTALIGN | TRACK_POPUP_MENU_FLAGS.TPM_BOTTOMALIGN | TRACK_POPUP_MENU_FLAGS.TPM_LEFTBUTTON,
-              cursorLocation.x,
-              cursorLocation.y,
+        // display the context menu at the cursor position
+        result = PInvoke.TrackPopupMenuEx(
+              safeMenuHandle,
+              (uint)(TRACK_POPUP_MENU_FLAGS.TPM_LEFTALIGN | TRACK_POPUP_MENU_FLAGS.TPM_BOTTOMALIGN | TRACK_POPUP_MENU_FLAGS.TPM_LEFTBUTTON),
+              cursorPos.X,
+              cursorPos.Y,
               hWnd,
-              LPTPMPARAMS.Null);
-        if (!boolResult)
-        {
-            throw Win32Helper.NewWin32Exception((UINT)boolResult.Value, Marshal.GetLastPInvokeError(), nameof(User32.TrackPopupMenuEx));
-        }
+              null);
+        ResultHandler.ThrowIfZero(result, getLastError: true, nameof(PInvoke.TrackPopupMenuEx));
     }
 }

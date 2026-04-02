@@ -1,19 +1,16 @@
-﻿using System.ComponentModel;
-using System.Runtime.InteropServices;
-
-using FancyMouse.Common.Helpers;
-
-using static FancyMouse.Common.NativeMethods.Core;
-using static FancyMouse.Common.NativeMethods.User32;
+﻿using FancyMouse.Common.Interop;
+using Windows.Win32;
+using Windows.Win32.Foundation;
+using Windows.Win32.UI.WindowsAndMessaging;
 
 namespace FancyMouse.HotKeys;
 
 internal sealed class MessageLoop
 {
-    public MessageLoop(string name, Func<HWND> hwndCallback)
+    public MessageLoop(string name, Func<Win32Window> windowFactory)
     {
         this.Name = name ?? throw new ArgumentNullException(nameof(name));
-        this.HwndCallback = hwndCallback ?? throw new ArgumentNullException(nameof(hwndCallback));
+        this.WindowFactory = windowFactory ?? throw new ArgumentNullException(nameof(windowFactory));
 
         this.RunningSemaphore = new SemaphoreSlim(1);
         this.CancellationTokenSource = new CancellationTokenSource();
@@ -25,17 +22,17 @@ internal sealed class MessageLoop
     }
 
     /// <summary>
-    /// Gets the callback to use to retrieve the hwnd to run the
+    /// Gets the callback to use to retrieve the Win32Window to run the
     /// message loop against. This callback is run in the context
-    /// of the message loop thread and can be used to create a hwnd
+    /// of the message loop thread and can be used to create a window
     /// which will be owned by the message loop thread.
     /// </summary>
-    private Func<HWND> HwndCallback
+    private Func<Win32Window> WindowFactory
     {
         get;
     }
 
-    public HWND? Hwnd
+    public Win32Window? Window
     {
         get;
         private set;
@@ -63,7 +60,7 @@ internal sealed class MessageLoop
         set;
     }
 
-    private DWORD? NativeThreadId
+    private uint? NativeThreadId
     {
         get;
         set;
@@ -86,8 +83,8 @@ internal sealed class MessageLoop
         // start a new internal message loop thread
         this.MessageLoopThread = new Thread(() =>
         {
-            this.NativeThreadId = Win32Helper.Kernel32.GetCurrentThreadId();
-            this.Hwnd = this.HwndCallback.Invoke();
+            this.NativeThreadId = PInvoke.GetCurrentThreadId();
+            this.Window = this.WindowFactory.Invoke();
             this.RunMessageLoop();
         })
         {
@@ -99,15 +96,17 @@ internal sealed class MessageLoop
 
     private void RunMessageLoop()
     {
-        var lpMsg = new LPMSG(
-            new MSG(
-                hwnd: HWND.Null,
-                message: MESSAGE_TYPE.WM_NULL,
-                wParam: new(0),
-                lParam: new(0),
-                time: new(0),
-                pt: new(0, 0),
-                lPrivate: new(0)));
+        var msg = new MSG
+        {
+            hwnd = HWND.Null,
+            message = PInvoke.WM_NULL,
+            wParam = new(0),
+            lParam = new(0),
+            time = 0,
+            pt = new(0, 0),
+        };
+
+        var hwnd = (HWND)(this.Window?.Hwnd ?? throw new InvalidOperationException());
 
         // see https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getmessage
         //     https://learn.microsoft.com/en-us/windows/win32/winmsg/about-messages-and-message-queues
@@ -121,9 +120,8 @@ internal sealed class MessageLoop
                 break;
             }
 
-            var hwnd = this.Hwnd ?? throw new InvalidOperationException();
-            var result = Win32Helper.User32.GetMessage(
-                lpMsg: lpMsg,
+            var result = PInvoke.GetMessage(
+                lpMsg: out msg,
                 hWnd: hwnd,
                 wMsgFilterMin: 0,
                 wMsgFilterMax: 0);
@@ -133,14 +131,13 @@ internal sealed class MessageLoop
                 continue;
             }
 
-            var msg = lpMsg.ToStructure();
-            if (msg.message == MESSAGE_TYPE.WM_QUIT)
+            if (msg.message == PInvoke.WM_QUIT)
             {
                 break;
             }
 
-            _ = Win32Helper.User32.TranslateMessage(msg);
-            _ = Win32Helper.User32.DispatchMessage(msg);
+            _ = PInvoke.TranslateMessage(msg);
+            _ = PInvoke.DispatchMessage(msg);
         }
 
         // clean up
@@ -166,12 +163,12 @@ internal sealed class MessageLoop
         // message loop - the loop will then notice that we've set the cancellation token,
         // and exit the loop...
         // (see https://devblogs.microsoft.com/oldnewthing/20050405-46/?p=35973)
-        var hwnd = this.Hwnd ?? throw new InvalidOperationException();
-        Win32Helper.User32.PostMessage(
+        var hwnd = (HWND)(this.Window?.Hwnd ?? throw new InvalidOperationException());
+        PInvoke.PostMessage(
             hWnd: hwnd,
-            msg: MESSAGE_TYPE.WM_NULL,
-            wParam: WPARAM.Null,
-            lParam: LPARAM.Null);
+            Msg: PInvoke.WM_NULL,
+            wParam: default,
+            lParam: default);
 
         // wait for the internal message loop to actually stop before we exit
         this.RunningSemaphore.Wait();

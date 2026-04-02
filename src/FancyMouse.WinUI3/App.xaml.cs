@@ -90,7 +90,6 @@ public partial class App : Application
             {
                 App.Current.Exit();
             };
-            trayIcon.Initialize();
             this.TrayIcon = trayIcon;
         }
         catch (Exception ex)
