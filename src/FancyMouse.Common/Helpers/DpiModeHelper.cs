@@ -1,6 +1,7 @@
-﻿using FancyMouse.Common.NativeMethods;
+﻿using System.Runtime.Versioning;
 
-using static FancyMouse.Common.NativeMethods.User32;
+using Windows.Win32;
+using Windows.Win32.UI.HiDpi;
 
 namespace FancyMouse.Common.Helpers;
 
@@ -23,6 +24,7 @@ public static class DpiModeHelper
     /// <remarks>
     /// See https://github.com/dotnet/winforms/blob/bd91bfb26ce90ac31e950c01dcb2b6e0776453a7/src/System.Windows.Forms.Primitives/src/System/Windows/Forms/Internals/ScaleHelper.cs#L368
     /// </remarks>
+    [SupportedOSPlatform("windows10.0.14393")]
     public static void EnsurePerMonitorV2Enabled()
     {
         // PowerToys supports the following operating systems:
@@ -39,8 +41,8 @@ public static class DpiModeHelper
         // there's a weird problem where AreDpiAwarenessContextsEqual was returning TRUE in debug mode
         // but FALSE in release mode and i couldn't work out why, so we can't do it the *right* way.
         // we'll just use GetAwarenessFromDpiAwarenessContext instead as a near-enough workaround.
-        var dpiAwarenessContext = User32.GetThreadDpiAwarenessContext();
-        var dpiAwareness = User32.GetAwarenessFromDpiAwarenessContext(dpiAwarenessContext);
+        var dpiAwarenessContext = PInvoke.GetThreadDpiAwarenessContext();
+        var dpiAwareness = PInvoke.GetAwarenessFromDpiAwarenessContext(dpiAwarenessContext);
         if (dpiAwareness != DPI_AWARENESS.DPI_AWARENESS_PER_MONITOR_AWARE)
         {
             throw new InvalidOperationException($"high dpi mode is not set to {nameof(DPI_AWARENESS.DPI_AWARENESS_PER_MONITOR_AWARE)}");

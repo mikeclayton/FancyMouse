@@ -1,11 +1,13 @@
-﻿using System.ComponentModel;
+﻿using System.Runtime.InteropServices;
 
-using FancyMouse.Common.NativeMethods;
+using FancyMouse.Common.Interop;
 using FancyMouse.Models.Display;
 using FancyMouse.Models.Drawing;
 
-using static FancyMouse.Common.NativeMethods.Core;
-using static FancyMouse.Common.NativeMethods.User32;
+using Windows.Win32;
+using Windows.Win32.Foundation;
+using Windows.Win32.Graphics.Gdi;
+using Windows.Win32.UI.WindowsAndMessaging;
 
 namespace FancyMouse.Common.Helpers;
 
@@ -18,49 +20,40 @@ public static class ScreenHelper
     private static RectangleInfo GetVirtualScreen()
     {
         return new(
-            User32.GetSystemMetrics(SYSTEM_METRICS_INDEX.SM_XVIRTUALSCREEN),
-            User32.GetSystemMetrics(SYSTEM_METRICS_INDEX.SM_YVIRTUALSCREEN),
-            User32.GetSystemMetrics(SYSTEM_METRICS_INDEX.SM_CXVIRTUALSCREEN),
-            User32.GetSystemMetrics(SYSTEM_METRICS_INDEX.SM_CYVIRTUALSCREEN));
+            PInvoke.GetSystemMetrics(SYSTEM_METRICS_INDEX.SM_XVIRTUALSCREEN),
+            PInvoke.GetSystemMetrics(SYSTEM_METRICS_INDEX.SM_YVIRTUALSCREEN),
+            PInvoke.GetSystemMetrics(SYSTEM_METRICS_INDEX.SM_CXVIRTUALSCREEN),
+            PInvoke.GetSystemMetrics(SYSTEM_METRICS_INDEX.SM_CYVIRTUALSCREEN));
     }
 
     public static IEnumerable<ScreenInfo> GetAllScreens()
     {
         // enumerate the monitors attached to the system
         var hMonitors = new List<HMONITOR>();
-        var callback = new User32.MONITORENUMPROC(
-            (hMonitor, hdcMonitor, lprcMonitor, dwData) =>
-            {
-                hMonitors.Add(hMonitor);
-                return true;
-            });
-        var result = User32.EnumDisplayMonitors(HDC.Null, LPCRECT.Null, callback, LPARAM.Null);
-        if (!result)
+        unsafe
         {
-            throw new Win32Exception(
-                result.Value,
-                $"{nameof(User32.EnumDisplayMonitors)} failed with return code {result.Value}");
+            var callback = new MONITORENUMPROC(
+                (hMonitor, hdcMonitor, lprcMonitor, dwData) =>
+                {
+                    hMonitors.Add(hMonitor);
+                    return true;
+                });
+            var result = PInvoke.EnumDisplayMonitors(HDC.Null, null, callback, (LPARAM)0);
         }
 
         // get detailed info about each monitor
+        var monitorInfo = new MONITORINFO
+        {
+            cbSize = (uint)Marshal.SizeOf<MONITORINFO>(),
+        };
         foreach (var hMonitor in hMonitors)
         {
-            var monitorInfoPtr = new LPMONITORINFO(
-                new MONITORINFO((DWORD)MONITORINFO.Size, RECT.Empty, RECT.Empty, 0));
-            result = User32.GetMonitorInfoW(hMonitor, monitorInfoPtr);
-            if (!result)
-            {
-                throw new Win32Exception(
-                    result.Value,
-                    $"{nameof(User32.GetMonitorInfoW)} failed with return code {result.Value}");
-            }
-
-            var monitorInfo = monitorInfoPtr.ToStructure();
-            monitorInfoPtr.Free();
+            var result = PInvoke.GetMonitorInfo(hMonitor, ref monitorInfo);
+            ResultHandler.ThrowIfZero(result, getLastError: true, nameof(PInvoke.GetMonitorInfo));
 
             yield return new ScreenInfo(
                 handle: hMonitor,
-                primary: monitorInfo.dwFlags.HasFlag(User32.MONITOR_INFO_FLAGS.MONITORINFOF_PRIMARY),
+                primary: (monitorInfo.dwFlags & PInvoke.MONITORINFOF_PRIMARY) != 0,
                 displayArea: new RectangleInfo(
                     monitorInfo.rcMonitor.left,
                     monitorInfo.rcMonitor.top,
@@ -79,9 +72,9 @@ public static class ScreenHelper
         PointInfo pt)
     {
         // get the monitor handle from the point
-        var hMonitor = User32.MonitorFromPoint(
+        var hMonitor = PInvoke.MonitorFromPoint(
             new((int)pt.X, (int)pt.Y),
-            User32.MONITOR_FROM_FLAGS.MONITOR_DEFAULTTONEAREST);
+            MONITOR_FROM_FLAGS.MONITOR_DEFAULTTONEAREST);
         if (hMonitor.IsNull)
         {
             throw new InvalidOperationException($"no monitor found for point {pt}");

@@ -10,7 +10,7 @@ namespace FancyMouse.Models.Display;
 /// </summary>
 public sealed record ScreenInfo
 {
-    public ScreenInfo(int handle, bool primary, RectangleInfo displayArea, RectangleInfo? workingArea)
+    public ScreenInfo(nint handle, bool primary, RectangleInfo displayArea, RectangleInfo? workingArea)
     {
         // this.Handle is a HMONITOR that has been cast to an int because we don't want
         // to expose the HMONITOR type outside the current assembly.
@@ -21,7 +21,8 @@ public sealed record ScreenInfo
     }
 
     [JsonPropertyName("handle")]
-    public int Handle
+    [JsonConverter(typeof(NintJsonConverter))]
+    public nint Handle
     {
         get;
     }
