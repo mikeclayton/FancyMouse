@@ -21,6 +21,7 @@ public sealed record ScreenInfo
     }
 
     [JsonPropertyName("handle")]
+    [JsonConverter(typeof(NintJsonConverter))]
     public nint Handle
     {
         get;
