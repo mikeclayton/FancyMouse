@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.4.33015.44
+# Visual Studio Version 18
+VisualStudioVersion = 18.5.11626.173 insiders
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FancyMouse", "FancyMouse\FancyMouse.csproj", "{EFE2A257-6979-4067-99A7-0C762492A8C7}"
 EndProject
@@ -34,8 +34,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FancyMouse.Settings.UnitTests", "FancyMouse.Settings.UnitTests\FancyMouse.Settings.UnitTests.csproj", "{E2822B3F-B07D-4E41-9A39-41E23F8EC058}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FancyMouse.WinUI3", "FancyMouse.WinUI3\FancyMouse.WinUI3.csproj", "{6F573335-3BB0-448C-B606-4895B2195EC1}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FancyMouse.CsWin32", "FancyMouse.CsWin32\FancyMouse.CsWin32.csproj", "{8806ABFA-B0DF-3C4A-3D42-B12886CB65F3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -207,22 +205,6 @@ Global
 		{6F573335-3BB0-448C-B606-4895B2195EC1}.Release|x64.ActiveCfg = Release|x64
 		{6F573335-3BB0-448C-B606-4895B2195EC1}.Release|x64.Build.0 = Release|x64
 		{6F573335-3BB0-448C-B606-4895B2195EC1}.Release|x86.ActiveCfg = Release|Any CPU
-		{8806ABFA-B0DF-3C4A-3D42-B12886CB65F3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8806ABFA-B0DF-3C4A-3D42-B12886CB65F3}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8806ABFA-B0DF-3C4A-3D42-B12886CB65F3}.Debug|ARM64.ActiveCfg = Debug|Any CPU
-		{8806ABFA-B0DF-3C4A-3D42-B12886CB65F3}.Debug|ARM64.Build.0 = Debug|Any CPU
-		{8806ABFA-B0DF-3C4A-3D42-B12886CB65F3}.Debug|x64.ActiveCfg = Debug|x64
-		{8806ABFA-B0DF-3C4A-3D42-B12886CB65F3}.Debug|x64.Build.0 = Debug|x64
-		{8806ABFA-B0DF-3C4A-3D42-B12886CB65F3}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{8806ABFA-B0DF-3C4A-3D42-B12886CB65F3}.Debug|x86.Build.0 = Debug|Any CPU
-		{8806ABFA-B0DF-3C4A-3D42-B12886CB65F3}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8806ABFA-B0DF-3C4A-3D42-B12886CB65F3}.Release|Any CPU.Build.0 = Release|Any CPU
-		{8806ABFA-B0DF-3C4A-3D42-B12886CB65F3}.Release|ARM64.ActiveCfg = Release|Any CPU
-		{8806ABFA-B0DF-3C4A-3D42-B12886CB65F3}.Release|ARM64.Build.0 = Release|Any CPU
-		{8806ABFA-B0DF-3C4A-3D42-B12886CB65F3}.Release|x64.ActiveCfg = Release|x64
-		{8806ABFA-B0DF-3C4A-3D42-B12886CB65F3}.Release|x64.Build.0 = Release|x64
-		{8806ABFA-B0DF-3C4A-3D42-B12886CB65F3}.Release|x86.ActiveCfg = Release|Any CPU
-		{8806ABFA-B0DF-3C4A-3D42-B12886CB65F3}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -237,7 +219,6 @@ Global
 		{DB015689-4BF8-479C-9168-A93C6A76AE6C} = {CDF25995-93DB-430F-9DA8-D77778CD8439}
 		{5D2A14E7-F870-4169-AB57-E708CF6F44D5} = {CDF25995-93DB-430F-9DA8-D77778CD8439}
 		{E2822B3F-B07D-4E41-9A39-41E23F8EC058} = {CDF25995-93DB-430F-9DA8-D77778CD8439}
-		{8806ABFA-B0DF-3C4A-3D42-B12886CB65F3} = {ECE2017E-843D-40C8-BAA4-DC0B5BAE0CAB}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {3D14D3DA-D261-4E05-A448-4AACF57F15D5}
