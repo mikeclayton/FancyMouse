@@ -21,6 +21,19 @@
     <DefineConstants>DISABLE_XAML_GENERATED_MAIN</DefineConstants>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <!--
+      change CsWin32Enabled to "true" to regenerate Win32 bindings in the "Generated" folder
+      (see Common.CsWin32.props for details)
+    -->
+    <CsWin32Enabled>true</CsWin32Enabled>
+  </PropertyGroup>
+  <Import Project="..\Common.CsWin32.props" />
+
+  <ItemGroup>
+    <Compile Remove="Generated\WinRT.SourceGenerator\**" />
+  </ItemGroup>
+
   <ItemGroup>
     <Manifest Include="$(ApplicationManifest)" />
   </ItemGroup>
@@ -38,10 +51,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Windows.CsWin32" Version="0.3.269">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
     <PackageReference Update="Microsoft.CodeAnalysis.NetAnalyzers" Version="10.0.201">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

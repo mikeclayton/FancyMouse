@@ -10,3 +10,9 @@ releases
 *.user
 
 wiki/anim
+
+# ignore the generated source code from the WinRT source generator
+# (some projects have EmitCompilerGeneratedFiles set to true to
+# cache the CsWin32 generated files for committing to source control,
+# but even then we don't want to check in WinRT.SourceGenerator files)
+**/Generated/WinRT.SourceGenerator
