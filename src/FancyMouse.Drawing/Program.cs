@@ -4,6 +4,7 @@ using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 
 using FancyMouse.Drawing.Bezels;
+using FancyMouse.Models.Styles;
 
 public static class Program
 {
@@ -72,15 +73,9 @@ public static class Program
         // NOTE: do NOT draw a flat bezel ring over the outer frame here — the grey ring's dark
         // colour would show through the partial-alpha pixels at the outer arc edge of the atlas
         // corners, making them look grey-fringed instead of blending cleanly into the canvas.
-        var renderer = new BezelRenderer(
-            bezelColor: SCREEN_BEZEL,
-            bezelThickness: SCREEN_BORDER,
-            threeDEffectDepth: SCREEN_DEPTH,
-            fadeStart: FADE_START,
-            fadeEnd: FADE_END,
-            hlMax: HL_MAX,
-            shMax: SH_MAX,
-            edgeFadeFraction: EDGE_FADE_FRACTION);
+        var screenBezelStyle = new BorderStyle(SCREEN_BEZEL, SCREEN_BORDER, SCREEN_DEPTH);
+        var bezelConfig = new BezelConfig(FADE_START, FADE_END, HL_MAX, SH_MAX, EDGE_FADE_FRACTION);
+        var renderer = new BezelRenderer(screenBezelStyle, bezelConfig);
 
         BezelGraphics.DrawScreenBackground(g, sbx, sby, sbw, sbh, SCREEN_BORDER, SCREEN_INNER);
         renderer.DrawBezel(g, sbx, sby, sbw, sbh);
@@ -92,7 +87,7 @@ public static class Program
         // save a sample screen bezel
         var screen = new Bitmap(400, 300, PixelFormat.Format32bppArgb);
         using var screenG = Graphics.FromImage(screen);
-        BezelGraphics.DrawFlatBezelRing(screenG, 0, 0, 400, 300, SCREEN_BORDER, 0, SCREEN_BEZEL);
+        BezelGraphics.DrawFlatBezelRing(screenG, 0, 0, 400, 300, (int)screenBezelStyle.Left, 0, screenBezelStyle.Color ?? Color.Transparent);
         screen.Save(@"C:\temp\mousejump_screen_bezel_solid.png", ImageFormat.Png);
 
         // ── Performance timing ────────────────────────────────────────────────────────

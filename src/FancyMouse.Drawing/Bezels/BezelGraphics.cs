@@ -1,6 +1,8 @@
 using System.Drawing;
 using System.Drawing.Drawing2D;
 
+using FancyMouse.Models.Styles;
+
 namespace FancyMouse.Drawing.Bezels;
 
 internal static class BezelGraphics
@@ -103,15 +105,12 @@ internal static class BezelGraphics
         int y,
         int width,
         int height,
-        int bezelThickness,
-        int bezel3DDepth,
-        Color bezelColor,
-        double hlMax,
-        double shMax,
-        float edgeFadeFraction)
+        BorderStyle borderStyle,
+        BezelConfig config)
     {
-        var n = bezelThickness;
-        var d = bezel3DDepth;
+        var n = (int)borderStyle.Left;
+        var d = (int)borderStyle.Depth;
+        var bezelColor = borderStyle.Color ?? Color.Transparent;
 
         // ── Straight edge flat fills ──────────────────────────────────────────
         // Fill the four straight edge strips with flat bezelColor first;
@@ -140,7 +139,7 @@ internal static class BezelGraphics
         var verticalEdgeY0 = y + n;               // top   end of outer left/right segments (inclusive)
         var verticalEdgeY1 = y + height - n;      // bottom end (exclusive — rectangle ends at outerBlY−1)
 
-        Color Pix(double hl, double sh) => BezelPrimitives.ApplyEffect(hl, sh, bezelColor, hlMax, shMax);
+        Color Pix(double hl, double sh) => BezelPrimitives.ApplyEffect(hl, sh, bezelColor, config.HighlightMax, config.ShadowMax);
 
         // ── Outer ring edge effects ───────────────────────────────────────────────
         // when d2 = 0,   d2 is the outermost pixel row/column
@@ -153,16 +152,16 @@ internal static class BezelGraphics
             var outerRight = x + width - d2 - 1;
 
             // Top outer:    HL base, secondary HL from TL corner (left→right)
-            DrawBezelEdge(g, horizontalEdgeX0, outerTop, horizontalEdgeX1, outerTop, Pix(1.0, 0.0), Pix(1.5, 0.0), edgeFadeFraction);
+            DrawBezelEdge(g, horizontalEdgeX0, outerTop, horizontalEdgeX1, outerTop, Pix(1.0, 0.0), Pix(1.5, 0.0), config.EdgeFadeFraction);
 
             // Right outer:  SH base, secondary SH from BR corner (bottom→top)
-            DrawBezelEdge(g, outerRight, verticalEdgeY1, outerRight, verticalEdgeY0, Pix(0.0, 1.0), Pix(0.0, 1.5), edgeFadeFraction);
+            DrawBezelEdge(g, outerRight, verticalEdgeY1, outerRight, verticalEdgeY0, Pix(0.0, 1.0), Pix(0.0, 1.5), config.EdgeFadeFraction);
 
             // Bottom outer: SH base, secondary SH from BR corner (right→left)
-            DrawBezelEdge(g, horizontalEdgeX1, outerBottom, horizontalEdgeX0, outerBottom, Pix(0.0, 1.0), Pix(0.0, 1.5), edgeFadeFraction);
+            DrawBezelEdge(g, horizontalEdgeX1, outerBottom, horizontalEdgeX0, outerBottom, Pix(0.0, 1.0), Pix(0.0, 1.5), config.EdgeFadeFraction);
 
             // Left outer:   HL base, secondary HL from TL corner (top→bottom)
-            DrawBezelEdge(g, outerLeft, verticalEdgeY0, outerLeft, verticalEdgeY1, Pix(1.0, 0.0), Pix(1.5, 0.0), edgeFadeFraction);
+            DrawBezelEdge(g, outerLeft, verticalEdgeY0, outerLeft, verticalEdgeY1, Pix(1.0, 0.0), Pix(1.5, 0.0), config.EdgeFadeFraction);
         }
 
         // ── Inner ring edge effects ───────────────────────────────────────────────
@@ -176,16 +175,16 @@ internal static class BezelGraphics
             var innerRight = x + width - n + d2;
 
             // Top inner:    SH base (reversed), secondary SH from TL inner corner
-            DrawBezelEdge(g, horizontalEdgeX0, innerTop, horizontalEdgeX1, innerTop, Pix(0.0, 1.0), Pix(0.0, 1.5), edgeFadeFraction);
+            DrawBezelEdge(g, horizontalEdgeX0, innerTop, horizontalEdgeX1, innerTop, Pix(0.0, 1.0), Pix(0.0, 1.5), config.EdgeFadeFraction);
 
             // Right inner:  HL halved base (bottom→top)
-            DrawBezelEdge(g, innerRight, verticalEdgeY1, innerRight, verticalEdgeY0, Pix(0.5, 0.0), Pix(0.75, 0.0), edgeFadeFraction);
+            DrawBezelEdge(g, innerRight, verticalEdgeY1, innerRight, verticalEdgeY0, Pix(0.5, 0.0), Pix(0.75, 0.0), config.EdgeFadeFraction);
 
             // Bottom inner: HL halved base (reversed), secondary HL from BR inner corner
-            DrawBezelEdge(g, horizontalEdgeX1, innerBottom, horizontalEdgeX0, innerBottom, Pix(0.5, 0.0), Pix(1.0, 0.0), edgeFadeFraction);
+            DrawBezelEdge(g, horizontalEdgeX1, innerBottom, horizontalEdgeX0, innerBottom, Pix(0.5, 0.0), Pix(1.0, 0.0), config.EdgeFadeFraction);
 
             // Left inner:   SH base (top→bottom)
-            DrawBezelEdge(g, innerLeft, verticalEdgeY0, innerLeft, verticalEdgeY1, Pix(0.0, 1.0), Pix(0.0, 1.5), edgeFadeFraction);
+            DrawBezelEdge(g, innerLeft, verticalEdgeY0, innerLeft, verticalEdgeY1, Pix(0.0, 1.0), Pix(0.0, 1.5), config.EdgeFadeFraction);
         }
     }
 

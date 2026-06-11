@@ -2,6 +2,8 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 
+using FancyMouse.Models.Styles;
+
 using static FancyMouse.Drawing.Bezels.BezelPrimitives;
 
 namespace FancyMouse.Drawing.Bezels;
@@ -35,17 +37,11 @@ internal static class CornerTemplates
     /// The template image needs to be recreated if the color, thickness or 3d effect
     /// depth settings change.
     /// </returns>
-    internal static Bitmap GetCornerTemplates(
-        int bezelThickness,
-        int bezel3DDepth,
-        Color bezelColor,
-        double fadeStartDegrees,
-        double fadeEndDegrees,
-        double highlightMax,
-        double shadowMax)
+    internal static Bitmap GetCornerTemplates(BorderStyle borderStyle, BezelConfig config)
     {
-        var n = bezelThickness;
-        var d = bezel3DDepth;
+        var n = (int)borderStyle.Left;
+        var d = (int)borderStyle.Depth;
+        var bezelColor = borderStyle.Color ?? Color.Transparent;
 
         // ── Step 1: render temporary bezel "ring" images ───────────────────
 
@@ -129,7 +125,7 @@ internal static class CornerTemplates
         // overlay images and transferred onto the corner image as a partially
         // transparent highlight (white) or shadow (black) effect. if an overlay
         // pixel is fully transparent we don't draw anything on the corner image.
-        double CornerEffectWeight(double theta) => BezelPrimitives.CornerEffectWeight(theta, fadeStartDegrees, fadeEndDegrees);
+        double CornerEffectWeight(double theta) => BezelPrimitives.CornerEffectWeight(theta, config.FadeStart, config.FadeEnd);
 
         var cornerData = default(BitmapData);
         var outerOverlayData = default(BitmapData);
@@ -276,7 +272,7 @@ internal static class CornerTemplates
                             }
                         }
 
-                        var newColor = ApplyEffect(hl * arcFade, sh * arcFade, bezelColor, highlightMax, shadowMax);
+                        var newColor = ApplyEffect(hl * arcFade, sh * arcFade, bezelColor, config.HighlightMax, config.ShadowMax);
                         srcPixelArgb[0] = newColor.B;
                         srcPixelArgb[1] = newColor.G;
                         srcPixelArgb[2] = newColor.R;
@@ -306,7 +302,7 @@ internal static class CornerTemplates
         }
 
         cornerTemplates.Save(
-            $@"C:\temp\corner_atlas_{n}_{bezel3DDepth}.png",
+            $@"C:\temp\corner_atlas_{n}_{borderStyle.Depth}.png",
             ImageFormat.Png);
 
         return cornerTemplates;

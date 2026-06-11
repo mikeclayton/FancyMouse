@@ -1,5 +1,7 @@
 using System.Drawing;
 
+using FancyMouse.Models.Styles;
+
 namespace FancyMouse.Drawing.Bezels;
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -27,50 +29,19 @@ namespace FancyMouse.Drawing.Bezels;
 // ═════════════════════════════════════════════════════════════════════════════
 internal sealed class BezelRenderer : IDisposable
 {
-    // ── Configuration (all set at construction, never mutated) ───────────────
-#pragma warning disable SA1306
-    private readonly Color BezelColor;
-    private readonly int BezelThickness;    // outer corner radius = ring width in pixels
-    private readonly int ThreeDEffectDepth; // 3-D effect layer depth at each ring edge
-    private readonly double FadeStart;         // degrees from edge where corner rolloff begins
-    private readonly double FadeEnd;           // degrees where rolloff reaches zero
-    private readonly double HlMax;             // peak highlight opacity fraction
-    private readonly double ShMax;             // peak shadow   opacity fraction
-    private readonly float EdgeFadeFraction;  // fraction of vertical edge with secondary effect
-#pragma warning restore SA1306
+    private readonly BorderStyle _borderStyle;
+    private readonly BezelConfig _config;
 
     // ── Corner atlas (owned; built eagerly at construction) ──────────────────
     // 2N×2N sprite sheet with pre-rendered corners and baked-in 3-D effects.
-    // Layout: TL=(0,0)  TR=(N,0)  BL=(0,N)  BR=(N,N)  where N=BezelThickness.
+    // Layout: TL=(0,0)  TR=(N,0)  BL=(0,N)  BR=(N,N)  where N=Thickness.
     private readonly Bitmap _cornerAtlas;
 
-    public BezelRenderer(
-        Color bezelColor,
-        int bezelThickness,
-        int threeDEffectDepth,
-        double fadeStart,
-        double fadeEnd,
-        double hlMax,
-        double shMax,
-        float edgeFadeFraction)
+    public BezelRenderer(BorderStyle borderStyle, BezelConfig config)
     {
-        BezelColor = bezelColor;
-        BezelThickness = bezelThickness;
-        ThreeDEffectDepth = threeDEffectDepth;
-        FadeStart = fadeStart;
-        FadeEnd = fadeEnd;
-        HlMax = hlMax;
-        ShMax = shMax;
-        EdgeFadeFraction = edgeFadeFraction;
-
-        _cornerAtlas = CornerTemplates.GetCornerTemplates(
-            bezelThickness,
-            threeDEffectDepth,
-            bezelColor,
-            fadeStart,
-            fadeEnd,
-            hlMax,
-            shMax);
+        _borderStyle = borderStyle ?? throw new ArgumentNullException(nameof(borderStyle));
+        _config = config ?? throw new ArgumentNullException(nameof(config));
+        _cornerAtlas = CornerTemplates.GetCornerTemplates(borderStyle, config);
     }
 
     // ── Render ───────────────────────────────────────────────────────────────
@@ -88,23 +59,12 @@ internal sealed class BezelRenderer : IDisposable
         // ── Straight edge fills + 3-D effects ────────────────────────────────
         // Fills all four strips with flat BezelColor then overlays highlight /
         // shadow gradient effects on the outer and inner depth layers.
-        BezelGraphics.DrawBezelEdges(
-            g,
-            x,
-            y,
-            width,
-            height,
-            BezelThickness,
-            ThreeDEffectDepth,
-            BezelColor,
-            HlMax,
-            ShMax,
-            EdgeFadeFraction);
+        BezelGraphics.DrawBezelEdges(g, x, y, width, height, _borderStyle, _config);
 
         // ── Corners (flat fill + 3-D effects baked in) ────────────────────────
         // Drawn last so the antialiased outer-edge pixels composite correctly
         // over whatever was drawn in the edge strips above.
-        var n = BezelThickness;
+        var n = (int)_borderStyle.Left;
         var corners = new[]
         {
             // (source region in atlas,      destination on target)
