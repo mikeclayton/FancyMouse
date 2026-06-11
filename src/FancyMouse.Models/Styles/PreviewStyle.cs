@@ -16,9 +16,7 @@ public sealed class PreviewStyle
         this.CanvasSize = canvasSize ?? throw new ArgumentNullException(nameof(canvasSize));
         this.CanvasStyle = canvasStyle ?? throw new ArgumentNullException(nameof(canvasStyle));
         this.ScreenStyle = screenStyle ?? throw new ArgumentNullException(nameof(screenStyle));
-        this.ExtraColors = new(
-            (extraColors ?? throw new ArgumentNullException(nameof(extraColors)))
-                .ToList());
+        this.ExtraColors = (extraColors ?? throw new ArgumentNullException(nameof(extraColors))).ToList().AsReadOnly();
     }
 
     public SizeInfo CanvasSize
