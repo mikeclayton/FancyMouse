@@ -1,6 +1,4 @@
 using System.Drawing;
-using System.Drawing.Drawing2D;
-using System.Drawing.Imaging;
 
 namespace FancyMouse.Drawing.Bezels;
 
@@ -38,7 +36,7 @@ internal sealed class BezelRenderer : IDisposable
     private readonly double FadeEnd;           // degrees where rolloff reaches zero
     private readonly double HlMax;             // peak highlight opacity fraction
     private readonly double ShMax;             // peak shadow   opacity fraction
-    private readonly double EdgeFadeFraction;  // fraction of vertical edge with secondary effect
+    private readonly float EdgeFadeFraction;  // fraction of vertical edge with secondary effect
 #pragma warning restore SA1306
 
     // ── Corner atlas (owned; built eagerly at construction) ──────────────────
@@ -54,7 +52,7 @@ internal sealed class BezelRenderer : IDisposable
         double fadeEnd,
         double hlMax,
         double shMax,
-        double edgeFadeFraction)
+        float edgeFadeFraction)
     {
         BezelColor = bezelColor;
         BezelThickness = bezelThickness;
@@ -65,7 +63,7 @@ internal sealed class BezelRenderer : IDisposable
         ShMax = shMax;
         EdgeFadeFraction = edgeFadeFraction;
 
-        _cornerAtlas = BezelGraphics.GetCornerTemplates(
+        _cornerAtlas = CornerTemplates.GetCornerTemplates(
             bezelThickness,
             threeDEffectDepth,
             bezelColor,
@@ -87,26 +85,9 @@ internal sealed class BezelRenderer : IDisposable
     //   Inner arc effects are reversed; BR inner highlight is halved.
     public void DrawBezel(Graphics g, int x, int y, int width, int height)
     {
-        var n = BezelThickness;
-
-        // ── Straight edge flat fills ──────────────────────────────────────────
-        // Fill the four straight edge strips (between corners) with flat BezelColor.
-        // The 3-D effects are overlaid by DrawBezelEdges; corners are drawn last.
-        var savedMode = g.SmoothingMode;
-        g.SmoothingMode = SmoothingMode.None;
-        using (var flatBrush = new SolidBrush(BezelColor))
-        {
-            g.FillRectangle(flatBrush, x + n, y,              width - (2 * n), n);  // top
-            g.FillRectangle(flatBrush, x + n, y + height - n, width - (2 * n), n);  // bottom
-            g.FillRectangle(flatBrush, x,             y + n,  n,             height - (2 * n));  // left
-            g.FillRectangle(flatBrush, x + width - n, y + n,  n,             height - (2 * n));  // right
-        }
-
-        g.SmoothingMode = savedMode;
-
-        // ── Straight edge 3-D effects ─────────────────────────────────────────
-        // Overlay highlight / shadow gradient strips on the outer and inner depth
-        // layers of all four straight edge segments.
+        // ── Straight edge fills + 3-D effects ────────────────────────────────
+        // Fills all four strips with flat BezelColor then overlays highlight /
+        // shadow gradient effects on the outer and inner depth layers.
         BezelGraphics.DrawBezelEdges(
             g,
             x,
@@ -123,6 +104,7 @@ internal sealed class BezelRenderer : IDisposable
         // ── Corners (flat fill + 3-D effects baked in) ────────────────────────
         // Drawn last so the antialiased outer-edge pixels composite correctly
         // over whatever was drawn in the edge strips above.
+        var n = BezelThickness;
         var corners = new[]
         {
             // (source region in atlas,      destination on target)
