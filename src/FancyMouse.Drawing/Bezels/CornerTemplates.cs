@@ -2,7 +2,7 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 
-namespace BezelPreview.Drawing;
+namespace FancyMouse.Drawing.Bezels;
 
 // ═════════════════════════════════════════════════════════════════════════════
 // CornerTemplates  (static factory)
@@ -92,21 +92,26 @@ internal static class CornerTemplates
     private static Bitmap CreateArcQuadrantBitmap(int outerRadius, int innerRadius)
     {
         int size = outerRadius;
-        var bmp  = new Bitmap(size, size, PixelFormat.Format32bppArgb);
+        var bmp = new Bitmap(size, size, PixelFormat.Format32bppArgb);
 
         if (outerRadius <= 0)
-            return bmp;   // degenerate — return blank bitmap
+        {
+            // degenerate — return blank bitmap
+            return bmp;
+        }
 
         using var g = Graphics.FromImage(bmp);
         GraphicsHelpers.EnableAntialias(g);
 
         // FillMode.Alternate: outer disc fills (winding=1), inner disc cancels (winding=2).
-        using var path  = new GraphicsPath(FillMode.Alternate);
+        using var path = new GraphicsPath(FillMode.Alternate);
         using var brush = new SolidBrush(Color.White);
 
         AddCircleFigure(path, outerRadius);
         if (innerRadius > 0)
+        {
             AddCircleFigure(path, innerRadius);
+        }
 
         g.FillPath(brush, path);
 

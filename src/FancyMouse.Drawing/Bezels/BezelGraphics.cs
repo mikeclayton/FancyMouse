@@ -2,7 +2,7 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 
-namespace BezelPreview.Drawing;
+namespace FancyMouse.Drawing.Bezels;
 
 internal static class BezelGraphics
 {
@@ -15,7 +15,7 @@ internal static class BezelGraphics
     /// the shape of the path, which means we'd need to apply highlight and shadow
     /// effects to the corners dynamically when every bezel is rendered in order
     /// to ensure a pixel-perfect effect is applied to each corner.
-    /// 
+    ///
     /// Our highlight and shadow effects are not massively expensive, so this
     /// wouldn't be a *major* perofrmance problem, *but* we can reduce the CPU
     /// load by pre-rendering the corners and reusing the same template for every
@@ -29,7 +29,7 @@ internal static class BezelGraphics
     /// so the full image is "2 × BezelThickness" in width and height. The corners
     /// are arranged in the "obvious" order - the image for the top left corner is
     /// in the top left cell or the grid, etc.
-    /// 
+    ///
     /// The template image needs to be recreated if the color, thickness or 3d effect
     /// depth settings change.
     /// </returns>
@@ -42,15 +42,14 @@ internal static class BezelGraphics
         double highlightMax,
         double shadowMax)
     {
-        var N = bezelThickness;
+        var n = bezelThickness;
 
         // ── Step 1: render a flat bezel on a 3N×3N transparent bitmap ───────────────
         //
         // 3N×3N ensures each arc endpoint connects to a straight edge segment rather
         // than directly to the adjacent arc, giving correct antialiasing results at
         // the arc endpoints (same as the real bezel DrawFlatBezelRing call will see).
-        //
-        using var flatBezel = new Bitmap(3 * N, 3 * N, PixelFormat.Format32bppArgb);
+        using var flatBezel = new Bitmap(3 * n, 3 * n, PixelFormat.Format32bppArgb);
         using var flatGraphics = Graphics.FromImage(flatBezel);
         BezelGraphics.DrawFlatBezelRing(
             flatGraphics,
@@ -60,7 +59,7 @@ internal static class BezelGraphics
             height: flatBezel.Height,
             bezelThickness: bezelThickness,
             bezelColor: bezelColor);
-        flatBezel.Save($@"C:\temp\flat_bezel_{N}.png", ImageFormat.Png);
+        flatBezel.Save($@"C:\temp\flat_bezel_{n}.png", ImageFormat.Png);
 
         // ── Step 1b: render the outer-arc alpha mask on a 3N×3N bitmap ───────────────
         //
@@ -73,16 +72,18 @@ internal static class BezelGraphics
         //   alpha = 255 → fully inside the outer arc zone (full 3-D effect)
         //   alpha = 0   → fully outside (no effect)
         //   partial      → on one of the two antialiased boundaries
-        //
-        var D = bezel3DDepth;
-        using var outerArcMask = new Bitmap(3 * N, 3 * N, PixelFormat.Format32bppArgb);
+        var d = bezel3DDepth;
+        using var outerArcMask = new Bitmap(3 * n, 3 * n, PixelFormat.Format32bppArgb);
         using (var maskGraphics = Graphics.FromImage(outerArcMask))
         {
             GraphicsHelpers.EnableAntialias(maskGraphics);
+
             // Outer ring path: same rounded-rect as the main bezel (radius N)
-            using var outerRingPath = BezelPrimitives.GetRoundedRectanglePath(0, 0, 3 * N, 3 * N, N);
+            using var outerRingPath = BezelPrimitives.GetRoundedRectanglePath(0, 0, 3 * n, 3 * n, n);
+
             // Inner cutout path: inset by D, radius N-D — shares arc centres with outerRingPath
-            using var innerCutoutPath = BezelPrimitives.GetRoundedRectanglePath(D, D, 3 * N - 2 * D, 3 * N - 2 * D, N - D);
+            using var innerCutoutPath = BezelPrimitives.GetRoundedRectanglePath(d, d, (3 * n) - (2 * d), (3 * n) - (2 * d), n - d);
+
             // FillMode.Alternate: outer shape fills, inner shape punches a hole → ring
             using var ringPath = new GraphicsPath(FillMode.Alternate);
             ringPath.AddPath(outerRingPath, false);
@@ -90,7 +91,8 @@ internal static class BezelGraphics
             using var whiteBrush = new SolidBrush(Color.White);
             maskGraphics.FillPath(whiteBrush, ringPath);
         }
-        outerArcMask.Save($@"C:\temp\outer_arc_mask_{N}_{D}.png", ImageFormat.Png);
+
+        outerArcMask.Save($@"C:\temp\outer_arc_mask_{n}_{d}.png", ImageFormat.Png);
 
         // ── Step 1c: render the inner-arc alpha mask on a 3N×3N bitmap ───────────────
         //
@@ -101,21 +103,21 @@ internal static class BezelGraphics
         //                     the inner arc zone and the flat zone.
         //   inner boundary — the content-area square (N, N, N, N), radius=0.
         //                     Square inner corner matches the actual bezel geometry.
-        //
-        using var innerArcMask = new Bitmap(3 * N, 3 * N, PixelFormat.Format32bppArgb);
+        using var innerArcMask = new Bitmap(3 * n, 3 * n, PixelFormat.Format32bppArgb);
         using (var innerMaskGraphics = Graphics.FromImage(innerArcMask))
         {
             GraphicsHelpers.EnableAntialias(innerMaskGraphics);
-            using var outerBoundary = BezelPrimitives.GetRoundedRectanglePath(N - D, N - D, N + 2 * D, N + 2 * D, D);
+            using var outerBoundary = BezelPrimitives.GetRoundedRectanglePath(n - d, n - d, n + (2 * d), n + (2 * d), d);
             using var innerBoundary = new GraphicsPath();
-            innerBoundary.AddRectangle(new Rectangle(N, N, N, N));
+            innerBoundary.AddRectangle(new Rectangle(n, n, n, n));
             using var ringPath = new GraphicsPath(FillMode.Alternate);
             ringPath.AddPath(outerBoundary, false);
             ringPath.AddPath(innerBoundary, false);
             using var whiteBrush = new SolidBrush(Color.White);
             innerMaskGraphics.FillPath(whiteBrush, ringPath);
         }
-        innerArcMask.Save($@"C:\temp\inner_arc_mask_{N}_{D}.png", ImageFormat.Png);
+
+        innerArcMask.Save($@"C:\temp\inner_arc_mask_{n}_{d}.png", ImageFormat.Png);
 
         // ── Step 2: copy the four N×N corner regions into a 2N×2N template ──────────
         //
@@ -136,13 +138,13 @@ internal static class BezelGraphics
         // outer-arc mask atlas copy below.
         var copies = new[]
         {
-            (source: new Point(0,   0  ), target: new Point(0, 0)), // TL
-            (source: new Point(2*N, 0  ), target: new Point(N, 0)), // TR
-            (source: new Point(0,   2*N), target: new Point(0, N)), // BL
-            (source: new Point(2*N, 2*N), target: new Point(N, N)), // BR
+            (source: new Point(0,         0), target: new Point(0, 0)), // TL
+            (source: new Point(2 * n,     0), target: new Point(n, 0)), // TR
+            (source: new Point(0,     2 * n), target: new Point(0, n)), // BL
+            (source: new Point(2 * n, 2 * n), target: new Point(n, n)), // BR
         };
 
-        var templateImage = new Bitmap(2 * N, 2 * N, PixelFormat.Format32bppArgb);
+        var templateImage = new Bitmap(2 * n, 2 * n, PixelFormat.Format32bppArgb);
         using (var templateGraphics = Graphics.FromImage(templateImage))
         {
             // Use NearestNeighbor + PixelOffsetMode.Half for an exact 1:1 pixel copy.
@@ -152,33 +154,34 @@ internal static class BezelGraphics
             // boundary — which shifts the visual arc edge ~0.5 px inward and creates a
             // visible gap between the corner arc and the flat-fill straight edges.
             templateGraphics.InterpolationMode = InterpolationMode.NearestNeighbor;
-            templateGraphics.PixelOffsetMode   = PixelOffsetMode.Half;
+            templateGraphics.PixelOffsetMode = PixelOffsetMode.Half;
 
             foreach (var (source, target) in copies)
             {
                 templateGraphics.DrawImage(
                     flatBezel,
-                    destRect: new Rectangle(target.X, target.Y, N, N),
-                    srcRect: new Rectangle(source.X, source.Y, N, N),
+                    destRect: new Rectangle(target.X, target.Y, n, n),
+                    srcRect: new Rectangle(source.X, source.Y, n, n),
                     srcUnit: GraphicsUnit.Pixel);
             }
         }
-        templateImage.Save($@"C:\temp\template_{N}.png", ImageFormat.Png);
+
+        templateImage.Save($@"C:\temp\template_{n}.png", ImageFormat.Png);
 
         // Copy the same four corners of the outer-arc mask into a parallel 2N×2N atlas.
         // In Step 3 we read the mask alpha to drive outerFade instead of a linear ramp.
-        var outerArcMaskAtlas = new Bitmap(2 * N, 2 * N, PixelFormat.Format32bppArgb);
+        var outerArcMaskAtlas = new Bitmap(2 * n, 2 * n, PixelFormat.Format32bppArgb);
         using (var maskAtlasGraphics = Graphics.FromImage(outerArcMaskAtlas))
         {
             maskAtlasGraphics.InterpolationMode = InterpolationMode.NearestNeighbor;
-            maskAtlasGraphics.PixelOffsetMode   = PixelOffsetMode.Half;
+            maskAtlasGraphics.PixelOffsetMode = PixelOffsetMode.Half;
             foreach (var (source, target) in copies)
             {
                 maskAtlasGraphics.DrawImage(
                     outerArcMask,
-                    destRect: new Rectangle(target.X, target.Y, N, N),
-                    srcRect:  new Rectangle(source.X, source.Y, N, N),
-                    srcUnit:  GraphicsUnit.Pixel);
+                    destRect: new Rectangle(target.X, target.Y, n, n),
+                    srcRect: new Rectangle(source.X, source.Y, n, n),
+                    srcUnit: GraphicsUnit.Pixel);
             }
         }
 
@@ -186,18 +189,18 @@ internal static class BezelGraphics
         // The inner arc zone pixels near each corner land at (N-1,N-1) / (N,N-1) / (N-1,N) / (N,N)
         // within their respective copy regions, ending up adjacent to the shared centre (N,N) in
         // the atlas — which is exactly where Step 3 reads them using (srcX-N, srcY-N) offsets.
-        var innerArcMaskAtlas = new Bitmap(2 * N, 2 * N, PixelFormat.Format32bppArgb);
+        var innerArcMaskAtlas = new Bitmap(2 * n, 2 * n, PixelFormat.Format32bppArgb);
         using (var innerMaskAtlasGraphics = Graphics.FromImage(innerArcMaskAtlas))
         {
             innerMaskAtlasGraphics.InterpolationMode = InterpolationMode.NearestNeighbor;
-            innerMaskAtlasGraphics.PixelOffsetMode   = PixelOffsetMode.Half;
+            innerMaskAtlasGraphics.PixelOffsetMode = PixelOffsetMode.Half;
             foreach (var (source, target) in copies)
             {
                 innerMaskAtlasGraphics.DrawImage(
                     innerArcMask,
-                    destRect: new Rectangle(target.X, target.Y, N, N),
-                    srcRect:  new Rectangle(source.X, source.Y, N, N),
-                    srcUnit:  GraphicsUnit.Pixel);
+                    destRect: new Rectangle(target.X, target.Y, n, n),
+                    srcRect: new Rectangle(source.X, source.Y, n, n),
+                    srcUnit: GraphicsUnit.Pixel);
             }
         }
 
@@ -246,17 +249,16 @@ internal static class BezelGraphics
         // alpha channel (transparency) as-is. this way the highlight / shadow
         // on semi transparent flat pixels will be proportional in intensity
         // to the flat pixel's visiblity.
-
         try
         {
             unsafe
             {
-                byte* scan0          = (byte*)templateData.Scan0;
-                var   stride         = templateData.Stride;
-                byte* maskScan0      = (byte*)outerArcMaskData.Scan0;
-                var   maskStride     = outerArcMaskData.Stride;
+                byte* scan0 = (byte*)templateData.Scan0;
+                var stride = templateData.Stride;
+                byte* maskScan0 = (byte*)outerArcMaskData.Scan0;
+                var maskStride = outerArcMaskData.Stride;
                 byte* innerMaskScan0 = (byte*)innerArcMaskData.Scan0;
-                var   innerMaskStride = innerArcMaskData.Stride;
+                var innerMaskStride = innerArcMaskData.Stride;
                 const int bitsPerPixel = 4; // PixelFormat.Format32bppArgb
 
                 for (var srcY = 0; srcY < templateImage.Height; srcY++)
@@ -271,9 +273,8 @@ internal static class BezelGraphics
                         }
 
                         var originOffset = new Point(
-                            y: srcY - N,
-                            x: srcX - N
-                        );
+                            y: srcY - n,
+                            x: srcX - n);
                         var originDistance = Math.Sqrt(
                             (originOffset.X * originOffset.X) + (originOffset.Y * originOffset.Y));
 
@@ -284,7 +285,7 @@ internal static class BezelGraphics
                         // are skipped; the +1 guard on originDistance catches the partial-alpha
                         // antialias pixels GDI+ places just outside the nominal radius N.
                         byte* maskArgb = maskScan0 + (srcY * maskStride) + (srcX * bitsPerPixel);
-                        var   outerFade = maskArgb[3] / 255.0;
+                        var outerFade = maskArgb[3] / 255.0;
 
                         // inOuterArc: any pixel the outer mask has coverage for.
                         var inOuterArc = outerFade > 0.0;
@@ -293,8 +294,8 @@ internal static class BezelGraphics
                         // The mask's outer arc (radius D from each inner corner) gives GDI+ antialias
                         // at the boundary between the inner arc zone and the flat zone.
                         byte* innerMaskArgb = innerMaskScan0 + (srcY * innerMaskStride) + (srcX * bitsPerPixel);
-                        var   innerFade = innerMaskArgb[3] / 255.0;
-                        var   inInnerArc = innerFade > 0.0;
+                        var innerFade = innerMaskArgb[3] / 255.0;
+                        var inInnerArc = innerFade > 0.0;
 
                         if (!inOuterArc && !inInnerArc)
                         {
@@ -311,12 +312,18 @@ internal static class BezelGraphics
                         if ((originOffset.X < 0) && (originOffset.Y < 0))
                         {
                             // pixel is in the top-left quadrant
-                            // highlight and shadow effects overlap and combine to make a 
+                            // highlight and shadow effects overlap and combine to make a
                             // TL — top+left both highlight → outer double-HL, inner double-SH
                             theta = 270.0 - GdiAngle(originOffset.X, originOffset.Y);
-                            var w = CornerWeight(theta) + CornerWeight(90 - theta) + 0.5 + 0.75 * MidpointPeak(theta);
-                            if (inOuterArc) hl = w;
-                            else sh = w;
+                            var w = CornerWeight(theta) + CornerWeight(90 - theta) + 0.5 + (0.75 * MidpointPeak(theta));
+                            if (inOuterArc)
+                            {
+                                hl = w;
+                            }
+                            else
+                            {
+                                sh = w;
+                            }
                         }
                         else if ((originOffset.X >= 0) && (originOffset.Y < 0))
                         {
@@ -339,12 +346,17 @@ internal static class BezelGraphics
                             // (inner HL halved to avoid over-brightness against outer-BR shadow)
                             theta = 90.0 - GdiAngle(originOffset.X, originOffset.Y);
                             if (inOuterArc)
-                                sh = CornerWeight(theta) + CornerWeight(90 - theta) + 0.5 + 0.75 * MidpointPeak(theta);
+                            {
+                                sh = CornerWeight(theta) + CornerWeight(90 - theta) + 0.5 + (0.75 * MidpointPeak(theta));
+                            }
                             else
-                                hl = 0.5 * CornerWeight(theta) + 0.5 * CornerWeight(90 - theta) + 0.25 + 0.375 * MidpointPeak(theta);
+                            {
+                                hl = (0.5 * CornerWeight(theta)) + (0.5 * CornerWeight(90 - theta)) + 0.25 + (0.375 * MidpointPeak(theta));
+                            }
                         }
-                        else  // originOffset.X < 0 && originOffset.Y >= 0
+                        else
                         {
+                            // originOffset.X < 0 && originOffset.Y >= 0
                             // BL — bottom=SH meets left=HL, both fade to flat at 45°
                             theta = GdiAngle(originOffset.X, originOffset.Y) - 90.0;
                             if (inOuterArc)
@@ -363,6 +375,7 @@ internal static class BezelGraphics
                         srcArgb[0] = newColor.B;
                         srcArgb[1] = newColor.G;
                         srcArgb[2] = newColor.R;
+
                         // srcArgb[3] (alpha) intentionally unchanged — preserves antialiased
                         // outer-edge coverage for correct DrawImage compositing
                     }
@@ -380,7 +393,7 @@ internal static class BezelGraphics
         innerArcMaskAtlas.Dispose();
 
         templateImage.Save(
-            $@"C:\temp\corner_atlas_{N}_{bezel3DDepth}.png",
+            $@"C:\temp\corner_atlas_{n}_{bezel3DDepth}.png",
             ImageFormat.Png);
 
         return templateImage;
@@ -400,8 +413,10 @@ internal static class BezelGraphics
     /// </summary>
     internal static void DrawBezelEdge(
         Graphics g,
-        int x1, int y1,
-        int x2, int y2,
+        int x1,
+        int y1,
+        int x2,
+        int y2,
         Color baseColor,
         Color cornerColor,
         float fadeFraction)
@@ -419,10 +434,11 @@ internal static class BezelGraphics
         {
             const float plateau = 0.05f;
             var blend = new ColorBlend(4);
-            blend.Colors    = new[] { cornerColor, cornerColor, baseColor, baseColor };
+            blend.Colors = new[] { cornerColor, cornerColor, baseColor, baseColor };
             blend.Positions = new[] { 0f, plateau, fadeFraction, 1f };
             brush.InterpolationColors = blend;
         }
+
         g.FillRectangle(brush, edgeBounds);
 
         g.SmoothingMode = savedMode;
@@ -447,14 +463,19 @@ internal static class BezelGraphics
     /// </summary>
     internal static void DrawBezelEdges(
         Graphics g,
-        int x, int y, int width, int height,
-        int bezelThickness, int bezel3DDepth,
+        int x,
+        int y,
+        int width,
+        int height,
+        int bezelThickness,
+        int bezel3DDepth,
         Color bezelColor,
-        double hlMax, double shMax,
+        double hlMax,
+        double shMax,
         double edgeFadeFraction)
     {
-        var N = bezelThickness;
-        var D = bezel3DDepth;
+        var n = bezelThickness;
+        var d = bezel3DDepth;
 
         // Pre-compute straight-edge span endpoints (constant across all depth layers).
         // These are the x/y positions of the arc centres at the corners of the bezel,
@@ -463,55 +484,62 @@ internal static class BezelGraphics
         // DrawBezelEdge uses |x2−x1| as the rectangle width, so x2 is EXCLUSIVE —
         // setting outerTrX = x+width−N means the filled rectangle ends at x+width−N−1,
         // which is exactly the last pixel before the TR/BR corner zone.
-        var outerTlX = x + N;               // left  end of outer top/bottom segments (inclusive)
-        var outerTrX = x + width  - N;      // right end (exclusive — rectangle ends at outerTrX−1)
-        var outerTlY = y + N;               // top   end of outer left/right segments (inclusive)
-        var outerBlY = y + height - N;      // bottom end (exclusive — rectangle ends at outerBlY−1)
+        var outerTlX = x + n;               // left  end of outer top/bottom segments (inclusive)
+        var outerTrX = x + width - n;       // right end (exclusive — rectangle ends at outerTrX−1)
+        var outerTlY = y + n;               // top   end of outer left/right segments (inclusive)
+        var outerBlY = y + height - n;      // bottom end (exclusive — rectangle ends at outerBlY−1)
 
         // Inner span: starts at the first pixel OUTSIDE the corner zone (x+N, y+N),
         // not at x+N−1 / y+N−1 which would overlap the corner atlas region drawn last.
-        var innerTlX = x + N;               // left  end of inner top/bottom segments (inclusive)
-        var innerTrX = x + width  - N;      // right end (exclusive)
-        var innerTlY = y + N;               // top   end of inner left/right segments (inclusive)
-        var innerBlY = y + height - N;      // bottom end (exclusive)
+        var innerTlX = x + n;               // left  end of inner top/bottom segments (inclusive)
+        var innerTrX = x + width - n;       // right end (exclusive)
+        var innerTlY = y + n;               // top   end of inner left/right segments (inclusive)
+        var innerBlY = y + height - n;      // bottom end (exclusive)
 
         Color Pix(double hl, double sh) => BezelPrimitives.ApplyEffect(hl, sh, bezelColor, hlMax, shMax);
 
         // ── Outer ring edge effects ───────────────────────────────────────────────
-        // d = 0 is the outermost pixel row/column; d = D-1 is the innermost effect layer.
-        for (var d = 0; d < D; d++)
+        // when d2 = 0,   d2 is the outermost pixel row/column
+        // when d2 = d-1, d2 is the innermost effect layer.
+        for (var d2 = 0; d2 < d; d2++)
         {
-            var top    = y + d;
-            var bottom = y + height - d - 1;
-            var left   = x + d;
-            var right  = x + width  - d - 1;
+            var top = y + d2;
+            var bottom = y + height - d2 - 1;
+            var left = x + d2;
+            var right = x + width - d2 - 1;
 
             // Top outer:    HL base, secondary HL from TL corner (left→right)
             DrawBezelEdge(g, outerTlX, top,    outerTrX, top,    Pix(1.0, 0.0), Pix(1.5, 0.0), 0.33f);
+
             // Bottom outer: SH base, secondary SH from BR corner (right→left)
             DrawBezelEdge(g, outerTrX, bottom, outerTlX, bottom, Pix(0.0, 1.0), Pix(0.0, 1.5), 0.33f);
+
             // Left outer:   HL base, secondary HL from TL corner (top→bottom)
             DrawBezelEdge(g, left, outerTlY,   left, outerBlY,   Pix(1.0, 0.0), Pix(1.5, 0.0), (float)edgeFadeFraction);
+
             // Right outer:  SH base, secondary SH from BR corner (bottom→top)
             DrawBezelEdge(g, right, outerBlY,  right, outerTlY,  Pix(0.0, 1.0), Pix(0.0, 1.5), (float)edgeFadeFraction);
         }
 
         // ── Inner ring edge effects ───────────────────────────────────────────────
-        // d = 0 is the innermost pixel row/column (adjacent to content area);
-        // d = D-1 is the outermost effect layer inside the ring.
-        for (var d = 0; d < D; d++)
+        // when d2 = 0,   d2 is the innermost pixel row/column (adjacent to content area);
+        // when d2 = D-1, d2 is the outermost effect layer inside the ring.
+        for (var d2 = 0; d2 < d; d2++)
         {
-            var iTop    = y + N - d - 1;
-            var iBottom = y + height - N + d;
-            var iLeft   = x + N - d - 1;
-            var iRight  = x + width - N + d;
+            var iTop = y + n - d2 - 1;
+            var iBottom = y + height - n + d2;
+            var iLeft = x + n - d2 - 1;
+            var iRight = x + width - n + d2;
 
             // Top inner:    SH base (reversed), secondary SH from TL inner corner
             DrawBezelEdge(g, innerTlX, iTop,    innerTrX, iTop,    Pix(0.0, 1.0), Pix(0.0, 1.5), 0.33f);
+
             // Bottom inner: HL halved base (reversed), secondary HL from BR inner corner
             DrawBezelEdge(g, innerTrX, iBottom, innerTlX, iBottom, Pix(0.5, 0.0), Pix(1.0, 0.0), 0.33f);
+
             // Left inner:   SH base (top→bottom)
             DrawBezelEdge(g, iLeft, innerTlY,   iLeft, innerBlY,   Pix(0.0, 1.0), Pix(0.0, 1.5), (float)edgeFadeFraction);
+
             // Right inner:  HL halved base (bottom→top)
             DrawBezelEdge(g, iRight, innerBlY,  iRight, innerTlY,  Pix(0.5, 0.0), Pix(0.75, 0.0), (float)edgeFadeFraction);
         }
@@ -525,13 +553,17 @@ internal static class BezelGraphics
     /// </summary>
     internal static void DrawFlatBezelRing(
         Graphics g,
-        int x, int y, int width, int height,
-        int bezelThickness, Color bezelColor)
+        int x,
+        int y,
+        int width,
+        int height,
+        int bezelThickness,
+        Color bezelColor)
     {
         GraphicsHelpers.EnableAntialias(g);
 
-        var innerWidth = width - 2 * bezelThickness;
-        var innerHeight = height - 2 * bezelThickness;
+        var innerWidth = width - (2 * bezelThickness);
+        var innerHeight = height - (2 * bezelThickness);
 
         if (innerWidth <= 0 || innerHeight <= 0)
         {

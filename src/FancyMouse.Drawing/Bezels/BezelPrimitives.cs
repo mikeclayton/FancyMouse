@@ -1,21 +1,69 @@
 ﻿using System.Drawing;
 using System.Drawing.Drawing2D;
 
-namespace BezelPreview.Drawing;
+namespace FancyMouse.Drawing.Bezels;
 
 internal static class BezelPrimitives
 {
     /// <summary>
     /// Returns the 3-D effect weight at angular distance <paramref name="theta"/> degrees
-    /// from a straight bezel edge.  Full strength from 0° to <paramref name="fadeStart"/>,
+    /// from a straight bezel edge. Full strength from 0° to <paramref name="fadeStart"/>,
     /// cosine rolloff from <paramref name="fadeStart"/> to <paramref name="fadeEnd"/>,
     /// zero beyond.
     /// </summary>
     internal static double CornerWeight(double theta, double fadeStartDegrees, double fadeEndDegrees)
+        => CosineEase(theta, fadeStartDegrees, fadeEndDegrees, 1.0, 0.0);
+
+    /// <summary>
+    /// Implements a cosine easing function that can be used creating a
+    /// smooth transition between two values within an interval.
+    /// <code>
+    ///  +-----+---+-----+
+    ///   -----.   .       - start value
+    ///        .\  .
+    ///        . \ .
+    ///        .  \.
+    ///        .   .-----  - end value
+    ///  +-----+---+-----+
+    ///        ^   ^
+    ///        |   interval end
+    ///        interval start
+    /// </code>
+    ///
+    /// </summary>
+    /// <returns>
+    /// if x is less than intervalStart, returns startValue.
+    /// if x is more than intervalEnd,returns endValue.
+    /// otherwise returns an eased value between startValue and endValue
+    /// </returns>
+    internal static double CosineEase(
+        double x,
+        double intervalStart,
+        double intervalEnd,
+        double startValue,
+        double endValue)
     {
-        if (theta <= fadeStartDegrees) return 1.0;
-        if (theta < fadeEndDegrees) return 0.5 * (1.0 + Math.Cos(Math.PI * (theta - fadeStartDegrees) / (fadeEndDegrees - fadeStartDegrees)));
-        return 0.0;
+        if (x <= intervalStart)
+        {
+            return startValue;
+        }
+
+        if (x >= intervalEnd)
+        {
+            return endValue;
+        }
+
+        var intervalWidth = intervalEnd - intervalStart;
+        if (intervalWidth <= 0)
+        {
+            return startValue;
+        }
+
+        var t = (x - intervalStart) / intervalWidth;
+        var weight = 0.5 * (1.0 - Math.Cos(Math.PI * t));
+
+        var delta = endValue - startValue;
+        return startValue + (delta * weight);
     }
 
     /// <summary>
@@ -42,10 +90,7 @@ internal static class BezelPrimitives
     /// to zero at 45° so the bezel colour is clean at the diagonal.
     /// </summary>
     internal static double MidpointFade(double theta)
-    {
-        if (theta >= 45.0) return 0.0;
-        return 0.5 * (1.0 + Math.Cos(Math.PI * theta / 45.0));
-    }
+        => CosineEase(theta, 0.0, 45.0, 1.0, 0.0);
 
     /// <summary>
     /// Blends highlight (<paramref name="hl"/>) and shadow (<paramref name="sh"/>) multipliers
@@ -53,15 +98,17 @@ internal static class BezelPrimitives
     /// <paramref name="hlMax"/> / <paramref name="shMax"/> so the effect stays subtle.
     /// </summary>
     internal static Color ApplyEffect(
-        double hl, double sh,
+        double hl,
+        double sh,
         Color baseColor,
-        double hlMax, double shMax)
+        double hlMax,
+        double shMax)
     {
         var ha = Math.Min(1.0, hl * hlMax);
         var sa = Math.Min(1.0, sh * shMax);
-        var r = (baseColor.R + ha * (255 - baseColor.R)) * (1 - sa);
-        var g = (baseColor.G + ha * (255 - baseColor.G)) * (1 - sa);
-        var b = (baseColor.B + ha * (255 - baseColor.B)) * (1 - sa);
+        var r = (baseColor.R + (ha * (255 - baseColor.R))) * (1 - sa);
+        var g = (baseColor.G + (ha * (255 - baseColor.G))) * (1 - sa);
+        var b = (baseColor.B + (ha * (255 - baseColor.B))) * (1 - sa);
         return Color.FromArgb(
             255,
             (int)Math.Clamp(r, 0, 255),
@@ -84,6 +131,7 @@ internal static class BezelPrimitives
         {
             path.AddRectangle(new Rectangle(x, y, w, h));
         }
+
         path.CloseFigure();
         return path;
     }

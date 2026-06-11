@@ -2,7 +2,7 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 
-namespace BezelPreview.Drawing;
+namespace FancyMouse.Drawing.Bezels;
 
 // ═════════════════════════════════════════════════════════════════════════════
 // BezelRenderer
@@ -30,14 +30,16 @@ namespace BezelPreview.Drawing;
 internal sealed class BezelRenderer : IDisposable
 {
     // ── Configuration (all set at construction, never mutated) ───────────────
-    public readonly Color  BezelColor;
-    public readonly int    BezelThickness;    // outer corner radius = ring width in pixels
-    public readonly int    ThreeDEffectDepth; // 3-D effect layer depth at each ring edge
-    public readonly double FadeStart;         // degrees from edge where corner rolloff begins
-    public readonly double FadeEnd;           // degrees where rolloff reaches zero
-    public readonly double HlMax;             // peak highlight opacity fraction
-    public readonly double ShMax;             // peak shadow   opacity fraction
-    public readonly double EdgeFadeFraction;  // fraction of vertical edge with secondary effect
+#pragma warning disable SA1306
+    private readonly Color BezelColor;
+    private readonly int BezelThickness;    // outer corner radius = ring width in pixels
+    private readonly int ThreeDEffectDepth; // 3-D effect layer depth at each ring edge
+    private readonly double FadeStart;         // degrees from edge where corner rolloff begins
+    private readonly double FadeEnd;           // degrees where rolloff reaches zero
+    private readonly double HlMax;             // peak highlight opacity fraction
+    private readonly double ShMax;             // peak shadow   opacity fraction
+    private readonly double EdgeFadeFraction;  // fraction of vertical edge with secondary effect
+#pragma warning restore SA1306
 
     // ── Corner atlas (owned; built eagerly at construction) ──────────────────
     // 2N×2N sprite sheet with pre-rendered corners and baked-in 3-D effects.
@@ -45,23 +47,23 @@ internal sealed class BezelRenderer : IDisposable
     private readonly Bitmap _cornerAtlas;
 
     public BezelRenderer(
-        Color  bezelColor,
-        int    bezelThickness,
-        int    threeDEffectDepth,
+        Color bezelColor,
+        int bezelThickness,
+        int threeDEffectDepth,
         double fadeStart,
         double fadeEnd,
         double hlMax,
         double shMax,
         double edgeFadeFraction)
     {
-        BezelColor        = bezelColor;
-        BezelThickness    = bezelThickness;
+        BezelColor = bezelColor;
+        BezelThickness = bezelThickness;
         ThreeDEffectDepth = threeDEffectDepth;
-        FadeStart         = fadeStart;
-        FadeEnd           = fadeEnd;
-        HlMax             = hlMax;
-        ShMax             = shMax;
-        EdgeFadeFraction  = edgeFadeFraction;
+        FadeStart = fadeStart;
+        FadeEnd = fadeEnd;
+        HlMax = hlMax;
+        ShMax = shMax;
+        EdgeFadeFraction = edgeFadeFraction;
 
         _cornerAtlas = BezelGraphics.GetCornerTemplates(
             bezelThickness,
@@ -85,7 +87,7 @@ internal sealed class BezelRenderer : IDisposable
     //   Inner arc effects are reversed; BR inner highlight is halved.
     public void DrawBezel(Graphics g, int x, int y, int width, int height)
     {
-        var N = BezelThickness;
+        var n = BezelThickness;
 
         // ── Straight edge flat fills ──────────────────────────────────────────
         // Fill the four straight edge strips (between corners) with flat BezelColor.
@@ -94,11 +96,12 @@ internal sealed class BezelRenderer : IDisposable
         g.SmoothingMode = SmoothingMode.None;
         using (var flatBrush = new SolidBrush(BezelColor))
         {
-            g.FillRectangle(flatBrush, x + N, y,              width - 2 * N, N);  // top
-            g.FillRectangle(flatBrush, x + N, y + height - N, width - 2 * N, N);  // bottom
-            g.FillRectangle(flatBrush, x,             y + N,  N,             height - 2 * N);  // left
-            g.FillRectangle(flatBrush, x + width - N, y + N,  N,             height - 2 * N);  // right
+            g.FillRectangle(flatBrush, x + n, y,              width - (2 * n), n);  // top
+            g.FillRectangle(flatBrush, x + n, y + height - n, width - (2 * n), n);  // bottom
+            g.FillRectangle(flatBrush, x,             y + n,  n,             height - (2 * n));  // left
+            g.FillRectangle(flatBrush, x + width - n, y + n,  n,             height - (2 * n));  // right
         }
+
         g.SmoothingMode = savedMode;
 
         // ── Straight edge 3-D effects ─────────────────────────────────────────
@@ -106,9 +109,16 @@ internal sealed class BezelRenderer : IDisposable
         // layers of all four straight edge segments.
         BezelGraphics.DrawBezelEdges(
             g,
-            x, y, width, height,
-            BezelThickness, ThreeDEffectDepth,
-            BezelColor, HlMax, ShMax, EdgeFadeFraction);
+            x,
+            y,
+            width,
+            height,
+            BezelThickness,
+            ThreeDEffectDepth,
+            BezelColor,
+            HlMax,
+            ShMax,
+            EdgeFadeFraction);
 
         // ── Corners (flat fill + 3-D effects baked in) ────────────────────────
         // Drawn last so the antialiased outer-edge pixels composite correctly
@@ -116,16 +126,16 @@ internal sealed class BezelRenderer : IDisposable
         var corners = new[]
         {
             // (source region in atlas,      destination on target)
-            (src: new Rectangle(0, 0, N, N), dest: new Rectangle(x,             y,              N, N)),  // TL
-            (src: new Rectangle(N, 0, N, N), dest: new Rectangle(x + width - N, y,              N, N)),  // TR
-            (src: new Rectangle(0, N, N, N), dest: new Rectangle(x,             y + height - N, N, N)),  // BL
-            (src: new Rectangle(N, N, N, N), dest: new Rectangle(x + width - N, y + height - N, N, N)),  // BR
+            (src: new Rectangle(0, 0, n, n), dest: new Rectangle(x,             y,              n, n)),  // TL
+            (src: new Rectangle(n, 0, n, n), dest: new Rectangle(x + width - n, y,              n, n)),  // TR
+            (src: new Rectangle(0, n, n, n), dest: new Rectangle(x,             y + height - n, n, n)),  // BL
+            (src: new Rectangle(n, n, n, n), dest: new Rectangle(x + width - n, y + height - n, n, n)),  // BR
         };
         foreach (var (src, dest) in corners)
             g.DrawImage(_cornerAtlas, dest, src, GraphicsUnit.Pixel);
     }
 
-    // ── Disposal ────────────────────────────────────────────────────────────
+    /* ── Disposal ──────────────────────────────────────────────────────────── */
 
     public void Dispose()
     {
