@@ -21,6 +21,7 @@ using Windows.Graphics;
 using Windows.System;
 using Windows.Win32;
 using Windows.Win32.Foundation;
+using Windows.Win32.Graphics.Gdi;
 using Windows.Win32.UI.WindowsAndMessaging;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -327,6 +328,10 @@ public sealed partial class PreviewWindow : Window
         await this.PositionWindowAsync(formLayout.FormBounds)
             .ConfigureAwait(false);
 
+        var cornerRadius = (int)appSettings.PreviewStyle.CanvasStyle.BorderStyle.Left;
+        await this.ApplyWindowRegionAsync(cornerRadius)
+            .ConfigureAwait(false);
+
         var imageCopyServices = displayInfo.Devices
             .Select(
                 deviceInfo => (IImageRegionCopyService)new DesktopImageRegionCopyService())
@@ -360,6 +365,62 @@ public sealed partial class PreviewWindow : Window
         // all the disposed images can pile up without being GC'ed
         GC.Collect();
         GC.WaitForPendingFinalizers();
+    }
+
+    /// <summary>
+    /// Clips the window's visible and input region to a rounded rectangle so that the
+    /// application behind it is visible through the outer bezel corners.
+    ///
+    /// <see cref="PInvoke.CreateRoundRectRgn"/> creates a GDI region whose corner arcs
+    /// match the outer bezel arc radius exactly — the cx/cy parameters are the full
+    /// ellipse diameter (2 × <paramref name="cornerRadius"/>), not the radius itself.
+    /// After a successful <see cref="PInvoke.SetWindowRgn"/> call Windows takes ownership
+    /// of the region handle and frees it when it is no longer needed; the caller must not
+    /// pass the handle to <c>DeleteObject</c> afterwards.
+    /// </summary>
+    private async Task ApplyWindowRegionAsync(int cornerRadius)
+    {
+        await this.InvokeOnUiThreadAsync(
+            () =>
+            {
+                var hWnd = (HWND)WinRT.Interop.WindowNative.GetWindowHandle(this);
+
+                if (cornerRadius <= 0)
+                {
+                    // remove any existing region, restoring the full rectangular window
+                    var clearResult = PInvoke.SetWindowRgn(hWnd, default, bRedraw: true);
+                    if (clearResult == 0)
+                    {
+                        var lastError = Marshal.GetLastPInvokeError();
+                        ResultHandler.HandleResult(clearResult, success: lastError == 0, lastError, nameof(PInvoke.SetWindowRgn));
+                    }
+
+                    return;
+                }
+
+                // AppWindow.Size is in physical pixels, matching SetWindowRgn's coordinate space
+                var width = this.AppWindow.Size.Width;
+                var height = this.AppWindow.Size.Height;
+
+                // cx/cy are the full ellipse diameter (not radius), so 2 × cornerRadius
+                var diameter = 2 * cornerRadius;
+                var hRgn = PInvoke.CreateRoundRectRgn(0, 0, width, height, diameter, diameter);
+                if (hRgn.IsNull)
+                {
+                    var lastError = Marshal.GetLastPInvokeError();
+                    ResultHandler.HandleResult(0, success: false, lastError, nameof(PInvoke.CreateRoundRectRgn));
+                }
+
+                // Windows owns hRgn after a successful SetWindowRgn call — do not DeleteObject it.
+                // On failure the caller retains ownership, so DeleteObject is called to release it.
+                var regionResult = PInvoke.SetWindowRgn(hWnd, hRgn, bRedraw: true);
+                if (regionResult == 0)
+                {
+                    PInvoke.DeleteObject(hRgn);
+                    var lastError = Marshal.GetLastPInvokeError();
+                    ResultHandler.HandleResult(regionResult, success: lastError == 0, lastError, nameof(PInvoke.SetWindowRgn));
+                }
+            }).ConfigureAwait(false);
     }
 
     /// <summary>

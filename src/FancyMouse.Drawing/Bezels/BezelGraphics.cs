@@ -4,25 +4,30 @@ using FancyMouse.Models.Styles;
 
 namespace FancyMouse.Drawing.Bezels;
 
-internal static class BezelGraphics
+public static class BezelGraphics
 {
     /// <summary>
-    /// Creates a graphics path for a rectangle with rounded corners.
+    /// Creates a <see cref="GraphicsPath"/> for an axis-aligned rounded rectangle.
+    ///
+    /// The path consists of four quarter-circle arcs joined into a single closed
+    /// figure.  When <paramref name="radius"/> is zero the path degenerates to a
+    /// plain rectangle.  The caller owns the returned path and is responsible for
+    /// disposing it.
     /// </summary>
-    private static GraphicsPath GetRoundedRectanglePath(int x, int y, int w, int h, int r)
+    public static GraphicsPath GetRoundedRectanglePath(int x, int y, int width, int height, int radius)
     {
         var path = new GraphicsPath();
-        if (r > 0)
+        if (radius > 0)
         {
-            var d = 2 * r;
-            path.AddArc(x, y, d, d, 180, 90);
-            path.AddArc(x + w - d, y, d, d, 270, 90);
-            path.AddArc(x + w - d, y + h - d, d, d, 0, 90);
-            path.AddArc(x, y + h - d, d, d, 90, 90);
+            var d = 2 * radius;
+            path.AddArc(x,             y,              d, d, 180, 90); // TL
+            path.AddArc(x + width - d, y,              d, d, 270, 90); // TR
+            path.AddArc(x + width - d, y + height - d, d, d,   0, 90); // BR
+            path.AddArc(x,             y + height - d, d, d,  90, 90); // BL
         }
         else
         {
-            path.AddRectangle(new Rectangle(x, y, w, h));
+            path.AddRectangle(new Rectangle(x, y, width, height));
         }
 
         path.CloseFigure();

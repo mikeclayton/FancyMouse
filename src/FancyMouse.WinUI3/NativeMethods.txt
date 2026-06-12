@@ -7,3 +7,7 @@ USER_DEFAULT_SCREEN_DPI
 GetDpiForWindow
 
 SetLastError
+
+CreateRoundRectRgn
+SetWindowRgn
+DeleteObject

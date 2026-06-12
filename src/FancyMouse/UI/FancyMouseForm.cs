@@ -2,6 +2,7 @@ using System.Diagnostics;
 
 using FancyMouse.Common.Helpers;
 using FancyMouse.Common.Imaging;
+using FancyMouse.Drawing.Bezels;
 using FancyMouse.Models.Display;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.ViewModel;
@@ -212,6 +213,9 @@ internal sealed partial class FancyMouseForm : Form
 
         await this.PositionFormAsync(formLayout.FormBounds);
 
+        var cornerRadius = (int)appSettings.PreviewStyle.CanvasStyle.BorderStyle.Left;
+        await this.ApplyWindowRegionAsync(cornerRadius);
+
         var imageCopyServices = displayInfo.Devices
             .Select(
                 deviceInfo => (IImageRegionCopyService)new DesktopImageRegionCopyService())
@@ -265,6 +269,33 @@ internal sealed partial class FancyMouseForm : Form
                 this.Location = rect.Location;
                 _ = this.PointToScreen(Point.Empty);
                 this.Size = rect.Size;
+            });
+    }
+
+    /// <summary>
+    /// Clips the window's visible and input region to a rounded rectangle so that the
+    /// application behind it is visible through the outer bezel corners.
+    ///
+    /// The rounded rectangle uses the same corner radius as the outer bezel arc, so the
+    /// clip boundary aligns exactly with the rendered corners.  WinForms calls
+    /// <c>SetWindowRgn</c> internally when <see cref="Form.Region"/> is assigned —
+    /// no P/Invoke is needed here.
+    /// </summary>
+    private async Task ApplyWindowRegionAsync(int cornerRadius)
+    {
+        await this.InvokeAsync(
+            () =>
+            {
+                if (cornerRadius <= 0)
+                {
+                    this.Region = null; // remove clipping, restore full rectangle
+                    return;
+                }
+
+                // this.Width / this.Height are the form's physical pixel dimensions after
+                // PositionFormAsync has run; Form.Region uses the same coordinate space
+                using var path = BezelGraphics.GetRoundedRectanglePath(0, 0, this.Width, this.Height, cornerRadius);
+                this.Region = new Region(path);
             });
     }
 
