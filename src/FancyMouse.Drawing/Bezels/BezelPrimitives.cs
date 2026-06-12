@@ -81,10 +81,14 @@ internal static class BezelPrimitives
     /// Returns 0.0 at the straight-edge junctions (θ = 0° and θ = 90°), rising to
     /// 1.0 at the 45° corner midpoint. Used on TL / BR corners to add a
     /// secondary-effect peak halfway round the double-highlight / double-shadow arc.
+    ///
+    /// Uses a half-sine curve (sin(θ × π/90)) for a smooth, continuous transition
+    /// that is exactly 0 at both endpoints and avoids visible seams where the corner
+    /// arc meets the straight edges.
     /// </summary>
     /// <param name="theta">Angle in degrees, measured from the nearest straight edge.</param>
     internal static double MidpointPeak(double theta)
-        => MidpointFade(Math.Abs(theta - 45.0));
+        => Math.Sin(theta * Math.PI / 90.0);
 
     /// <summary>
     /// Fades 1.0 → 0.0 from a straight edge (θ = 0°) to the 45° corner midpoint.

@@ -1,5 +1,5 @@
 using System.Drawing;
-
+using System.Drawing.Drawing2D;
 using FancyMouse.Models.Styles;
 
 namespace FancyMouse.Drawing.Bezels;
@@ -27,7 +27,7 @@ namespace FancyMouse.Drawing.Bezels;
 // 3-D effects baked in) is built eagerly at construction time and owned by
 // this instance.
 // ═════════════════════════════════════════════════════════════════════════════
-internal sealed class BezelRenderer : IDisposable
+public sealed class BezelRenderer : IDisposable
 {
     private readonly BorderStyle _borderStyle;
     private readonly BezelConfig _config;
@@ -64,6 +64,12 @@ internal sealed class BezelRenderer : IDisposable
         // ── Corners (flat fill + 3-D effects baked in) ────────────────────────
         // Drawn last so the antialiased outer-edge pixels composite correctly
         // over whatever was drawn in the edge strips above.
+        //
+        // NearestNeighbor + PixelOffsetMode.Half ensures an exact 1:1 pixel copy.
+        // With Half mode the sample point for dest pixel i lands at exactly i,
+        // so NearestNeighbor snaps to the correct source pixel without bilinear
+        // blurring. Default bilinear samples at i+0.5, shifting the arc edge ~0.5 px
+        // inward and creating a visible gap between the corner arc and the edge strips.
         var n = (int)_borderStyle.Left;
         var corners = new[]
         {
@@ -73,8 +79,14 @@ internal sealed class BezelRenderer : IDisposable
             (src: new Rectangle(0, n, n, n), dest: new Rectangle(x,             y + height - n, n, n)),  // BL
             (src: new Rectangle(n, n, n, n), dest: new Rectangle(x + width - n, y + height - n, n, n)),  // BR
         };
+        var savedInterpolation = g.InterpolationMode;
+        var savedPixelOffset = g.PixelOffsetMode;
+        g.InterpolationMode = InterpolationMode.NearestNeighbor;
+        g.PixelOffsetMode = PixelOffsetMode.Half;
         foreach (var (src, dest) in corners)
             g.DrawImage(_cornerAtlas, dest, src, GraphicsUnit.Pixel);
+        g.InterpolationMode = savedInterpolation;
+        g.PixelOffsetMode = savedPixelOffset;
     }
 
     /* ── Disposal ──────────────────────────────────────────────────────────── */

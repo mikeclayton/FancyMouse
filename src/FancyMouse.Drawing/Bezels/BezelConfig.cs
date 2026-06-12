@@ -5,7 +5,7 @@ namespace FancyMouse.Drawing.Bezels;
 /// These are independent of bezel size — the same config can be reused across
 /// bezels of different thicknesses or colours.
 /// </summary>
-internal sealed class BezelConfig
+public sealed class BezelConfig
 {
     public BezelConfig(
         double fadeStart,
