@@ -5,7 +5,7 @@ namespace FancyMouse.Common.Interop;
 
 /// <summary>
 /// Wrapper around a Windows window class that can be passed to
-/// external assemblies to manage WNDPROC delgate lifetime without
+/// external assemblies to manage WNDPROC delegate lifetime without
 /// exposing internals.
 /// </summary>
 public sealed class Win32WindowClass

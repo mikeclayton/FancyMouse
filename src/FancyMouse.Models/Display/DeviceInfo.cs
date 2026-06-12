@@ -13,9 +13,7 @@ public sealed record DeviceInfo
     {
         this.Hostname = hostname ?? throw new ArgumentNullException(nameof(hostname));
         this.Localhost = localhost;
-        this.Screens = new(
-            (screens ?? throw new ArgumentNullException(nameof(screens)))
-                .ToList());
+        this.Screens = (screens ?? throw new ArgumentNullException(nameof(screens))).ToList().AsReadOnly();
     }
 
     public string Hostname

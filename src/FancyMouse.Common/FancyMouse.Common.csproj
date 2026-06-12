@@ -1,21 +1,20 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net10.0-windows</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <Platforms>AnyCPU;x64</Platforms>
+    </PropertyGroup>
 
-  <PropertyGroup>
-    <TargetFramework>net10.0-windows</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <Platforms>AnyCPU;x64</Platforms>
-  </PropertyGroup>
+    <ItemGroup>
+        <None Remove="images\icon.ico" />
+        <EmbeddedResource Include="images\icon.ico" />
+    </ItemGroup>
 
-  <PropertyGroup>
-    <!--
-      change CsWin32Enabled to "true" to regenerate Win32 bindings in the "Generated" folder
-      (see Common.CsWin32.props for details)
-    -->
-    <CsWin32Enabled>false</CsWin32Enabled>
-  </PropertyGroup>
-  <Import Project="..\Common.CsWin32.props" />
+    <ItemGroup>
+        <ProjectReference Include="..\FancyMouse.Models\FancyMouse.Models.csproj" />
+    </ItemGroup>
 
   <ItemGroup>
     <None Remove="images\icon.ico" />

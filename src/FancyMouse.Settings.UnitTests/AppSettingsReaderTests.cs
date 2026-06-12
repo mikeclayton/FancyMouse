@@ -4,11 +4,9 @@ using System.Text.Json;
 
 using FancyMouse.HotKeys;
 using FancyMouse.Models.Styles;
-using FancyMouse.Settings;
-using FancyMouse.UnitTests.Settings.TestUtils;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using FancyMouse.Settings.UnitTests.TestUtils;
 
-namespace FancyMouse.UnitTests.Settings;
+namespace FancyMouse.Settings.UnitTests;
 
 [TestClass]
 public sealed class AppSettingsReaderTests
