@@ -1,6 +1,5 @@
 using System.Drawing;
 using System.Drawing.Drawing2D;
-
 using FancyMouse.Models.Styles;
 
 namespace FancyMouse.Drawing.Bezels;
@@ -57,10 +56,27 @@ internal static class BezelGraphics
             : new RectangleF(x1, Math.Min(y1, y2), 1f, Math.Abs(y2 - y1));
 
         var savedMode = g.SmoothingMode;
+        var savedPixelOffset = g.PixelOffsetMode;
+
         g.SmoothingMode = SmoothingMode.None;
+        g.PixelOffsetMode = PixelOffsetMode.None;
 
         using var brush = new LinearGradientBrush(
             new Point(x1, y1), new Point(x2, y2), cornerColor, baseColor);
+
+        // for gradient fills, the default WrapMode.Tile fills the gradient region as
+        // a series of tiles and it antialiases the edge where they join - this means
+        // the *end* color of the gradient from the neighbouring tile can bleed into
+        // the *start* color of the adjoining tile.
+        //
+        // in our case it means the *end* color for the neighbouring (off-screen) tile
+        // can bleed into the *start* color of our edge region, causing a 1-pixel wide
+        // rendering artifact on the resulting image.
+        //
+        // to prevent this, TileFlipXY *mirrors* the gradient at both ends so antialiasing
+        // with the neighboring tile uses the same colour at the join and there's no
+        // rendering artifact.
+        brush.WrapMode = WrapMode.TileFlipXY;
 
         // a fixed percentage along the line before the lighting effect begins to fade
         const float fadePlateau = 0.05f;
@@ -79,6 +95,7 @@ internal static class BezelGraphics
         g.FillRectangle(brush, edgeBounds);
 
         g.SmoothingMode = savedMode;
+        g.PixelOffsetMode = savedPixelOffset;
     }
 
     /// <summary>
@@ -100,6 +117,7 @@ internal static class BezelGraphics
     /// constant across all depth layers (arc-centre-to-arc-centre span).
     /// </summary>
     internal static void DrawBezelEdges(
+        NLog.ILogger logger,
         Graphics g,
         int x,
         int y,
@@ -116,7 +134,9 @@ internal static class BezelGraphics
         // Fill the four straight edge strips with flat bezelColor first;
         // the 3-D effect passes below then overlay highlight / shadow on top.
         var savedMode = g.SmoothingMode;
+        var savedPixelOffset = g.PixelOffsetMode;
         g.SmoothingMode = SmoothingMode.None;
+        g.PixelOffsetMode = PixelOffsetMode.None;
         using (var flatBrush = new SolidBrush(bezelColor))
         {
             g.FillRectangle(flatBrush, x + n,             y,              width - (2 * n),  n);              // top
@@ -126,6 +146,12 @@ internal static class BezelGraphics
         }
 
         g.SmoothingMode = savedMode;
+        g.PixelOffsetMode = savedPixelOffset;
+
+        if (d == 0)
+        {
+            return;
+        }
 
         // Pre-compute straight-edge span endpoints (constant across all depth layers).
         // These are the x/y positions of the arc centres at the corners of the bezel,
@@ -134,16 +160,19 @@ internal static class BezelGraphics
         // DrawBezelEdge uses |x2−x1| as the rectangle width, so x2 is EXCLUSIVE —
         // setting outerTrX = x+width−N means the filled rectangle ends at x+width−N−1,
         // which is exactly the last pixel before the TR/BR corner zone.
-        var horizontalEdgeX0 = x + n;          // left  end of outer top/bottom segments (inclusive)
+        var horizontalEdgeX0 = x + n;         // left  end of outer top/bottom segments (inclusive)
         var horizontalEdgeX1 = x + width - n; // right end (exclusive — rectangle ends at outerTrX−1)
-        var verticalEdgeY0 = y + n;               // top   end of outer left/right segments (inclusive)
-        var verticalEdgeY1 = y + height - n;      // bottom end (exclusive — rectangle ends at outerBlY−1)
+        var verticalEdgeY0 = y + n;           // top   end of outer left/right segments (inclusive)
+        var verticalEdgeY1 = y + height - n;  // bottom end (exclusive — rectangle ends at outerBlY−1)
 
         Color Pix(double hl, double sh) => BezelPrimitives.ApplyEffect(hl, sh, bezelColor, config.HighlightMax, config.ShadowMax);
+        Color PixCS(double hl, double sh, double cs) => Pix(hl * cs, sh * cs);
+
+        var profile = new BezelProfile(n, d);
 
         // ── Outer ring edge effects ───────────────────────────────────────────────
-        // when d2 = 0,   d2 is the outermost pixel row/column
-        // when d2 = d-1, d2 is the innermost effect layer.
+        // d2=0 is the outermost pixel (arc boundary — full effect);
+        // d2=d-1 is the innermost (approaches flat-zone junction — fading effect).
         for (var d2 = 0; d2 < d; d2++)
         {
             var outerTop = y + d2;
@@ -151,22 +180,24 @@ internal static class BezelGraphics
             var outerLeft = x + d2;
             var outerRight = x + width - d2 - 1;
 
+            var cs = profile.GetEdgeIntensity(d2);
+
             // Top outer:    HL base, secondary HL from TL corner (left→right)
-            DrawBezelEdge(g, horizontalEdgeX0, outerTop, horizontalEdgeX1, outerTop, Pix(1.0, 0.0), Pix(1.5, 0.0), config.EdgeFadeFraction);
+            DrawBezelEdge(g, horizontalEdgeX0, outerTop, horizontalEdgeX1, outerTop, PixCS(1.0, 0.0, cs), PixCS(1.5, 0.0, cs), config.EdgeFadeFraction);
 
             // Right outer:  SH base, secondary SH from BR corner (bottom→top)
-            DrawBezelEdge(g, outerRight, verticalEdgeY1, outerRight, verticalEdgeY0, Pix(0.0, 1.0), Pix(0.0, 1.5), config.EdgeFadeFraction);
+            DrawBezelEdge(g, outerRight, verticalEdgeY1, outerRight, verticalEdgeY0, PixCS(0.0, 1.0, cs), PixCS(0.0, 1.5, cs), config.EdgeFadeFraction);
 
             // Bottom outer: SH base, secondary SH from BR corner (right→left)
-            DrawBezelEdge(g, horizontalEdgeX1, outerBottom, horizontalEdgeX0, outerBottom, Pix(0.0, 1.0), Pix(0.0, 1.5), config.EdgeFadeFraction);
+            DrawBezelEdge(g, horizontalEdgeX1, outerBottom, horizontalEdgeX0, outerBottom, PixCS(0.0, 1.0, cs), PixCS(0.0, 1.5, cs), config.EdgeFadeFraction);
 
             // Left outer:   HL base, secondary HL from TL corner (top→bottom)
-            DrawBezelEdge(g, outerLeft, verticalEdgeY0, outerLeft, verticalEdgeY1, Pix(1.0, 0.0), Pix(1.5, 0.0), config.EdgeFadeFraction);
+            DrawBezelEdge(g, outerLeft, verticalEdgeY0, outerLeft, verticalEdgeY1, PixCS(1.0, 0.0, cs), PixCS(1.5, 0.0, cs), config.EdgeFadeFraction);
         }
 
         // ── Inner ring edge effects ───────────────────────────────────────────────
-        // when d2 = 0,   d2 is the innermost pixel row/column (adjacent to content area);
-        // when d2 = D-1, d2 is the outermost effect layer inside the ring.
+        // d2=0 is the innermost pixel (content boundary — full effect);
+        // d2=d-1 is the outermost (approaches flat-zone junction — fading effect).
         for (var d2 = 0; d2 < d; d2++)
         {
             var innerTop = y + n - d2 - 1;
@@ -174,17 +205,19 @@ internal static class BezelGraphics
             var innerLeft = x + n - d2 - 1;
             var innerRight = x + width - n + d2;
 
+            var cs = profile.GetEdgeIntensity(d2);
+
             // Top inner:    SH base (reversed), secondary SH from TL inner corner
-            DrawBezelEdge(g, horizontalEdgeX0, innerTop, horizontalEdgeX1, innerTop, Pix(0.0, 1.0), Pix(0.0, 1.5), config.EdgeFadeFraction);
+            DrawBezelEdge(g, horizontalEdgeX0, innerTop, horizontalEdgeX1, innerTop, PixCS(0.0, 1.0, cs), PixCS(0.0, 1.5, cs), config.EdgeFadeFraction);
 
             // Right inner:  HL halved base (bottom→top)
-            DrawBezelEdge(g, innerRight, verticalEdgeY1, innerRight, verticalEdgeY0, Pix(0.5, 0.0), Pix(0.75, 0.0), config.EdgeFadeFraction);
+            DrawBezelEdge(g, innerRight, verticalEdgeY1, innerRight, verticalEdgeY0, PixCS(0.5, 0.0, cs), PixCS(0.75, 0.0, cs), config.EdgeFadeFraction);
 
             // Bottom inner: HL halved base (reversed), secondary HL from BR inner corner
-            DrawBezelEdge(g, horizontalEdgeX1, innerBottom, horizontalEdgeX0, innerBottom, Pix(0.5, 0.0), Pix(1.0, 0.0), config.EdgeFadeFraction);
+            DrawBezelEdge(g, horizontalEdgeX1, innerBottom, horizontalEdgeX0, innerBottom, PixCS(0.5, 0.0, cs), PixCS(0.75, 0.0, cs), config.EdgeFadeFraction);
 
             // Left inner:   SH base (top→bottom)
-            DrawBezelEdge(g, innerLeft, verticalEdgeY0, innerLeft, verticalEdgeY1, Pix(0.0, 1.0), Pix(0.0, 1.5), config.EdgeFadeFraction);
+            DrawBezelEdge(g, innerLeft, verticalEdgeY0, innerLeft, verticalEdgeY1, PixCS(0.0, 1.0, cs), PixCS(0.0, 1.5, cs), config.EdgeFadeFraction);
         }
     }
 
@@ -280,12 +313,40 @@ internal static class BezelGraphics
         }
 
         using var outerPath = BezelGraphics.GetRoundedRectanglePath(x, y, width, height, outerRadius);
-        using var innerPath = BezelGraphics.GetRoundedRectanglePath(x + inset, y + inset, innerWidth, innerHeight, innerRadius);
-        using var brush = new SolidBrush(color);
+        using var fillBrush = new SolidBrush(color);
 
-        using var ringPath = new GraphicsPath(FillMode.Alternate);
-        ringPath.AddPath(outerPath, false);
-        ringPath.AddPath(innerPath, false);
-        g.FillPath(brush, ringPath);
+        if (innerRadius == 0)
+        {
+            // Two-pass rendering for a sharp inner corner (innerRadius == 0):
+            //   pass 1 — fill the outer rounded shape (includes content area)
+            //   pass 2 — erase the inner rectangle with SmoothingMode.None
+            //
+            // The one-pass FillMode.Alternate approach antialiases the sharp inner
+            // corner, leaving a partial-alpha pixel at the boundary of the inner
+            // rectangle in GDI+'s PixelOffsetMode.Half coordinate space.  That
+            // stray pixel shows as a dot at the arc centre in the corner template.
+            // The two-pass approach avoids the boundary ambiguity entirely.
+            g.FillPath(fillBrush, outerPath);
+
+            var savedMode = g.SmoothingMode;
+            var savedPixelOffset = g.PixelOffsetMode;
+            var savedCompositing = g.CompositingMode;
+            g.SmoothingMode = SmoothingMode.None;
+            g.PixelOffsetMode = PixelOffsetMode.None;
+            g.CompositingMode = CompositingMode.SourceCopy;
+            using var clearBrush = new SolidBrush(Color.Transparent);
+            g.FillRectangle(clearBrush, x + inset, y + inset, innerWidth, innerHeight);
+            g.SmoothingMode = savedMode;
+            g.PixelOffsetMode = savedPixelOffset;
+            g.CompositingMode = savedCompositing;
+        }
+        else
+        {
+            using var innerPath = BezelGraphics.GetRoundedRectanglePath(x + inset, y + inset, innerWidth, innerHeight, innerRadius);
+            using var ringPath = new GraphicsPath(FillMode.Alternate);
+            ringPath.AddPath(outerPath, false);
+            ringPath.AddPath(innerPath, false);
+            g.FillPath(fillBrush, ringPath);
+        }
     }
 }

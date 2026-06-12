@@ -9,6 +9,7 @@ using FancyMouse.Models.Display;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Styles;
 using FancyMouse.Models.ViewModel;
+using NLog;
 
 namespace FancyMouse.Common.Helpers;
 
@@ -36,6 +37,7 @@ public static class DrawingHelper
     /// A preview image of the canvas layout.
     /// </returns>
     public static async Task<Bitmap> RenderPreviewAsync(
+        ILogger logger,
         CanvasViewModel canvasLayout,
         ScreenInfo activatedScreen,
         List<IImageRegionCopyService> imageRegionCopyServices,
@@ -54,7 +56,7 @@ public static class DrawingHelper
             await previewImageCreatedCallback(previewImage);
         }
 
-        DrawingHelper.DrawRaisedBorder(previewGraphics, canvasLayout.CanvasBounds, canvasLayout.CanvasStyle);
+        DrawingHelper.DrawRaisedBorder(logger, previewGraphics, canvasLayout.CanvasBounds, canvasLayout.CanvasStyle);
         DrawingHelper.DrawBackgroundFill(
             previewGraphics,
             canvasLayout.CanvasStyle,
@@ -83,7 +85,7 @@ public static class DrawingHelper
         foreach (var screenDrawingOp in screenDrawingOps)
         {
             DrawingHelper.DrawRaisedBorder(
-                previewGraphics, screenDrawingOp.ScreenLayout.ScreenBounds, screenDrawingOp.ScreenLayout.ScreenStyle);
+                logger, previewGraphics, screenDrawingOp.ScreenLayout.ScreenBounds, screenDrawingOp.ScreenLayout.ScreenStyle);
         }
 
         var refreshRequired = false;
@@ -148,8 +150,10 @@ public static class DrawingHelper
     /// Draws a border shape with a raised 3-D highlight and shadow effect.
     /// </summary>
     private static void DrawRaisedBorder(
-        Graphics graphics, BoxBounds boxBounds, BoxStyle boxStyle)
+        ILogger logger, Graphics graphics, BoxBounds boxBounds, BoxStyle boxStyle)
     {
+        ArgumentNullException.ThrowIfNull(graphics);
+
         var borderStyle = boxStyle.BorderStyle;
         if ((borderStyle.Horizontal < 1) || (borderStyle.Vertical < 1))
         {
@@ -162,7 +166,7 @@ public static class DrawingHelper
         }
 
         var bounds = boxBounds.BorderBounds.ToRectangle();
-        using var renderer = new BezelRenderer(borderStyle, DrawingHelper.DefaultBezelConfig);
+        using var renderer = new BezelRenderer(logger, borderStyle, DrawingHelper.DefaultBezelConfig);
         renderer.DrawBezel(graphics, bounds.X, bounds.Y, bounds.Width, bounds.Height);
     }
 

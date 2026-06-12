@@ -218,6 +218,7 @@ internal sealed partial class FancyMouseForm : Form
             .ToList();
 
         await DrawingHelper.RenderPreviewAsync(
+            this.Logger,
             this.FormLayout.CanvasLayout,
             activatedScreen,
             imageCopyServices,

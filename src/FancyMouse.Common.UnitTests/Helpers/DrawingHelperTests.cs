@@ -1,4 +1,5 @@
-﻿using System.Drawing;
+﻿using System.Diagnostics;
+using System.Drawing;
 using System.Drawing.Imaging;
 using System.Reflection;
 
@@ -7,7 +8,6 @@ using FancyMouse.Common.Imaging;
 using FancyMouse.Models.Display;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Styles;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace FancyMouse.Common.UnitTests.Helpers;
 
@@ -143,7 +143,7 @@ public sealed class DrawingHelperTests
         public async Task RunTestCases(TestCase data)
         {
             // load the fake desktop image
-            using var desktopImage = GetPreviewLayoutTests.LoadImageResource(data.DesktopImageFilename);
+            using var desktopImage = DrawingHelperTests.LoadImageResource(data.DesktopImageFilename);
 
             var formLayout = LayoutHelper.GetFormLayout(
                 previewStyle: data.PreviewStyle,
@@ -157,14 +157,15 @@ public sealed class DrawingHelperTests
                 .ToList();
 
             // draw the preview image
-            using var actual = await DrawingHelper.RenderPreviewAsync(formLayout.CanvasLayout, data.ActivatedScreen, imageCopyServices);
+            var logger = NLog.LogManager.CreateNullLogger();
+            using var actual = await DrawingHelper.RenderPreviewAsync(logger, formLayout.CanvasLayout, data.ActivatedScreen, imageCopyServices);
 
             // save the actual image so we can pick it up as a build artifact
             var actualFilename = Path.GetFileNameWithoutExtension(data.ExpectedImageFilename) + "_actual" + Path.GetExtension(data.ExpectedImageFilename);
             actual.Save(actualFilename, ImageFormat.Png);
 
             // load the expected image
-            var expected = GetPreviewLayoutTests.LoadImageResource(data.ExpectedImageFilename);
+            var expected = DrawingHelperTests.LoadImageResource(data.ExpectedImageFilename);
 
             // save the actual image so we can pick it up as a build artifact
             var expectedFilename = Path.GetFileNameWithoutExtension(data.ExpectedImageFilename) + "_expected" + Path.GetExtension(data.ExpectedImageFilename);
@@ -172,23 +173,6 @@ public sealed class DrawingHelperTests
 
             // compare the images
             AssertImagesEqual(expected, actual);
-        }
-
-        private static Bitmap LoadImageResource(string filename)
-        {
-            var assembly = Assembly.GetExecutingAssembly();
-            var assemblyName = new AssemblyName(assembly.FullName ?? throw new InvalidOperationException());
-            var resourceName = $"{assemblyName.Name}.{filename.Replace("/", ".")}";
-            var resourceNames = assembly.GetManifestResourceNames();
-            if (!resourceNames.Contains(resourceName))
-            {
-                throw new InvalidOperationException($"Embedded resource '{resourceName}' does not exist.");
-            }
-
-            var stream = assembly.GetManifestResourceStream(resourceName)
-                ?? throw new InvalidOperationException();
-            var image = (Bitmap)Image.FromStream(stream);
-            return image;
         }
 
         /// <summary>
@@ -221,5 +205,95 @@ public sealed class DrawingHelperTests
                 }
             }
         }
+    }
+
+    [TestClass]
+    public sealed class RenderPerformanceTests
+    {
+        [TestMethod]
+        public async Task MeasureRenderPreviewAsync()
+        {
+            const int iterations = 10;
+            var logger = NLog.LogManager.CreateNullLogger();
+
+            var systemHighlight = Color.FromArgb(0, 120, 215);
+            var previewStyle = StyleHelper.BezelledPreviewStyle;
+            previewStyle = new(
+                canvasSize: previewStyle.CanvasSize,
+                canvasStyle: new(
+                    marginStyle: previewStyle.CanvasStyle.MarginStyle,
+                    borderStyle: previewStyle.CanvasStyle.BorderStyle.WithColor(systemHighlight),
+                    paddingStyle: previewStyle.CanvasStyle.PaddingStyle,
+                    backgroundStyle: previewStyle.CanvasStyle.BackgroundStyle
+                ),
+                screenStyle: previewStyle.ScreenStyle,
+                extraColors: previewStyle.ExtraColors
+            );
+
+            var displayInfo = new DisplayInfo(
+                devices: new DeviceInfo[]
+                {
+                    new(
+                        hostname: "localhost",
+                        localhost: true,
+                        screens: new List<ScreenInfo>
+                        {
+                            new(handle: 0, primary: true,  displayArea: new(5120, 349, 1920, 1080), workingArea: new(5120, 349, 1920, 1080)),
+                            new(handle: 0, primary: false, displayArea: new(0, 0, 5120, 1440),      workingArea: new(0, 0, 5120, 1440)),
+                        }
+                    ),
+                });
+
+            var activatedScreen = displayInfo.Devices[0].Screens[0];
+            var activatedLocation = new PointInfo(x: 50, y: 50);
+
+            using var desktopImage = DrawingHelperTests.LoadImageResource("Helpers/_test-win11-desktop.png");
+
+            async Task<Bitmap> Render()
+            {
+                var formLayout = LayoutHelper.GetFormLayout(
+                    previewStyle: previewStyle,
+                    displayInfo: displayInfo,
+                    activatedScreen: activatedScreen,
+                    activatedLocation: activatedLocation);
+                var imageCopyServices = formLayout.CanvasLayout.DeviceLayouts
+                    .Select(_ => (IImageRegionCopyService)new StaticImageRegionCopyService(desktopImage))
+                    .ToList();
+                return await DrawingHelper.RenderPreviewAsync(logger, formLayout.CanvasLayout, activatedScreen, imageCopyServices);
+            }
+
+            // warm-up — discarded to allow any lazy initialisation to complete
+            using (var warmup = await Render())
+            {
+            }
+
+            var elapsed = new long[iterations];
+            for (var i = 0; i < iterations; i++)
+            {
+                var sw = Stopwatch.StartNew();
+                using var image = await Render();
+                elapsed[i] = sw.ElapsedMilliseconds;
+            }
+
+            Console.WriteLine($"RenderPreviewAsync ({iterations} iterations, win11 layout):");
+            Console.WriteLine($"  min={elapsed.Min()}ms  avg={elapsed.Average():F1}ms  max={elapsed.Max()}ms");
+        }
+    }
+
+    private static Bitmap LoadImageResource(string filename)
+    {
+        var assembly = Assembly.GetExecutingAssembly();
+        var assemblyName = new AssemblyName(assembly.FullName ?? throw new InvalidOperationException());
+        var resourceName = $"{assemblyName.Name}.{filename.Replace("/", ".")}";
+        var resourceNames = assembly.GetManifestResourceNames();
+        if (!resourceNames.Contains(resourceName))
+        {
+            throw new InvalidOperationException($"Embedded resource '{resourceName}' does not exist.");
+        }
+
+        var stream = assembly.GetManifestResourceStream(resourceName)
+            ?? throw new InvalidOperationException();
+        var image = (Bitmap)Image.FromStream(stream);
+        return image;
     }
 }

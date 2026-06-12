@@ -333,6 +333,7 @@ public sealed partial class PreviewWindow : Window
             .ToList();
 
         await DrawingHelper.RenderPreviewAsync(
+                this.Logger,
                 this.FormLayout.CanvasLayout,
                 activatedScreen,
                 imageCopyServices,

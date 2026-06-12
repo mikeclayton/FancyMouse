@@ -1,6 +1,7 @@
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using FancyMouse.Models.Styles;
+using NLog;
 
 namespace FancyMouse.Drawing.Bezels;
 
@@ -29,6 +30,7 @@ namespace FancyMouse.Drawing.Bezels;
 // ═════════════════════════════════════════════════════════════════════════════
 public sealed class BezelRenderer : IDisposable
 {
+    private readonly ILogger _logger;
     private readonly BorderStyle _borderStyle;
     private readonly BezelConfig _config;
 
@@ -37,8 +39,9 @@ public sealed class BezelRenderer : IDisposable
     // Layout: TL=(0,0)  TR=(N,0)  BL=(0,N)  BR=(N,N)  where N=Thickness.
     private readonly Bitmap _cornerAtlas;
 
-    public BezelRenderer(BorderStyle borderStyle, BezelConfig config)
+    public BezelRenderer(ILogger logger, BorderStyle borderStyle, BezelConfig config)
     {
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _borderStyle = borderStyle ?? throw new ArgumentNullException(nameof(borderStyle));
         _config = config ?? throw new ArgumentNullException(nameof(config));
         _cornerAtlas = CornerTemplates.GetCornerTemplates(borderStyle, config);
@@ -59,7 +62,7 @@ public sealed class BezelRenderer : IDisposable
         // ── Straight edge fills + 3-D effects ────────────────────────────────
         // Fills all four strips with flat BezelColor then overlays highlight /
         // shadow gradient effects on the outer and inner depth layers.
-        BezelGraphics.DrawBezelEdges(g, x, y, width, height, _borderStyle, _config);
+        BezelGraphics.DrawBezelEdges(_logger, g, x, y, width, height, _borderStyle, _config);
 
         // ── Corners (flat fill + 3-D effects baked in) ────────────────────────
         // Drawn last so the antialiased outer-edge pixels composite correctly
@@ -79,12 +82,18 @@ public sealed class BezelRenderer : IDisposable
             (src: new Rectangle(0, n, n, n), dest: new Rectangle(x,             y + height - n, n, n)),  // BL
             (src: new Rectangle(n, n, n, n), dest: new Rectangle(x + width - n, y + height - n, n, n)),  // BR
         };
+
         var savedInterpolation = g.InterpolationMode;
         var savedPixelOffset = g.PixelOffsetMode;
+
         g.InterpolationMode = InterpolationMode.NearestNeighbor;
         g.PixelOffsetMode = PixelOffsetMode.Half;
+
         foreach (var (src, dest) in corners)
+        {
             g.DrawImage(_cornerAtlas, dest, src, GraphicsUnit.Pixel);
+        }
+
         g.InterpolationMode = savedInterpolation;
         g.PixelOffsetMode = savedPixelOffset;
     }

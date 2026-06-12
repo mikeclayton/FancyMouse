@@ -40,7 +40,7 @@ internal static class CornerTemplates
     internal static Bitmap GetCornerTemplates(BorderStyle borderStyle, BezelConfig config)
     {
         var n = (int)borderStyle.Left;
-        var d = (int)borderStyle.Depth;
+        var depth = (int)borderStyle.Depth;
         var bezelColor = borderStyle.Color ?? Color.Transparent;
 
         // ── Step 1: render temporary bezel "ring" images ───────────────────
@@ -74,93 +74,31 @@ internal static class CornerTemplates
             innerRadius: 0,
             color: bezelColor);
 
-        // outer effect overlay — a white ring D pixels wide at the outer arc zone
-        // of each corner, drawn with GDI+ antialiasing so we can blend the effect
-        // into the color (or transparency) behind it
-        //
-        // e.g. top left corner - outer effect "ring"
-        // +----------+
-        // |   ░▒▓▓▓▓▓|
-        // | ░▓▓▓▓▒   |
-        // |▒▓▓▒▒     |
-        // |▓▓▓▒      |
-        // +----------+
-        // |<->| D
-        //     |<---->| N - D
-        // |<-- N --->|
-        using var outerEffectOverlay = CornerTemplates.DrawCornerRegions(
-            cornerSize: n,
-            outerRadius: n,
-            innerRadius: n - d,
-            color: Color.White);
+        if (depth == 0)
+        {
+            return cornerTemplates;
+        }
 
-        // inner effect overlay — a white ring D pixels wide at the inner arc
-        // zone of each corner
-        //
-        // e.g. top left corner - inner effect "ring"
-        // +----------+
-        // |          |
-        // |          |
-        // |       ░▒▓|
-        // |      ░▓▓▓|
-        // +----------+
-        //        |<->| D
-        // |<-- N --->|
-        using var innerEffectOverlay = CornerTemplates.DrawCornerRegions(
-            cornerSize: n,
-            outerRadius: d,
-            innerRadius: 0,
-            color: Color.White);
-
-        // ── Step 2: copy the effect overlay pixels onto the corner image ───────────────────
-        //
-        // we've already drawn the *flat* bezel corners onto the corner image.
-        //
-        // now we want to add our highlight and shadow effects, which we'll do
-        // by drawing partially transparent white (highlight) or black (shadow)
-        // pixels on top of the flat bezel pixels. this allows the light effect
-        // to be drawn as an accent based on the flat bezel color.
-        //
-        // the transparency for each pixel is taken from the outer and inner
-        // overlay images and transferred onto the corner image as a partially
-        // transparent highlight (white) or shadow (black) effect. if an overlay
-        // pixel is fully transparent we don't draw anything on the corner image.
+        // ── Step 2: apply highlight and shadow effects ─────────────────────────
         double CornerEffectWeight(double theta) => BezelPrimitives.CornerEffectWeight(theta, config.FadeStart, config.FadeEnd);
 
+        var profile = new BezelProfile(n, depth);
+
         var cornerData = default(BitmapData);
-        var outerOverlayData = default(BitmapData);
-        var innerOverlayData = default(BitmapData);
 
         try
         {
-            // lock the bitmaps so we can access direct memory for pixel io operations
             cornerData = cornerTemplates.LockBits(
                 new Rectangle(0, 0, cornerTemplates.Width, cornerTemplates.Height),
                 ImageLockMode.ReadWrite,
-                PixelFormat.Format32bppArgb);
-            outerOverlayData = outerEffectOverlay.LockBits(
-                new Rectangle(0, 0, outerEffectOverlay.Width, outerEffectOverlay.Height),
-                ImageLockMode.ReadOnly,
-                PixelFormat.Format32bppArgb);
-            innerOverlayData = innerEffectOverlay.LockBits(
-                new Rectangle(0, 0, innerEffectOverlay.Width, innerEffectOverlay.Height),
-                ImageLockMode.ReadOnly,
                 PixelFormat.Format32bppArgb);
 
             unsafe
             {
                 byte* cornerScan0 = (byte*)cornerData.Scan0;
                 var cornerStride = cornerData.Stride;
-                byte* outerOverlayScan0 = (byte*)outerOverlayData.Scan0;
-                var outerOverlayStride = outerOverlayData.Stride;
-                byte* innerOverlayScan0 = (byte*)innerOverlayData.Scan0;
-                var innerOverlayStride = innerOverlayData.Stride;
                 const int bytesPerPixel = 4; // PixelFormat.Format32bppArgb
 
-                // iterate over the entire corner and overlay images.
-                // depending on which quadrant a pixel is in, we'll use
-                // different combinations of colors for lighting effects
-                // with the outer and inner overlay pixels
                 for (var srcY = 0; srcY < cornerTemplates.Height; srcY++)
                 {
                     for (var srcX = 0; srcX < cornerTemplates.Width; srcX++)
@@ -175,30 +113,45 @@ internal static class CornerTemplates
                             continue;
                         }
 
-                        byte* outerOverlayArgb = outerOverlayScan0 + (srcY * outerOverlayStride) + (srcX * bytesPerPixel);
-                        var outerFade = outerOverlayArgb[3] / 255.0;
-                        var inOuterArc = outerFade > 0.0;
+                        // calculate the offset of the pixel relative to the centre of the
+                        // corner  template - the sign on the x and y coordinate tell us
+                        // which quadrant it's it in (i.e. TL, TR, BL, BR)
+                        var originOffset = new Point(
+                            y: srcY - n,
+                            x: srcX - n);
 
-                        byte* innerOverlayArgb = innerOverlayScan0 + (srcY * innerOverlayStride) + (srcX * bytesPerPixel);
-                        var innerFade = innerOverlayArgb[3] / 255.0;
-                        var inInnerArc = innerFade > 0.0;
+                        // BezelProfile.GetCornerIntensity calculates the intensity of the
+                        // lighting effect at the specified location in a bezel corner. it
+                        // calculates the normal of the bezel's profile at the point and
+                        // converts that into the intensity of the highlight or shadow.
+                        //
+                        // it returns a signed intensity in the range [-1, +1]:
+                        //
+                        //   effectIntensity > 0  — outer arc, surface faces the light → apply as highlight
+                        //   effectIntensity < 0  — inner arc, surface faces away      → apply as shadow
+                        //   effectIntensity ≈ 0  — flat zone                          → no effect
+                        var effectIntensity = profile.GetCornerIntensity(originOffset);
 
-                        if (!inOuterArc && !inInnerArc)
+                        // Math.Abs(effectIntensity) carries the unsigned scaling factor
+                        // for the lighting effect on this pixel - multiply this by the
+                        // alpha channel of the flat bezel to determine the final
+                        // transparency of the effect
+                        var effectMagnitude = Math.Abs(effectIntensity);
+                        if (effectMagnitude < 1e-10)
                         {
-                            // flat zone between lighting effects — leave as plain bezelColor
+                            // flat zone — leave as plain bezelColor
                             continue;
                         }
 
-                        var arcFade = inOuterArc ? outerFade : innerFade;
+                        // +ve effect intensity is highlight,
+                        // -ve effect intensity is shadow
+                        var isHighlightEffect = effectIntensity > 0.0;
 
                         double theta;
                         var hl = 0.0;
                         var sh = 0.0;
 
-                        var originOffset = new Point(
-                            y: srcY - n,
-                            x: srcX - n);
-
+                        // use the +/- sign of the offsets to determine the quadrant the pixel is in
                         if (originOffset.Y < 0)
                         {
                             if (originOffset.X < 0)
@@ -208,7 +161,7 @@ internal static class CornerTemplates
                                 //      → outer double-highlight, inner double-shadow
                                 theta = 270.0 - GdiAngle(originOffset.X, originOffset.Y);
                                 var weight = CornerEffectWeight(theta) + CornerEffectWeight(90 - theta) + 0.5 + (0.75 * MidpointPeak(theta));
-                                if (inOuterArc)
+                                if (isHighlightEffect)
                                 {
                                     hl = weight;
                                 }
@@ -223,7 +176,7 @@ internal static class CornerTemplates
                                 //      inner: shadow from the top edge meets highlight from the right edge,
                                 //      → both fade to flat at 45°
                                 theta = (GdiAngle(originOffset.X, originOffset.Y) - 270.0 + 360.0) % 360.0;
-                                if (inOuterArc)
+                                if (isHighlightEffect)
                                 {
                                     hl = CornerEffectWeight(theta) * MidpointFade(theta);
                                     sh = CornerEffectWeight(90 - theta) * MidpointFade(90 - theta);
@@ -243,7 +196,7 @@ internal static class CornerTemplates
                                 //      inner: shadow from the left edge meets highlight from the bottom edge,
                                 //      → both fade to flat at 45°
                                 theta = GdiAngle(originOffset.X, originOffset.Y) - 90.0;
-                                if (inOuterArc)
+                                if (isHighlightEffect)
                                 {
                                     hl = CornerEffectWeight(90 - theta) * MidpointFade(90 - theta);
                                     sh = CornerEffectWeight(theta) * MidpointFade(theta);
@@ -261,7 +214,7 @@ internal static class CornerTemplates
                                 //      → outer double-shadow, inner single-highlight
                                 //      (inner HL halved to avoid over-brightness against outer-BR shadow)
                                 theta = 90.0 - GdiAngle(originOffset.X, originOffset.Y);
-                                if (inOuterArc)
+                                if (isHighlightEffect)
                                 {
                                     sh = CornerEffectWeight(theta) + CornerEffectWeight(90 - theta) + 0.5 + (0.275 * MidpointPeak(theta));
                                 }
@@ -272,7 +225,11 @@ internal static class CornerTemplates
                             }
                         }
 
-                        var newColor = ApplyEffect(hl * arcFade, sh * arcFade, bezelColor, config.HighlightMax, config.ShadowMax);
+                        // effectMagnitude carries the effect intensity due to the ; the sign replaces the
+                        // previous inOuterArc/inInnerArc flags that were sourced from overlay
+                        // bitmaps. The flat bezel's pixel alpha (from GDI+ arc antialiasing) is
+                        // left unchanged and handles outer-edge transparency automatically.
+                        var newColor = ApplyEffect(hl * effectMagnitude, sh * effectMagnitude, bezelColor, config.HighlightMax, config.ShadowMax);
                         srcPixelArgb[0] = newColor.B;
                         srcPixelArgb[1] = newColor.G;
                         srcPixelArgb[2] = newColor.R;
@@ -289,21 +246,7 @@ internal static class CornerTemplates
             {
                 cornerTemplates.UnlockBits(cornerData);
             }
-
-            if (outerOverlayData is not null)
-            {
-                outerEffectOverlay.UnlockBits(outerOverlayData);
-            }
-
-            if (innerOverlayData is not null)
-            {
-                innerEffectOverlay.UnlockBits(innerOverlayData);
-            }
         }
-
-        cornerTemplates.Save(
-            $@"C:\temp\corner_atlas_{n}_{borderStyle.Depth}.png",
-            ImageFormat.Png);
 
         return cornerTemplates;
     }
