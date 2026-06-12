@@ -39,6 +39,13 @@ public static class ScreenHelper
                     return true;
                 });
             var result = PInvoke.EnumDisplayMonitors(HDC.Null, null, callback, (LPARAM)0);
+            if (result == 0)
+            {
+                throw new InvalidOperationException("failed to enumerate monitors");
+            }
+
+            // prevent callback from being collected during the enumeration
+            GC.KeepAlive(callback);
         }
 
         // get detailed info about each monitor
@@ -49,7 +56,10 @@ public static class ScreenHelper
         foreach (var hMonitor in hMonitors)
         {
             var result = PInvoke.GetMonitorInfo(hMonitor, ref monitorInfo);
-            ResultHandler.ThrowIfZero(result, getLastError: true, nameof(PInvoke.GetMonitorInfo));
+            ResultHandler.ThrowIfZero(
+                result,
+                getLastError: true,
+                memberName: nameof(PInvoke.GetMonitorInfo));
 
             yield return new ScreenInfo(
                 handle: hMonitor,

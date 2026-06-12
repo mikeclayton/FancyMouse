@@ -2,7 +2,6 @@
 
 namespace FancyMouse.Models.UnitTests.Drawing;
 
-[TestClass]
 public static class RectangleInfoTests
 {
     [TestClass]

@@ -7,11 +7,9 @@ using FancyMouse.Models.Display;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Styles;
 using FancyMouse.Models.ViewModel;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace FancyMouse.Common.UnitTests.Helpers;
 
-[TestClass]
 public static class LayoutHelperTests
 {
     /*
@@ -59,7 +57,7 @@ public static class LayoutHelperTests
             yield return new object[] { new TestCase(layoutConfig, layoutInfo) };
 
             // check we handle rounding errors in scaling the preview form
-            // that might make the form a pixel *smaller* than the current screen -
+            // that might make the form one pixel *smaller* than the current screen -
             // e.g. a desktop 7168 x 1440 scaled to a screen 1024 x 768
             // with a 5px form padding border:
             //
