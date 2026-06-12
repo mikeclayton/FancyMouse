@@ -39,8 +39,10 @@ internal static class CornerTemplates
     /// </returns>
     internal static Bitmap GetCornerTemplates(BorderStyle borderStyle, BezelConfig config)
     {
-        var n = (int)borderStyle.Left;
-        var depth = (int)borderStyle.Depth;
+        // Render at 2× and scale down so GDI+ antialiases the highlight/shadow
+        // zone-boundary edges in the corner tiles before they are baked into the atlas.
+        var n = (int)borderStyle.Left * 2;
+        var depth = (int)borderStyle.Depth * 2;
         var bezelColor = borderStyle.Color ?? Color.Transparent;
 
         // ── Step 1: render temporary bezel "ring" images ───────────────────
@@ -68,7 +70,7 @@ internal static class CornerTemplates
         // |▓▓▓▓▓▓▓▓▓▓|
         // +----------+
         // |<-- N --->|
-        var cornerTemplates = CornerTemplates.DrawCornerRegions(
+        using var cornerTemplates = CornerTemplates.DrawCornerRegions(
             cornerSize: n,
             outerRadius: n,
             innerRadius: 0,
@@ -76,13 +78,13 @@ internal static class CornerTemplates
 
         if (depth == 0)
         {
-            return cornerTemplates;
+            return CornerTemplates.ScaleHalf(cornerTemplates);
         }
 
         // ── Step 2: apply highlight and shadow effects ─────────────────────────
         double CornerEffectWeight(double theta) => BezelPrimitives.CornerEffectWeight(theta, config.FadeStart, config.FadeEnd);
 
-        var profile = new BezelProfile(n, depth);
+        var profile = new BezelProfileRamped(n, depth, config.RampAngleDegrees);
 
         var cornerData = default(BitmapData);
 
@@ -130,7 +132,7 @@ internal static class CornerTemplates
                         //   effectIntensity > 0  — outer arc, surface faces the light → apply as highlight
                         //   effectIntensity < 0  — inner arc, surface faces away      → apply as shadow
                         //   effectIntensity ≈ 0  — flat zone                          → no effect
-                        var effectIntensity = profile.GetCornerIntensity(originOffset);
+                        var effectIntensity = profile.GetCornerIntensity(n, originOffset);
 
                         // Math.Abs(effectIntensity) carries the unsigned scaling factor
                         // for the lighting effect on this pixel - multiply this by the
@@ -248,7 +250,22 @@ internal static class CornerTemplates
             }
         }
 
-        return cornerTemplates;
+        return CornerTemplates.ScaleHalf(cornerTemplates);
+    }
+
+    /// <summary>
+    /// Scales a bitmap to half its width and height using high-quality bicubic
+    /// interpolation, antialiasing any sharp colour transitions in the source.
+    /// The caller owns the returned bitmap; the source is not disposed.
+    /// </summary>
+    private static Bitmap ScaleHalf(Bitmap source)
+    {
+        var result = new Bitmap(source.Width / 2, source.Height / 2, PixelFormat.Format32bppArgb);
+        using var g = Graphics.FromImage(result);
+        g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+        g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+        g.DrawImage(source, 0, 0, result.Width, result.Height);
+        return result;
     }
 
     /// <summary>

@@ -12,13 +12,15 @@ public sealed class BezelConfig
         double fadeEnd,
         double highlightMax,
         double shadowMax,
-        float edgeFadeFraction)
+        float edgeFadeFraction,
+        double rampAngleDegrees)
     {
         FadeStart = fadeStart;
         FadeEnd = fadeEnd;
         HighlightMax = highlightMax;
         ShadowMax = shadowMax;
         EdgeFadeFraction = edgeFadeFraction;
+        RampAngleDegrees = rampAngleDegrees;
     }
 
     /// <summary>
@@ -54,4 +56,13 @@ public sealed class BezelConfig
     /// full length of the edge.
     /// </summary>
     public float EdgeFadeFraction { get; }
+
+    /// <summary>
+    /// Gets the inclination angle of the bezel ramp surface, in degrees.
+    /// Used by <see cref="BezelProfileRamped"/> to set the constant surface normal
+    /// across the outer and inner effect rings.
+    /// 0° = horizontal surface (no shading); 90° = vertical wall (maximum shading).
+    /// Typical value: 45° — gives cos(45°) ≈ 0.707 uniform intensity on each ring.
+    /// </summary>
+    public double RampAngleDegrees { get; }
 }

@@ -173,7 +173,7 @@ public static class BezelGraphics
         Color Pix(double hl, double sh) => BezelPrimitives.ApplyEffect(hl, sh, bezelColor, config.HighlightMax, config.ShadowMax);
         Color PixCS(double hl, double sh, double cs) => Pix(hl * cs, sh * cs);
 
-        var profile = new BezelProfile(n, d);
+        var profile = new BezelProfileRamped(n, d, config.RampAngleDegrees);
 
         // ── Outer ring edge effects ───────────────────────────────────────────────
         // d2=0 is the outermost pixel (arc boundary — full effect);

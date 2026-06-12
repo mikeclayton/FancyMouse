@@ -144,7 +144,8 @@ public static class DrawingHelper
         fadeEnd: 60.0,             // degrees where rolloff reaches zero
         highlightMax: 0x44 / 255.0, // peak highlight opacity (~26.7 %)
         shadowMax: 0x44 / 255.0,   // peak shadow   opacity (~26.7 %)
-        edgeFadeFraction: 0.75f);  // fraction of edge length with secondary effect
+        edgeFadeFraction: 0.75f,   // fraction of edge length with secondary effect
+        rampAngleDegrees: 45.0);   // chamfer inclination — cos(45°) ≈ 0.707 uniform intensity
 
     /// <summary>
     /// Draws a border shape with a raised 3-D highlight and shadow effect.
