@@ -2,7 +2,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
-using System.Runtime.InteropServices.Marshalling;
+
 using FancyMouse.Common.Helpers;
 using FancyMouse.Common.Imaging;
 using FancyMouse.Common.Interop;
@@ -240,25 +240,27 @@ public sealed partial class PreviewWindow : Window
             pointerLocation = pointerLocation.Scale(1 / (decimal)highDpiScalingRatio);
 
             // work out which screenshot was clicked
-            var devicePairings = this.FormLayout.CanvasLayout.DeviceLayouts
-                .SelectMany(
-                    deviceLayout => deviceLayout.ScreenLayouts,
-                    (deviceLayout, screenLayout) => new { DeviceLayout = deviceLayout, ScreenLayout = screenLayout })
-                .ToList();
-            var clickedPairing = devicePairings
+            var clickedScreen = this.FormLayout.CanvasLayout.DeviceLayouts
+                .SelectMany(deviceLayout => deviceLayout.ScreenLayouts)
                 .FirstOrDefault(
-                    deviceParing => deviceParing.ScreenLayout.ScreenBounds.OuterBounds.Contains(pointerLocation));
-            if (clickedPairing is null)
+                    screenLayout => screenLayout.ScreenBounds.OuterBounds.Contains(pointerLocation));
+            if (clickedScreen is null)
             {
-                // no screenshot was clicked - must have clicked the background or window border
-                // so we'll do nothing, and leave the form visible
+                return;
+            }
+
+            // find the device the clicked screenshot belongs to
+            var clickedDevice = this.FormLayout.CanvasLayout.DeviceLayouts
+                .FirstOrDefault(
+                    deviceLayout => deviceLayout.ScreenLayouts.Contains(clickedScreen));
+            if (clickedDevice is null)
+            {
                 return;
             }
 
             // scale up the click onto the physical screen - the aspect ratio of the screenshot
             // might be distorted compared to the physical screen due to the borders around the
             // screenshot, so we need to work out the target location on the physical screen first
-            var clickedScreen = clickedPairing.ScreenLayout;
             var clickedDisplayArea = clickedScreen.ScreenInfo.DisplayArea;
             var clickedLocation = pointerLocation
                 .Stretch(
@@ -281,14 +283,14 @@ public sealed partial class PreviewWindow : Window
         this.HideWindow();
     }
 
-    public async Task ShowPreview()
+    public async Task ShowPreviewAsync()
     {
         var logger = this.Logger;
 
         logger.Info(string.Join(
             '\n',
             "-----------",
-            nameof(PreviewWindow.ShowPreview),
+            nameof(PreviewWindow.ShowPreviewAsync),
             "-----------"));
 
         // hide the form while we redraw it...
@@ -303,25 +305,18 @@ public sealed partial class PreviewWindow : Window
 
         var appSettings = ConfigHelper.AppSettings ?? throw new InvalidOperationException();
 
-        /* local device */
-        var displayInfo = new DisplayInfo(
-            new List<DeviceInfo>
-            {
-                new(
-                    hostname: Environment.MachineName,
-                    localhost: true,
-                    screens: ScreenHelper.GetAllScreens()),
-            });
+        var displayInfo = DeviceHelper.GetDisplayInfo();
 
         var activatedScreen = DeviceHelper.GetActivatedScreen(displayInfo.Devices[0], activatedLocation);
 
+        var previewStyle = appSettings.PreviewStyle;
         var formLayout = LayoutHelper.GetFormLayout(
-            previewStyle: appSettings.PreviewStyle,
+            previewStyle,
             displayInfo,
             activatedScreen: activatedScreen,
             activatedLocation: activatedLocation);
 
-        // remember this so we can map the mouse clicks back to
+        // remember the layout so we can map the mouse clicks back to
         // the appropriate device and screen location
         this.FormLayout = formLayout;
 
@@ -361,7 +356,7 @@ public sealed partial class PreviewWindow : Window
 
         this.PreviewImage.Source = null;
 
-        // force preview image memory to be released, otherwise
+        // force preview image memory to be released - otherwise
         // all the disposed images can pile up without being GC'ed
         GC.Collect();
         GC.WaitForPendingFinalizers();
@@ -485,7 +480,7 @@ public sealed partial class PreviewWindow : Window
                 if (!this.Visible)
                 {
                     // we seem to need to turn off topmost and then re-enable it again
-                    // when we show the form, otherwise it doesn't always get shown topmost...
+                    // when we show the form - otherwise it doesn't always get shown topmost...
                     presenter.IsAlwaysOnTop = false;
                     presenter.IsAlwaysOnTop = true;
                 }

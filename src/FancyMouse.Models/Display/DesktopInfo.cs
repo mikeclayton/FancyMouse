@@ -11,9 +11,7 @@ public sealed record DesktopInfo
 {
     public DesktopInfo(IEnumerable<ScreenInfo> screens)
     {
-        this.Screens = new(
-            (screens ?? throw new ArgumentNullException(nameof(screens)))
-                .ToList());
+        this.Screens = (screens ?? throw new ArgumentNullException(nameof(screens))).ToList().AsReadOnly();
     }
 
     public ReadOnlyCollection<ScreenInfo> Screens

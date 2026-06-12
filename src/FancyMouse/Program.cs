@@ -12,12 +12,6 @@ internal static class Program
     [STAThread]
     private static void Main()
     {
-        // run Logitech SetPoint as admin for hotkeys to get activated from custom mouse bindings
-        // when an Office application or Visual Studio is the active window. (SetPoint *keyboard*
-        // bindings work fine when running as a normal user in Office, but *mouse* bindings only
-        // work when SetPoint is run as an admin...)
-        // https://social.msdn.microsoft.com/Forums/en-US/09a7ebee-9567-4704-be88-de54a16ca99e/logitech-mouse-button-assignments-ignored-by-vs?forum=csharpide
-
         // To customize application configuration such as set high DPI settings or default font,
         // see https://aka.ms/applicationconfiguration.
         ApplicationConfiguration.Initialize();
@@ -39,9 +33,9 @@ internal static class Program
         // been already (we'll get an error from previewForm.BeginInvoke() if the form
         // handle doesn't exist). note that BeginInvoke() will block whatever thread is
         // the owner of the handle so we need to make sure it gets created on the main
-        // application thread otherwise we might block something important like the the
+        // application thread otherwise we might block something important like the
         // hotkey message loop
-        var previewHwnd = previewForm.Handle;
+        _ = previewForm.Handle;
 
         var cancellationTokenSource = new CancellationTokenSource();
         ConfigHelper.SetAppSettingsPath(".\\appSettings.json");
@@ -54,7 +48,7 @@ internal static class Program
                 await previewForm.InvokeAsync(
                     async (cancellationToken) =>
                     {
-                        await previewForm.ShowPreview();
+                        await previewForm.ShowPreviewAsync();
                     },
                     cancellationTokenSource.Token);
             });

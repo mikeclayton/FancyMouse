@@ -10,6 +10,13 @@ namespace FancyMouse.Common.Helpers;
 
 public static class LayoutHelper
 {
+    public static RectangleInfo GetCombinedScreenBounds(List<RectangleInfo> screenBounds)
+    {
+        return screenBounds.Skip(1).Aggregate(
+            seed: screenBounds.First(),
+            (combined, screenBounds) => combined.Union(screenBounds));
+    }
+
     public static FormViewModel GetFormLayout(
         PreviewStyle previewStyle, DisplayInfo displayInfo, ScreenInfo activatedScreen, PointInfo activatedLocation)
     {

@@ -11,8 +11,7 @@ using FancyMouse.Models.Styles;
 
 namespace FancyMouse.Common.UnitTests.Helpers;
 
-[TestClass]
-public sealed class DrawingHelperTests
+public static class DrawingHelperTests
 {
     [TestClass]
     public sealed class GetPreviewLayoutTests
@@ -99,8 +98,8 @@ public sealed class DrawingHelperTests
                     displayInfo: displayInfo,
                     activatedScreen: displayInfo.Devices[0].Screens[0],
                     activatedLocation: new(x: 50, y: 50),
-                    desktopImageFilename: "Helpers/_test-4grid-desktop.png",
-                    expectedImageFilename: "Helpers/_test-4grid-expected.png"),
+                    desktopImageFilename: "_test-4grid-desktop.png",
+                    expectedImageFilename: "_test-4grid-expected.png"),
             };
 
             // win 11
@@ -133,8 +132,8 @@ public sealed class DrawingHelperTests
                     displayInfo: displayInfo,
                     activatedScreen: displayInfo.Devices[0].Screens[0],
                     activatedLocation: new(x: 50, y: 50),
-                    desktopImageFilename: "Helpers/_test-win11-desktop.png",
-                    expectedImageFilename: "Helpers/_test-win11-expected.png"),
+                    desktopImageFilename: "_test-win11-desktop.png",
+                    expectedImageFilename: "_test-win11-expected.png"),
             };
         }
 
@@ -173,6 +172,33 @@ public sealed class DrawingHelperTests
 
             // compare the images
             AssertImagesEqual(expected, actual);
+        }
+
+        private static Bitmap LoadImageResource(string filename)
+        {
+            var referenceType = typeof(DrawingHelperTests);
+            var resourceAssembly = referenceType.Assembly;
+
+            var resourcePrefix = referenceType.Namespace;
+            var resourceName = $"{resourcePrefix}.{filename.Replace("/", ".")}";
+            var resourceNames = resourceAssembly.GetManifestResourceNames();
+            if (!resourceNames.Contains(resourceName))
+            {
+                var message = string.Join(
+                    Environment.NewLine,
+                    new List<string>([
+                        $"Embedded resource '{resourceName}' does not exist.",
+                        string.Empty,
+                        "Valid resource names are:",
+                        string.Empty])
+                    .Concat(resourceNames));
+                throw new InvalidOperationException(message);
+            }
+
+            var stream = resourceAssembly.GetManifestResourceStream(resourceName)
+                ?? throw new InvalidOperationException();
+            var image = (Bitmap)Image.FromStream(stream);
+            return image;
         }
 
         /// <summary>

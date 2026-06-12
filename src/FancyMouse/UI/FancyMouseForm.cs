@@ -135,19 +135,27 @@ internal sealed partial class FancyMouseForm : Form
             if (this.FormLayout is null)
             {
                 // there's no layout data so we can't work out what screen was clicked
+                throw new InvalidOperationException();
+            }
+
+            // get the *scaled* pointer location
+            var pointerLocation = new PointInfo(mouseEventArgs.Location);
+
+            // work out which screenshot was clicked
+            var clickedScreen = this.FormLayout.CanvasLayout.DeviceLayouts
+                .SelectMany(deviceLayout => deviceLayout.ScreenLayouts)
+                .FirstOrDefault(
+                    screenLayout => screenLayout.ScreenBounds.OuterBounds.Contains(pointerLocation));
+            if (clickedScreen is null)
+            {
                 return;
             }
 
-            // work out which screenshot was clicked
-            var devicePairings = this.FormLayout.CanvasLayout.DeviceLayouts
-                .SelectMany(
-                    deviceLayout => deviceLayout.ScreenLayouts,
-                    (deviceLayout, screenLayout) => new { DeviceLayout = deviceLayout, ScreenLayout = screenLayout })
-                .ToList();
-            var clickedPairing = devicePairings
+            // find the device the clicked screenshot belongs to
+            var clickedDevice = this.FormLayout.CanvasLayout.DeviceLayouts
                 .FirstOrDefault(
-                    deviceParing => deviceParing.ScreenLayout.ScreenBounds.OuterBounds.Contains(mouseEventArgs.X, mouseEventArgs.Y));
-            if (clickedPairing is null)
+                    deviceLayout => deviceLayout.ScreenLayouts.Contains(clickedScreen));
+            if (clickedDevice is null)
             {
                 return;
             }
@@ -155,9 +163,8 @@ internal sealed partial class FancyMouseForm : Form
             // scale up the click onto the physical screen - the aspect ratio of the screenshot
             // might be distorted compared to the physical screen due to the borders around the
             // screenshot, so we need to work out the target location on the physical screen first
-            var clickedScreen = clickedPairing.ScreenLayout;
             var clickedDisplayArea = clickedScreen.ScreenInfo.DisplayArea;
-            var clickedLocation = new PointInfo(mouseEventArgs.Location)
+            var clickedLocation = pointerLocation
                 .Stretch(
                     source: clickedScreen.ScreenBounds.ContentBounds,
                     target: clickedDisplayArea)
@@ -178,14 +185,14 @@ internal sealed partial class FancyMouseForm : Form
         this.OnDeactivate(EventArgs.Empty);
     }
 
-    public async Task ShowPreview()
+    public async Task ShowPreviewAsync()
     {
         var logger = this.Logger;
 
         logger.Info(string.Join(
             '\n',
             "-----------",
-            nameof(FancyMouseForm.ShowPreview),
+            nameof(FancyMouseForm.ShowPreviewAsync),
             "-----------"));
 
         // hide the form while we redraw it...
@@ -199,15 +206,17 @@ internal sealed partial class FancyMouseForm : Form
 
         var appSettings = Internal.Helpers.ConfigHelper.AppSettings ?? throw new InvalidOperationException();
         var displayInfo = DeviceHelper.GetDisplayInfo();
+
         var activatedScreen = DeviceHelper.GetActivatedScreen(displayInfo.Devices[0], activatedLocation);
 
+        var previewStyle = appSettings.PreviewStyle;
         var formLayout = LayoutHelper.GetFormLayout(
-            previewStyle: appSettings.PreviewStyle,
+            previewStyle,
             displayInfo,
             activatedScreen: activatedScreen,
             activatedLocation: activatedLocation);
 
-        // remember this so we can map the mouse clicks back to
+        // remember the layout so we can map the mouse clicks back to
         // the appropriate device and screen location
         this.FormLayout = formLayout;
 
@@ -222,12 +231,12 @@ internal sealed partial class FancyMouseForm : Form
             .ToList();
 
         await DrawingHelper.RenderPreviewAsync(
-            this.Logger,
-            this.FormLayout.CanvasLayout,
-            activatedScreen,
-            imageCopyServices,
-            this.OnPreviewImageCreatedAsync,
-            this.OnPreviewImageUpdatedAsync);
+                this.FormLayout.CanvasLayout,
+                activatedScreen,
+                imageCopyServices,
+                this.OnPreviewImageCreatedAsync,
+                this.OnPreviewImageUpdatedAsync)
+            .ConfigureAwait(false);
 
         stopwatch.Stop();
 
@@ -246,9 +255,10 @@ internal sealed partial class FancyMouseForm : Form
         this.Thumbnail.Image = null;
         tmp.Dispose();
 
-        // force preview image memory to be released, otherwise
+        // force preview image memory to be released - otherwise
         // all the disposed images can pile up without being GC'ed
         GC.Collect();
+        GC.WaitForPendingFinalizers();
     }
 
     /// <summary>
@@ -326,7 +336,7 @@ internal sealed partial class FancyMouseForm : Form
                 if (!this.Visible)
                 {
                     // we seem to need to turn off topmost and then re-enable it again
-                    // when we show the form, otherwise it doesn't always get shown topmost...
+                    // when we show the form - otherwise it doesn't always get shown topmost...
                     this.TopMost = false;
                     this.TopMost = true;
                     this.Show();
