@@ -476,23 +476,55 @@ public sealed partial class PreviewWindow : Window
         await this.InvokeOnUiThreadAsync(
             () =>
             {
-                var presenter = this.AppWindow.Presenter as OverlappedPresenter
-                    ?? throw new InvalidOperationException();
+                /*
+                    this sequence doesn't appear to work reliably in all cases:
 
-                if (!this.Visible)
-                {
-                    // we seem to need to turn off topmost and then re-enable it again
-                    // when we show the form - otherwise it doesn't always get shown topmost...
-                    presenter.IsAlwaysOnTop = false;
-                    presenter.IsAlwaysOnTop = true;
-                }
+                      this.AppWindow.Show();
+                      this.Activate();
+                      this.PreviewImage.Focus(FocusState.Programmatic);
 
-                this.AppWindow.Show();
+                    under certain (not fully understood) circumstances the form doesn't activate
+                    properly which means the "Deactivated" event doesn't fire, which in turn
+                    means the preview window isn't dismissed.
 
-                // we have to activate the window to make sure the deactivate event fires
-                this.Activate();
-                this.PreviewImage.Focus(FocusState.Programmatic);
-            }).ConfigureAwait(false);
+                    specifically, closing the preview window by "blurring" (i.e. clicking a
+                    different application window) causes the *next* activation to not close
+                    properly if *that* activation is also "blurred". the only way to "reset"
+                    a running process is to click (left or right) on the thumbail to dismiss
+                    it.
+
+                    in summary:
+
+                    * Activation 1 (click): left or right click the preview window to hide it
+                    * Activation 2 (blur): clicking a different application hides the preview window
+                    * Activation 3 (blur): clicking a different application *doesn't* hide the preview window
+                    * Activation 4 (click): left or right click the preview window to hide it
+                    * Activation 5 (blur): clicking a different application hides the preview window
+
+                    "blur" dismissals in Activation 2 and Activation 5 work because the previous
+                    activiation was dismissed with a click, but Activation 3 *doesn't* dismiss the
+                    window because the previous activation was ended with a blur.
+
+                    the key indicator is in the return value from GetGUIThreadInfo - the hwndFocus
+                    silently stays pointing at whatever window the previously-active application had
+                    focused because the preview window hasn't properly activated and become the focussed
+                    window.
+
+                    so because focus never actually transferred to the preview window in Activation 3,
+                    there was no focus for the window to lose later when the user clicked away - so
+                    the next deactivation event silently never fired, leaving the preview stuck open.
+
+                    calling the raw Win32 APIs directly against the window's own HWND - rather than
+                    going through Window.Activate() / UIElement.Focus() - reliably completes the
+                    activation / focus transfer every time, regardless of how the previous activation
+                    ended.
+                */
+                var hWnd = (HWND)WinRT.Interop.WindowNative.GetWindowHandle(this);
+                _ = PInvoke.ShowWindow(hWnd, SHOW_WINDOW_CMD.SW_SHOW);
+                _ = PInvoke.SetForegroundWindow(hWnd);
+                _ = PInvoke.SetFocus(hWnd);
+                _ = PInvoke.SetActiveWindow(hWnd);
+            });
     }
 
     /// <summary>
