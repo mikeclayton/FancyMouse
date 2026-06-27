@@ -115,12 +115,19 @@ public sealed partial class PreviewWindow : Window
 
     private void PreviewWindow_Activated(object sender, WindowActivatedEventArgs e)
     {
+        this.Logger.Info(
+            CultureInfo.InvariantCulture,
+            "{method} - activation state = {state}",
+            nameof(PreviewWindow.PreviewWindow_Activated),
+            e.WindowActivationState);
+
         switch (e.WindowActivationState)
         {
             case WindowActivationState.CodeActivated:
                 this.PreviewImage.Focus(FocusState.Programmatic);
                 break;
             case WindowActivationState.Deactivated:
+                this.Logger.Info("hiding window - reason = Window.Activated reported Deactivated");
                 this.HideWindow();
                 break;
             default:
@@ -132,6 +139,7 @@ public sealed partial class PreviewWindow : Window
     {
         if (e.Key == VirtualKey.Escape)
         {
+            this.Logger.Info("hiding window - reason = Escape key pressed");
             this.HideWindow();
             return;
         }
@@ -198,6 +206,7 @@ public sealed partial class PreviewWindow : Window
         if (targetScreen is not null)
         {
             MouseHelper.SetCursorPosition(targetScreen.DisplayArea.Midpoint);
+            this.Logger.Info("hiding window - reason = screen-switch key pressed");
             this.HideWindow();
         }
     }
@@ -282,6 +291,11 @@ public sealed partial class PreviewWindow : Window
             MouseHelper.SetCursorPosition(clickedLocation);
         }
 
+        var clickButton = pointerPoint.Properties.IsLeftButtonPressed ? "left" : "right";
+        this.Logger.Info(
+            CultureInfo.InvariantCulture,
+            "hiding window - reason = {clickButton} click on preview image",
+            clickButton);
         this.HideWindow();
     }
 
@@ -296,8 +310,8 @@ public sealed partial class PreviewWindow : Window
             "-----------"));
 
         // hide the form while we redraw it...
-        await this.HideWindowAsync()
-            .ConfigureAwait(false);
+        logger.Info("hiding window - reason = ShowPreviewAsync redraw reset - hotkey re-triggered");
+        await this.HideWindowAsync();
 
         var stopwatch = Stopwatch.StartNew();
 
@@ -322,12 +336,10 @@ public sealed partial class PreviewWindow : Window
         // the appropriate device and screen location
         this.FormLayout = formLayout;
 
-        await this.PositionWindowAsync(formLayout.FormBounds)
-            .ConfigureAwait(false);
+        await this.PositionWindowAsync(formLayout.FormBounds);
 
         var cornerRadius = (int)appSettings.PreviewStyle.CanvasStyle.BorderStyle.Left;
-        await this.ApplyWindowRegionAsync(cornerRadius)
-            .ConfigureAwait(false);
+        await this.ApplyWindowRegionAsync(cornerRadius);
 
         var imageCopyServices = displayInfo.Devices
             .Select(
@@ -340,13 +352,11 @@ public sealed partial class PreviewWindow : Window
                 activatedScreen,
                 imageCopyServices,
                 this.OnPreviewImageCreatedAsync,
-                this.OnPreviewImageUpdatedAsync)
-            .ConfigureAwait(false);
+                this.OnPreviewImageUpdatedAsync);
 
         stopwatch.Stop();
 
-        await this.ShowWindowAsync()
-            .ConfigureAwait(false);
+        await this.ShowWindowAsync();
     }
 
     private void ClearPreview()
@@ -417,7 +427,7 @@ public sealed partial class PreviewWindow : Window
                     var lastError = Marshal.GetLastPInvokeError();
                     ResultHandler.HandleResult(regionResult, success: lastError == 0, lastError, nameof(PInvoke.SetWindowRgn));
                 }
-            }).ConfigureAwait(false);
+            });
     }
 
     /// <summary>
@@ -453,12 +463,24 @@ public sealed partial class PreviewWindow : Window
             });
 
         // wait for the task to complete
-        await tcs.Task.ConfigureAwait(false);
+        await tcs.Task;
     }
 
     private void HideWindow()
     {
+        var wasVisible = this.Visible;
+        this.Logger.Info(
+            CultureInfo.InvariantCulture,
+            "{method} - before hiding, was visible = {wasVisible}",
+            nameof(PreviewWindow.HideWindow),
+            wasVisible);
         this.AppWindow.Hide();
+
+        this.Logger.Info(
+            CultureInfo.InvariantCulture,
+            "{method} - after hiding",
+            nameof(PreviewWindow.HideWindow));
+
         this.ClearPreview();
     }
 
@@ -468,7 +490,7 @@ public sealed partial class PreviewWindow : Window
             () =>
             {
                 this.HideWindow();
-            }).ConfigureAwait(false);
+            });
     }
 
     private async Task ShowWindowAsync()
@@ -552,11 +574,18 @@ public sealed partial class PreviewWindow : Window
                 var windowBounds = new RectInt32((int)bounds.X, (int)bounds.Y, (int)bounds.Width, (int)bounds.Height);
                 this.AppWindow.MoveAndResize(windowBounds);
                 this.AppWindow.MoveAndResize(windowBounds);
-            }).ConfigureAwait(false);
+            });
     }
 
     private async Task OnPreviewImageCreatedAsync(Bitmap preview)
     {
+        this.Logger.Info(
+            CultureInfo.InvariantCulture,
+            "{method} - preview size = {width}x{height}",
+            nameof(PreviewWindow.OnPreviewImageCreatedAsync),
+            preview.Width,
+            preview.Height);
+
         await this.InvokeOnUiThreadAsync(
             () =>
             {
@@ -567,11 +596,25 @@ public sealed partial class PreviewWindow : Window
 
                 this.PreviewImage.Width = preview.Width * highDpiScalingRatio;
                 this.PreviewImage.Height = preview.Height * highDpiScalingRatio;
-            }).ConfigureAwait(false);
+
+                this.Logger.Info(
+                    CultureInfo.InvariantCulture,
+                    "{method} - PreviewImage size set to {width}x{height}",
+                    nameof(PreviewWindow.OnPreviewImageCreatedAsync),
+                    this.PreviewImage.Width,
+                    this.PreviewImage.Height);
+            });
     }
 
     private async Task OnPreviewImageUpdatedAsync(Bitmap preview)
     {
+        this.Logger.Info(
+            CultureInfo.InvariantCulture,
+            "{method} - preview size = {width}x{height}",
+            nameof(PreviewWindow.OnPreviewImageUpdatedAsync),
+            preview.Width,
+            preview.Height);
+
         await this.InvokeOnUiThreadAsync(
             () =>
             {
@@ -586,6 +629,12 @@ public sealed partial class PreviewWindow : Window
                 }
 
                 this.PreviewImage.Source = bitmapImage;
-            }).ConfigureAwait(false);
+
+                this.Logger.Info(
+                    CultureInfo.InvariantCulture,
+                    "{method} - PreviewImage.Source set, IsSourceNull = {isNull}",
+                    nameof(PreviewWindow.OnPreviewImageUpdatedAsync),
+                    this.PreviewImage.Source is null);
+            });
     }
 }

@@ -2,6 +2,11 @@ WINDOW_EX_STYLE
 WINDOW_STYLE
 GetWindowLong
 SetWindowLong
+ShowWindow
+SHOW_WINDOW_CMD
+SetForegroundWindow
+SetFocus
+SetActiveWindow
 
 USER_DEFAULT_SCREEN_DPI
 GetDpiForWindow

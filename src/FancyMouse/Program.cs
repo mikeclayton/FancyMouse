@@ -1,3 +1,5 @@
+using System.Globalization;
+
 using FancyMouse.Internal.Helpers;
 using FancyMouse.UI;
 using NLog;
@@ -12,6 +14,11 @@ internal static class Program
     [STAThread]
     private static void Main()
     {
+        // captured once per process launch and used in NLog.config's fileName, so the log
+        // file name is stable for the lifetime of this process instead of rotating every
+        // time the embedded timestamp's minute ticks over.
+        GlobalDiagnosticsContext.Set("sessionStart", DateTime.Now.ToString("yyyy-MM-dd_HH_mm", CultureInfo.InvariantCulture));
+
         // To customize application configuration such as set high DPI settings or default font,
         // see https://aka.ms/applicationconfiguration.
         ApplicationConfiguration.Initialize();
