@@ -1,8 +1,9 @@
 using System.Diagnostics;
 
 using FancyMouse.Common.Helpers;
-using FancyMouse.Common.Imaging;
 using FancyMouse.Drawing.Bezels;
+using FancyMouse.Drawing.Helpers;
+using FancyMouse.Drawing.Screens;
 using FancyMouse.Models.Display;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.ViewModel;

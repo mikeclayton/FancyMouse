@@ -2,7 +2,7 @@
 
 using FancyMouse.Models.Drawing;
 
-namespace FancyMouse.Common.Imaging;
+namespace FancyMouse.Drawing.Screens;
 
 public interface IImageRegionCopyService
 {

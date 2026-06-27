@@ -3,7 +3,7 @@ using System.Drawing.Drawing2D;
 
 using FancyMouse.Models.Drawing;
 
-namespace FancyMouse.Common.Imaging;
+namespace FancyMouse.Drawing.Screens;
 
 /// <summary>
 /// Implements an IImageRegionCopyService that paints a solid block of the specified color.

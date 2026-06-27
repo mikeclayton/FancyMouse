@@ -1,6 +1,7 @@
 ﻿using System.Runtime.InteropServices;
 
 using FancyMouse.Common.Interop;
+using FancyMouse.Common.Win32Api;
 using FancyMouse.Models.Drawing;
 
 using Windows.Win32;
@@ -32,8 +33,8 @@ public static class MouseHelper
     /// </summary>
     public static PointInfo GetCursorPosition()
     {
-        var result = PInvoke.GetCursorPos(out var point);
-        ResultHandler.ThrowIfZero(result, getLastError: true, nameof(PInvoke.GetCursorPos));
+        _ = User32.GetCursorPos(out var point)
+            .ThrowIfFailed();
         return new(point.X, point.Y);
     }
 
@@ -73,21 +74,12 @@ public static class MouseHelper
         var targetPosition = position.ToPoint();
         for (var i = 0; i < 2; i++)
         {
-            // SetCursorPos has been known to return zero (i.e. an error),
-            // with GetLastError also returning zero to indicate success
-            var result1 = PInvoke.SetCursorPos(targetPosition.X, targetPosition.Y);
-            if (result1 == 0)
-            {
-                var lastError = Marshal.GetLastPInvokeError();
-                ResultHandler.HandleResult(
-                    result1,
-                    success: lastError == 0,
-                    lastError,
-                    nameof(PInvoke.SetCursorPos));
-            }
+            _ = User32.SetCursorPos(targetPosition.X, targetPosition.Y)
+                .ThrowIfFailed();
 
-            var result2 = PInvoke.GetCursorPos(out var currentPosition);
-            ResultHandler.ThrowIfZero(result2, getLastError: true, nameof(PInvoke.GetCursorPos));
+            _ = User32.GetCursorPos(out var currentPosition)
+                .ThrowIfFailed();
+
             if ((currentPosition.X == position.X) || (currentPosition.Y == position.Y))
             {
                 break;
@@ -125,15 +117,18 @@ public static class MouseHelper
         };
 
         // don't check return value - we aren't going to do anything if it fails
-        _ = PInvoke.SendInput(inputs, inputs.Length);
+        // (IgnoreFailure is a null-op, used here purely to annotate the intention)
+        _ = User32.SendInput(inputs, inputs.Length)
+            .IgnoreFailure();
     }
 
     private static decimal CalculateAbsoluteCoordinateX(decimal x)
     {
         // If MOUSEEVENTF_ABSOLUTE value is specified, dx and dy contain normalized absolute coordinates between 0 and 65,535.
         // see https://learn.microsoft.com/en-us/windows/win32/api/winuser/ns-winuser-mouseinput
-        var result = PInvoke.GetSystemMetrics(SYSTEM_METRICS_INDEX.SM_CXSCREEN);
-        ResultHandler.ThrowIfZero(result, getLastError: false, nameof(PInvoke.GetSystemMetrics));
+        var result = User32.GetSystemMetrics(SYSTEM_METRICS_INDEX.SM_CXSCREEN)
+            .ThrowIfFailed()
+            .GetValue();
         return (x * 65535) / result;
     }
 
@@ -141,8 +136,9 @@ public static class MouseHelper
     {
         // If MOUSEEVENTF_ABSOLUTE value is specified, dx and dy contain normalized absolute coordinates between 0 and 65,535.
         // see https://learn.microsoft.com/en-us/windows/win32/api/winuser/ns-winuser-mouseinput
-        var result = PInvoke.GetSystemMetrics(SYSTEM_METRICS_INDEX.SM_CYSCREEN);
-        ResultHandler.ThrowIfZero(result, getLastError: false, nameof(PInvoke.GetSystemMetrics));
+        var result = User32.GetSystemMetrics(SYSTEM_METRICS_INDEX.SM_CYSCREEN)
+            .ThrowIfFailed()
+            .GetValue();
         return (y * 65535) / result;
     }
 }

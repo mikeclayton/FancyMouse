@@ -1,0 +1,11 @@
+// Foundation
+WIN32_ERROR
+
+// Gdi32
+SetStretchBltMode
+StretchBlt
+
+// User32
+GetDesktopWindow
+GetWindowDC
+ReleaseDC

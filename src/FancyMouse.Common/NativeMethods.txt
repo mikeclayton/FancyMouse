@@ -1,19 +1,41 @@
-HBRUSH
-HCURSOR
-HICON
-HINSTANCE
+// Shell32 - Windows Shell
+Shell_NotifyIcon
 
+// User32 - High DPI
+GetAwarenessFromDpiAwarenessContext
+GetThreadDpiAwarenessContext
+
+// User32 - Keyboard and Mouse Input
+SendInput
+
+// User32 - Menus and Other Resources
+AppendMenu
+CreatePopupMenu
+GetCursorPos
+SetCursorPos
+SetMenuInfo
+TrackPopupMenuEx
+TRACK_POPUP_MENU_FLAGS
+
+// User32 - Windows and Messages
+CreateWindowEx
+DefWindowProc
+GetSystemMetrics
+HWND_MESSAGE
+RegisterClassEx
+SetForegroundWindow
 WM_ACTIVATE
+WM_COMMAND
 WM_CREATE
 WM_ENTERIDLE
 WM_ENTERMENULOOP
 WM_EXITMENULOOP
-WM_KILLFOCUS
 WM_GETMINMAXINFO
 WM_IME_SETCONTEXT
 WM_IME_NOTIFY
 WM_INITMENU
 WM_INITMENUPOPUP
+WM_KILLFOCUS
 WM_LBUTTONDOWN
 WM_MENUSELECT
 WM_NCACTIVATE
@@ -23,45 +45,28 @@ WM_RBUTTONDOWN
 WM_SETCURSOR
 WM_SETFOCUS
 WM_UNINITMENUPOPUP
-WM_USER
 WM_WINDOWPOSCHANGED
 WM_WINDOWPOSCHANGING
-WM_COMMAND
-
-CreateWindowExW
-DefWindowProc
-GetWindowLong
-RegisterClassEx
-SetForegroundWindow
+WM_USER
 WNDPROC
 
-MONITORINFOF_PRIMARY
-ScreenToClient
+// User32 - Windows GDI
 EnumDisplayMonitors
 GetMonitorInfo
-GetSystemMetrics
 MonitorFromPoint
-SendInput
+MONITORINFOF_PRIMARY
+ScreenToClient
 
-GetCursorPos
-SetCursorPos
 
-AppendMenu
-CreatePopupMenu
-SetMenuInfo
-TrackPopupMenuEx
-TRACK_POPUP_MENU_FLAGS
 
-SetStretchBltMode
-StretchBlt
 
-GetDesktopWindow
-GetWindowDC
-ReleaseDC
 
-Shell_NotifyIconW
+// HBRUSH
+// HCURSOR
+// HICON
+// HINSTANCE
 
-GetAwarenessFromDpiAwarenessContext
-GetThreadDpiAwarenessContext
+// GetWindowLong
+// WNDPROC
 
-HWND_MESSAGE
+// MonitorFromPoint

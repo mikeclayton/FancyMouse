@@ -1,11 +1,13 @@
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Globalization;
 using System.Runtime.InteropServices;
 
 using FancyMouse.Common.Helpers;
-using FancyMouse.Common.Imaging;
 using FancyMouse.Common.Interop;
+using FancyMouse.Drawing.Helpers;
+using FancyMouse.Drawing.Screens;
 using FancyMouse.Models.Display;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.ViewModel;

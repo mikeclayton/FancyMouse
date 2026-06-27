@@ -1,6 +1,7 @@
 ﻿using System.Runtime.InteropServices;
 
 using FancyMouse.Common.Interop;
+using FancyMouse.Common.Win32Api;
 using FancyMouse.Models.Display;
 using FancyMouse.Models.Drawing;
 
@@ -20,10 +21,10 @@ public static class ScreenHelper
     private static RectangleInfo GetVirtualScreen()
     {
         return new(
-            PInvoke.GetSystemMetrics(SYSTEM_METRICS_INDEX.SM_XVIRTUALSCREEN),
-            PInvoke.GetSystemMetrics(SYSTEM_METRICS_INDEX.SM_YVIRTUALSCREEN),
-            PInvoke.GetSystemMetrics(SYSTEM_METRICS_INDEX.SM_CXVIRTUALSCREEN),
-            PInvoke.GetSystemMetrics(SYSTEM_METRICS_INDEX.SM_CYVIRTUALSCREEN));
+            User32.GetSystemMetrics(SYSTEM_METRICS_INDEX.SM_XVIRTUALSCREEN).ThrowIfFailed().GetValue(),
+            User32.GetSystemMetrics(SYSTEM_METRICS_INDEX.SM_YVIRTUALSCREEN).ThrowIfFailed().GetValue(),
+            User32.GetSystemMetrics(SYSTEM_METRICS_INDEX.SM_CXVIRTUALSCREEN).ThrowIfFailed().GetValue(),
+            User32.GetSystemMetrics(SYSTEM_METRICS_INDEX.SM_CYVIRTUALSCREEN).ThrowIfFailed().GetValue());
     }
 
     public static IEnumerable<ScreenInfo> GetAllScreens()
@@ -38,11 +39,9 @@ public static class ScreenHelper
                     hMonitors.Add(hMonitor);
                     return true;
                 });
-            var result = PInvoke.EnumDisplayMonitors(HDC.Null, null, callback, (LPARAM)0);
-            if (result == 0)
-            {
-                throw new InvalidOperationException("failed to enumerate monitors");
-            }
+
+            _ = User32.EnumDisplayMonitors(HDC.Null, null, callback, (LPARAM)0)
+                .ThrowIfFailed();
 
             // prevent callback from being collected during the enumeration
             GC.KeepAlive(callback);
@@ -55,12 +54,8 @@ public static class ScreenHelper
         };
         foreach (var hMonitor in hMonitors)
         {
-            var result = PInvoke.GetMonitorInfo(hMonitor, ref monitorInfo);
-            ResultHandler.ThrowIfZero(
-                result,
-                getLastError: true,
-                memberName: nameof(PInvoke.GetMonitorInfo));
-
+            _ = User32.GetMonitorInfo(hMonitor, ref monitorInfo)
+                .ThrowIfFailed();
             yield return new ScreenInfo(
                 handle: hMonitor,
                 primary: (monitorInfo.dwFlags & PInvoke.MONITORINFOF_PRIMARY) != 0,

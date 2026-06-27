@@ -4,7 +4,8 @@ using System.Drawing.Imaging;
 using System.Reflection;
 
 using FancyMouse.Common.Helpers;
-using FancyMouse.Common.Imaging;
+using FancyMouse.Drawing.Helpers;
+using FancyMouse.Drawing.Screens;
 using FancyMouse.Models.Display;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Styles;

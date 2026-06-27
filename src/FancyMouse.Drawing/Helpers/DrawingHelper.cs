@@ -3,15 +3,15 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 
-using FancyMouse.Common.Imaging;
 using FancyMouse.Drawing.Bezels;
+using FancyMouse.Drawing.Screens;
 using FancyMouse.Models.Display;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Styles;
 using FancyMouse.Models.ViewModel;
 using NLog;
 
-namespace FancyMouse.Common.Helpers;
+namespace FancyMouse.Drawing.Helpers;
 
 public static class DrawingHelper
 {

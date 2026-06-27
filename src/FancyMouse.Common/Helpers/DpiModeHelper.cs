@@ -1,6 +1,7 @@
 ﻿using System.Runtime.Versioning;
 
-using Windows.Win32;
+using FancyMouse.Common.Win32Api;
+
 using Windows.Win32.UI.HiDpi;
 
 namespace FancyMouse.Common.Helpers;
@@ -41,8 +42,8 @@ public static class DpiModeHelper
         // there's a weird problem where AreDpiAwarenessContextsEqual was returning TRUE in debug mode
         // but FALSE in release mode and i couldn't work out why, so we can't do it the *right* way.
         // we'll just use GetAwarenessFromDpiAwarenessContext instead as a near-enough workaround.
-        var dpiAwarenessContext = PInvoke.GetThreadDpiAwarenessContext();
-        var dpiAwareness = PInvoke.GetAwarenessFromDpiAwarenessContext(dpiAwarenessContext);
+        var dpiAwarenessContext = User32.GetThreadDpiAwarenessContext().ThrowIfFailed().GetValue();
+        var dpiAwareness = User32.GetAwarenessFromDpiAwarenessContext(dpiAwarenessContext).ThrowIfFailed().GetValue();
         if (dpiAwareness != DPI_AWARENESS.DPI_AWARENESS_PER_MONITOR_AWARE)
         {
             throw new InvalidOperationException($"high dpi mode is not set to {nameof(DPI_AWARENESS.DPI_AWARENESS_PER_MONITOR_AWARE)}");
