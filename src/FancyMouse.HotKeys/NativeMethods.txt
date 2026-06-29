@@ -1,17 +1,19 @@
-WM_HOTKEY
-WM_NULL
-WM_QUIT
-WM_USER
+// Kernel32 - Processes and Threads
+GetCurrentThreadId
 
-WNDPROC
+// User32 - Keyboard and Mouse Input
+HOT_KEY_MODIFIERS
+RegisterHotKey
+UnregisterHotKey
+
+// User32 - Windows and Messages
 DefWindowProc
 DispatchMessage
 GetMessage
 PostMessage
 TranslateMessage
-
-HOT_KEY_MODIFIERS
-RegisterHotKey
-UnregisterHotKey
-
-GetCurrentThreadId
+WM_HOTKEY
+WM_NULL
+WM_QUIT
+WM_USER
+WNDPROC

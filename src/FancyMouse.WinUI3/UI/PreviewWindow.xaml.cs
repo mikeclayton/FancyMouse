@@ -2,16 +2,16 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Globalization;
-using System.Runtime.InteropServices;
 
 using FancyMouse.Common.Helpers;
-using FancyMouse.Common.Interop;
+using FancyMouse.Common.Win32Api;
 using FancyMouse.Drawing.Helpers;
 using FancyMouse.Drawing.Screens;
 using FancyMouse.Models.Display;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.ViewModel;
 using FancyMouse.WinUI3.Internal.Helpers;
+using FancyMouse.WinUI3.Win32Api;
 
 using Microsoft.UI.Input;
 using Microsoft.UI.Windowing;
@@ -65,46 +65,26 @@ public sealed partial class PreviewWindow : Window
             var hWnd = (HWND)WinRT.Interop.WindowNative.GetWindowHandle(this);
 
             // get the current window style
-            PInvoke.SetLastError(0);
-            var result = PInvoke.GetWindowLong(hWnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE);
-            if (result == 0)
-            {
-                var lastError = Marshal.GetLastPInvokeError();
-                ResultHandler.HandleResult(result, success: lastError == 0, lastError, nameof(PInvoke.GetWindowLong));
-            }
+            var style = (WINDOW_STYLE)User32.GetWindowLong(hWnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE)
+                .ThrowIfFailed()
+                .GetValue();
 
             // set the window to be borderless, with no title bar, and hide all of the max / min / close buttons
-            var style = (WINDOW_STYLE)result;
             style &= ~WINDOW_STYLE.WS_OVERLAPPEDWINDOW;
             style |= WINDOW_STYLE.WS_POPUP;
-            PInvoke.SetLastError(0);
-            result = PInvoke.SetWindowLong(hWnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE, (int)style);
-            if (result == 0)
-            {
-                var lastError = Marshal.GetLastPInvokeError();
-                ResultHandler.HandleResult(result, success: lastError == 0, lastError, nameof(PInvoke.SetWindowLong));
-            }
+            _ = User32.SetWindowLong(hWnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE, (int)style)
+                .ThrowIfFailed();
 
             // get the current extended window style
-            PInvoke.SetLastError(0);
-            result = PInvoke.GetWindowLong(hWnd, WINDOW_LONG_PTR_INDEX.GWL_EXSTYLE);
-            if (result == 0)
-            {
-                var lastError = Marshal.GetLastPInvokeError();
-                ResultHandler.HandleResult(result, success: lastError == 0, lastError, nameof(PInvoke.GetWindowLong));
-            }
+            var exStyle = (WINDOW_EX_STYLE)User32.GetWindowLong(hWnd, WINDOW_LONG_PTR_INDEX.GWL_EXSTYLE)
+                .ThrowIfFailed()
+                .GetValue();
 
             // set the window to be borderless, with no title bar, and hide all of the max / min / close buttons
-            var exStyle = (WINDOW_EX_STYLE)result;
             exStyle |= WINDOW_EX_STYLE.WS_EX_TOOLWINDOW; // hide the taskbar icon
             exStyle |= WINDOW_EX_STYLE.WS_EX_TOPMOST;    // make topmost
-            PInvoke.SetLastError(0);
-            result = PInvoke.SetWindowLong(hWnd, WINDOW_LONG_PTR_INDEX.GWL_EXSTYLE, (int)exStyle);
-            if (result == 0)
-            {
-                var lastError = Marshal.GetLastPInvokeError();
-                ResultHandler.HandleResult(result, success: lastError == 0, lastError, nameof(PInvoke.SetWindowLong));
-            }
+            _ = User32.SetWindowLong(hWnd, WINDOW_LONG_PTR_INDEX.GWL_EXSTYLE, (int)exStyle)
+                .ThrowIfFailed();
         }
 
         this.Activated += this.PreviewWindow_Activated;
@@ -378,10 +358,10 @@ public sealed partial class PreviewWindow : Window
     /// Clips the window's visible and input region to a rounded rectangle so that the
     /// application behind it is visible through the outer bezel corners.
     ///
-    /// <see cref="PInvoke.CreateRoundRectRgn"/> creates a GDI region whose corner arcs
+    /// <see cref="Gdi32.CreateRoundRectRgn"/> creates a GDI region whose corner arcs
     /// match the outer bezel arc radius exactly — the cx/cy parameters are the full
     /// ellipse diameter (2 × <paramref name="cornerRadius"/>), not the radius itself.
-    /// After a successful <see cref="PInvoke.SetWindowRgn"/> call Windows takes ownership
+    /// After a successful <see cref="Gdi32.SetWindowRgn"/> call Windows takes ownership
     /// of the region handle and frees it when it is no longer needed; the caller must not
     /// pass the handle to <c>DeleteObject</c> afterwards.
     /// </summary>
@@ -395,13 +375,8 @@ public sealed partial class PreviewWindow : Window
                 if (cornerRadius <= 0)
                 {
                     // remove any existing region, restoring the full rectangular window
-                    var clearResult = PInvoke.SetWindowRgn(hWnd, default, bRedraw: true);
-                    if (clearResult == 0)
-                    {
-                        var lastError = Marshal.GetLastPInvokeError();
-                        ResultHandler.HandleResult(clearResult, success: lastError == 0, lastError, nameof(PInvoke.SetWindowRgn));
-                    }
-
+                    _ = Gdi32.SetWindowRgn(hWnd, default, bRedraw: true)
+                        .ThrowIfFailed();
                     return;
                 }
 
@@ -411,22 +386,21 @@ public sealed partial class PreviewWindow : Window
 
                 // cx/cy are the full ellipse diameter (not radius), so 2 × cornerRadius
                 var diameter = 2 * cornerRadius;
-                var hRgn = PInvoke.CreateRoundRectRgn(0, 0, width, height, diameter, diameter);
-                if (hRgn.IsNull)
-                {
-                    var lastError = Marshal.GetLastPInvokeError();
-                    ResultHandler.HandleResult(0, success: false, lastError, nameof(PInvoke.CreateRoundRectRgn));
-                }
+                var hRgn = Gdi32.CreateRoundRectRgn(0, 0, width, height, diameter, diameter)
+                    .ThrowIfFailed()
+                    .GetValue();
 
                 // Windows owns hRgn after a successful SetWindowRgn call — do not DeleteObject it.
                 // On failure the caller retains ownership, so DeleteObject is called to release it.
-                var regionResult = PInvoke.SetWindowRgn(hWnd, hRgn, bRedraw: true);
-                if (regionResult == 0)
-                {
-                    PInvoke.DeleteObject(hRgn);
-                    var lastError = Marshal.GetLastPInvokeError();
-                    ResultHandler.HandleResult(regionResult, success: lastError == 0, lastError, nameof(PInvoke.SetWindowRgn));
-                }
+                Gdi32.SetWindowRgn(hWnd, hRgn, bRedraw: true)
+                    .OnFailure(value =>
+                    {
+                        // best-effort cleanup - if this itself fails, the original SetWindowRgn
+                        // failure (thrown below) is the one that matters to the caller.
+                        _ = Gdi32.DeleteObject(hRgn)
+                            .IgnoreFailure();
+                    })
+                    .ThrowIfFailed();
             });
     }
 
@@ -436,8 +410,9 @@ public sealed partial class PreviewWindow : Window
     private double GetHighDpiScalingRatio()
     {
         var hWnd = (HWND)WinRT.Interop.WindowNative.GetWindowHandle(this);
-        var windowDpi = PInvoke.GetDpiForWindow(hWnd);
-        ResultHandler.ThrowIfZero((int)windowDpi, getLastError: true, nameof(PInvoke.GetDpiForWindow));
+        var windowDpi = User32.GetDpiForWindow(hWnd)
+            .ThrowIfFailed()
+            .GetValue();
         var scalingRatio = (double)PInvoke.USER_DEFAULT_SCREEN_DPI / windowDpi;
         return scalingRatio;
     }
@@ -542,10 +517,14 @@ public sealed partial class PreviewWindow : Window
                     ended.
                 */
                 var hWnd = (HWND)WinRT.Interop.WindowNative.GetWindowHandle(this);
-                _ = PInvoke.ShowWindow(hWnd, SHOW_WINDOW_CMD.SW_SHOW);
-                _ = PInvoke.SetForegroundWindow(hWnd);
-                _ = PInvoke.SetFocus(hWnd);
-                _ = PInvoke.SetActiveWindow(hWnd);
+                _ = User32.ShowWindow(hWnd, SHOW_WINDOW_CMD.SW_SHOW)
+                    .ThrowIfFailed();
+                _ = User32.SetForegroundWindow(hWnd)
+                    .ThrowIfFailed();
+                _ = User32.SetFocus(hWnd)
+                    .ThrowIfFailed();
+                _ = User32.SetActiveWindow(hWnd)
+                    .ThrowIfFailed();
             });
     }
 

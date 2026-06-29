@@ -56,17 +56,3 @@ GetMonitorInfo
 MonitorFromPoint
 MONITORINFOF_PRIMARY
 ScreenToClient
-
-
-
-
-
-// HBRUSH
-// HCURSOR
-// HICON
-// HINSTANCE
-
-// GetWindowLong
-// WNDPROC
-
-// MonitorFromPoint

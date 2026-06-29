@@ -1,8 +1,6 @@
 ﻿using System.Drawing;
 using System.Runtime.InteropServices;
 
-using FancyMouse.Common.Win32Api;
-
 using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.Graphics.Gdi;

@@ -1,6 +1,4 @@
-﻿using FancyMouse.Common.Win32Api;
-
-using Windows.Win32;
+﻿using Windows.Win32;
 using Windows.Win32.UI.Input.KeyboardAndMouse;
 
 namespace FancyMouse.Common.Win32Api;

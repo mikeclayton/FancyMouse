@@ -1,7 +1,5 @@
 ﻿using System.Runtime.InteropServices;
 
-using FancyMouse.Common.Win32Api;
-
 using Windows.Win32;
 using Windows.Win32.UI.HiDpi;
 
@@ -11,14 +9,14 @@ internal static partial class User32
 {
     internal static Win32Result<DPI_AWARENESS> GetAwarenessFromDpiAwarenessContext(DPI_AWARENESS_CONTEXT value)
     {
-        var result = PInvoke.GetAwarenessFromDpiAwarenessContext(value);
+        var returnValue = PInvoke.GetAwarenessFromDpiAwarenessContext(value);
 
         // If the provided value is null or invalid,
         // this method will return DPI_AWARENESS_INVALID
         return new Win32Result<DPI_AWARENESS>(
-            nameof(User32.GetAwarenessFromDpiAwarenessContext),
-            result,
-            isSuccess: result != DPI_AWARENESS.DPI_AWARENESS_INVALID,
+            nameof(PInvoke.GetAwarenessFromDpiAwarenessContext),
+            returnValue,
+            isSuccess: returnValue != DPI_AWARENESS.DPI_AWARENESS_INVALID,
             useLastError: false,
             Marshal.GetLastPInvokeError());
     }

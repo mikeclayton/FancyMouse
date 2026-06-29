@@ -1,18 +1,19 @@
-WINDOW_EX_STYLE
-WINDOW_STYLE
+// User32 - Windows and Messages
 GetWindowLong
 SetWindowLong
+SetActiveWindow
+SetFocus
+SetForegroundWindow
 ShowWindow
 SHOW_WINDOW_CMD
-SetForegroundWindow
-SetFocus
-SetActiveWindow
+WINDOW_EX_STYLE
+WINDOW_STYLE
 
-USER_DEFAULT_SCREEN_DPI
+// User32 - High DPI
 GetDpiForWindow
+USER_DEFAULT_SCREEN_DPI
 
-SetLastError
-
+// Gdi32 - Windows GDI
 CreateRoundRectRgn
-SetWindowRgn
 DeleteObject
+SetWindowRgn

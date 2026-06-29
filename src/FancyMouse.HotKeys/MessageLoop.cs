@@ -1,4 +1,6 @@
 ﻿using FancyMouse.Common.Interop;
+using FancyMouse.HotKeys.Win32Api;
+
 using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.UI.WindowsAndMessaging;
@@ -83,7 +85,9 @@ internal sealed class MessageLoop
         // start a new internal message loop thread
         this.MessageLoopThread = new Thread(() =>
         {
-            this.NativeThreadId = PInvoke.GetCurrentThreadId();
+            this.NativeThreadId = Kernel32.GetCurrentThreadId()
+                .ThrowIfFailed()
+                .GetValue();
             this.Window = this.WindowFactory.Invoke();
             this.RunMessageLoop();
         })
@@ -120,11 +124,16 @@ internal sealed class MessageLoop
                 break;
             }
 
-            var result = PInvoke.GetMessage(
+            // GetMessage's wrapper treats -1 as a real failure (per the documented contract),
+            // but we deliberately don't throw on it here - it's tolerated and retried, same as
+            // this code has always done, rather than taking down the message loop thread.
+            var result = User32.GetMessage(
                 lpMsg: out msg,
                 hWnd: hwnd,
                 wMsgFilterMin: 0,
-                wMsgFilterMax: 0);
+                wMsgFilterMax: 0)
+                .IgnoreFailure()
+                .GetValue();
 
             if (result.Value == -1)
             {
@@ -136,8 +145,11 @@ internal sealed class MessageLoop
                 break;
             }
 
-            _ = PInvoke.TranslateMessage(msg);
-            _ = PInvoke.DispatchMessage(msg);
+            _ = User32.TranslateMessage(msg)
+                .ThrowIfFailed();
+
+            _ = User32.DispatchMessage(msg)
+                .ThrowIfFailed();
         }
 
         // clean up
@@ -164,11 +176,12 @@ internal sealed class MessageLoop
         // and exit the loop...
         // (see https://devblogs.microsoft.com/oldnewthing/20050405-46/?p=35973)
         var hwnd = (HWND)(this.Window?.Hwnd ?? throw new InvalidOperationException());
-        PInvoke.PostMessage(
-            hWnd: hwnd,
-            Msg: PInvoke.WM_NULL,
-            wParam: default,
-            lParam: default);
+        _ = User32.PostMessage(
+                hWnd: hwnd,
+                Msg: PInvoke.WM_NULL,
+                wParam: default,
+                lParam: default)
+            .ThrowIfFailed();
 
         // wait for the internal message loop to actually stop before we exit
         this.RunningSemaphore.Wait();
