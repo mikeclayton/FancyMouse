@@ -159,15 +159,21 @@ public sealed class DrawingHelperTests
             // draw the preview image
             using var actual = await DrawingHelper.RenderPreviewAsync(formLayout.CanvasLayout, data.ActivatedScreen, imageCopyServices);
 
+            var currentDirectory = Environment.CurrentDirectory;
+
             // save the actual image so we can pick it up as a build artifact
-            var actualFilename = Path.GetFileNameWithoutExtension(data.ExpectedImageFilename) + "_actual" + Path.GetExtension(data.ExpectedImageFilename);
+            var actualFilename = Path.Combine(
+                currentDirectory,
+                Path.GetFileNameWithoutExtension(data.ExpectedImageFilename) + "_actual" + Path.GetExtension(data.ExpectedImageFilename));
             actual.Save(actualFilename, ImageFormat.Png);
 
             // load the expected image
             var expected = GetPreviewLayoutTests.LoadImageResource(data.ExpectedImageFilename);
 
             // save the actual image so we can pick it up as a build artifact
-            var expectedFilename = Path.GetFileNameWithoutExtension(data.ExpectedImageFilename) + "_expected" + Path.GetExtension(data.ExpectedImageFilename);
+            var expectedFilename = Path.Combine(
+                currentDirectory,
+                Path.GetFileNameWithoutExtension(data.ExpectedImageFilename) + "_expected" + Path.GetExtension(data.ExpectedImageFilename));
             expected.Save(expectedFilename, ImageFormat.Png);
 
             // compare the images
