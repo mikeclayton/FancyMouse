@@ -4,7 +4,6 @@ using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 
 using FancyMouse.Common.Imaging;
-using FancyMouse.Drawing.Bezels;
 using FancyMouse.Models.Display;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Styles;
@@ -137,12 +136,23 @@ public static class DrawingHelper
     // Hardcoded 3-D lighting config shared by all bezels.
     // Values are compile-time constants; BezelConfig exists so the rendering
     // methods are parameterised and ready to accept per-bezel variation later.
-    private static readonly BezelConfig DefaultBezelConfig = new(
-        fadeStart: 30.0,           // degrees from edge where corner rolloff begins
-        fadeEnd: 60.0,             // degrees where rolloff reaches zero
+    private static readonly Drawing.RoundedBezels.BezelConfig RoundedBezelConfig = new(
+        fadeStart: 30.0,            // degrees from edge where corner rolloff begins
+        fadeEnd: 60.0,              // degrees where rolloff reaches zero
         highlightMax: 0x44 / 255.0, // peak highlight opacity (~26.7 %)
-        shadowMax: 0x44 / 255.0,   // peak shadow   opacity (~26.7 %)
+        shadowMax: 0x44 / 255.0,     // peak shadow   opacity (~26.7 %)
         edgeFadeFraction: 0.75f);  // fraction of edge length with secondary effect
+
+    // Hardcoded 3-D lighting config shared by all bezels.
+    // Values are compile-time constants; BezelConfig exists so the rendering
+    // methods are parameterised and ready to accept per-bezel variation later.
+    private static readonly Drawing.ContouredBezels.BezelConfig ContouredBezelConfig = new(
+        fadeStart: 30.0,            // degrees from edge where corner rolloff begins
+        fadeEnd: 60.0,              // degrees where rolloff reaches zero
+        highlightMax: 0x44 / 255.0, // peak highlight opacity (~26.7 %)
+        shadowMax: 0x44 / 255.0,    // peak shadow   opacity (~26.7 %)
+        edgeFadeFraction: 0.75f,    // fraction of edge length with secondary effect
+        rampAngleDegrees: 45.0);    // chamfer inclination — cos(45°) ≈ 0.707 uniform intensity
 
     /// <summary>
     /// Draws a border shape with a raised 3-D highlight and shadow effect.
@@ -161,9 +171,22 @@ public static class DrawingHelper
             return;
         }
 
-        var bounds = boxBounds.BorderBounds.ToRectangle();
-        using var renderer = new BezelRenderer(borderStyle, DrawingHelper.DefaultBezelConfig);
-        renderer.DrawBezel(graphics, bounds.X, bounds.Y, bounds.Width, bounds.Height);
+        if (string.Empty.Length == 1)
+        {
+            // draw a rounded bezel
+            var bounds = boxBounds.BorderBounds.ToRectangle();
+            using var renderer = new Drawing.RoundedBezels.BezelRenderer(borderStyle, DrawingHelper.RoundedBezelConfig);
+            renderer.DrawBezel(graphics, bounds.X, bounds.Y, bounds.Width, bounds.Height);
+        }
+        else
+        {
+            // draw a contoured bezel
+            var bounds = boxBounds.BorderBounds.ToRectangle();
+            using var renderer = new Drawing.ContouredBezels.BezelRenderer(
+                borderStyle,
+                DrawingHelper.ContouredBezelConfig);
+            renderer.DrawBezel(graphics, bounds.X, bounds.Y, bounds.Width, bounds.Height);
+        }
     }
 
     /// <summary>

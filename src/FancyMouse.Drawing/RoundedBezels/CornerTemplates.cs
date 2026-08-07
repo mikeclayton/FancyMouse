@@ -4,9 +4,9 @@ using System.Drawing.Imaging;
 
 using FancyMouse.Models.Styles;
 
-using static FancyMouse.Drawing.Bezels.BezelPrimitives;
+using static FancyMouse.Drawing.RoundedBezels.BezelPrimitives;
 
-namespace FancyMouse.Drawing.Bezels;
+namespace FancyMouse.Drawing.RoundedBezels;
 
 internal static class CornerTemplates
 {

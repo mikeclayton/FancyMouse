@@ -1,46 +1,46 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net10.0-windows</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <Platforms>AnyCPU;x64</Platforms>
-  </PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <Platforms>AnyCPU;x64</Platforms>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <None Remove="Helpers\_test-4grid-desktop.png" />
-    <None Remove="Helpers\_test-4grid-expected.png" />
-    <None Remove="Helpers\_test-win11-desktop.png" />
-    <None Remove="Helpers\_test-win11-expected.png" />
-  </ItemGroup>
+    <ItemGroup>
+        <None Remove="Helpers\_test-4grid-desktop.png" />
+        <None Remove="Helpers\_test-4grid-expected.png" />
+        <None Remove="Helpers\_test-win11-desktop.png" />
+        <None Remove="Helpers\_test-win11-expected.png" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <EmbeddedResource Include="Helpers\_test-4grid-desktop.png" />
-    <EmbeddedResource Include="Helpers\_test-4grid-expected.png" />
-    <EmbeddedResource Include="Helpers\_test-win11-desktop.png" />
-    <EmbeddedResource Include="Helpers\_test-win11-expected.png" />
-  </ItemGroup>
+    <ItemGroup>
+        <EmbeddedResource Include="Helpers\_test-4grid-desktop.png" />
+        <EmbeddedResource Include="Helpers\_test-4grid-expected.png" />
+        <EmbeddedResource Include="Helpers\_test-win11-desktop.png" />
+        <EmbeddedResource Include="Helpers\_test-win11-expected.png" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.3.0" />
-    <PackageReference Include="MSTest.TestAdapter" Version="4.1.0" />
-    <PackageReference Include="MSTest.TestFramework" Version="4.1.0" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.3.0" />
+        <PackageReference Include="MSTest.TestAdapter" Version="4.1.0" />
+        <PackageReference Include="MSTest.TestFramework" Version="4.1.0" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\FancyMouse.Common\FancyMouse.Common.csproj" />
-    <ProjectReference Include="..\FancyMouse.Settings\FancyMouse.Settings.csproj" />
-  </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\FancyMouse.Common\FancyMouse.Common.csproj" />
+        <ProjectReference Include="..\FancyMouse.Settings\FancyMouse.Settings.csproj" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Update="Microsoft.CodeAnalysis.NetAnalyzers" Version="10.0.201">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Update="StyleCop.Analyzers" Version="1.2.0-beta.507">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Update="Microsoft.CodeAnalysis.NetAnalyzers" Version="10.0.201">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Update="StyleCop.Analyzers" Version="1.2.0-beta.507">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
 
 </Project>
