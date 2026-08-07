@@ -6,9 +6,7 @@ public sealed record DisplayInfo
 {
     public DisplayInfo(IEnumerable<DeviceInfo> devices)
     {
-        this.Devices = new(
-            (devices ?? throw new ArgumentNullException(nameof(devices)))
-                .ToList());
+        this.Devices = (devices ?? throw new ArgumentNullException(nameof(devices))).ToList().AsReadOnly();
     }
 
     public ReadOnlyCollection<DeviceInfo> Devices

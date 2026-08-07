@@ -1,16 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+    <Import Project="..\Common.Dotnet.Analyzers.props" />
+    <Import Project="..\Common.Dotnet.CsWin32.props" />
+    <Import Project="..\Common.Dotnet.props" />
     <Import Project="..\Common.Dotnet.CsWinRT.props" />
-    <!-- <Import Project="..\Common.SelfContained.props" /> -->
 
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
-        <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
-        <TargetPlatformIdentifier>Windows</TargetPlatformIdentifier>
-        <TargetPlatformVersion>10.0.26100.0</TargetPlatformVersion>
-        <TargetPlatformMinVersion>10.0.26100.0</TargetPlatformMinVersion>
         <RootNamespace>FancyMouse.WinUI3</RootNamespace>
         <ApplicationManifest>app.manifest</ApplicationManifest>
-        <Platforms>x64;AnyCPU</Platforms>
+        <Platforms>x64</Platforms>
         <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
         <PublishProfile>win-$(Platform).pubxml</PublishProfile>
         <UseWinUI>true</UseWinUI>
@@ -20,19 +18,6 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <DefineConstants>DISABLE_XAML_GENERATED_MAIN</DefineConstants>
     </PropertyGroup>
-
-    <PropertyGroup>
-        <!--
-      change CsWin32Enabled to "true" to regenerate Win32 bindings in the "Generated" folder
-      (see Common.CsWin32.props for details)
-    -->
-        <CsWin32Enabled>true</CsWin32Enabled>
-    </PropertyGroup>
-    <Import Project="..\Common.CsWin32.props" />
-
-    <ItemGroup>
-        <Compile Remove="Generated\WinRT.SourceGenerator\**" />
-    </ItemGroup>
 
     <ItemGroup>
         <Manifest Include="$(ApplicationManifest)" />
@@ -50,17 +35,6 @@
         <ProjectReference Include="..\FancyMouse.Settings\FancyMouse.Settings.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-        <PackageReference Update="Microsoft.CodeAnalysis.NetAnalyzers" Version="10.0.201">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
-        <PackageReference Update="StyleCop.Analyzers" Version="1.2.0-beta.507">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
-    </ItemGroup>
-
     <!-- Publish Properties -->
     <PropertyGroup>
         <PublishReadyToRun Condition="'$(Configuration)' == 'Debug'">False</PublishReadyToRun>
@@ -74,9 +48,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <AdditionalFiles Include="NativeMethods.txt" />
-    </ItemGroup>
-    <ItemGroup>
         <Content Include="appSettings.json">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </Content>
@@ -84,5 +55,4 @@
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </Content>
     </ItemGroup>
-
 </Project>

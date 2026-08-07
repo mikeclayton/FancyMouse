@@ -1,10 +1,8 @@
 ﻿using FancyMouse.Common.Helpers;
 using FancyMouse.Models.Drawing;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace FancyMouse.Common.UnitTests.Helpers;
 
-[TestClass]
 public static class MouseHelperTests
 {
     [TestClass]

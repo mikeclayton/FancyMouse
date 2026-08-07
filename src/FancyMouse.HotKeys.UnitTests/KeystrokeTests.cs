@@ -1,9 +1,6 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿namespace FancyMouse.HotKeys.UnitTests;
 
-namespace FancyMouse.HotKeys.UnitTests;
-
-[TestClass]
-public sealed class KeystrokeTests
+public static class KeystrokeTests
 {
     [TestClass]
     public sealed class ParseTests
