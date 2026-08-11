@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 
 using FancyMouse.Common.Interop;
+using FancyMouse.Common.Win32Gen;
 
 using Windows.Win32;
 using Windows.Win32.Foundation;
@@ -102,18 +103,19 @@ public sealed class TrayIcon
             guidItem = Guid.Empty,
             hBalloonIcon = HICON.Null,
         };
-        var result = PInvoke.Shell_NotifyIcon(NOTIFY_ICON_MESSAGE.NIM_ADD, notifyIconData);
-        ResultHandler.ThrowIfZero(result, getLastError: true, nameof(PInvoke.Shell_NotifyIcon));
+        _ = Shell32.Shell_NotifyIcon(NOTIFY_ICON_MESSAGE.NIM_ADD, notifyIconData)
+            .ThrowIfFailed();
     }
 
     private void InitializeTrayMenu()
     {
-        var hMenu = PInvoke.CreatePopupMenu();
-        ResultHandler.ThrowIfZero(hMenu, getLastError: true, nameof(PInvoke.CreatePopupMenu));
+        var hMenu = User32.CreatePopupMenu()
+            .ThrowIfFailed()
+            .GetValue();
 
         using var safeMenuHandle = new Win32SafeHandle(hMenu);
-        var result = PInvoke.AppendMenu(safeMenuHandle, MENU_ITEM_FLAGS.MF_STRING, TrayIcon.WM_TRAYICON_EXITCOMMAND, "Exit");
-        ResultHandler.ThrowIfZero(hMenu, getLastError: true, nameof(PInvoke.AppendMenu));
+        _ = User32.AppendMenu(safeMenuHandle, MENU_ITEM_FLAGS.MF_STRING, TrayIcon.WM_TRAYICON_EXITCOMMAND, "Exit")
+            .ThrowIfFailed();
 
         this.ContextMenu = hMenu;
     }
@@ -192,7 +194,9 @@ public sealed class TrayIcon
                 break;
         }
 
-        return PInvoke.DefWindowProc((HWND)hWnd, msg, wParam, lParam);
+        return User32.DefWindowProc((HWND)hWnd, msg, wParam, lParam)
+            .IgnoreFailure()
+            .GetValue();
     }
 
     private static void ShowTrayIconContextMenu(HWND hWnd, HMENU hMenu)
@@ -202,16 +206,15 @@ public sealed class TrayIcon
             throw new InvalidOperationException();
         }
 
-        var result = PInvoke.SetForegroundWindow(hWnd);
-        ResultHandler.ThrowIfZero(result, getLastError: false, nameof(PInvoke.SetForegroundWindow));
+        _ = User32.SetForegroundWindow(hWnd)
+            .ThrowIfFailed();
 
         // get the current cursor position
-        result = PInvoke.GetCursorPos(out var cursorPos);
-        ResultHandler.ThrowIfZero(result, getLastError: true, nameof(PInvoke.GetCursorPos));
+        _ = User32.GetCursorPos(out var cursorPos).ThrowIfFailed();
 
         // convert it into client coordinates
-        result = PInvoke.ScreenToClient(hWnd, ref cursorPos);
-        ResultHandler.ThrowIfZero(result, getLastError: true, nameof(PInvoke.ScreenToClient));
+        _ = User32.ScreenToClient(hWnd, ref cursorPos)
+            .ThrowIfFailed();
 
         // set menu information
         var menuInfo = new MENUINFO
@@ -225,17 +228,17 @@ public sealed class TrayIcon
             dwMenuData = nuint.Zero,
         };
         using var safeMenuHandle = new Win32SafeHandle(hMenu);
-        result = PInvoke.SetMenuInfo(safeMenuHandle, menuInfo);
-        ResultHandler.ThrowIfZero(result, getLastError: true, nameof(PInvoke.SetMenuInfo));
+        _ = User32.SetMenuInfo(safeMenuHandle, menuInfo)
+            .ThrowIfFailed();
 
         // display the context menu at the cursor position
-        result = PInvoke.TrackPopupMenuEx(
+        _ = User32.TrackPopupMenuEx(
               safeMenuHandle,
               (uint)(TRACK_POPUP_MENU_FLAGS.TPM_LEFTALIGN | TRACK_POPUP_MENU_FLAGS.TPM_BOTTOMALIGN | TRACK_POPUP_MENU_FLAGS.TPM_LEFTBUTTON),
               cursorPos.X,
               cursorPos.Y,
               hWnd,
-              null);
-        ResultHandler.ThrowIfZero(result, getLastError: true, nameof(PInvoke.TrackPopupMenuEx));
+              null)
+            .ThrowIfFailed();
     }
 }

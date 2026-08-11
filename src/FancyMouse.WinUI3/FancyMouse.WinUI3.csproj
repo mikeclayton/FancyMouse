@@ -10,7 +10,7 @@
         <TargetPlatformMinVersion>10.0.26100.0</TargetPlatformMinVersion>
         <RootNamespace>FancyMouse.WinUI3</RootNamespace>
         <ApplicationManifest>app.manifest</ApplicationManifest>
-        <Platforms>x64;AnyCPU</Platforms>
+        <Platforms>x64</Platforms>
         <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
         <PublishProfile>win-$(Platform).pubxml</PublishProfile>
         <UseWinUI>true</UseWinUI>
@@ -19,6 +19,11 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <DefineConstants>DISABLE_XAML_GENERATED_MAIN</DefineConstants>
+        <!-- writes every source generator's output to disk (CsWin32's own
+             PInvoke surface as well as FancyMouse.Win32Gen's) purely so it
+             can be reviewed - not required for the build to work -->
+        <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+        <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
     </PropertyGroup>
 
     <ItemGroup>
@@ -32,9 +37,16 @@
     </ItemGroup>
 
     <ItemGroup>
+        <!-- the emitted files would otherwise also be picked up as regular
+             Compile items, generating every type in them a second time -->
+        <Compile Remove="$(CompilerGeneratedFilesOutputPath)\**\*.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
         <ProjectReference Include="..\FancyMouse.Common\FancyMouse.Common.csproj" />
         <ProjectReference Include="..\FancyMouse.Models\FancyMouse.Models.csproj" />
         <ProjectReference Include="..\FancyMouse.Settings\FancyMouse.Settings.csproj" />
+        <ProjectReference Include="..\FancyMouse.Win32Gen\FancyMouse.Win32Gen.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     </ItemGroup>
 
     <ItemGroup>

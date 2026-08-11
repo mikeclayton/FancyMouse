@@ -1,0 +1,74 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <LangVersion>latest</LangVersion>
+        <IsRoslynComponent>true</IsRoslynComponent>
+        <IncludeBuildOutput>false</IncludeBuildOutput>
+        <EnforceExtendedAnalyzerRules>false</EnforceExtendedAnalyzerRules>
+        <Platforms>x64</Platforms>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- these are hand-authored fragments (Source\Functions\*.cs is a bare
+             method with no enclosing class/namespace; Source\Framework\*.cs
+             is missing only its namespace), not standalone C#, so they can't
+             be Compile items - embed them instead and read them back at
+             generate time -->
+        <Compile Remove="Source\**\*.cs" />
+        <None Remove="Source\**\*.cs" />
+        <EmbeddedResource Include="Source\**\*.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Remove="ApiTable\ApiTable.txt" />
+        <EmbeddedResource Include="ApiTable\ApiTable.txt" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- required by RS2008 (Microsoft.CodeAnalysis.Analyzers) since this
+             generator now defines DiagnosticDescriptors of its own -->
+        <AdditionalFiles Include="AnalyzerReleases.Shipped.md" />
+        <AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.11.0" PrivateAssets="all" />
+        <!-- CodeFixProvider/CodeAction live at the workspace layer, not the
+             compiler layer - Microsoft.CodeAnalysis.CSharp alone (enough
+             for the DiagnosticAnalyzer/IIncrementalGenerator above) doesn't
+             carry them. -->
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.11.0" PrivateAssets="all" />
+        <!-- for reading the raw ECMA-335 tables of the win32metadata .winmd
+             file - explicit (rather than relying on it being a transitive
+             dependency of Microsoft.CodeAnalysis.CSharp) so it resolves
+             predictably regardless of Roslyn version -->
+        <PackageReference Include="System.Reflection.Metadata" Version="8.0.0" PrivateAssets="all" />
+        <!-- not actually needed to build - CsWin32 itself already exposes
+             the restored win32docs file's path to every analyzer in the
+             compilation via the CsWin32InputDocPaths CompilerVisibleProperty
+             (see ApiDocs\ApiDocsPaths.cs), the same way it does for
+             CsWin32InputMetadataPaths. Referenced explicitly anyway so the
+             dependency this generator relies on is visible in this project
+             file, not just implied by whatever a consuming project happens
+             to restore. -->
+        <PackageReference Include="Microsoft.Windows.SDK.Win32Docs" Version="0.1.42-alpha" PrivateAssets="all" />
+        <!-- the win32docs file is a MessagePack-encoded dictionary - version
+             pinned to match what CsWin32 itself uses (see
+             https://github.com/microsoft/CsWin32/issues/371), since the
+             ApiDetails record it contains isn't documented anywhere and was
+             reverse-engineered from CsWin32's own Docs.cs. -->
+        <PackageReference Include="MessagePack" Version="2.5.301" PrivateAssets="all" />
+        <PackageReference Update="Microsoft.CodeAnalysis.NetAnalyzers" Version="10.0.201">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Update="StyleCop.Analyzers" Version="1.2.0-beta.507">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
+
+</Project>

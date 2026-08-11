@@ -1,15 +1,14 @@
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
-using System.Runtime.InteropServices;
 
 using FancyMouse.Common.Helpers;
 using FancyMouse.Common.Imaging;
-using FancyMouse.Common.Interop;
 using FancyMouse.Models.Display;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.ViewModel;
 using FancyMouse.WinUI3.Internal.Helpers;
+using FancyMouse.WinUI3.Win32Gen;
 
 using Microsoft.UI.Input;
 using Microsoft.UI.Windowing;
@@ -62,46 +61,28 @@ public sealed partial class PreviewWindow : Window
             var hWnd = (HWND)WinRT.Interop.WindowNative.GetWindowHandle(this);
 
             // get the current window style
-            PInvoke.SetLastError(0);
-            var result = PInvoke.GetWindowLong(hWnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE);
-            if (result == 0)
-            {
-                var lastError = Marshal.GetLastPInvokeError();
-                ResultHandler.HandleResult(result, success: lastError == 0, lastError, nameof(PInvoke.GetWindowLong));
-            }
+            var result = User32.GetWindowLong(hWnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE)
+                .ThrowIfFailed()
+                .GetValue();
 
             // set the window to be borderless, with no title bar, and hide all of the max / min / close buttons
             var style = (WINDOW_STYLE)result;
             style &= ~WINDOW_STYLE.WS_OVERLAPPEDWINDOW;
             style |= WINDOW_STYLE.WS_POPUP;
-            PInvoke.SetLastError(0);
-            result = PInvoke.SetWindowLong(hWnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE, (int)style);
-            if (result == 0)
-            {
-                var lastError = Marshal.GetLastPInvokeError();
-                ResultHandler.HandleResult(result, success: lastError == 0, lastError, nameof(PInvoke.SetWindowLong));
-            }
+            _ = User32.SetWindowLong(hWnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE, (int)style)
+                .ThrowIfFailed();
 
             // get the current extended window style
-            PInvoke.SetLastError(0);
-            result = PInvoke.GetWindowLong(hWnd, WINDOW_LONG_PTR_INDEX.GWL_EXSTYLE);
-            if (result == 0)
-            {
-                var lastError = Marshal.GetLastPInvokeError();
-                ResultHandler.HandleResult(result, success: lastError == 0, lastError, nameof(PInvoke.GetWindowLong));
-            }
+            result = User32.GetWindowLong(hWnd, WINDOW_LONG_PTR_INDEX.GWL_EXSTYLE)
+                .ThrowIfFailed()
+                .GetValue();
 
             // set the window to be borderless, with no title bar, and hide all of the max / min / close buttons
             var exStyle = (WINDOW_EX_STYLE)result;
             exStyle |= WINDOW_EX_STYLE.WS_EX_TOOLWINDOW; // hide the taskbar icon
             exStyle |= WINDOW_EX_STYLE.WS_EX_TOPMOST;    // make topmost
-            PInvoke.SetLastError(0);
-            result = PInvoke.SetWindowLong(hWnd, WINDOW_LONG_PTR_INDEX.GWL_EXSTYLE, (int)exStyle);
-            if (result == 0)
-            {
-                var lastError = Marshal.GetLastPInvokeError();
-                ResultHandler.HandleResult(result, success: lastError == 0, lastError, nameof(PInvoke.SetWindowLong));
-            }
+            _ = User32.SetWindowLong(hWnd, WINDOW_LONG_PTR_INDEX.GWL_EXSTYLE, (int)exStyle)
+                .ThrowIfFailed();
         }
 
         this.Activated += this.PreviewWindow_Activated;
@@ -362,8 +343,9 @@ public sealed partial class PreviewWindow : Window
     private double GetHighDpiScalingRatio()
     {
         var hWnd = (HWND)WinRT.Interop.WindowNative.GetWindowHandle(this);
-        var windowDpi = PInvoke.GetDpiForWindow(hWnd);
-        ResultHandler.ThrowIfZero((int)windowDpi, getLastError: true, nameof(PInvoke.GetDpiForWindow));
+        var windowDpi = User32.GetDpiForWindow(hWnd)
+            .ThrowIfFailed()
+            .GetValue();
         var scalingRatio = (double)PInvoke.USER_DEFAULT_SCREEN_DPI / windowDpi;
         return scalingRatio;
     }

@@ -4,7 +4,12 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-        <Platforms>AnyCPU;x64</Platforms>
+        <Platforms>x64</Platforms>
+        <!-- writes every source generator's output to disk (CsWin32's own
+             PInvoke surface as well as FancyMouse.Win32Gen's) purely so it
+             can be reviewed - not required for the build to work -->
+        <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+        <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
     </PropertyGroup>
 
     <ItemGroup>
@@ -13,7 +18,14 @@
     </ItemGroup>
 
     <ItemGroup>
+        <!-- the emitted files would otherwise also be picked up as regular
+             Compile items, generating every type in them a second time -->
+        <Compile Remove="$(CompilerGeneratedFilesOutputPath)\**\*.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
         <ProjectReference Include="..\FancyMouse.Models\FancyMouse.Models.csproj" />
+        <ProjectReference Include="..\FancyMouse.Win32Gen\FancyMouse.Win32Gen.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     </ItemGroup>
 
     <ItemGroup>
