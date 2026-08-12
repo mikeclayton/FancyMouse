@@ -16,6 +16,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\FancyMouse.Drawing\FancyMouse.Drawing.csproj" />
         <ProjectReference Include="..\FancyMouse.Models\FancyMouse.Models.csproj" />
     </ItemGroup>
 
