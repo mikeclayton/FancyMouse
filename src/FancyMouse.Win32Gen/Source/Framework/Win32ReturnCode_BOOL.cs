@@ -1,0 +1,14 @@
+using System.Runtime.CompilerServices;
+
+using Windows.Win32.Foundation;
+
+internal static partial class Win32ReturnCode
+{
+    // BOOL is one of the CsWin32-generated types that isn't public in this
+    // project, so this overload - and anything that returns Win32Result<BOOL> -
+    // has to stay internal to the assembly.
+    internal static Win32ReturnCode<BOOL> SuccessIsNonZero(
+        this BOOL result,
+        [CallerMemberName] string memberName = "")
+        => new(result, result, lastError: null, memberName);
+}

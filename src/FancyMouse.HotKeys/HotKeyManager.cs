@@ -1,5 +1,6 @@
 ﻿using FancyMouse.Common.Helpers;
 using FancyMouse.Common.Interop;
+using FancyMouse.HotKeys.Win32Gen;
 
 using Windows.Win32;
 using Windows.Win32.Foundation;
@@ -64,8 +65,8 @@ public sealed class HotKeyManager
         // do we need to unregister the existing hotkey first?
         if (this.HotKey is not null)
         {
-            var result = PInvoke.PostMessage(hwnd.Value, HotKeyHelper.WM_PRIV_UNREGISTER_HOTKEY, default, default);
-            ResultHandler.ThrowIfZero(result, getLastError: true, nameof(PInvoke.PostMessage));
+            _ = User32.PostMessage(hwnd.Value, HotKeyHelper.WM_PRIV_UNREGISTER_HOTKEY, default, default)
+                .ThrowIfFailed();
             this.MessageSemaphore.Wait();
         }
 
@@ -74,8 +75,8 @@ public sealed class HotKeyManager
         // register the new hotkey
         if (this.HotKey is not null)
         {
-            var result = PInvoke.PostMessage(hwnd.Value, HotKeyHelper.WM_PRIV_REGISTER_HOTKEY, default, default);
-            ResultHandler.ThrowIfZero(result, getLastError: true, nameof(PInvoke.PostMessage));
+            _ = User32.PostMessage(hwnd.Value, HotKeyHelper.WM_PRIV_REGISTER_HOTKEY, default, default)
+                .ThrowIfFailed();
             this.MessageSemaphore.Wait();
         }
     }
@@ -97,29 +98,30 @@ public sealed class HotKeyManager
 
             case HotKeyHelper.WM_PRIV_REGISTER_HOTKEY:
             {
-                var result1 = PInvoke.RegisterHotKey(
+                _ = User32.RegisterHotKey(
                     hWnd: (HWND)hWnd,
                     id: 1,
                     fsModifiers: (HOT_KEY_MODIFIERS)(this.HotKey ?? throw new InvalidOperationException()).Modifiers,
-                    vk: (uint)this.HotKey.Key);
-                ResultHandler.ThrowIfZero(result1, getLastError: true, nameof(PInvoke.RegisterHotKey));
+                    vk: (uint)this.HotKey.Key)
+                    .ThrowIfFailed();
                 this.MessageSemaphore.Release();
                 break;
             }
 
             case HotKeyHelper.WM_PRIV_UNREGISTER_HOTKEY:
             {
-                var result1 = PInvoke.UnregisterHotKey(
+                _ = User32.UnregisterHotKey(
                     hWnd: (HWND)hWnd,
-                    id: 1);
-                ResultHandler.ThrowIfZero(result1, getLastError: true, nameof(PInvoke.UnregisterHotKey));
+                    id: 1)
+                    .ThrowIfFailed();
                 this.MessageSemaphore.Release();
                 break;
             }
         }
 
-        var result = PInvoke.DefWindowProc((HWND)hWnd, msg, wParam, lParam);
-        return result;
+        return User32.DefWindowProc((HWND)hWnd, msg, wParam, lParam)
+            .IgnoreFailure()
+            .GetValue();
     }
 
     private void OnHotKeyPressed(HotKeyEventArgs e)

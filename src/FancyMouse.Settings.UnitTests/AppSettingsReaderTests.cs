@@ -8,7 +8,6 @@ using FancyMouse.Settings.UnitTests.TestUtils;
 
 namespace FancyMouse.Settings.UnitTests;
 
-[TestClass]
 public sealed class AppSettingsReaderTests
 {
     [TestClass]
@@ -313,7 +312,7 @@ public sealed class AppSettingsReaderTests
             var averageMs = (decimal)times.Sum() / times.Count / ticksPerMs;
             Console.WriteLine($"{averageMs} ms");
 
-            Assert.IsTrue(averageMs < 1.5M);
+            Assert.IsLessThan(1.5M, averageMs);
         }
     }
 }

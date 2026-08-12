@@ -16,3 +16,10 @@ wiki/anim
 # cache the CsWin32 generated files for committing to source control,
 # but even then we don't want to check in WinRT.SourceGenerator files)
 **/Generated/WinRT.SourceGenerator
+
+# FancyMouse.Common.csproj/FancyMouse.HotKeys.csproj/FancyMouse.WinUI3.csproj
+# write every source generator's output here (CsWin32 + FancyMouse.Win32Gen)
+# purely so it can be reviewed locally
+src/FancyMouse.Common/Generated
+src/FancyMouse.HotKeys/Generated
+src/FancyMouse.WinUI3/Generated
