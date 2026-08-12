@@ -16,10 +16,11 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\FancyMouse.Drawing\FancyMouse.Drawing.csproj" />
         <ProjectReference Include="..\FancyMouse.Models\FancyMouse.Models.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="System.Drawing.Common" Version="10.0.5" />
+        <PackageReference Include="System.Drawing.Common" Version="10.0.8" />
     </ItemGroup>
 </Project>

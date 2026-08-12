@@ -27,7 +27,7 @@ jobs:
       BUILD_PATH:       ${{ github.workspace }}/src
       PUBLISH_PATH:     ${{ github.workspace }}/.build/app/net9.0-windows
 
-      TARGET_FRAMEWORK: net10.0-windows
+      TARGET_FRAMEWORK: net10.0-windows10.0.26100.0
       CONFIG_NAME:      Release
       PLATFORM_NAME:    x64
       RUNTIME_NAME:     win-x64
@@ -136,13 +136,13 @@ jobs:
                 --output "${{ env.PUBLISH_PATH }}/FancyMouse.WinUI3"
 
       - name: upload release (winforms)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: FancyMouse-v0.0.0-preview
           path: ${{ env.PUBLISH_PATH }}/FancyMouse.WinForms
 
       - name: upload release (winui3)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: FancyMouse.WinUI3-v0.0.0-preview
           path: ${{ env.PUBLISH_PATH }}/FancyMouse.WinUI3
@@ -156,7 +156,7 @@ jobs:
 
       - name: upload test images
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: test-images
           path: ${{ env.BUILD_PATH }}/FancyMouse.Common.UnitTests/bin/${{ env.PLATFORM_NAME }}/${{ env.CONFIG_NAME }}/${{ env.TARGET_FRAMEWORK }}/*_actual.png

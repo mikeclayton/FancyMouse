@@ -47,6 +47,7 @@ public static class DrawingHelper
         var previewBounds = canvasLayout.CanvasBounds.OuterBounds.ToRectangle();
         var previewImage = new Bitmap(previewBounds.Width, previewBounds.Height, PixelFormat.Format32bppPArgb);
         var previewGraphics = Graphics.FromImage(previewImage);
+        previewGraphics.Clear(Color.Transparent);
         if (previewImageCreatedCallback != null)
         {
             await previewImageCreatedCallback(previewImage);
@@ -132,8 +133,29 @@ public static class DrawingHelper
         return previewImage;
     }
 
+    // Hardcoded 3-D lighting config shared by all bezels.
+    // Values are compile-time constants; BezelConfig exists so the rendering
+    // methods are parameterised and ready to accept per-bezel variation later.
+    private static readonly Drawing.RoundedBezels.BezelConfig RoundedBezelConfig = new(
+        fadeStart: 30.0,            // degrees from edge where corner rolloff begins
+        fadeEnd: 60.0,              // degrees where rolloff reaches zero
+        highlightMax: 0x44 / 255.0, // peak highlight opacity (~26.7 %)
+        shadowMax: 0x44 / 255.0,     // peak shadow   opacity (~26.7 %)
+        edgeFadeFraction: 0.75f);  // fraction of edge length with secondary effect
+
+    // Hardcoded 3-D lighting config shared by all bezels.
+    // Values are compile-time constants; BezelConfig exists so the rendering
+    // methods are parameterised and ready to accept per-bezel variation later.
+    private static readonly Drawing.ContouredBezels.BezelConfig ContouredBezelConfig = new(
+        fadeStart: 30.0,            // degrees from edge where corner rolloff begins
+        fadeEnd: 60.0,              // degrees where rolloff reaches zero
+        highlightMax: 0x44 / 255.0, // peak highlight opacity (~26.7 %)
+        shadowMax: 0x44 / 255.0,    // peak shadow   opacity (~26.7 %)
+        edgeFadeFraction: 0.75f,    // fraction of edge length with secondary effect
+        rampAngleDegrees: 45.0);    // chamfer inclination — cos(45°) ≈ 0.707 uniform intensity
+
     /// <summary>
-    /// Draws a border shape with an optional raised 3d highlight and shadow effect.
+    /// Draws a border shape with a raised 3-D highlight and shadow effect.
     /// </summary>
     private static void DrawRaisedBorder(
         Graphics graphics, BoxBounds boxBounds, BoxStyle boxStyle)
@@ -149,75 +171,21 @@ public static class DrawingHelper
             return;
         }
 
-        // draw the main box border
-        using var borderBrush = new SolidBrush(borderStyle.Color.Value);
-        var borderRegion = new Region(boxBounds.BorderBounds.ToRectangle());
-        borderRegion.Exclude(boxBounds.PaddingBounds.ToRectangle());
-        graphics.FillRegion(borderBrush, borderRegion);
-
-        // draw the highlight and shadow
-        var bounds = boxBounds.BorderBounds.ToRectangle();
-        using var highlight = new Pen(Color.FromArgb(0x44, 0xFF, 0xFF, 0xFF));
-        using var shadow = new Pen(Color.FromArgb(0x44, 0x00, 0x00, 0x00));
-
-        var outer = (
-            Left: bounds.Left,
-            Top: bounds.Top,
-            Right: bounds.Right - 1,
-            Bottom: bounds.Bottom - 1
-        );
-        var inner = (
-            Left: bounds.Left + (int)borderStyle.Left - 1,
-            Top: bounds.Top + (int)borderStyle.Top - 1,
-            Right: bounds.Right - (int)borderStyle.Right,
-            Bottom: bounds.Bottom - (int)borderStyle.Bottom
-        );
-
-        for (var i = 0; i < borderStyle.Depth; i++)
+        if (string.Empty.Length == 1)
         {
-            // left edge
-            if (borderStyle.Left >= i * 2)
-            {
-                graphics.DrawLine(highlight, outer.Left, outer.Top, outer.Left, outer.Bottom);
-                graphics.DrawLine(shadow, inner.Left, inner.Top, inner.Left, inner.Bottom);
-            }
-
-            // top edge
-            if (borderStyle.Top >= i * 2)
-            {
-                graphics.DrawLine(highlight, outer.Left, outer.Top, outer.Right, outer.Top);
-                graphics.DrawLine(shadow, inner.Left, inner.Top, inner.Right, inner.Top);
-            }
-
-            // right edge
-            if (borderStyle.Right >= i * 2)
-            {
-                graphics.DrawLine(highlight, inner.Right, inner.Top, inner.Right, inner.Bottom);
-                graphics.DrawLine(shadow, outer.Right, outer.Top, outer.Right, outer.Bottom);
-            }
-
-            // bottom edge
-            if (borderStyle.Bottom >= i * 2)
-            {
-                graphics.DrawLine(highlight, inner.Left, inner.Bottom, inner.Right, inner.Bottom);
-                graphics.DrawLine(shadow, outer.Left, outer.Bottom, outer.Right, outer.Bottom);
-            }
-
-            // shrink the outer border for the next iteration
-            outer = (
-                outer.Left + 1,
-                outer.Top + 1,
-                outer.Right - 1,
-                outer.Bottom - 1
-            );
-
-            // enlarge the inner border for the next iteration
-            inner = (
-                inner.Left - 1,
-                inner.Top - 1,
-                inner.Right + 1,
-                inner.Bottom + 1
-            );
+            // draw a rounded bezel
+            var bounds = boxBounds.BorderBounds.ToRectangle();
+            using var renderer = new Drawing.RoundedBezels.BezelRenderer(borderStyle, DrawingHelper.RoundedBezelConfig);
+            renderer.DrawBezel(graphics, bounds.X, bounds.Y, bounds.Width, bounds.Height);
+        }
+        else
+        {
+            // draw a contoured bezel
+            var bounds = boxBounds.BorderBounds.ToRectangle();
+            using var renderer = new Drawing.ContouredBezels.BezelRenderer(
+                borderStyle,
+                DrawingHelper.ContouredBezelConfig);
+            renderer.DrawBezel(graphics, bounds.X, bounds.Y, bounds.Width, bounds.Height);
         }
     }
 
