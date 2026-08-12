@@ -1,39 +1,25 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <Import Project="..\Common.Dotnet.Analyzers.props" />
+    <Import Project="..\Common.Dotnet.CsWinRT.props" />
 
-  <PropertyGroup>
-    <TargetFramework>net10.0-windows</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <Platforms>x64</Platforms>
-  </PropertyGroup>
+    <PropertyGroup>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <Platforms>x64</Platforms>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.3.0" />
-    <PackageReference Include="MSTest.TestAdapter" Version="4.1.0" />
-    <PackageReference Include="MSTest.TestFramework" Version="4.1.0" />
-    <!-- needed to construct AdditionalText/SourceText/Location test fixtures
+    <ItemGroup>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.3.0" />
+        <PackageReference Include="MSTest.TestAdapter" Version="4.1.0" />
+        <PackageReference Include="MSTest.TestFramework" Version="4.1.0" />
+        <!-- needed to construct AdditionalText/SourceText/Location test fixtures
          for NativeMethodsTxtParser - Win32Gen references this itself, but
          PrivateAssets="all" there means it doesn't flow transitively. -->
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.11.0" />
-    <!-- needed to build in-memory MessagePack fixtures for ApiDetailsFormatter/
-         ApiDocsHelper.MergeFromStream - same PrivateAssets="all" transitivity
-         gap as above. -->
-    <PackageReference Include="MessagePack" Version="2.5.301" />
-  </ItemGroup>
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.11.0" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\FancyMouse.Win32Gen\FancyMouse.Win32Gen.csproj" ReferenceOutputAssembly="true" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Update="Microsoft.CodeAnalysis.NetAnalyzers" Version="10.0.201">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Update="StyleCop.Analyzers" Version="1.2.0-beta.507">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-  </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\FancyMouse.Win32Gen\FancyMouse.Win32Gen.csproj" ReferenceOutputAssembly="true" />
+    </ItemGroup>
 
 </Project>

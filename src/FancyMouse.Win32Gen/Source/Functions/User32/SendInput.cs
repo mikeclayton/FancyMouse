@@ -1,4 +1,4 @@
-public static Win32Result<uint> SendInput(ReadOnlySpan<INPUT> pInputs, int cbSize)
+internal static Win32Result<uint> SendInput(ReadOnlySpan<INPUT> pInputs, int cbSize)
 {
     // https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-sendinput
     // The function returns the number of events that it successfully inserted into the keyboard or mouse input stream.

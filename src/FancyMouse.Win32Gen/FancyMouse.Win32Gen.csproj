@@ -1,6 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+    <Import Project="..\Common.Dotnet.Analyzers.props" />
+    <Import Project="..\Common.Dotnet.CsWinRT.props" />
 
     <PropertyGroup>
+        <!-- analyzers must be based on netstandard -->
         <TargetFramework>netstandard2.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
@@ -23,11 +26,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <None Remove="ApiTable\ApiTable.txt" />
-        <EmbeddedResource Include="ApiTable\ApiTable.txt" />
-    </ItemGroup>
-
-    <ItemGroup>
         <!-- required by RS2008 (Microsoft.CodeAnalysis.Analyzers) since this
              generator now defines DiagnosticDescriptors of its own -->
         <AdditionalFiles Include="AnalyzerReleases.Shipped.md" />
@@ -46,29 +44,29 @@
              dependency of Microsoft.CodeAnalysis.CSharp) so it resolves
              predictably regardless of Roslyn version -->
         <PackageReference Include="System.Reflection.Metadata" Version="8.0.0" PrivateAssets="all" />
-        <!-- not actually needed to build - CsWin32 itself already exposes
-             the restored win32docs file's path to every analyzer in the
-             compilation via the CsWin32InputDocPaths CompilerVisibleProperty
-             (see ApiDocs\ApiDocsPaths.cs), the same way it does for
-             CsWin32InputMetadataPaths. Referenced explicitly anyway so the
-             dependency this generator relies on is visible in this project
-             file, not just implied by whatever a consuming project happens
-             to restore. -->
-        <PackageReference Include="Microsoft.Windows.SDK.Win32Docs" Version="0.1.42-alpha" PrivateAssets="all" />
-        <!-- the win32docs file is a MessagePack-encoded dictionary - version
-             pinned to match what CsWin32 itself uses (see
-             https://github.com/microsoft/CsWin32/issues/371), since the
-             ApiDetails record it contains isn't documented anywhere and was
-             reverse-engineered from CsWin32's own Docs.cs. -->
-        <PackageReference Include="MessagePack" Version="2.5.301" PrivateAssets="all" />
-        <PackageReference Update="Microsoft.CodeAnalysis.NetAnalyzers" Version="10.0.201">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
-        <PackageReference Update="StyleCop.Analyzers" Version="1.2.0-beta.507">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
+        <!-- CsWin32\ drives CsWin32's own Generator directly (see
+             CsWin32\CsWin32Helper.cs) - CsWin32 ships its analyzer
+             assemblies only under analyzers/cs, which NuGet wires up as a
+             live analyzer for whatever references it, not as a normal
+             compile-time Reference. ExcludeAssets="analyzers" stops CsWin32
+             itself from running as an analyzer against this project's own
+             compilation (it has no NativeMethods.txt here to act on, so
+             would just be dead weight); the specific DLLs CsWin32\ needs
+             are added as plain References below instead, via the $(Pkg...)
+             property NuGet defines for every referenced package regardless
+             of asset selection. -->
+        <PackageReference Include="Microsoft.Windows.CsWin32" Version="0.3.269" PrivateAssets="all" ExcludeAssets="analyzers" />
+       
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- Microsoft.Windows.CsWin32.Generator/GeneratorOptions/Docs -
+             ExcludeAssets="analyzers" above means these don't come in as a
+             normal Reference either, so they're added explicitly here. -->
+        <Reference Include="Microsoft.Windows.CsWin32">
+            <HintPath>$(PkgMicrosoft_Windows_CsWin32)\analyzers\cs\Microsoft.Windows.CsWin32.dll</HintPath>
+            <Private>true</Private>
+        </Reference>
     </ItemGroup>
 
 </Project>

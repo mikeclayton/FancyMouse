@@ -1,4 +1,4 @@
-public static Win32Result<int> SetWindowLong(HWND hWnd, WINDOW_LONG_PTR_INDEX nIndex, int dwNewLong)
+internal static Win32Result<int> SetWindowLong(HWND hWnd, WINDOW_LONG_PTR_INDEX nIndex, int dwNewLong)
 {
     // https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowlongw
     // If the function succeeds, the return value is the previous value of the specified 32-bit integer.

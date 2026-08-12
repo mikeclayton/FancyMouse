@@ -4,6 +4,8 @@ using System.Text.Json;
 using FancyMouse.Models.Styles;
 using FancyMouse.Settings.V1;
 
+using ColorConverter = FancyMouse.Settings.V2.Converters.ColorConverter;
+
 namespace FancyMouse.Settings.V2;
 
 internal static class SettingsConverterV2

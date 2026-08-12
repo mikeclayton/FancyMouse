@@ -1,4 +1,4 @@
-public static Win32Result<BOOL> SetCursorPos(int X, int Y)
+internal static Win32Result<BOOL> SetCursorPos(int X, int Y)
 {
     // https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setcursorpos
     // Returns nonzero if successful or zero otherwise.

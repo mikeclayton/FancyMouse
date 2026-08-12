@@ -1,4 +1,4 @@
-public static Win32Result<BOOL> UnregisterHotKey(HWND hWnd, int id)
+internal static Win32Result<BOOL> UnregisterHotKey(HWND hWnd, int id)
 {
     // https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-unregisterhotkey
     // If the function succeeds, the return value is nonzero.

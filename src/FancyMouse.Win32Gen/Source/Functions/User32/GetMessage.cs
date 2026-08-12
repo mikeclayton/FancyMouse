@@ -1,4 +1,4 @@
-public static Win32Result<BOOL> GetMessage(out MSG lpMsg, HWND hWnd, uint wMsgFilterMin, uint wMsgFilterMax)
+internal static Win32Result<BOOL> GetMessage(out MSG lpMsg, HWND hWnd, uint wMsgFilterMin, uint wMsgFilterMax)
 {
     // https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getmessage
     // If the function retrieves a message other than WM_QUIT, the return value is nonzero.

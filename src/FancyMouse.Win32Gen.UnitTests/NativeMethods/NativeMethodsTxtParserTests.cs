@@ -82,7 +82,7 @@ public static class NativeMethodsTxtParserTests
         public void RunTestCases(TestCase data)
         {
             var file = new TestAdditionalText(data.Input);
-            var actual = NativeMethodsTxtParser.Parse(file, CancellationToken.None)
+            var actual = NativeMethodsTxtParser.Parse(file, CancellationToken.None).Entries
                 .Select(entry => (Kind: entry.Kind.ToString(), entry.Name))
                 .ToArray();
             CollectionAssert.AreEqual(data.Expected, actual);
@@ -95,10 +95,10 @@ public static class NativeMethodsTxtParserTests
             var expectedLines = new[] { "GetCursorPos", "-SetCursorPos", "User32.*" };
 
             var file = new TestAdditionalText(input);
-            var entries = NativeMethodsTxtParser.Parse(file, CancellationToken.None).ToArray();
+            var entries = NativeMethodsTxtParser.Parse(file, CancellationToken.None).Entries;
 
-            Assert.AreEqual(expectedLines.Length, entries.Length);
-            for (var i = 0; i < entries.Length; i++)
+            Assert.HasCount(expectedLines.Length, entries);
+            for (var i = 0; i < entries.Count; i++)
             {
                 var span = entries[i].Location.SourceSpan;
                 var lineText = input.Substring(span.Start, span.Length);

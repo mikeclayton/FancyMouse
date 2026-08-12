@@ -1,4 +1,4 @@
-public static Win32Result<BOOL> TranslateMessage(in MSG lpMsg)
+internal static Win32Result<BOOL> TranslateMessage(in MSG lpMsg)
 {
     // https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-translatemessage
     // If the message is translated (that is, a character message is posted to the thread's message queue),

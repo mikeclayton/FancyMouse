@@ -1,28 +1,26 @@
-using System.Collections.Immutable;
 using System.Text;
-using FancyMouse.Win32Gen.ApiDocs;
-using FancyMouse.Win32Gen.ApiTable;
+using FancyMouse.Win32Gen.CsWin32;
 using FancyMouse.Win32Gen.Metadata;
-using FancyMouse.Win32Gen.NativeMethods;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 
 namespace FancyMouse.Win32Gen.Generators;
 
 /// <summary>
-/// Reads NativeMethods.txt, and for every api name it has an
-/// <see cref="ApiWrapperTemplates"/> entry for, emits a
-/// <c>Win32Result</c>/<c>Win32ReturnCode</c>-flavoured wrapper method -
-/// annotated with the matching win32docs xmldoc block, see
-/// <see cref="ApiDocsHelper"/> - into the appropriate static class
+/// For every real P/Invoke function name <see cref="CsWin32Methods"/>
+/// resolves from NativeMethods.txt (wildcards expanded, exclusions already
+/// applied - CsWin32's own resolution, not this generator's), emits a
+/// <c>Win32Result</c>/<c>Win32ReturnCode</c>-flavoured wrapper method for
+/// every one it has an <see cref="ApiWrapperTemplates"/> entry for -
+/// annotated with the same xmldoc block CsWin32 itself already attached to
+/// the api's raw extern declaration - into the appropriate static class
 /// (<c>User32</c>, <c>Kernel32</c>, ...).
 /// </summary>
 /// <remarks>
 /// Api names with no template are reported via
-/// <see cref="Win32ApiGeneratorDiagnostics"/> instead of acted on -
-/// exclusions/wildcards are logged and ignored, and a name win32metadata
-/// confirms is a real function but has no template is a build error
-/// (<see cref="Win32ApiGeneratorDiagnostics.FunctionMissingTemplate"/>).
+/// <see cref="Win32ApiGeneratorDiagnostics"/> instead of acted on - a name
+/// win32metadata confirms is a real function but has no template is a
+/// build error (<see cref="Win32ApiGeneratorDiagnostics.FunctionMissingTemplate"/>).
 /// </remarks>
 [Generator]
 public sealed class Win32FunctionGenerator : IIncrementalGenerator
@@ -32,151 +30,94 @@ public sealed class Win32FunctionGenerator : IIncrementalGenerator
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         var rootNamespace = Win32GeneratorHelpers.GetRootNamespace(context);
-        var entries = Win32GeneratorHelpers.GetEntries(context);
+        var cswin32Methods = CsWin32Helper.GetCsWin32Methods(context);
 
         var metadataIndex = context.AnalyzerConfigOptionsProvider
-            .Select(static (options, _) => Win32MetadataIndex.Load(Win32MetadataPaths.Get(options)));
-
-        var docPaths = context.AnalyzerConfigOptionsProvider
-            .Select(static (options, _) => ApiDocsPaths.Get(options));
+            .Select(static (options, _) => Win32MetadataDirectory.Load(Win32MetadataHelper.GetWin32MetadataPaths(options)));
 
         context.RegisterSourceOutput(
-            entries.Combine(rootNamespace).Combine(metadataIndex).Combine(docPaths),
+            rootNamespace.Combine(cswin32Methods).Combine(metadataIndex),
             static (spc, data) =>
             {
-                var (((entries, rootNamespace), metadataIndex), docPaths) = data;
-                Win32FunctionGenerator.Emit(spc, rootNamespace, entries, metadataIndex, docPaths);
+                var ((rootNamespace, cswin32Methods), metadataIndex) = data;
+                Win32FunctionGenerator.Emit(spc, rootNamespace, cswin32Methods, metadataIndex);
             });
     }
 
     private static void Emit(
         SourceProductionContext context,
         string rootNamespace,
-        ImmutableArray<NativeMethodsEntry> entries,
-        Win32MetadataIndex? metadataIndex,
-        ImmutableArray<string> docPaths)
+        CsWin32Methods cswin32Methods,
+        Win32MetadataDirectory? metadataIndex)
     {
         // keyed by api name so the same name requested from more than one
         // NativeMethods.txt file (or duplicated within one) still only
         // produces a single wrapper method - each occurrence is still
         // logged below, just not emitted twice.
-        var matched = new Dictionary<string, ApiWrapperTemplate>(StringComparer.Ordinal);
-
-        foreach (var entry in entries)
+        var win32genWrappers = new Dictionary<string, ApiWrapperTemplate>(StringComparer.Ordinal);
+        foreach (var csWin32MethodName in cswin32Methods.GetMethodNames())
         {
-            switch (entry.Kind)
+            if (Win32FunctionGenerator.TryResolveTemplate(context, csWin32MethodName, metadataIndex, out var win32genTemplate))
             {
-                case NativeMethodsEntryKind.Exclusion:
-                    context.ReportDiagnostic(Diagnostic.Create(Win32ApiGeneratorDiagnostics.ExclusionIgnored, entry.Location, entry.Name));
-                    break;
-
-                case NativeMethodsEntryKind.ModuleWildcard:
-                    context.ReportDiagnostic(Diagnostic.Create(Win32ApiGeneratorDiagnostics.WildcardIgnored, entry.Location, entry.Name));
-                    break;
-
-                case NativeMethodsEntryKind.ApiName:
-                    Win32FunctionGenerator.ProcessApiName(context, entry, metadataIndex, matched);
-                    break;
+                win32genWrappers[csWin32MethodName] = win32genTemplate;
             }
         }
-
-        // one instance per generation pass - loads the win32docs file (and
-        // caches its own per-api rendered output) once, however many
-        // wrappers get matched in this pass, rather than once per api.
-        var apiDocs = new ApiDocsHelper(docPaths);
-
-        // drives the [SuccessIsXxx]/[UseLastError]/[HumanVerified]
-        // attributes applied to each wrapper below.
-        var apiTable = ApiTableHelper.Get();
 
         // one file per api, not one per class - so each generated file
         // stays small enough to actually navigate on disk, even once every
         // wrapper carries a full xmldoc block.
-        foreach (var pair in matched)
+        foreach (var kvp in win32genWrappers)
         {
-            var apiName = pair.Key;
-            var template = pair.Value;
-
-            // xmldocs are generated fresh from the live win32docs file on
-            // every pass, not committed into the Source\Functions\*.cs
-            // templates themselves - keeps the templates focused on the
-            // actual wrapper logic, and doc text never goes stale relative
-            // to whatever win32docs version is currently restored.
-            var xmlDocs = apiDocs.GetXmlDocsForFunction(apiName);
-            var attributeLines = Win32FunctionGenerator.BuildAttributeLines(apiTable, apiName);
+            var cswin32MethodName = kvp.Key;
+            var win32genWrapper = kvp.Value;
 
             var parts = new List<string>();
-            if (xmlDocs is not null)
+
+            // xmldocs come straight from CsWin32's own raw extern
+            // declaration for this api (already sitting in
+            // cswin32Methods) instead of being independently rendered from
+            // the win32docs file - one less thing to keep in sync with
+            // whatever CsWin32 itself does, and it's regenerated fresh
+            // every pass either way.
+            if (cswin32Methods.TryGetNativeMethod(cswin32MethodName, out var nativeMethod))
             {
-                parts.Add(xmlDocs);
+                var xmlDocs = nativeMethod!.TryExtractXmlDocs();
+                if (xmlDocs is not null)
+                {
+                    parts.Add(xmlDocs);
+                }
             }
 
-            parts.AddRange(attributeLines);
-            parts.Add(template.MethodSource);
+            parts.Add(win32genWrapper.MethodSource);
             var methodSource = string.Join("\n", parts);
 
-            var source = Win32GeneratorHelpers.BuildClassSource(rootNamespace, template.ClassName, new[] { template with { MethodSource = methodSource } });
-            context.AddSource($"{Win32FunctionGenerator.OutputFolder}/{template.ClassName}_{apiName}.g.cs", SourceText.From(source, Encoding.UTF8));
+            var source = Win32GeneratorHelpers.BuildClassSource(rootNamespace, win32genWrapper.ClassName, new[] { win32genWrapper with { MethodSource = methodSource } });
+            context.AddSource($"{Win32FunctionGenerator.OutputFolder}/{win32genWrapper.ClassName}_{cswin32MethodName}.g.cs", SourceText.From(source, Encoding.UTF8));
         }
     }
 
-    // one line per attribute, immediately after the xmldocs and before the
-    // method signature - an api with no ApiTable.txt entry just gets none.
-    private static IReadOnlyList<string> BuildAttributeLines(FancyMouse.Win32Gen.ApiTable.ApiTable apiTable, string apiName)
-    {
-        if (!apiTable.TryGet(apiName, out var entry))
-        {
-            return Array.Empty<string>();
-        }
-
-        var lines = new List<string>();
-        foreach (var kind in entry.Attributes)
-        {
-            var attribute = Win32FunctionGenerator.ToAttributeSyntax(kind);
-            if (attribute is not null)
-            {
-                lines.Add(attribute);
-            }
-        }
-
-        return lines;
-    }
-
-    private static string? ToAttributeSyntax(ApiAttributeKind kind)
-        => kind switch
-        {
-            ApiAttributeKind.SuccessIsNonZero => "[SuccessIsNonZero]",
-            ApiAttributeKind.SuccessIsNotNull => "[SuccessIsNotNull]",
-            ApiAttributeKind.AlwaysSucceeds => "[AlwaysSucceeds]",
-            ApiAttributeKind.UseLastError => "[UseLastError]",
-            ApiAttributeKind.HumanVerified => "[HumanVerified]",
-
-            // SuccessDelegateAttribute requires a method-name argument, but
-            // the table doesn't carry one yet (see ApiTableParser's
-            // placeholder handling of [SuccessIsCustom]) - an empty string
-            // satisfies the constructor without claiming a real method
-            // exists, so the attribute can still be emitted rather than
-            // silently dropped, until the table can carry the real name.
-            ApiAttributeKind.SuccessDelegate => "[SuccessDelegate(\"\")]",
-
-            _ => null,
-        };
-
-    private static void ProcessApiName(
+    // apiName comes from CsWin32's own resolved PInvoke class now, not a
+    // NativeMethods.txt line, so there's no source location to point
+    // diagnostics at - Location.None is the best available.
+    //
+    // returns the matched template instead of writing into a shared
+    // dictionary itself, so the mutation happens visibly at the call site
+    // rather than being hidden inside a method whose name doesn't suggest
+    // it has that side effect.
+    private static bool TryResolveTemplate(
         SourceProductionContext context,
-        NativeMethodsEntry entry,
-        Win32MetadataIndex? metadataIndex,
-        Dictionary<string, ApiWrapperTemplate> matched)
+        string apiName,
+        Win32MetadataDirectory? metadataIndex,
+        out ApiWrapperTemplate template)
     {
-        if (ApiWrapperTemplates.TryGet(entry.Name, out var template))
+        if (ApiWrapperTemplates.TryGet(apiName, out template))
         {
-            matched[entry.Name] = template;
-            return;
+            return true;
         }
 
-        if (metadataIndex is not null && metadataIndex.TryClassify(entry.Name, out var kind))
+        if (metadataIndex is not null && metadataIndex.TryGet(apiName, out var entry))
         {
-            switch (kind)
+            switch (entry!.Kind)
             {
                 // an enum, constant, native-typedef struct, or delegate
                 // genuinely doesn't need a wrapper - not a gap, so nothing
@@ -185,17 +126,18 @@ public sealed class Win32FunctionGenerator : IIncrementalGenerator
                 case Win32MemberKind.Constant:
                 case Win32MemberKind.Struct:
                 case Win32MemberKind.Delegate:
-                    return;
+                    return false;
 
                 // unlike NoTemplateFound below, this is a confirmed gap:
                 // win32metadata says this name really is a P/Invoke
                 // function, and there's just no template for it yet.
                 case Win32MemberKind.Function:
-                    context.ReportDiagnostic(Diagnostic.Create(Win32ApiGeneratorDiagnostics.FunctionMissingTemplate, entry.Location, entry.Name));
-                    return;
+                    context.ReportDiagnostic(Diagnostic.Create(Win32ApiGeneratorDiagnostics.FunctionMissingTemplate, Location.None, apiName));
+                    return false;
             }
         }
 
-        context.ReportDiagnostic(Diagnostic.Create(Win32ApiGeneratorDiagnostics.NoTemplateFound, entry.Location, entry.Name));
+        context.ReportDiagnostic(Diagnostic.Create(Win32ApiGeneratorDiagnostics.NoTemplateFound, Location.None, apiName));
+        return false;
     }
 }

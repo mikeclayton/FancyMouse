@@ -1,4 +1,4 @@
-public static Win32Result<DPI_AWARENESS_CONTEXT> GetThreadDpiAwarenessContext()
+internal static Win32Result<DPI_AWARENESS_CONTEXT> GetThreadDpiAwarenessContext()
 {
     // https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getthreaddpiawarenesscontext
     // This method will return the latest DPI_AWARENESS_CONTEXT sent to SetThreadDpiAwarenessContext.

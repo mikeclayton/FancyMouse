@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+    <PropertyGroup>
+        <!-- writes every source generator's output to disk (CsWin32's own
+             PInvoke surface as well as FancyMouse.Win32Gen's) purely so it
+             can be reviewed - not required for the build to work -->
+        <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+        <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- the emitted files would otherwise also be picked up as regular
+             Compile items, generating every type in them a second time -->
+        <Compile Remove="$(CompilerGeneratedFilesOutputPath)\**\*.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <AdditionalFiles Include="NativeMethods.txt" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- import the CsWin32 nuget package -->
+        <PackageReference Include="Microsoft.Windows.CsWin32" Version="0.3.269">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- import the Win32Gen project to generate error-handling wrappers around CsWin32 methods -->
+        <ProjectReference Include="..\FancyMouse.Win32Gen\FancyMouse.Win32Gen.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    </ItemGroup>
+
+</Project>

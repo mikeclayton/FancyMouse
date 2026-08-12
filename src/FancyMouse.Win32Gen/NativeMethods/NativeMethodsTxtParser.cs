@@ -22,12 +22,14 @@ internal static class NativeMethodsTxtParser
         (char)0x200B,
     };
 
-    public static IEnumerable<NativeMethodsEntry> Parse(AdditionalText file, CancellationToken cancellationToken)
+    public static NativeMethodsEntries Parse(AdditionalText file, CancellationToken cancellationToken)
     {
+        var entries = new List<NativeMethodsEntry>();
+
         var text = file.GetText(cancellationToken);
         if (text is null)
         {
-            yield break;
+            return new NativeMethodsEntries(entries);
         }
 
         foreach (var line in text.Lines)
@@ -47,7 +49,7 @@ internal static class NativeMethodsTxtParser
                 var excluded = raw.Substring(1).Trim();
                 if (excluded.Length > 0)
                 {
-                    yield return new NativeMethodsEntry(NativeMethodsEntryKind.Exclusion, excluded, location);
+                    entries.Add(new NativeMethodsEntry(NativeMethodsEntryKind.Exclusion, excluded, location));
                 }
 
                 continue;
@@ -59,9 +61,11 @@ internal static class NativeMethodsTxtParser
                 continue;
             }
 
-            yield return name.EndsWith(".*", StringComparison.Ordinal)
+            entries.Add(name.EndsWith(".*", StringComparison.Ordinal)
                 ? new NativeMethodsEntry(NativeMethodsEntryKind.ModuleWildcard, name.Substring(0, name.Length - 2), location)
-                : new NativeMethodsEntry(NativeMethodsEntryKind.ApiName, name, location);
+                : new NativeMethodsEntry(NativeMethodsEntryKind.ApiName, name, location));
         }
+
+        return new NativeMethodsEntries(entries);
     }
 }

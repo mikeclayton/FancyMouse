@@ -1,4 +1,4 @@
-public static Win32Result<BOOL> SetMenuInfo(SafeHandle param0, in MENUINFO param1)
+internal static Win32Result<BOOL> SetMenuInfo(SafeHandle param0, in MENUINFO param1)
 {
     // https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setmenuinfo
     // If the function succeeds, the return value is nonzero.

@@ -1,4 +1,4 @@
-public static Win32Result<BOOL> Shell_NotifyIcon(NOTIFY_ICON_MESSAGE dwMessage, in NOTIFYICONDATAW lpData)
+internal static Win32Result<BOOL> Shell_NotifyIcon(NOTIFY_ICON_MESSAGE dwMessage, in NOTIFYICONDATAW lpData)
 {
     // https://learn.microsoft.com/en-us/windows/win32/api/shellapi/nf-shellapi-shell_notifyiconw
     // Returns TRUE if successful, or FALSE otherwise.

@@ -11,9 +11,7 @@ namespace FancyMouse.Win32Gen.Generators;
 /// parser's.
 /// </summary>
 /// <remarks>
-/// Severity is deliberately mixed: <see cref="ExclusionIgnored"/>,
-/// <see cref="WildcardIgnored"/>, and <see cref="NoTemplateFound"/> are
-/// proof-of-concept shortcuts, not mistakes, so they stay
+/// Severity is deliberately mixed: <see cref="NoTemplateFound"/> stays
 /// <see cref="DiagnosticSeverity.Info"/> (this repo builds with
 /// TreatWarningsAsErrors, so anything higher would turn "we haven't
 /// implemented this yet" into a build break). <see cref="FunctionMissingTemplate"/>
@@ -27,24 +25,8 @@ namespace FancyMouse.Win32Gen.Generators;
 /// </remarks>
 internal static class Win32ApiGeneratorDiagnostics
 {
-    public static readonly DiagnosticDescriptor ExclusionIgnored = new(
-        id: "WIN32GEN001",
-        title: "NativeMethods.txt exclusion ignored",
-        messageFormat: "Ignoring exclusion '-{0}' - exclusions aren't processed by this generator yet",
-        category: "FancyMouse.Win32Gen",
-        DiagnosticSeverity.Info,
-        isEnabledByDefault: true);
-
-    public static readonly DiagnosticDescriptor WildcardIgnored = new(
-        id: "WIN32GEN002",
-        title: "NativeMethods.txt wildcard ignored",
-        messageFormat: "Ignoring wildcard '{0}.*' - module wildcards aren't processed by this generator yet",
-        category: "FancyMouse.Win32Gen",
-        DiagnosticSeverity.Info,
-        isEnabledByDefault: true);
-
     public static readonly DiagnosticDescriptor NoTemplateFound = new(
-        id: "WIN32GEN003",
+        id: "WIN32GEN001",
         title: "NativeMethods.txt entry has no wrapper template",
         messageFormat: "Ignoring entry '{0}' - no wrapper template found, and it isn't a recognized Win32 enum, constant, or function either (could be a struct/interface/handle type, a typo, or win32metadata just wasn't available to check)",
         category: "FancyMouse.Win32Gen",
@@ -60,7 +42,7 @@ internal static class Win32ApiGeneratorDiagnostics
     /// couldn't be checked at all.
     /// </summary>
     public static readonly DiagnosticDescriptor FunctionMissingTemplate = new(
-        id: "WIN32GEN004",
+        id: "WIN32GEN002",
         title: "NativeMethods.txt function has no wrapper template",
         messageFormat: "No wrapper template for '{0}' - win32metadata confirms this is a real Win32 function; add a template to ApiWrapperTemplates or remove this line",
         category: "FancyMouse.Win32Gen",

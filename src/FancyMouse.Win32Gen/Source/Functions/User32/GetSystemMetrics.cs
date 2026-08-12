@@ -1,4 +1,4 @@
-public static Win32Result<int> GetSystemMetrics(SYSTEM_METRICS_INDEX nIndex)
+internal static Win32Result<int> GetSystemMetrics(SYSTEM_METRICS_INDEX nIndex)
 {
     // https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getsystemmetrics
     // If the function succeeds, the return value is the requested system metric or configuration setting.

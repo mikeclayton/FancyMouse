@@ -3,7 +3,7 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace FancyMouse.Settings.V2;
+namespace FancyMouse.Settings.V2.Converters;
 
 /// <summary>
 /// Converts a color string from the settings file into a color, and vice versa.

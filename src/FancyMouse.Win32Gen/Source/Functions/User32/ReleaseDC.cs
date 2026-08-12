@@ -1,4 +1,4 @@
-public static Win32Result<int> ReleaseDC(HWND hWnd, HDC hDC)
+internal static Win32Result<int> ReleaseDC(HWND hWnd, HDC hDC)
 {
     // https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-releasedc
     // The return value indicates whether the DC was released.

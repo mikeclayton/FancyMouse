@@ -8,7 +8,7 @@ namespace FancyMouse.Win32Gen.UnitTests.Metadata;
 /// <summary>
 /// Builds a small, in-memory ECMA-335 metadata blob shaped like a real
 /// win32metadata .winmd file - just enough of each construct
-/// <see cref="Win32Gen.Metadata.Win32MetadataIndex.IndexMetadata"/> looks
+/// <see cref="Win32Gen.Metadata.Win32MetadataDirectory.IndexMetadata"/> looks
 /// for (an enum, a delegate, a native-typedef struct, and an "Apis" type
 /// carrying a literal constant field and a PinvokeImpl method) - so tests
 /// don't need to load a real, multi-megabyte win32metadata file to exercise

@@ -1,4 +1,4 @@
-public static Win32Result<int> SetStretchBltMode(HDC hdc, STRETCH_BLT_MODE mode)
+internal static Win32Result<int> SetStretchBltMode(HDC hdc, STRETCH_BLT_MODE mode)
 {
     // https://learn.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-setstretchbltmode
     // If the function succeeds, the return value is the previous stretching mode.

@@ -1,4 +1,4 @@
-public static Win32Result<BOOL> TrackPopupMenuEx(SafeHandle hMenu, uint uFlags, int x, int y, HWND hwnd, TPMPARAMS? lptpm)
+internal static Win32Result<BOOL> TrackPopupMenuEx(SafeHandle hMenu, uint uFlags, int x, int y, HWND hwnd, TPMPARAMS? lptpm)
 {
     // https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-trackpopupmenuex
     // If you specify TPM_RETURNCMD in the fuFlags parameter, the return value is the menu-item identifier of the item that the user selected.

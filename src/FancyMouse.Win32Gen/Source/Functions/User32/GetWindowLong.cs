@@ -1,4 +1,4 @@
-public static Win32Result<int> GetWindowLong(HWND hWnd, WINDOW_LONG_PTR_INDEX nIndex)
+internal static Win32Result<int> GetWindowLong(HWND hWnd, WINDOW_LONG_PTR_INDEX nIndex)
 {
     // https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getwindowlongw
     // If the function succeeds, the return value is the requested value.

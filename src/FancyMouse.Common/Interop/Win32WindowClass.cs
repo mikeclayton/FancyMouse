@@ -1,7 +1,4 @@
-﻿using Windows.Win32.Foundation;
-using Windows.Win32.UI.WindowsAndMessaging;
-
-namespace FancyMouse.Common.Interop;
+﻿namespace FancyMouse.Common.Interop;
 
 /// <summary>
 /// Wrapper around a Windows window class that can be passed to

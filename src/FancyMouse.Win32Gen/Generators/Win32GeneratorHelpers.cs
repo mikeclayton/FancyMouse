@@ -1,20 +1,18 @@
-using System.Collections.Immutable;
-using FancyMouse.Win32Gen.NativeMethods;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace FancyMouse.Win32Gen.Generators;
 
 /// <summary>
-/// Shared plumbing for <see cref="Win32AttributeGenerator"/>,
-/// <see cref="Win32FrameworkGenerator"/>, and <see cref="Win32FunctionGenerator"/> -
-/// each is its own <see cref="IIncrementalGenerator"/> (so each kind of
-/// generated output - attributes, framework types, api wrappers - is
-/// independently decoupled and can be reasoned about on its own), but all
-/// three still emit into the same single <c>{RootNamespace}.Win32Gen</c>
-/// namespace, so a consuming project only ever needs one <c>using</c> to
-/// see all of it. Only the generated *files* are organised into separate
-/// folders (Attributes/Framework/Functions) for on-disk navigability.
+/// Shared plumbing for <see cref="Win32FrameworkGenerator"/> and
+/// <see cref="Win32FunctionGenerator"/> - each is its own
+/// <see cref="IIncrementalGenerator"/> (so each kind of generated output -
+/// framework types, api wrappers - is independently decoupled and can be
+/// reasoned about on its own), but both still emit into the same single
+/// <c>{RootNamespace}.Win32Gen</c> namespace, so a consuming project only
+/// ever needs one <c>using</c> to see all of it. Only the generated
+/// *files* are organised into separate folders (Framework/Functions) for
+/// on-disk navigability.
 /// </summary>
 internal static class Win32GeneratorHelpers
 {
@@ -24,16 +22,6 @@ internal static class Win32GeneratorHelpers
     public static IncrementalValueProvider<string> GetRootNamespace(IncrementalGeneratorInitializationContext context)
         => context.AnalyzerConfigOptionsProvider
             .Select(static (options, _) => Win32GeneratorHelpers.ResolveRootNamespace(options));
-
-    public static IncrementalValueProvider<ImmutableArray<NativeMethodsEntry>> GetEntries(IncrementalGeneratorInitializationContext context)
-    {
-        var nativeMethodTxts = NativeMethodHelper.DiscoverNativeMethodTxts(context);
-
-        return nativeMethodTxts
-            .Select(static (file, ct) => NativeMethodsTxtParser.Parse(file, ct).ToImmutableArray())
-            .Collect()
-            .Select(static (lists, _) => lists.SelectMany(list => list).ToImmutableArray());
-    }
 
     public static string BuildFrameworkFileSource(string rootNamespace, string fragment)
         => $$"""

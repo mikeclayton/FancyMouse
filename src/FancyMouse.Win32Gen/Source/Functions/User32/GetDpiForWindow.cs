@@ -1,4 +1,4 @@
-public static Win32Result<uint> GetDpiForWindow(HWND hwnd)
+internal static Win32Result<uint> GetDpiForWindow(HWND hwnd)
 {
     // https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getdpiforwindow
     // The DPI for the window, which depends on the DPI_AWARENESS of the window.
