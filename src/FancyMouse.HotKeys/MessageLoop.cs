@@ -1,4 +1,6 @@
 ﻿using FancyMouse.Common.Interop;
+using FancyMouse.HotKeys.Win32Gen;
+
 using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.UI.WindowsAndMessaging;
@@ -83,7 +85,7 @@ internal sealed class MessageLoop
         // start a new internal message loop thread
         this.MessageLoopThread = new Thread(() =>
         {
-            this.NativeThreadId = PInvoke.GetCurrentThreadId();
+            this.NativeThreadId = Kernel32.GetCurrentThreadId().ThrowIfFailed().GetValue();
             this.Window = this.WindowFactory.Invoke();
             this.RunMessageLoop();
         })
@@ -120,13 +122,14 @@ internal sealed class MessageLoop
                 break;
             }
 
-            var result = PInvoke.GetMessage(
+            var result = User32.GetMessage(
                 lpMsg: out msg,
                 hWnd: hwnd,
                 wMsgFilterMin: 0,
-                wMsgFilterMax: 0);
+                wMsgFilterMax: 0)
+                .IgnoreFailure();
 
-            if (result.Value == -1)
+            if (result.Failure)
             {
                 continue;
             }
@@ -136,8 +139,8 @@ internal sealed class MessageLoop
                 break;
             }
 
-            _ = PInvoke.TranslateMessage(msg);
-            _ = PInvoke.DispatchMessage(msg);
+            _ = User32.TranslateMessage(msg).IgnoreFailure();
+            _ = User32.DispatchMessage(msg).IgnoreFailure();
         }
 
         // clean up
@@ -164,11 +167,12 @@ internal sealed class MessageLoop
         // and exit the loop...
         // (see https://devblogs.microsoft.com/oldnewthing/20050405-46/?p=35973)
         var hwnd = (HWND)(this.Window?.Hwnd ?? throw new InvalidOperationException());
-        PInvoke.PostMessage(
+        _ = User32.PostMessage(
             hWnd: hwnd,
             Msg: PInvoke.WM_NULL,
             wParam: default,
-            lParam: default);
+            lParam: default)
+            .IgnoreFailure();
 
         // wait for the internal message loop to actually stop before we exit
         this.RunningSemaphore.Wait();

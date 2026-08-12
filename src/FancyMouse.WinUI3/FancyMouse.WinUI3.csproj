@@ -1,16 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+    <Import Project="..\Common.Dotnet.Analyzers.props" />
+    <Import Project="..\Common.Dotnet.CsWin32.props" />
+    <Import Project="..\Common.Dotnet.props" />
     <Import Project="..\Common.Dotnet.CsWinRT.props" />
-    <!-- <Import Project="..\Common.SelfContained.props" /> -->
 
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
-        <TargetFramework>net10.0-windows</TargetFramework>
-        <TargetPlatformIdentifier>Windows</TargetPlatformIdentifier>
-        <TargetPlatformVersion>10.0.26100.0</TargetPlatformVersion>
-        <TargetPlatformMinVersion>10.0.26100.0</TargetPlatformMinVersion>
         <RootNamespace>FancyMouse.WinUI3</RootNamespace>
         <ApplicationManifest>app.manifest</ApplicationManifest>
-        <Platforms>x64;AnyCPU</Platforms>
+        <Platforms>x64</Platforms>
         <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
         <PublishProfile>win-$(Platform).pubxml</PublishProfile>
         <UseWinUI>true</UseWinUI>
@@ -37,21 +35,6 @@
         <ProjectReference Include="..\FancyMouse.Settings\FancyMouse.Settings.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-        <PackageReference Include="Microsoft.Windows.CsWin32" Version="0.3.269">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
-        <PackageReference Update="Microsoft.CodeAnalysis.NetAnalyzers" Version="10.0.201">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
-        <PackageReference Update="StyleCop.Analyzers" Version="1.2.0-beta.507">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
-    </ItemGroup>
-
     <!-- Publish Properties -->
     <PropertyGroup>
         <PublishReadyToRun Condition="'$(Configuration)' == 'Debug'">False</PublishReadyToRun>
@@ -62,10 +45,6 @@
 
     <ItemGroup>
         <None Remove="appSettings.json" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <AdditionalFiles Include="NativeMethods.txt" />
     </ItemGroup>
 
     <ItemGroup>

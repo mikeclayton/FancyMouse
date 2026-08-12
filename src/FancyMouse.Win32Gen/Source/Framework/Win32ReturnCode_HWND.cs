@@ -1,0 +1,15 @@
+using System.Runtime.CompilerServices;
+
+using Windows.Win32.Foundation;
+
+internal static partial class Win32ReturnCode
+{
+    // HWND is an internal CsWin32-generated type, and there's no shared
+    // interface across CsWin32 handle structs to write a single generic
+    // overload against - each has its own independently generated IsNull
+    // property, not one from a common contract.
+    internal static Win32ReturnCode<HWND> SuccessIsNotNull(
+        this HWND result,
+        [CallerMemberName] string memberName = "")
+        => new(result, !result.IsNull, lastError: null, memberName);
+}

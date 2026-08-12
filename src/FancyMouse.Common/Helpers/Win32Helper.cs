@@ -2,6 +2,7 @@
 using System.Runtime.InteropServices;
 
 using FancyMouse.Common.Interop;
+using FancyMouse.Common.Win32Gen;
 
 using Windows.Win32;
 using Windows.Win32.Foundation;
@@ -63,11 +64,11 @@ public static class Win32Helper
                     lpszClassName = new PCWSTR(classNamePtr),
                     hIconSm = HICON.Null,
                 };
-                classAtom = PInvoke.RegisterClassEx(wndClass);
+                classAtom = User32.RegisterClassEx(wndClass)
+                    .ThrowIfFailed()
+                    .GetValue();
             }
         }
-
-        ResultHandler.ThrowIfZero(classAtom, getLastError: true, nameof(PInvoke.RegisterClassEx));
 
         var windowClass = new Win32WindowClass(classAtom, className, windowProc);
         return windowClass;
@@ -82,7 +83,7 @@ public static class Win32Helper
         var hWnd = default(HWND);
         unsafe
         {
-            hWnd = PInvoke.CreateWindowEx(
+            hWnd = User32.CreateWindowEx(
                 dwExStyle: 0,
                 lpClassName: windowClass.ClassName,
                 lpWindowName: windowName,
@@ -94,10 +95,10 @@ public static class Win32Helper
                 hWndParent: HWND.HWND_MESSAGE, // message-only window
                 hMenu: null,
                 hInstance: null,
-                lpParam: null);
+                lpParam: null)
+                .ThrowIfFailed()
+                .GetValue();
         }
-
-        ResultHandler.ThrowIfZero(hWnd, getLastError: true, nameof(PInvoke.CreateWindowEx));
 
         var window = new Win32Window(windowClass, windowName, hWnd);
         return window;
