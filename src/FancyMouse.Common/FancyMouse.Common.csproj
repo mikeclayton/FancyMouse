@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <Import Project="..\Common.Dotnet.Analyzers.props" />
     <Import Project="..\Common.Dotnet.CsWin32.props" />
-    <Import Project="..\Common.Dotnet.CsWinRT.props" />
+    <Import Project="..\Common.Dotnet.props" />
 
     <PropertyGroup>
         <ImplicitUsings>enable</ImplicitUsings>
