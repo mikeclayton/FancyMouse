@@ -112,15 +112,6 @@ jobs:
                 --no-build `
                 --filter "TestCategory!=Performance"
 
-      - name: dotnet publish (winforms)
-        working-directory: ${{ env.BUILD_PATH }}
-        run: |
-            dotnet publish "./FancyMouse/FancyMouse.csproj" `
-                --p:Configuration="${{ env.CONFIG_NAME }}" `
-                --p:Platform="${{ env.PLATFORM_NAME }}" `
-                --p:RuntimeIdentifier="${{ env.RUNTIME_NAME }}" `
-                --output "${{ env.PUBLISH_PATH }}/FancyMouse.WinForms"
-
       - name: dotnet publish (winui3)
         working-directory: ${{ env.BUILD_PATH }}
         run: |
@@ -134,12 +125,6 @@ jobs:
                 --p:PublishTrimmed=false `
                 --self-contained false `
                 --output "${{ env.PUBLISH_PATH }}/FancyMouse.WinUI3"
-
-      - name: upload release (winforms)
-        uses: actions/upload-artifact@v7
-        with:
-          name: FancyMouse-v0.0.0-preview
-          path: ${{ env.PUBLISH_PATH }}/FancyMouse.WinForms
 
       - name: upload release (winui3)
         uses: actions/upload-artifact@v7
