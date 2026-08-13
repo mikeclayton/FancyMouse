@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
 VisualStudioVersion = 18.5.11626.173
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FancyMouse", "FancyMouse\FancyMouse.csproj", "{EFE2A257-6979-4067-99A7-0C762492A8C7}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{49E13F75-3D64-4529-B0AA-55DFE69795FB}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{C92998B2-2E21-4DA8-A73D-ADE970C87F25}"
@@ -64,22 +62,6 @@ Global
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{EFE2A257-6979-4067-99A7-0C762492A8C7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{EFE2A257-6979-4067-99A7-0C762492A8C7}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{EFE2A257-6979-4067-99A7-0C762492A8C7}.Debug|ARM64.ActiveCfg = Debug|x64
-		{EFE2A257-6979-4067-99A7-0C762492A8C7}.Debug|ARM64.Build.0 = Debug|x64
-		{EFE2A257-6979-4067-99A7-0C762492A8C7}.Debug|x64.ActiveCfg = Debug|x64
-		{EFE2A257-6979-4067-99A7-0C762492A8C7}.Debug|x64.Build.0 = Debug|x64
-		{EFE2A257-6979-4067-99A7-0C762492A8C7}.Debug|x86.ActiveCfg = Debug|x64
-		{EFE2A257-6979-4067-99A7-0C762492A8C7}.Debug|x86.Build.0 = Debug|x64
-		{EFE2A257-6979-4067-99A7-0C762492A8C7}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{EFE2A257-6979-4067-99A7-0C762492A8C7}.Release|Any CPU.Build.0 = Release|Any CPU
-		{EFE2A257-6979-4067-99A7-0C762492A8C7}.Release|ARM64.ActiveCfg = Release|x64
-		{EFE2A257-6979-4067-99A7-0C762492A8C7}.Release|ARM64.Build.0 = Release|x64
-		{EFE2A257-6979-4067-99A7-0C762492A8C7}.Release|x64.ActiveCfg = Release|x64
-		{EFE2A257-6979-4067-99A7-0C762492A8C7}.Release|x64.Build.0 = Release|x64
-		{EFE2A257-6979-4067-99A7-0C762492A8C7}.Release|x86.ActiveCfg = Release|x64
-		{EFE2A257-6979-4067-99A7-0C762492A8C7}.Release|x86.Build.0 = Release|x64
 		{1BBB9184-2ECA-465A-A990-C15A6A60BA0F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{1BBB9184-2ECA-465A-A990-C15A6A60BA0F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1BBB9184-2ECA-465A-A990-C15A6A60BA0F}.Debug|ARM64.ActiveCfg = Debug|x64
