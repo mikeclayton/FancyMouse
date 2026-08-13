@@ -36,10 +36,6 @@ public sealed class DesktopScreenshotCaptureProvider : IScreenshotCaptureProvide
         await this.captureLock.WaitAsync().ConfigureAwait(false);
         try
         {
-            // TEMPORARY - artificial delay so slow/backfilled captures are visible for a
-            // manual smoke test. Remove before merging.
-            await Task.Delay(1000).ConfigureAwait(false);
-
             return await Task.Run(
                 () => DesktopScreenshotCaptureProvider.Capture(sourceArea, thumbnailSize))
                 .ConfigureAwait(false);
