@@ -8,9 +8,9 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
     <!--
-        Background and Screenshots are layered in the same Grid cell (z-order follows
-        declaration order) - both are sized to fill this control exactly, since they're
-        rendered at the same physical-pixel size (see PreviewPane.xaml.cs).
+        BackgroundImage fills this control exactly (see PreviewPane.xaml.cs). ScreensCanvas is
+        layered on top and populated in code-behind with one bezel/placeholder/content element
+        per screen, each positioned absolutely to match its ScreenLayout bounds.
     -->
     <Grid x:Name="RootGrid">
         <Image
@@ -18,10 +18,7 @@
             Stretch="Fill"
             HorizontalAlignment="Stretch"
             VerticalAlignment="Stretch" />
-        <Image
-            x:Name="ScreenshotsImageControl"
-            Stretch="Fill"
-            HorizontalAlignment="Stretch"
-            VerticalAlignment="Stretch" />
+        <Canvas
+            x:Name="ScreensCanvas" />
     </Grid>
 </UserControl>

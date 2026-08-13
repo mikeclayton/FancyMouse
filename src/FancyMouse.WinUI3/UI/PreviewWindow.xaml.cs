@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 
@@ -203,8 +202,6 @@ public sealed partial class PreviewWindow : Window
         await this.HideWindowAsync()
             .ConfigureAwait(false);
 
-        var stopwatch = Stopwatch.StartNew();
-
         // capture this first so we get an accurate current mouse location
         // (in case the user moves it a few pixels while the form is rendered)
         var activatedLocation = MouseHelper.GetCursorPosition();
@@ -236,25 +233,85 @@ public sealed partial class PreviewWindow : Window
         await this.RenderBorderAsync(previewLayout, hostBoxStyle)
             .ConfigureAwait(false);
 
+        // builds every screen's bezel + placeholder fill immediately, so there's something to
+        // show as soon as the window becomes visible - screenshots backfill afterwards
         await this.SetPreviewPaneLayoutAsync(previewLayout)
             .ConfigureAwait(false);
 
-        var imageCopyServices = displayInfo.Devices
-            .Select(
-                deviceInfo => (IImageRegionCopyService)new DesktopImageRegionCopyService())
+        // one capture provider per device - see IScreenshotCaptureProvider/
+        // DesktopScreenshotCaptureProvider remarks for why a single instance is safe (and
+        // necessary) to share across all of that device's screens
+        var captureProviders = displayInfo.Devices
+            .Select(deviceInfo => (IScreenshotCaptureProvider)new DesktopScreenshotCaptureProvider())
             .ToList();
 
-        await DrawingHelper.RenderPreviewAsync(
-                previewLayout.CanvasLayout,
-                activatedScreen,
-                imageCopyServices,
-                this.OnScreenshotsImageChangedAsync,
-                this.OnScreenshotsImageChangedAsync)
+        // kick off a capture request per screen without awaiting them yet, so they can all
+        // start running (subject to each provider's own parallel-vs-series capabilities)
+        var captureRequests = previewLayout.CanvasLayout.DeviceLayouts
+            .SelectMany((deviceLayout, deviceIndex) => deviceLayout.ScreenLayouts.Select(
+                screenLayout => new ScreenCaptureRequest(
+                    screenLayout,
+                    captureProviders[deviceIndex].CaptureAsync(
+                        screenLayout.ScreenInfo.DisplayArea,
+                        screenLayout.ScreenBounds.ContentBounds.Size))))
+            .ToList();
+
+        // the activated screen's own capture must complete - and be applied - before the
+        // window is shown, otherwise a *later* capture of that screen would risk capturing
+        // the preview window itself, since it's positioned on top of the activated screen
+        var activatedRequest = captureRequests.Single(
+            request => object.ReferenceEquals(request.ScreenLayout.ScreenInfo, activatedScreen));
+        await this.ApplyScreenshotAsync(activatedRequest)
             .ConfigureAwait(false);
 
-        stopwatch.Stop();
-
         await this.ShowWindowAsync()
+            .ConfigureAwait(false);
+
+        // backfill the remaining screens in the background, in whatever order their captures
+        // actually complete - "slow" sources (e.g. a future remote capture provider) shouldn't
+        // hold up screens that are already done
+        var remainingRequests = captureRequests
+            .Where(request => !object.ReferenceEquals(request, activatedRequest))
+            .ToList();
+        _ = this.BackfillScreenshotsAsync(remainingRequests, captureProviders);
+    }
+
+    /// <summary>
+    /// Awaits the remaining screen captures in completion order (not list order) and applies
+    /// each one as soon as it's ready, then disposes <paramref name="captureProviders"/> once
+    /// every request for this activation - including the activated screen's own, already
+    /// applied before this was called - has finished with them.
+    /// </summary>
+    private async Task BackfillScreenshotsAsync(
+        List<ScreenCaptureRequest> requests, List<IScreenshotCaptureProvider> captureProviders)
+    {
+        try
+        {
+            var pending = requests.ToList();
+            while (pending.Count > 0)
+            {
+                var completedTask = await Task.WhenAny(pending.Select(request => request.CaptureTask))
+                    .ConfigureAwait(false);
+                var completedRequest = pending.Single(request => request.CaptureTask == completedTask);
+                pending.Remove(completedRequest);
+                await this.ApplyScreenshotAsync(completedRequest)
+                    .ConfigureAwait(false);
+            }
+        }
+        finally
+        {
+            foreach (var provider in captureProviders.OfType<IDisposable>())
+            {
+                provider.Dispose();
+            }
+        }
+    }
+
+    private async Task ApplyScreenshotAsync(ScreenCaptureRequest request)
+    {
+        using var image = await request.CaptureTask.ConfigureAwait(false);
+        await this.InvokeOnUiThreadAsync(
+                () => this.PreviewPane.SetScreenshot(request.ScreenLayout, image))
             .ConfigureAwait(false);
     }
 
@@ -267,7 +324,6 @@ public sealed partial class PreviewWindow : Window
 
         this.BorderImage.Source = null;
         this.PreviewPane.Layout = null;
-        this.PreviewPane.ScreenshotsImage = null;
 
         // force preview image memory to be released - otherwise
         // all the disposed images can pile up without being GC'ed
@@ -422,15 +478,6 @@ public sealed partial class PreviewWindow : Window
             }).ConfigureAwait(false);
     }
 
-    private async Task OnScreenshotsImageChangedAsync(Bitmap screenshotsImage)
-    {
-        await this.InvokeOnUiThreadAsync(
-            () =>
-            {
-                this.PreviewPane.ScreenshotsImage = screenshotsImage;
-            }).ConfigureAwait(false);
-    }
-
     private static BitmapImage ToBitmapImage(Bitmap bitmap)
     {
         var bitmapImage = new BitmapImage();
@@ -440,4 +487,11 @@ public sealed partial class PreviewWindow : Window
         bitmapImage.SetSource(stream.AsRandomAccessStream());
         return bitmapImage;
     }
+
+    /// <summary>
+    /// Pairs a screen with its in-flight capture request, so a result can be routed back to
+    /// the right <see cref="PreviewPane"/> slot once it completes (see
+    /// <see cref="PreviewPane.SetScreenshot"/>).
+    /// </summary>
+    private sealed record ScreenCaptureRequest(ScreenLayout ScreenLayout, Task<Bitmap> CaptureTask);
 }
