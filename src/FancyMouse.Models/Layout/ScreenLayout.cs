@@ -1,10 +1,10 @@
-﻿using FancyMouse.Models.Display;
+using FancyMouse.Models.Display;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Styles;
 
-namespace FancyMouse.Models.ViewModel;
+namespace FancyMouse.Models.Layout;
 
-public sealed class ScreenViewModel
+public sealed class ScreenLayout
 {
     public sealed class Builder
     {
@@ -22,7 +22,7 @@ public sealed class ScreenViewModel
 
         /// <summary>
         /// Gets or sets the layout bounds for the screen.
-        /// Coordinates are relative to the origin on the containing Form.
+        /// Coordinates are relative to the origin on the containing Preview.
         /// </summary>
         public BoxBounds ScreenBounds
         {
@@ -36,16 +36,16 @@ public sealed class ScreenViewModel
             set;
         }
 
-        public ScreenViewModel Build()
+        public ScreenLayout Build()
         {
-            return new ScreenViewModel(
+            return new ScreenLayout(
                 screenInfo: this.ScreenInfo ?? throw new InvalidOperationException($"{nameof(this.ScreenInfo)} must be initialized before calling {nameof(this.Build)}."),
                 screenBounds: this.ScreenBounds ?? throw new InvalidOperationException($"{nameof(this.ScreenBounds)} must be initialized before calling {nameof(this.Build)}."),
                 screenStyle: this.ScreenStyle ?? throw new InvalidOperationException($"{nameof(this.ScreenStyle)} must be initialized before calling {nameof(this.Build)}."));
         }
     }
 
-    public ScreenViewModel(
+    public ScreenLayout(
         ScreenInfo screenInfo,
         BoxBounds screenBounds,
         BoxStyle screenStyle)
@@ -62,7 +62,7 @@ public sealed class ScreenViewModel
 
     /// <summary>
     /// Gets the layout bounds for the screen.
-    /// Coordinates are relative to the origin on the containing Form.
+    /// Coordinates are relative to the origin on the containing Preview.
     /// </summary>
     public BoxBounds ScreenBounds
     {

@@ -143,19 +143,20 @@ public static class DrawingHelperTests
             // load the fake desktop image
             using var desktopImage = GetPreviewLayoutTests.LoadImageResource(data.DesktopImageFilename);
 
-            var formLayout = LayoutHelper.GetFormLayout(
+            var previewLayout = LayoutHelper.GetPreviewLayout(
                 previewStyle: data.PreviewStyle,
                 displayInfo: data.DisplayInfo,
-                activatedScreen: data.ActivatedScreen,
-                activatedLocation: data.ActivatedLocation);
+                activatedScreen: data.ActivatedScreen);
 
-            var imageCopyServices = formLayout.CanvasLayout.DeviceLayouts
+            var imageCopyServices = previewLayout.CanvasLayout.DeviceLayouts
                 .Select(
                     deviceLayout => (IImageRegionCopyService)new StaticImageRegionCopyService(desktopImage))
                 .ToList();
 
-            // draw the preview image
-            using var actual = await DrawingHelper.RenderPreviewAsync(formLayout.CanvasLayout, data.ActivatedScreen, imageCopyServices);
+            // draw the preview image - the combined (border+background+bezels/screenshots)
+            // render, since the expected golden images were captured against that
+            var hostBoxStyle = LayoutHelper.GetHostBoxStyle(data.PreviewStyle.CanvasStyle);
+            using var actual = await DrawingHelper.RenderCombinedPreviewAsync(previewLayout, hostBoxStyle, data.ActivatedScreen, imageCopyServices);
 
             var currentDirectory = Environment.CurrentDirectory;
 

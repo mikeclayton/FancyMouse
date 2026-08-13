@@ -1,11 +1,16 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Styles;
 
-namespace FancyMouse.Models.ViewModel;
+namespace FancyMouse.Models.Layout;
 
-public sealed class CanvasViewModel
+/// <summary>
+/// The layout of the canvas that <see cref="PreviewLayout"/> displays - the background fill and
+/// the device/screen grid. Deliberately excludes the outer border - that's the hosting
+/// window's responsibility, not the preview's (see <see cref="PreviewLayout"/> remarks).
+/// </summary>
+public sealed class CanvasLayout
 {
     public sealed class Builder
     {
@@ -17,7 +22,7 @@ public sealed class CanvasViewModel
 
         /// <summary>
         /// Gets or sets the layout bounds for the canvas.
-        /// Coordinates are relative to the origin on the containing Form.
+        /// Coordinates are relative to the origin on the containing Preview.
         /// </summary>
         public BoxBounds? CanvasBounds
         {
@@ -31,15 +36,15 @@ public sealed class CanvasViewModel
             set;
         }
 
-        public List<DeviceViewModel.Builder>? DeviceLayouts
+        public List<DeviceLayout.Builder>? DeviceLayouts
         {
             get;
             set;
         }
 
-        public CanvasViewModel Build()
+        public CanvasLayout Build()
         {
-            return new CanvasViewModel(
+            return new CanvasLayout(
                 canvasBounds: this.CanvasBounds ?? throw new InvalidOperationException($"{nameof(this.CanvasBounds)} must be initialized before calling {nameof(this.Build)}."),
                 canvasStyle: this.CanvasStyle ?? throw new InvalidOperationException($"{nameof(this.CanvasStyle)} must be initialized before calling {nameof(this.Build)}."),
                 deviceLayouts: (this.DeviceLayouts ?? throw new InvalidOperationException($"{nameof(this.DeviceLayouts)} must be initialized before calling {nameof(this.Build)}."))
@@ -47,10 +52,10 @@ public sealed class CanvasViewModel
         }
     }
 
-    public CanvasViewModel(
+    public CanvasLayout(
         BoxBounds canvasBounds,
         BoxStyle canvasStyle,
-        IEnumerable<DeviceViewModel> deviceLayouts)
+        IEnumerable<DeviceLayout> deviceLayouts)
     {
         this.CanvasBounds = canvasBounds ?? throw new ArgumentNullException(nameof(canvasBounds));
         this.CanvasStyle = canvasStyle ?? throw new ArgumentNullException(nameof(canvasStyle));
@@ -61,7 +66,7 @@ public sealed class CanvasViewModel
 
     /// <summary>
     /// Gets the layout bounds for the canvas.
-    /// Coordinates are relative to the origin on the containing Form.
+    /// Coordinates are relative to the origin on the containing Preview.
     /// </summary>
     public BoxBounds CanvasBounds
     {
@@ -73,7 +78,7 @@ public sealed class CanvasViewModel
         get;
     }
 
-    public ReadOnlyCollection<DeviceViewModel> DeviceLayouts
+    public ReadOnlyCollection<DeviceLayout> DeviceLayouts
     {
         get;
     }

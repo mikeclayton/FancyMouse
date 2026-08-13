@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
@@ -6,15 +6,20 @@ using System.Drawing.Imaging;
 using FancyMouse.Common.Imaging;
 using FancyMouse.Models.Display;
 using FancyMouse.Models.Drawing;
+using FancyMouse.Models.Layout;
 using FancyMouse.Models.Styles;
-using FancyMouse.Models.ViewModel;
 
 namespace FancyMouse.Common.Helpers;
 
 public static class DrawingHelper
 {
     /// <summary>
-    /// Renders a preview image of the specified canvas layout.
+    /// Renders the device/screen bezels and screenshots for the specified canvas layout -
+    /// deliberately excludes the background fill and the outer border, which are rendered
+    /// separately (see <see cref="RenderBackground"/>/<see cref="RenderBorder"/>) since a
+    /// hosting window may layer them independently (e.g. a WinUI3 host renders its own
+    /// border, and rendering the background as its own image lets it stay cached/reused
+    /// independently of the screenshots later).
     /// </summary>
     /// <param name="canvasLayout">
     /// The layout of the canvas, including the layout of all devices and screens.
@@ -32,10 +37,10 @@ public static class DrawingHelper
     /// A callback that is invoked when the preview image is updated.
     /// </param>
     /// <returns>
-    /// A preview image of the canvas layout.
+    /// An image of the bezels and screenshots for the canvas layout.
     /// </returns>
     public static async Task<Bitmap> RenderPreviewAsync(
-        CanvasViewModel canvasLayout,
+        CanvasLayout canvasLayout,
         ScreenInfo activatedScreen,
         List<IImageRegionCopyService> imageRegionCopyServices,
         Func<Bitmap, Task>? previewImageCreatedCallback = null,
@@ -52,13 +57,6 @@ public static class DrawingHelper
         {
             await previewImageCreatedCallback(previewImage);
         }
-
-        DrawingHelper.DrawRaisedBorder(previewGraphics, canvasLayout.CanvasBounds, canvasLayout.CanvasStyle);
-        DrawingHelper.DrawBackgroundFill(
-            previewGraphics,
-            canvasLayout.CanvasStyle,
-            canvasLayout.CanvasBounds,
-            []);
 
         // sort the source and target screen areas into the order we want to
         // draw them, putting the activated screen first (we need to capture
@@ -133,15 +131,127 @@ public static class DrawingHelper
         return previewImage;
     }
 
-    // Hardcoded 3-D lighting config shared by all bezels.
-    // Values are compile-time constants; BezelConfig exists so the rendering
-    // methods are parameterised and ready to accept per-bezel variation later.
-    private static readonly Drawing.RoundedBezels.BezelConfig RoundedBezelConfig = new(
-        fadeStart: 30.0,            // degrees from edge where corner rolloff begins
-        fadeEnd: 60.0,              // degrees where rolloff reaches zero
-        highlightMax: 0x44 / 255.0, // peak highlight opacity (~26.7 %)
-        shadowMax: 0x44 / 255.0,     // peak shadow   opacity (~26.7 %)
-        edgeFadeFraction: 0.75f);  // fraction of edge length with secondary effect
+    /// <summary>
+    /// Renders the gradient-filled background for the specified canvas layout, as its own
+    /// transparent-elsewhere image sized to <paramref name="canvasLayout"/>'s own outer
+    /// bounds - a hosting window layers this beneath <see cref="RenderPreviewAsync"/>'s
+    /// output (and, separately, its own border image) rather than having it baked into a
+    /// single flattened bitmap.
+    /// </summary>
+    public static Bitmap RenderBackground(CanvasLayout canvasLayout)
+    {
+        var bounds = canvasLayout.CanvasBounds.OuterBounds.ToRectangle();
+        var image = new Bitmap(bounds.Width, bounds.Height, PixelFormat.Format32bppPArgb);
+        using var graphics = Graphics.FromImage(image);
+        graphics.Clear(Color.Transparent);
+        DrawingHelper.DrawBackgroundFill(
+            graphics,
+            canvasLayout.CanvasStyle,
+            canvasLayout.CanvasBounds,
+            []);
+        return image;
+    }
+
+    /// <summary>
+    /// Renders a raised border ring for the specified box, as its own transparent-elsewhere
+    /// image sized to <paramref name="hostBounds"/>'s outer bounds - used by a hosting
+    /// window to render its own border independently of whatever it's hosting (see
+    /// <see cref="LayoutHelper.GetHostBoxStyle"/>/<see cref="LayoutHelper.GetHostBounds"/>).
+    /// </summary>
+    /// <remarks>
+    /// <paramref name="hostBounds"/> must be zero-based (<c>OuterBounds.Location == (0,0)</c>)
+    /// - its rectangles are used directly as pixel coordinates into the bitmap this
+    /// allocates, which is sized to exactly fit it. Callers deriving a host box by enlarging
+    /// a zero-based content box (<see cref="LayoutHelper.GetHostBounds"/>) need to
+    /// re-anchor it first - e.g. <c>hostBounds.MoveTo(new PointInfo(0, 0))</c> - since
+    /// enlarging outward shifts the origin negative.
+    /// </remarks>
+    public static Bitmap RenderBorder(BoxBounds hostBounds, BoxStyle hostStyle)
+    {
+        var bounds = hostBounds.OuterBounds.ToRectangle();
+        var image = new Bitmap(bounds.Width, bounds.Height, PixelFormat.Format32bppPArgb);
+        using var graphics = Graphics.FromImage(image);
+        graphics.Clear(Color.Transparent);
+        DrawingHelper.DrawRaisedBorder(graphics, hostBounds, hostStyle);
+        return image;
+    }
+
+    /// <summary>
+    /// Renders the border, background, and bezels/screenshots for a <see cref="PreviewLayout"/>
+    /// into a single flattened image - the pre-split rendering behavior, kept for hosts (the
+    /// legacy WinForms app) that display the preview as one image rather than layering the
+    /// three pieces independently.
+    /// </summary>
+    public static async Task<Bitmap> RenderCombinedPreviewAsync(
+        PreviewLayout previewLayout,
+        BoxStyle hostBoxStyle,
+        ScreenInfo activatedScreen,
+        List<IImageRegionCopyService> imageRegionCopyServices,
+        Func<Bitmap, Task>? previewImageCreatedCallback = null,
+        Func<Bitmap, Task>? previewImageUpdatedCallback = null)
+    {
+        var canvasLayout = previewLayout.CanvasLayout;
+        var hostBounds = LayoutHelper.GetHostBounds(canvasLayout.CanvasBounds.OuterBounds, hostBoxStyle)
+            .MoveTo(new PointInfo(0, 0));
+
+        // hostBounds.OuterBounds is now (0,0)-based, so hostBounds.ContentBounds.Location is
+        // exactly the margin+border offset to draw the (also zero-based) canvas-relative
+        // background/screenshots images at, within the host-sized combined bitmap.
+        var offsetX = (int)hostBounds.ContentBounds.X;
+        var offsetY = (int)hostBounds.ContentBounds.Y;
+
+        using var borderImage = DrawingHelper.RenderBorder(hostBounds, hostBoxStyle);
+        using var backgroundImage = DrawingHelper.RenderBackground(canvasLayout);
+
+        var combinedBounds = hostBounds.OuterBounds.ToRectangle();
+        var combinedImage = new Bitmap(combinedBounds.Width, combinedBounds.Height, PixelFormat.Format32bppPArgb);
+
+        // KNOWN ISSUE - spam-activating the host (e.g. mashing the hotkey) can start a new
+        // ShowPreviewAsync() call while a previous one is still rendering. Nothing here
+        // serializes/cancels overlapping calls, and each caller's own ClearPreview()-style
+        // cleanup disposes whatever Bitmap is currently on display - which can be *this*
+        // combinedImage, still owned by an earlier, still-in-flight call to this method.
+        // Graphics.FromImage(combinedImage) below then throws ArgumentException ("Parameter
+        // is not valid") because the underlying GDI+ handle is already gone.
+        // Deferred rather than patched here: this whole progressive-callback/shared-bitmap
+        // design is expected to be replaced by the "stage 2" per-screen capture pipeline
+        // (see the FancyMouse.WinUI3 PreviewWindow/PreviewPane split), at which point this
+        // shared-mutable-Bitmap shape goes away anyway - any interim locking/cancellation
+        // fix here would just be thrown away with it.
+        void Compose(Bitmap screenshotsImage)
+        {
+            using var combinedGraphics = Graphics.FromImage(combinedImage);
+            combinedGraphics.Clear(Color.Transparent);
+            combinedGraphics.DrawImageUnscaled(borderImage, 0, 0);
+            combinedGraphics.DrawImageUnscaled(backgroundImage, offsetX, offsetY);
+            combinedGraphics.DrawImageUnscaled(screenshotsImage, offsetX, offsetY);
+        }
+
+        using var screenshotsImage = await DrawingHelper.RenderPreviewAsync(
+            canvasLayout,
+            activatedScreen,
+            imageRegionCopyServices,
+            previewImageCreatedCallback: async screenshots =>
+            {
+                Compose(screenshots);
+                if (previewImageCreatedCallback != null)
+                {
+                    await previewImageCreatedCallback(combinedImage);
+                }
+            },
+            previewImageUpdatedCallback: async screenshots =>
+            {
+                Compose(screenshots);
+                if (previewImageUpdatedCallback != null)
+                {
+                    await previewImageUpdatedCallback(combinedImage);
+                }
+            }).ConfigureAwait(false);
+
+        Compose(screenshotsImage);
+
+        return combinedImage;
+    }
 
     // Hardcoded 3-D lighting config shared by all bezels.
     // Values are compile-time constants; BezelConfig exists so the rendering
@@ -171,22 +281,12 @@ public static class DrawingHelper
             return;
         }
 
-        if (string.Empty.Length == 1)
-        {
-            // draw a rounded bezel
-            var bounds = boxBounds.BorderBounds.ToRectangle();
-            using var renderer = new Drawing.RoundedBezels.BezelRenderer(borderStyle, DrawingHelper.RoundedBezelConfig);
-            renderer.DrawBezel(graphics, bounds.X, bounds.Y, bounds.Width, bounds.Height);
-        }
-        else
-        {
-            // draw a contoured bezel
-            var bounds = boxBounds.BorderBounds.ToRectangle();
-            using var renderer = new Drawing.ContouredBezels.BezelRenderer(
-                borderStyle,
-                DrawingHelper.ContouredBezelConfig);
-            renderer.DrawBezel(graphics, bounds.X, bounds.Y, bounds.Width, bounds.Height);
-        }
+        // draw a contoured bezel
+        var bounds = boxBounds.BorderBounds.ToRectangle();
+        using var renderer = new Drawing.ContouredBezels.BezelRenderer(
+            borderStyle,
+            DrawingHelper.ContouredBezelConfig);
+        renderer.DrawBezel(graphics, bounds.X, bounds.Y, bounds.Width, bounds.Height);
     }
 
     /// <summary>

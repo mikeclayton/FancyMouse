@@ -1,10 +1,10 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Drawing;
 
 using FancyMouse.Models.Display;
 using FancyMouse.Models.Drawing;
+using FancyMouse.Models.Layout;
 using FancyMouse.Models.Styles;
-using FancyMouse.Models.ViewModel;
 
 namespace FancyMouse.Common.Helpers;
 
@@ -17,20 +17,19 @@ public static class LayoutHelper
             (combined, screenBounds) => combined.Union(screenBounds));
     }
 
-    public static FormViewModel GetFormLayout(
-        PreviewStyle previewStyle, DisplayInfo displayInfo, ScreenInfo activatedScreen, PointInfo activatedLocation)
+    public static PreviewLayout GetPreviewLayout(
+        PreviewStyle previewStyle, DisplayInfo displayInfo, ScreenInfo activatedScreen)
     {
         ArgumentNullException.ThrowIfNull(previewStyle);
         ArgumentNullException.ThrowIfNull(displayInfo);
         ArgumentNullException.ThrowIfNull(activatedScreen);
-        ArgumentNullException.ThrowIfNull(activatedLocation);
 
         /*
 
            example layout:
 
-           +-------------------------------[form]------------------------------+
-           |▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒[canvas]▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒|
+           +-------------------------------[host]-------------------------------+
+           |▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒[preview]▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒|
            |▒▒+----------------------------[grid]----+----------------------+▒▒|
            |▒▒|                                      |▓▓▓▓▓▓[device 2]▓▓▓▓▓▓|▒▒|
            |▒▒|                                      |▓▓░░░░[screen 1]░░░░▓▓|▒▒|
@@ -53,7 +52,7 @@ public static class LayoutHelper
            |▒▒|        ▓▓░░░░░░░░░░░░░░░░░░▓▓        |   ▓▓░░        ░░▓▓   |▒▒|
            |▒▒|        ▓▓░░░░[screen 2]░░░░▓▓        |   ▓▓░░        ░░▓▓   |▒▒|
            |▒▒|        ▓▓░░              ░░▓▓        |   ▓▓░░░░░░░░░░░░▓▓   |▒▒|
-           |▒▒|        ▓▓░░              ░░▓▓        |   ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓   |▒▒|
+           |▒▒|        ▓▓░░░░░░░░░░░░░░░░░░▓▓        |   ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓   |▒▒|
            |▒▒|        ▓▓░░              ░░▓▓        |                      |▒▒|
            |▒▒|        ▓▓░░░░░░░░░░░░░░░░░░▓▓        |                      |▒▒|
            |▒▒|        ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓        |                      |▒▒|
@@ -61,20 +60,97 @@ public static class LayoutHelper
            |▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒|
            +-------------------------------------------------------------------+
 
+           the "host" box (margin/border only) is a hosting window's own
+           concern - see GetHostBoxStyle/GetHostBounds - everything from
+           "preview" inward is what this method actually returns.
+
         */
 
-        // arrange the form, canvas, devices and screens
-        var formLayout = LayoutHelper.CreateInitialFormLayout(previewStyle, displayInfo, activatedScreen);
-        LayoutHelper.ArrangeAndScaleDeviceLayouts(formLayout);
-        LayoutHelper.ArrangeAndScaleScreenLayouts(formLayout);
-        LayoutHelper.ArrangeAndResizeCanvasLayout(formLayout);
-        LayoutHelper.ArrangeAndResizeFormLayout(formLayout, activatedScreen, activatedLocation);
+        var hostBoxStyle = LayoutHelper.GetHostBoxStyle(previewStyle.CanvasStyle);
+        var previewBoxStyle = LayoutHelper.GetPreviewBoxStyle(previewStyle.CanvasStyle);
 
-        return formLayout.Build();
+        // arrange the preview, canvas, devices and screens
+        var previewLayout = LayoutHelper.CreateInitialPreviewLayout(previewStyle, previewBoxStyle, hostBoxStyle, displayInfo, activatedScreen);
+        LayoutHelper.ArrangeAndScaleDeviceLayouts(previewLayout);
+        LayoutHelper.ArrangeAndScaleScreenLayouts(previewLayout);
+        LayoutHelper.ArrangeAndResizeCanvasLayout(previewLayout);
+        previewLayout.PreviewSize = previewLayout.CanvasLayout?.CanvasBounds?.OuterBounds.Size
+            ?? throw new InvalidOperationException();
+
+        return previewLayout.Build();
     }
 
-    internal static FormViewModel.Builder CreateInitialFormLayout(
-        PreviewStyle previewStyle, DisplayInfo displayInfo, ScreenInfo activatedScreen)
+    /// <summary>
+    /// Positions an arbitrary rectangle (typically a hosting window's own outer bounds, from
+    /// wrapping a <see cref="PreviewLayout.PreviewSize"/> in <see cref="GetHostBoxStyle"/>) on
+    /// the desktop - centered on the activated location, clamped to stay fully within the
+    /// activated screen. <see cref="PreviewLayout"/> itself deliberately knows nothing about
+    /// desktop position - this is entirely a hosting window's own concern.
+    /// </summary>
+    public static RectangleInfo PositionOnScreen(RectangleInfo bounds, ScreenInfo activatedScreen, PointInfo activatedLocation)
+    {
+        ArgumentNullException.ThrowIfNull(bounds);
+        ArgumentNullException.ThrowIfNull(activatedScreen);
+        ArgumentNullException.ThrowIfNull(activatedLocation);
+        return bounds
+            .Center(activatedLocation)
+            .MoveInside(activatedScreen.DisplayArea);
+    }
+
+    /// <summary>
+    /// Derives the box style a hosting window uses to wrap a <see cref="PreviewLayout"/> -
+    /// margin and border only (the actual rendered border ring around the preview), with
+    /// zero padding since there's no gap between the border's inner edge and the preview
+    /// pane's own content - the preview pane's background fills right up to its own edge.
+    /// </summary>
+    public static BoxStyle GetHostBoxStyle(BoxStyle canvasStyle)
+    {
+        ArgumentNullException.ThrowIfNull(canvasStyle);
+        return new BoxStyle(
+            marginStyle: canvasStyle.MarginStyle,
+            borderStyle: canvasStyle.BorderStyle,
+            paddingStyle: PaddingStyle.Empty,
+            backgroundStyle: BackgroundStyle.Empty);
+    }
+
+    /// <summary>
+    /// Derives the box style a <see cref="PreviewLayout"/> uses for its own content - zero
+    /// margin and border (both are now the hosting window's job, see
+    /// <see cref="GetHostBoxStyle"/>) and the padding/background the preview pane renders
+    /// itself, inset from its own bounds.
+    /// </summary>
+    public static BoxStyle GetPreviewBoxStyle(BoxStyle canvasStyle)
+    {
+        ArgumentNullException.ThrowIfNull(canvasStyle);
+        return new BoxStyle(
+            marginStyle: MarginStyle.Empty,
+            borderStyle: BorderStyle.Empty,
+            paddingStyle: canvasStyle.PaddingStyle,
+            backgroundStyle: canvasStyle.BackgroundStyle);
+    }
+
+    /// <summary>
+    /// Computes a hosting window's own wrapping box - margin, border, and a content box that
+    /// exactly matches <paramref name="previewBounds"/> - both zero-based, since
+    /// <see cref="PreviewLayout"/> (and everything nested under it) has no notion of desktop
+    /// position, only size (see <see cref="PreviewLayout.PreviewSize"/>). A hosting window
+    /// uses this both to work out its own on-screen footprint size (typically passing
+    /// <c>new RectangleInfo(previewLayout.PreviewSize)</c>, then positioning the result with
+    /// <see cref="PositionOnScreen"/>) and to work out where to render the border image
+    /// (passing <see cref="CanvasLayout.CanvasBounds"/>'s <c>OuterBounds</c> instead, since
+    /// that's also zero-based and rendering happens into a bitmap of its own).
+    /// </summary>
+    public static BoxBounds GetHostBounds(RectangleInfo previewBounds, BoxStyle hostBoxStyle)
+    {
+        ArgumentNullException.ThrowIfNull(previewBounds);
+        ArgumentNullException.ThrowIfNull(hostBoxStyle);
+        return BoxBounds.CreateFromContentBounds(
+            contentBounds: previewBounds,
+            boxStyle: hostBoxStyle);
+    }
+
+    internal static PreviewLayout.Builder CreateInitialPreviewLayout(
+        PreviewStyle previewStyle, BoxStyle previewBoxStyle, BoxStyle hostBoxStyle, DisplayInfo displayInfo, ScreenInfo activatedScreen)
     {
         ArgumentNullException.ThrowIfNull(previewStyle);
         ArgumentNullException.ThrowIfNull(displayInfo);
@@ -85,47 +161,42 @@ public static class LayoutHelper
             throw new ArgumentException("Value must contain at least one device.", nameof(displayInfo));
         }
 
-        /*
-        // check each device has at least one screen.
-        for (var deviceIndex = 0; deviceIndex < displayInfo.Devices.Count; deviceIndex++)
-        {
-            var device = displayInfo.Devices[deviceIndex];
-            if (device.Screens.Count == 0)
-            {
-                throw new ArgumentException($"{nameof(displayInfo)}.{nameof(displayInfo.Devices)}[{deviceIndex}] must contain at least one screen.", nameof(displayInfo));
-            }
-        }
-        */
-
-        // work out the maximum allowed size of the preview form:
+        // work out the maximum allowed size of the *host's* outer footprint:
         // * can't be bigger than the activated screen
         // * can't be bigger than the configured canvas size
-        var formMaxBounds = new RectangleInfo(
-            previewStyle.CanvasSize
-                .Clamp(activatedScreen.DisplayArea.Size));
+        var hostMaxSize = previewStyle.CanvasSize
+            .Clamp(activatedScreen.DisplayArea.Size);
+
+        // the preview pane's own maximum size is whatever's left of that footprint once the
+        // host's margin/border allowance has been subtracted from it - pure size arithmetic,
+        // since PreviewLayout deliberately has no position, only a size (see PreviewLayout).
+        var previewMaxSize = hostMaxSize
+            .Shrink(hostBoxStyle.MarginStyle)
+            .Shrink(hostBoxStyle.BorderStyle);
+        var previewMaxBounds = new RectangleInfo(previewMaxSize);
 
         var screenStyles = LayoutHelper.GetDeviceScreenStyles(previewStyle, displayInfo.Devices.Count).ToList();
 
-        // create an initial form layout.
+        // create an initial preview layout.
         // this is a nested structure of mutable "builder" objects that can be used to
         // build the final immutable layout objects once all the bounds have been calculated
-        var formLayout = new FormViewModel.Builder
+        var previewLayout = new PreviewLayout.Builder
         {
-            FormBounds = RectangleInfo.Empty,
+            PreviewSize = SizeInfo.Empty,
             CanvasLayout = new()
             {
                 CanvasBounds = BoxBounds.CreateFromOuterBounds(
-                    outerBounds: formMaxBounds,
-                    boxStyle: previewStyle.CanvasStyle),
-                CanvasStyle = previewStyle.CanvasStyle,
+                    outerBounds: previewMaxBounds,
+                    boxStyle: previewBoxStyle),
+                CanvasStyle = previewBoxStyle,
                 DeviceLayouts = displayInfo.Devices.Select(
-                    (deviceInfo, deviceIndex) => new DeviceViewModel.Builder
+                    (deviceInfo, deviceIndex) => new DeviceLayout.Builder
                     {
                         DeviceInfo = deviceInfo,
                         DeviceBounds = BoxBounds.Empty,
                         DeviceStyle = BoxStyle.Empty,
                         ScreenLayouts = deviceInfo.Screens.Select(
-                            screenInfo => new ScreenViewModel.Builder
+                            screenInfo => new ScreenLayout.Builder
                             {
                                 ScreenInfo = screenInfo,
                                 ScreenBounds = BoxBounds.Empty,
@@ -135,7 +206,7 @@ public static class LayoutHelper
             },
         };
 
-        return formLayout;
+        return previewLayout;
     }
 
     internal static IEnumerable<BoxStyle> GetDeviceScreenStyles(PreviewStyle previewStyle, int screenCount)
@@ -173,11 +244,11 @@ public static class LayoutHelper
     /// <summary>
     /// Arranges the device layouts into a non-overlapping grid and scales them to fit inside the specified content bounds.
     /// </summary>
-    internal static void ArrangeAndScaleDeviceLayouts(FormViewModel.Builder formLayout)
+    internal static void ArrangeAndScaleDeviceLayouts(PreviewLayout.Builder previewLayout)
     {
-        var deviceLayouts = formLayout.CanvasLayout?.DeviceLayouts
+        var deviceLayouts = previewLayout.CanvasLayout?.DeviceLayouts
             ?? throw new InvalidOperationException();
-        var contentBounds = formLayout.CanvasLayout.CanvasBounds?.ContentBounds
+        var contentBounds = previewLayout.CanvasLayout.CanvasBounds?.ContentBounds
             ?? throw new InvalidOperationException();
 
         // build an initial grid of devices at 100% scale. the grid is currently a single row
@@ -186,7 +257,7 @@ public static class LayoutHelper
         // Mouse Without Borders "square" arrangement.
         var gridRowCount = 1;
         var gridColumnCount = deviceLayouts.Count;
-        var deviceGrid = new DeviceViewModel.Builder[gridRowCount, gridColumnCount];
+        var deviceGrid = new DeviceLayout.Builder[gridRowCount, gridColumnCount];
         for (var columnIndex = 0; columnIndex < gridColumnCount; columnIndex++)
         {
             deviceGrid[0, columnIndex] = deviceLayouts[columnIndex];
@@ -315,9 +386,9 @@ public static class LayoutHelper
     /// Arranges the screen layouts inside their respective device cells and
     /// scales them to fit inside their parent device layouts.
     /// </summary>
-    internal static void ArrangeAndScaleScreenLayouts(FormViewModel.Builder formLayout)
+    internal static void ArrangeAndScaleScreenLayouts(PreviewLayout.Builder previewLayout)
     {
-        var deviceLayouts = formLayout.CanvasLayout?.DeviceLayouts
+        var deviceLayouts = previewLayout.CanvasLayout?.DeviceLayouts
             ?? throw new InvalidOperationException();
 
         foreach (var deviceLayout in deviceLayouts)
@@ -363,9 +434,9 @@ public static class LayoutHelper
         }
     }
 
-    internal static void ArrangeAndResizeCanvasLayout(FormViewModel.Builder formLayout)
+    internal static void ArrangeAndResizeCanvasLayout(PreviewLayout.Builder previewLayout)
     {
-        var canvasLayout = formLayout.CanvasLayout ?? throw new InvalidOperationException();
+        var canvasLayout = previewLayout.CanvasLayout ?? throw new InvalidOperationException();
 
         // work out how big the canvas needs to be in order to contain the device layouts
         var canvasContentBounds = RectangleInfo.Union(
@@ -373,7 +444,7 @@ public static class LayoutHelper
                 .Select(deviceLayout => deviceLayout.DeviceBounds.OuterBounds));
         var canvasOuterBounds = BoxBounds.CreateFromContentBounds(
             contentBounds: canvasContentBounds,
-            boxStyle: formLayout.CanvasLayout.CanvasStyle);
+            boxStyle: canvasLayout.CanvasStyle);
 
         // move the canvas into position
         var positionedOuterBounds = canvasOuterBounds.OuterBounds.MoveTo(
@@ -382,17 +453,6 @@ public static class LayoutHelper
 
         canvasLayout.CanvasBounds = BoxBounds.CreateFromOuterBounds(
             outerBounds: positionedOuterBounds,
-            boxStyle: formLayout.CanvasLayout.CanvasStyle);
-    }
-
-    internal static void ArrangeAndResizeFormLayout(FormViewModel.Builder formLayout, ScreenInfo activatedScreen, PointInfo activatedLocation)
-    {
-        var canvasOuterBounds = formLayout.CanvasLayout?.CanvasBounds?.OuterBounds
-            ?? throw new InvalidOperationException();
-
-        // resize and center the form on the activated location
-        formLayout.FormBounds = canvasOuterBounds
-            .Center(activatedLocation)
-            .MoveInside(activatedScreen.DisplayArea);
+            boxStyle: canvasLayout.CanvasStyle);
     }
 }

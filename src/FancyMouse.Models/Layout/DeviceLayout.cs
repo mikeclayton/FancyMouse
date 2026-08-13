@@ -1,12 +1,12 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 
 using FancyMouse.Models.Display;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Styles;
 
-namespace FancyMouse.Models.ViewModel;
+namespace FancyMouse.Models.Layout;
 
-public sealed class DeviceViewModel
+public sealed class DeviceLayout
 {
     public sealed class Builder
     {
@@ -25,7 +25,7 @@ public sealed class DeviceViewModel
 
         /// <summary>
         /// Gets or sets the layout bounds for the device.
-        /// Coordinates are relative to the origin on the containing Form.
+        /// Coordinates are relative to the origin on the containing Preview.
         /// </summary>
         public BoxBounds DeviceBounds
         {
@@ -39,15 +39,15 @@ public sealed class DeviceViewModel
             set;
         }
 
-        public List<ScreenViewModel.Builder>? ScreenLayouts
+        public List<ScreenLayout.Builder>? ScreenLayouts
         {
             get;
             set;
         }
 
-        public DeviceViewModel Build()
+        public DeviceLayout Build()
         {
-            return new DeviceViewModel(
+            return new DeviceLayout(
                 deviceInfo: this.DeviceInfo ?? throw new InvalidOperationException($"{nameof(this.DeviceInfo)} must be initialized before calling {nameof(this.Build)}."),
                 deviceBounds: this.DeviceBounds ?? throw new InvalidOperationException($"{nameof(this.DeviceBounds)} must be initialized before calling {nameof(this.Build)}."),
                 deviceStyle: this.DeviceStyle ?? throw new InvalidOperationException($"{nameof(this.DeviceStyle)} must be initialized before calling {nameof(this.Build)}."),
@@ -56,11 +56,11 @@ public sealed class DeviceViewModel
         }
     }
 
-    public DeviceViewModel(
+    public DeviceLayout(
         DeviceInfo deviceInfo,
         BoxBounds deviceBounds,
         BoxStyle deviceStyle,
-        IEnumerable<ScreenViewModel> screenLayouts)
+        IEnumerable<ScreenLayout> screenLayouts)
     {
         this.DeviceInfo = deviceInfo ?? throw new ArgumentNullException(nameof(deviceInfo));
         this.DeviceBounds = deviceBounds ?? throw new ArgumentNullException(nameof(deviceBounds));
@@ -77,7 +77,7 @@ public sealed class DeviceViewModel
 
     /// <summary>
     /// Gets the layout bounds for the device.
-    /// Coordinates are relative to the origin on the containing Form.
+    /// Coordinates are relative to the origin on the containing Preview.
     /// </summary>
     public BoxBounds DeviceBounds
     {
@@ -89,7 +89,7 @@ public sealed class DeviceViewModel
         get;
     }
 
-    public ReadOnlyCollection<ScreenViewModel> ScreenLayouts
+    public ReadOnlyCollection<ScreenLayout> ScreenLayouts
     {
         get;
     }

@@ -6,11 +6,11 @@ using FancyMouse.Common.Helpers;
 using FancyMouse.Common.Imaging;
 using FancyMouse.Models.Display;
 using FancyMouse.Models.Drawing;
-using FancyMouse.Models.ViewModel;
+using FancyMouse.Models.Layout;
+using FancyMouse.Models.Styles;
 using FancyMouse.WinUI3.Internal.Helpers;
 using FancyMouse.WinUI3.Win32Gen;
 
-using Microsoft.UI.Input;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Input;
@@ -41,12 +41,6 @@ public sealed partial class PreviewWindow : Window
     private NLog.ILogger Logger
     {
         get;
-    }
-
-    private FormViewModel? FormLayout
-    {
-        get;
-        set;
     }
 
     /// <summary>
@@ -86,9 +80,9 @@ public sealed partial class PreviewWindow : Window
         }
 
         this.Activated += this.PreviewWindow_Activated;
-        this.StackPanel.PreviewKeyDown += this.PreviewWindow_PreviewKeyDown;
-        this.PreviewImage.PreviewKeyDown += this.PreviewWindow_PreviewKeyDown;
-        this.PreviewImage.PointerPressed += this.PreviewImage_PointerPressed;
+        this.RootGrid.PreviewKeyDown += this.PreviewWindow_PreviewKeyDown;
+        this.PreviewPane.PreviewKeyDown += this.PreviewWindow_PreviewKeyDown;
+        this.PreviewPane.ScreenshotClicked += this.PreviewPane_ScreenshotClicked;
     }
 
     private void PreviewWindow_Activated(object sender, WindowActivatedEventArgs e)
@@ -96,7 +90,7 @@ public sealed partial class PreviewWindow : Window
         switch (e.WindowActivationState)
         {
             case WindowActivationState.CodeActivated:
-                this.PreviewImage.Focus(FocusState.Programmatic);
+                this.PreviewPane.Focus(FocusState.Programmatic);
                 break;
             case WindowActivationState.Deactivated:
                 this.HideWindow();
@@ -180,86 +174,18 @@ public sealed partial class PreviewWindow : Window
         }
     }
 
-    private void PreviewImage_PointerPressed(object sender, PointerRoutedEventArgs e)
+    private void PreviewPane_ScreenshotClicked(object? sender, ScreenshotClickedEventArgs e)
     {
         var logger = this.Logger;
 
         logger.Info(string.Join(
             '\n',
             "-----------",
-            nameof(PreviewWindow.PreviewImage_PointerPressed),
-            "-----------"));
+            nameof(PreviewWindow.PreviewPane_ScreenshotClicked),
+            "-----------",
+            $"clicked location = {e.Location}"));
 
-        if (!e.Pointer.PointerDeviceType.Equals(PointerDeviceType.Mouse))
-        {
-            // not a mouse click
-            return;
-        }
-
-        var pointerPoint = e.GetCurrentPoint((UIElement)sender);
-        logger.Info(string.Join(
-            '\n',
-            "Reporting mouse event args",
-            $"\tleft button = {pointerPoint.Properties.IsLeftButtonPressed}",
-            $"\right button = {pointerPoint.Properties.IsRightButtonPressed}",
-            $"\tlocation = {pointerPoint.Position}"));
-
-        if (pointerPoint.Properties.IsLeftButtonPressed)
-        {
-            if (this.FormLayout is null)
-            {
-                // there's no layout data so we can't work out what screen was clicked
-                throw new InvalidOperationException();
-            }
-
-            // get the *scaled* pointer location
-            var pointerLocation = new PointInfo((decimal)pointerPoint.Position.X, (decimal)pointerPoint.Position.Y);
-
-            // we need to apply the high-dpi scaling ratio for the current monitor to the pointer location
-            var highDpiScalingRatio = this.GetHighDpiScalingRatio();
-            pointerLocation = pointerLocation.Scale(1 / (decimal)highDpiScalingRatio);
-
-            // work out which screenshot was clicked
-            var clickedScreen = this.FormLayout.CanvasLayout.DeviceLayouts
-                .SelectMany(deviceLayout => deviceLayout.ScreenLayouts)
-                .FirstOrDefault(
-                    screenLayout => screenLayout.ScreenBounds.OuterBounds.Contains(pointerLocation));
-            if (clickedScreen is null)
-            {
-                return;
-            }
-
-            // find the device the clicked screenshot belongs to
-            var clickedDevice = this.FormLayout.CanvasLayout.DeviceLayouts
-                .FirstOrDefault(
-                    deviceLayout => deviceLayout.ScreenLayouts.Contains(clickedScreen));
-            if (clickedDevice is null)
-            {
-                return;
-            }
-
-            // scale up the click onto the physical screen - the aspect ratio of the screenshot
-            // might be distorted compared to the physical screen due to the borders around the
-            // screenshot, so we need to work out the target location on the physical screen first
-            var clickedDisplayArea = clickedScreen.ScreenInfo.DisplayArea;
-            var clickedLocation = pointerLocation
-                .Stretch(
-                    source: clickedScreen.ScreenBounds.ContentBounds,
-                    target: clickedDisplayArea)
-                .Clamp(
-                    new(
-                        x: clickedDisplayArea.X + 1,
-                        y: clickedDisplayArea.Y + 1,
-                        width: clickedDisplayArea.Width - 1,
-                        height: clickedDisplayArea.Height - 1
-                    ))
-                .Truncate();
-
-            // move mouse pointer
-            logger.Info($"clicked location = {clickedLocation}");
-            MouseHelper.SetCursorPosition(clickedLocation);
-        }
-
+        MouseHelper.SetCursorPosition(e.Location);
         this.HideWindow();
     }
 
@@ -279,7 +205,7 @@ public sealed partial class PreviewWindow : Window
 
         var stopwatch = Stopwatch.StartNew();
 
-        // capture this first so we get an accurate mouse location
+        // capture this first so we get an accurate current mouse location
         // (in case the user moves it a few pixels while the form is rendered)
         var activatedLocation = MouseHelper.GetCursorPosition();
 
@@ -290,17 +216,27 @@ public sealed partial class PreviewWindow : Window
         var activatedScreen = DeviceHelper.GetActivatedScreen(displayInfo.Devices[0], activatedLocation);
 
         var previewStyle = appSettings.PreviewStyle;
-        var formLayout = LayoutHelper.GetFormLayout(
+        var previewLayout = LayoutHelper.GetPreviewLayout(
             previewStyle,
             displayInfo,
-            activatedScreen: activatedScreen,
-            activatedLocation: activatedLocation);
+            activatedScreen: activatedScreen);
 
-        // remember the layout so we can map the mouse clicks back to
-        // the appropriate device and screen location
-        this.FormLayout = formLayout;
+        // the outer border is this window's own responsibility, not the preview pane's -
+        // see LayoutHelper.GetHostBoxStyle. PreviewLayout itself has no desktop position
+        // (only a size - see PreviewLayout), so positioning the window on the desktop -
+        // centered on the activated location, clamped to the activated screen - is entirely
+        // this window's own job too.
+        var hostBoxStyle = LayoutHelper.GetHostBoxStyle(previewStyle.CanvasStyle);
+        var hostBounds = LayoutHelper.GetHostBounds(new RectangleInfo(previewLayout.PreviewSize), hostBoxStyle);
+        var positionedHostOuterBounds = LayoutHelper.PositionOnScreen(hostBounds.OuterBounds, activatedScreen, activatedLocation);
 
-        await this.PositionWindowAsync(formLayout.FormBounds)
+        await this.PositionWindowAsync(positionedHostOuterBounds)
+            .ConfigureAwait(false);
+
+        await this.RenderBorderAsync(previewLayout, hostBoxStyle)
+            .ConfigureAwait(false);
+
+        await this.SetPreviewPaneLayoutAsync(previewLayout)
             .ConfigureAwait(false);
 
         var imageCopyServices = displayInfo.Devices
@@ -309,11 +245,11 @@ public sealed partial class PreviewWindow : Window
             .ToList();
 
         await DrawingHelper.RenderPreviewAsync(
-                this.FormLayout.CanvasLayout,
+                previewLayout.CanvasLayout,
                 activatedScreen,
                 imageCopyServices,
-                this.OnPreviewImageCreatedAsync,
-                this.OnPreviewImageUpdatedAsync)
+                this.OnScreenshotsImageChangedAsync,
+                this.OnScreenshotsImageChangedAsync)
             .ConfigureAwait(false);
 
         stopwatch.Stop();
@@ -324,12 +260,14 @@ public sealed partial class PreviewWindow : Window
 
     private void ClearPreview()
     {
-        if (this.PreviewImage.Source is null)
+        if ((this.BorderImage.Source is null) && (this.PreviewPane.Layout is null))
         {
             return;
         }
 
-        this.PreviewImage.Source = null;
+        this.BorderImage.Source = null;
+        this.PreviewPane.Layout = null;
+        this.PreviewPane.ScreenshotsImage = null;
 
         // force preview image memory to be released - otherwise
         // all the disposed images can pile up without being GC'ed
@@ -409,7 +347,7 @@ public sealed partial class PreviewWindow : Window
 
                 // we have to activate the window to make sure the deactivate event fires
                 this.Activate();
-                this.PreviewImage.Focus(FocusState.Programmatic);
+                this.PreviewPane.Focus(FocusState.Programmatic);
             }).ConfigureAwait(false);
     }
 
@@ -441,37 +379,65 @@ public sealed partial class PreviewWindow : Window
             }).ConfigureAwait(false);
     }
 
-    private async Task OnPreviewImageCreatedAsync(Bitmap preview)
+    /// <summary>
+    /// Renders this window's own border - see <see cref="LayoutHelper.GetHostBoxStyle"/> -
+    /// and assigns it to <see cref="BorderImage"/>. Unlike <see cref="PreviewPane"/>'s
+    /// content, this is rendered directly by the host rather than the pane, since the border
+    /// is deliberately not one of the pane's concerns.
+    /// </summary>
+    private async Task RenderBorderAsync(PreviewLayout previewLayout, BoxStyle hostBoxStyle)
     {
+        // render against a zero-based host box - a border image is its own bitmap, so its
+        // pixel coordinates need to start at (0,0) regardless of where the (possibly
+        // negative, once enlarged outward from a zero-based content box) host bounds would
+        // otherwise place it.
+        var localHostBounds = LayoutHelper.GetHostBounds(previewLayout.CanvasLayout.CanvasBounds.OuterBounds, hostBoxStyle)
+            .MoveTo(new PointInfo(0, 0));
+
+        using var borderBitmap = DrawingHelper.RenderBorder(localHostBounds, hostBoxStyle);
+
         await this.InvokeOnUiThreadAsync(
             () =>
             {
-                this.ClearPreview();
-
-                // we need to apply the high-dpi scaling ratio for the current monitor to the image control size
                 var highDpiScalingRatio = this.GetHighDpiScalingRatio();
+                this.BorderImage.Width = borderBitmap.Width * highDpiScalingRatio;
+                this.BorderImage.Height = borderBitmap.Height * highDpiScalingRatio;
+                this.BorderImage.Source = PreviewWindow.ToBitmapImage(borderBitmap);
 
-                this.PreviewImage.Width = preview.Width * highDpiScalingRatio;
-                this.PreviewImage.Height = preview.Height * highDpiScalingRatio;
+                // position PreviewPane so it lines up exactly with the transparent hole in
+                // the middle of the border image - the offset is always the host box's own
+                // margin+border thickness, regardless of where localHostBounds itself sits.
+                var offsetX = (localHostBounds.ContentBounds.X - localHostBounds.OuterBounds.X) * (decimal)highDpiScalingRatio;
+                var offsetY = (localHostBounds.ContentBounds.Y - localHostBounds.OuterBounds.Y) * (decimal)highDpiScalingRatio;
+                this.PreviewPane.Margin = new Thickness((double)offsetX, (double)offsetY, 0, 0);
             }).ConfigureAwait(false);
     }
 
-    private async Task OnPreviewImageUpdatedAsync(Bitmap preview)
+    private async Task SetPreviewPaneLayoutAsync(PreviewLayout previewLayout)
     {
         await this.InvokeOnUiThreadAsync(
             () =>
             {
-                this.ClearPreview();
-
-                var bitmapImage = new BitmapImage();
-                using (var stream = new MemoryStream())
-                {
-                    preview.Save(stream, ImageFormat.Png);
-                    stream.Position = 0;
-                    bitmapImage.SetSource(stream.AsRandomAccessStream());
-                }
-
-                this.PreviewImage.Source = bitmapImage;
+                this.PreviewPane.Layout = previewLayout;
             }).ConfigureAwait(false);
+    }
+
+    private async Task OnScreenshotsImageChangedAsync(Bitmap screenshotsImage)
+    {
+        await this.InvokeOnUiThreadAsync(
+            () =>
+            {
+                this.PreviewPane.ScreenshotsImage = screenshotsImage;
+            }).ConfigureAwait(false);
+    }
+
+    private static BitmapImage ToBitmapImage(Bitmap bitmap)
+    {
+        var bitmapImage = new BitmapImage();
+        using var stream = new MemoryStream();
+        bitmap.Save(stream, ImageFormat.Png);
+        stream.Position = 0;
+        bitmapImage.SetSource(stream.AsRandomAccessStream());
+        return bitmapImage;
     }
 }
