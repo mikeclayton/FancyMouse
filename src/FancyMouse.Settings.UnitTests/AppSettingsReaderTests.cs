@@ -240,7 +240,7 @@ public sealed class AppSettingsReaderTests
                             color2: Color.Pink
                         )
                     ),
-                    extraColors: Array.Empty<Color>()));
+                    extraColors: AppSettings.DefaultSettings.PreviewStyle.ExtraColors));
             Assert.AreEqual(
                 JsonSerializer.Serialize(expected),
                 JsonSerializer.Serialize(actual));

@@ -11,6 +11,10 @@ releases
 
 wiki/anim
 
+# ignore the virtual monitor driver binaries - these are used to
+# attach multiple virtual monitors for testing lots of screens
+usbmmidd_v2/**
+
 # ignore the generated source code from the WinRT source generator
 # (some projects have EmitCompilerGeneratedFiles set to true to
 # cache the CsWin32 generated files for committing to source control,

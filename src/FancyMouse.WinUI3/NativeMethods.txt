@@ -5,3 +5,5 @@ SetWindowLong
 
 USER_DEFAULT_SCREEN_DPI
 GetDpiForWindow
+
+SetForegroundWindow

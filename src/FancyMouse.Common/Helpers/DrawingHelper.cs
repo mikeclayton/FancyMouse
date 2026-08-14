@@ -1,147 +1,61 @@
-﻿using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 
-using FancyMouse.Common.Imaging;
-using FancyMouse.Models.Display;
 using FancyMouse.Models.Drawing;
+using FancyMouse.Models.Layout;
 using FancyMouse.Models.Styles;
-using FancyMouse.Models.ViewModel;
 
 namespace FancyMouse.Common.Helpers;
 
 public static class DrawingHelper
 {
     /// <summary>
-    /// Renders a preview image of the specified canvas layout.
+    /// Renders the gradient-filled background for the specified canvas layout, as its own
+    /// transparent-elsewhere image sized to <paramref name="canvasLayout"/>'s own outer
+    /// bounds - a hosting window layers this beneath the per-screen bezels/screenshots (and,
+    /// separately, its own border image) rather than having it baked into a single flattened
+    /// bitmap.
     /// </summary>
-    /// <param name="canvasLayout">
-    /// The layout of the canvas, including the layout of all devices and screens.
-    /// </param>
-    /// <param name="activatedScreen">
-    /// The screen that is currently activated (i.e. the one that the user is interacting with).
-    /// </param>
-    /// <param name="imageRegionCopyServices">
-    /// A list of IImageRegionCopyService implementations, one for each device in the canvas layout.
-    /// </param>
-    /// <param name="previewImageCreatedCallback">
-    /// A callback that is invoked when the preview image is created.
-    /// </param>
-    /// <param name="previewImageUpdatedCallback">
-    /// A callback that is invoked when the preview image is updated.
-    /// </param>
-    /// <returns>
-    /// A preview image of the canvas layout.
-    /// </returns>
-    public static async Task<Bitmap> RenderPreviewAsync(
-        CanvasViewModel canvasLayout,
-        ScreenInfo activatedScreen,
-        List<IImageRegionCopyService> imageRegionCopyServices,
-        Func<Bitmap, Task>? previewImageCreatedCallback = null,
-        Func<Bitmap, Task>? previewImageUpdatedCallback = null)
+    public static Bitmap RenderBackground(CanvasLayout canvasLayout)
     {
-        var stopwatch = Stopwatch.StartNew();
-
-        // initialize the preview image
-        var previewBounds = canvasLayout.CanvasBounds.OuterBounds.ToRectangle();
-        var previewImage = new Bitmap(previewBounds.Width, previewBounds.Height, PixelFormat.Format32bppPArgb);
-        var previewGraphics = Graphics.FromImage(previewImage);
-        previewGraphics.Clear(Color.Transparent);
-        if (previewImageCreatedCallback != null)
-        {
-            await previewImageCreatedCallback(previewImage);
-        }
-
-        DrawingHelper.DrawRaisedBorder(previewGraphics, canvasLayout.CanvasBounds, canvasLayout.CanvasStyle);
+        var bounds = canvasLayout.CanvasBounds.OuterBounds.ToRectangle();
+        var image = new Bitmap(bounds.Width, bounds.Height, PixelFormat.Format32bppPArgb);
+        using var graphics = Graphics.FromImage(image);
+        graphics.Clear(Color.Transparent);
         DrawingHelper.DrawBackgroundFill(
-            previewGraphics,
+            graphics,
             canvasLayout.CanvasStyle,
             canvasLayout.CanvasBounds,
             []);
-
-        // sort the source and target screen areas into the order we want to
-        // draw them, putting the activated screen first (we need to capture
-        // and draw the activated screen before we show the form because
-        // otherwise we'll capture the form as part of the screenshot!)
-        var screenDrawingOps = canvasLayout.DeviceLayouts
-            .SelectMany(
-                (deviceLayout, deviceIndex) => deviceLayout.ScreenLayouts.Select(
-                    screenLayout => new
-                    {
-                        DeviceIndex = deviceIndex,
-                        DeviceLayout = deviceLayout,
-                        ScreenLayout = screenLayout,
-                        CopyService = imageRegionCopyServices[deviceIndex],
-                    }))
-            .OrderByDescending(
-                pair => object.ReferenceEquals(pair.ScreenLayout, activatedScreen))
-            .ToList();
-
-        // draw all the screenshot bezels
-        foreach (var screenDrawingOp in screenDrawingOps)
-        {
-            DrawingHelper.DrawRaisedBorder(
-                previewGraphics, screenDrawingOp.ScreenLayout.ScreenBounds, screenDrawingOp.ScreenLayout.ScreenStyle);
-        }
-
-        var refreshRequired = false;
-        var placeholdersDrawn = false;
-        for (var i = 0; i < screenDrawingOps.Count; i++)
-        {
-            var screenDrawingOp = screenDrawingOps[i];
-
-            screenDrawingOp.CopyService.CopyImageRegion(
-                targetGraphics: previewGraphics,
-                sourceBounds: screenDrawingOp.ScreenLayout.ScreenInfo.DisplayArea,
-                targetBounds: screenDrawingOp.ScreenLayout.ScreenBounds.ContentBounds);
-            refreshRequired = true;
-
-            // show the placeholder images and show the form if it looks like it might take
-            // a while to capture the remaining screenshot images (but only if there are any)
-            if (stopwatch.ElapsedMilliseconds > 250)
-            {
-                // draw placeholder backgrounds for any undrawn screens
-                if (!placeholdersDrawn)
-                {
-                    DrawingHelper.DrawScreenPlaceholders(
-                        previewGraphics,
-                        screenDrawingOp.ScreenLayout.ScreenStyle,
-                        screenDrawingOps
-                            .Skip(i + 1)
-                            .Select(drawingOp => drawingOp.ScreenLayout.ScreenBounds)
-                            .ToList());
-                    placeholdersDrawn = true;
-                }
-
-                if (previewImageUpdatedCallback != null)
-                {
-                    await previewImageUpdatedCallback(previewImage);
-                }
-
-                refreshRequired = false;
-            }
-        }
-
-        if (refreshRequired)
-        {
-            previewImageUpdatedCallback?.Invoke(previewImage);
-        }
-
-        stopwatch.Stop();
-
-        return previewImage;
+        return image;
     }
 
-    // Hardcoded 3-D lighting config shared by all bezels.
-    // Values are compile-time constants; BezelConfig exists so the rendering
-    // methods are parameterised and ready to accept per-bezel variation later.
-    private static readonly Drawing.RoundedBezels.BezelConfig RoundedBezelConfig = new(
-        fadeStart: 30.0,            // degrees from edge where corner rolloff begins
-        fadeEnd: 60.0,              // degrees where rolloff reaches zero
-        highlightMax: 0x44 / 255.0, // peak highlight opacity (~26.7 %)
-        shadowMax: 0x44 / 255.0,     // peak shadow   opacity (~26.7 %)
-        edgeFadeFraction: 0.75f);  // fraction of edge length with secondary effect
+    /// <summary>
+    /// Renders a raised border ring for the specified box, as its own transparent-elsewhere
+    /// image sized to <paramref name="hostBounds"/>'s outer bounds. Used both by a hosting
+    /// window to render its own outer border (see
+    /// <see cref="LayoutHelper.GetHostBoxStyle"/>/<see cref="LayoutHelper.GetHostBounds"/>)
+    /// and, per screen, to render each screen's bezel - the two uses share this method because
+    /// a bezel is just a border ring around a smaller box.
+    /// </summary>
+    /// <remarks>
+    /// <paramref name="hostBounds"/> must be zero-based (<c>OuterBounds.Location == (0,0)</c>)
+    /// - its rectangles are used directly as pixel coordinates into the bitmap this
+    /// allocates, which is sized to exactly fit it. Callers deriving a box by enlarging or
+    /// using a non-zero-based content box (e.g. <see cref="LayoutHelper.GetHostBounds"/>, or a
+    /// <see cref="ScreenLayout.ScreenBounds"/> which is relative to the canvas origin,
+    /// not its own) need to re-anchor it first - e.g. <c>bounds.MoveTo(new PointInfo(0, 0))</c>.
+    /// </remarks>
+    public static Bitmap RenderBorder(BoxBounds hostBounds, BoxStyle hostStyle)
+    {
+        var bounds = hostBounds.OuterBounds.ToRectangle();
+        var image = new Bitmap(bounds.Width, bounds.Height, PixelFormat.Format32bppPArgb);
+        using var graphics = Graphics.FromImage(image);
+        graphics.Clear(Color.Transparent);
+        DrawingHelper.DrawRaisedBorder(graphics, hostBounds, hostStyle);
+        return image;
+    }
 
     // Hardcoded 3-D lighting config shared by all bezels.
     // Values are compile-time constants; BezelConfig exists so the rendering
@@ -171,22 +85,12 @@ public static class DrawingHelper
             return;
         }
 
-        if (string.Empty.Length == 1)
-        {
-            // draw a rounded bezel
-            var bounds = boxBounds.BorderBounds.ToRectangle();
-            using var renderer = new Drawing.RoundedBezels.BezelRenderer(borderStyle, DrawingHelper.RoundedBezelConfig);
-            renderer.DrawBezel(graphics, bounds.X, bounds.Y, bounds.Width, bounds.Height);
-        }
-        else
-        {
-            // draw a contoured bezel
-            var bounds = boxBounds.BorderBounds.ToRectangle();
-            using var renderer = new Drawing.ContouredBezels.BezelRenderer(
-                borderStyle,
-                DrawingHelper.ContouredBezelConfig);
-            renderer.DrawBezel(graphics, bounds.X, bounds.Y, bounds.Width, bounds.Height);
-        }
+        // draw a contoured bezel
+        var bounds = boxBounds.BorderBounds.ToRectangle();
+        using var renderer = new Drawing.ContouredBezels.BezelRenderer(
+            borderStyle,
+            DrawingHelper.ContouredBezelConfig);
+        renderer.DrawBezel(graphics, bounds.X, bounds.Y, bounds.Width, bounds.Height);
     }
 
     /// <summary>
@@ -212,26 +116,6 @@ public static class DrawingHelper
         }
 
         graphics.FillRegion(backgroundBrush, backgroundRegion);
-    }
-
-    /// <summary>
-    /// Draws placeholder background images for the specified screens on the preview.
-    /// </summary>
-    private static void DrawScreenPlaceholders(
-        Graphics graphics, BoxStyle screenStyle, List<BoxBounds> screenBounds)
-    {
-        if (screenBounds.Count == 0)
-        {
-            return;
-        }
-
-        if (screenStyle.BackgroundStyle.Color1 == null)
-        {
-            return;
-        }
-
-        using var brush = new SolidBrush(screenStyle.BackgroundStyle.Color1.Value);
-        graphics.FillRectangles(brush, screenBounds.Select(bounds => bounds.PaddingBounds.ToRectangle()).ToArray());
     }
 
     private static Brush? GetBackgroundStyleBrush(BackgroundStyle backgroundStyle, RectangleInfo backgroundBounds)

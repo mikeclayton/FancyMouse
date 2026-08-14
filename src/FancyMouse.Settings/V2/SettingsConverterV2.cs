@@ -34,6 +34,7 @@ internal static class SettingsConverterV2
             return AppSettings.DefaultSettings.PreviewStyle;
         }
 
+        // extraColors has no JSON representation yet, so it always inherits the default
         return new PreviewStyle(
             canvasSize: new(
                 width: SettingsConverterV2.Clamp(
@@ -85,7 +86,7 @@ internal static class SettingsConverterV2
                         defaultValue: defaultStyle.ScreenStyle?.BackgroundStyle?.Color2)
                 )
             ),
-            extraColors: Array.Empty<Color>());
+            extraColors: defaultStyle.ExtraColors);
     }
 
     private static MarginStyle MergeMarginStyles(MarginStyleSettings? marginStyle, MarginStyle? defaultStyle)

@@ -1,12 +1,12 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Drawing;
 using System.Text.Json;
 
 using FancyMouse.Common.Helpers;
 using FancyMouse.Models.Display;
 using FancyMouse.Models.Drawing;
+using FancyMouse.Models.Layout;
 using FancyMouse.Models.Styles;
-using FancyMouse.Models.ViewModel;
 
 namespace FancyMouse.Common.UnitTests.Helpers;
 
@@ -106,7 +106,7 @@ public static class LayoutHelperTests
     {
         public sealed class TestCase
         {
-            public TestCase(string testName, PreviewStyle previewStyle, DisplayInfo displayInfo, ScreenInfo activatedScreen, PointInfo activatedLocation, FormViewModel expectedResult)
+            public TestCase(string testName, PreviewStyle previewStyle, DisplayInfo displayInfo, ScreenInfo activatedScreen, PointInfo activatedLocation, PreviewLayout expectedResult, RectangleInfo expectedWindowBounds)
             {
                 this.TestName = testName;
                 this.PreviewStyle = previewStyle;
@@ -114,6 +114,7 @@ public static class LayoutHelperTests
                 this.ActivatedLocation = activatedLocation;
                 this.ActivatedScreen = activatedScreen;
                 this.ExpectedResult = expectedResult;
+                this.ExpectedWindowBounds = expectedWindowBounds;
             }
 
             public string TestName { get; }
@@ -126,7 +127,16 @@ public static class LayoutHelperTests
 
             public PointInfo ActivatedLocation { get; }
 
-            public FormViewModel ExpectedResult { get; }
+            public PreviewLayout ExpectedResult { get; }
+
+            /// <summary>
+            /// Gets the window bounds a host would end up with after wrapping <see cref="ExpectedResult"/>'s
+            /// <see cref="PreviewLayout.PreviewSize"/> in its own host box (see
+            /// <see cref="LayoutHelper.GetHostBoxStyle"/>) and positioning it via
+            /// <see cref="LayoutHelper.PositionOnScreen"/> - preserved from before PreviewLayout's
+            /// own position was removed, so this coverage doesn't get lost.
+            /// </summary>
+            public RectangleInfo ExpectedWindowBounds { get; }
         }
 
         public static IEnumerable<object[]> GetTestCases()
@@ -178,34 +188,40 @@ public static class LayoutHelperTests
                 });
             var activatedScreen = displayInfo.Devices[0].Screens[0];
             var activatedLocation = activatedScreen.DisplayArea.Midpoint;
-            var expectedResult = new FormViewModel(
-                formBounds: new(250, 186, 524, 396),
+
+            // the outer border (width 5) is now the *host's* job - it's rendered outside
+            // PreviewSize, not baked into CanvasBounds - so CanvasBounds only reflects the
+            // canvas padding (width 1) now. The overall on-screen footprint a host would end
+            // up with (the old FormBounds, border-inclusive) is unchanged - see
+            // expectedWindowBounds below.
+            var expectedResult = new PreviewLayout(
+                previewSize: new(514, 386),
                 canvasLayout: new(
                     canvasBounds: BoxBounds.CreateFromOuterBounds(
-                        outerBounds: new(0, 0, 524, 396),
-                        boxStyle: previewStyle.CanvasStyle),
-                    canvasStyle: previewStyle.CanvasStyle,
-                    deviceLayouts: new List<DeviceViewModel>()
+                        outerBounds: new(0, 0, 514, 386),
+                        boxStyle: LayoutHelper.GetPreviewBoxStyle(previewStyle.CanvasStyle)),
+                    canvasStyle: LayoutHelper.GetPreviewBoxStyle(previewStyle.CanvasStyle),
+                    deviceLayouts: new List<DeviceLayout>()
                     {
                         new(
                             deviceInfo: displayInfo.Devices[0],
                             deviceBounds: BoxBounds.CreateFromOuterBounds(
-                                outerBounds: new(6, 6, 512, 384),
+                                outerBounds: new(1, 1, 512, 384),
                                 boxStyle: BoxStyle.Empty),
                             deviceStyle: BoxStyle.Empty,
-                            screenLayouts: new List<ScreenViewModel>
+                            screenLayouts: new List<ScreenLayout>
                             {
                                 new(
                                     screenInfo: displayInfo.Devices[0].Screens[0],
                                     screenBounds: BoxBounds.CreateFromOuterBounds(
-                                        outerBounds: new(6, 6, 512, 384),
+                                        outerBounds: new(1, 1, 512, 384),
                                         boxStyle: previewStyle.ScreenStyle),
                                     screenStyle: previewStyle.ScreenStyle),
                             }
                         ),
                     }
                 ));
-            yield return new object[] { new TestCase(testName, previewStyle, displayInfo, activatedScreen, activatedLocation, expectedResult) };
+            yield return new object[] { new TestCase(testName, previewStyle, displayInfo, activatedScreen, activatedLocation, expectedResult, expectedWindowBounds: new(250, 186, 524, 396)) };
 
             // happy path - single device with screen and 50% scaling,
             // *no* preview borders but *has* screenshot borders
@@ -253,14 +269,17 @@ public static class LayoutHelperTests
                 });
             activatedScreen = displayInfo.Devices[0].Screens[0];
             activatedLocation = activatedScreen.DisplayArea.Midpoint;
-            expectedResult = new FormViewModel(
-                formBounds: new(256, 192, 512, 384),
+
+            // no canvas border/padding configured, so the host box and preview box are both
+            // effectively zero-sized here - numerically identical to the pre-split behavior.
+            expectedResult = new PreviewLayout(
+                previewSize: new(512, 384),
                 canvasLayout: new(
                     canvasBounds: BoxBounds.CreateFromOuterBounds(
                         outerBounds: new(0, 0, 512, 384),
-                        boxStyle: previewStyle.CanvasStyle),
-                    canvasStyle: previewStyle.CanvasStyle,
-                    deviceLayouts: new List<DeviceViewModel>()
+                        boxStyle: LayoutHelper.GetPreviewBoxStyle(previewStyle.CanvasStyle)),
+                    canvasStyle: LayoutHelper.GetPreviewBoxStyle(previewStyle.CanvasStyle),
+                    deviceLayouts: new List<DeviceLayout>()
                     {
                         new(
                             deviceInfo: displayInfo.Devices[0],
@@ -268,7 +287,7 @@ public static class LayoutHelperTests
                                 outerBounds: new(0, 0, 512, 384),
                                 boxStyle: BoxStyle.Empty),
                             deviceStyle: BoxStyle.Empty,
-                            screenLayouts: new List<ScreenViewModel>
+                            screenLayouts: new List<ScreenLayout>
                             {
                                 new(
                                     screenInfo: displayInfo.Devices[0].Screens[0],
@@ -280,7 +299,7 @@ public static class LayoutHelperTests
                         ),
                     }
                 ));
-            yield return new object[] { new TestCase(testName, previewStyle, displayInfo, activatedScreen, activatedLocation, expectedResult) };
+            yield return new object[] { new TestCase(testName, previewStyle, displayInfo, activatedScreen, activatedLocation, expectedResult, expectedWindowBounds: new(256, 192, 512, 384)) };
 
             // rounding error check - single screen with 33% scaling,
             // no borders, check to make sure form scales to exactly
@@ -324,14 +343,14 @@ public static class LayoutHelperTests
                 });
             activatedScreen = displayInfo.Devices[0].Screens[0];
             activatedLocation = activatedScreen.DisplayArea.Midpoint;
-            expectedResult = new FormViewModel(
-                formBounds: new(300, 66.5m, 300, 67),
+            expectedResult = new PreviewLayout(
+                previewSize: new(300, 67),
                 canvasLayout: new(
                     canvasBounds: BoxBounds.CreateFromOuterBounds(
                         outerBounds: new(0, 0, 300, 67),
-                        boxStyle: previewStyle.CanvasStyle),
-                    canvasStyle: previewStyle.CanvasStyle,
-                    deviceLayouts: new List<DeviceViewModel>()
+                        boxStyle: LayoutHelper.GetPreviewBoxStyle(previewStyle.CanvasStyle)),
+                    canvasStyle: LayoutHelper.GetPreviewBoxStyle(previewStyle.CanvasStyle),
+                    deviceLayouts: new List<DeviceLayout>()
                     {
                         new(
                             deviceInfo: displayInfo.Devices[0],
@@ -339,7 +358,7 @@ public static class LayoutHelperTests
                                 outerBounds: new(0, 0, 300, 67),
                                 boxStyle: BoxStyle.Empty),
                             deviceStyle: BoxStyle.Empty,
-                            screenLayouts: new List<ScreenViewModel>()
+                            screenLayouts: new List<ScreenLayout>()
                             {
                                 new(
                                     screenInfo: displayInfo.Devices[0].Screens[0],
@@ -351,7 +370,7 @@ public static class LayoutHelperTests
                         ),
                     }
                 ));
-            yield return new object[] { new TestCase(testName, previewStyle, displayInfo, activatedScreen, activatedLocation, expectedResult) };
+            yield return new object[] { new TestCase(testName, previewStyle, displayInfo, activatedScreen, activatedLocation, expectedResult, expectedWindowBounds: new(300, 66.5m, 300, 67)) };
 
             // primary monitor not topmost / leftmost - if there are screens
             // that are further left or higher up than the primary monitor
@@ -420,40 +439,44 @@ public static class LayoutHelperTests
                 });
             activatedScreen = displayInfo.Devices[0].Screens[0];
             activatedLocation = activatedScreen.DisplayArea.Midpoint;
-            expectedResult = new FormViewModel(
-                formBounds: new(-1318, -42, 716, 204),
+
+            // as with Test 1, the on-screen footprint (border-inclusive) is unchanged - only
+            // CanvasBounds/DeviceBounds/ScreenBounds shift by the removed border width (5),
+            // since they're now relative to the preview pane's own (border-excluded) origin.
+            expectedResult = new PreviewLayout(
+                previewSize: new(706, 194),
                 canvasLayout: new(
                     canvasBounds: BoxBounds.CreateFromOuterBounds(
-                        outerBounds: new(0, 0, 716, 204),
-                        boxStyle: previewStyle.CanvasStyle),
-                    canvasStyle: previewStyle.CanvasStyle,
-                    deviceLayouts: new List<DeviceViewModel>()
+                        outerBounds: new(0, 0, 706, 194),
+                        boxStyle: LayoutHelper.GetPreviewBoxStyle(previewStyle.CanvasStyle)),
+                    canvasStyle: LayoutHelper.GetPreviewBoxStyle(previewStyle.CanvasStyle),
+                    deviceLayouts: new List<DeviceLayout>()
                     {
                         new(
                             deviceInfo: displayInfo.Devices[0],
                             deviceBounds: BoxBounds.CreateFromOuterBounds(
-                                outerBounds: new(6, 6, 704, 192),
+                                outerBounds: new(1, 1, 704, 192),
                                 boxStyle: BoxStyle.Empty),
                             deviceStyle: BoxStyle.Empty,
-                            screenLayouts: new List<ScreenViewModel>()
+                            screenLayouts: new List<ScreenLayout>()
                             {
                                 new(
                                     screenInfo: displayInfo.Devices[0].Screens[0],
                                     screenBounds: BoxBounds.CreateFromOuterBounds(
-                                        outerBounds: new(6, 6, 192, 108),
+                                        outerBounds: new(1, 1, 192, 108),
                                         boxStyle: previewStyle.ScreenStyle),
                                     screenStyle: previewStyle.ScreenStyle),
                                 new(
                                     screenInfo: displayInfo.Devices[0].Screens[1],
                                     screenBounds: BoxBounds.CreateFromOuterBounds(
-                                        outerBounds: new(198, 54, 512, 144),
+                                        outerBounds: new(193, 49, 512, 144),
                                         boxStyle: previewStyle.ScreenStyle),
                                     screenStyle: previewStyle.ScreenStyle),
                             }
                         ),
                     }
                 ));
-            yield return new object[] { new TestCase(testName, previewStyle, displayInfo, activatedScreen, activatedLocation, expectedResult) };
+            yield return new object[] { new TestCase(testName, previewStyle, displayInfo, activatedScreen, activatedLocation, expectedResult, expectedWindowBounds: new(-1318, -42, 716, 204)) };
 
             // two devices side-by-side with a single screen each
             //
@@ -502,14 +525,14 @@ public static class LayoutHelperTests
                 });
             activatedScreen = displayInfo.Devices[0].Screens[0];
             activatedLocation = activatedScreen.DisplayArea.Midpoint;
-            expectedResult = new FormViewModel(
-                formBounds: new(1760, 607.5m, 1600, 225),
+            expectedResult = new PreviewLayout(
+                previewSize: new(1600, 225),
                 canvasLayout: new(
                     canvasBounds: BoxBounds.CreateFromOuterBounds(
                         outerBounds: new(0, 0, 1600, 225),
-                        boxStyle: previewStyle.CanvasStyle),
-                    canvasStyle: previewStyle.CanvasStyle,
-                    deviceLayouts: new List<DeviceViewModel>()
+                        boxStyle: LayoutHelper.GetPreviewBoxStyle(previewStyle.CanvasStyle)),
+                    canvasStyle: LayoutHelper.GetPreviewBoxStyle(previewStyle.CanvasStyle),
+                    deviceLayouts: new List<DeviceLayout>()
                     {
                         new(
                             deviceInfo: displayInfo.Devices[0],
@@ -517,7 +540,7 @@ public static class LayoutHelperTests
                                 outerBounds: new(0, 0, 800, 225),
                                 boxStyle: BoxStyle.Empty),
                             deviceStyle: BoxStyle.Empty,
-                            screenLayouts: new List<ScreenViewModel>()
+                            screenLayouts: new List<ScreenLayout>()
                             {
                                 new(
                                     screenInfo: displayInfo.Devices[0].Screens[0],
@@ -533,7 +556,7 @@ public static class LayoutHelperTests
                                 outerBounds: new(800, 0, 800, 225),
                                 boxStyle: BoxStyle.Empty),
                             deviceStyle: BoxStyle.Empty,
-                            screenLayouts: new List<ScreenViewModel>()
+                            screenLayouts: new List<ScreenLayout>()
                             {
                                 new(
                                     screenInfo: displayInfo.Devices[1].Screens[0],
@@ -545,7 +568,7 @@ public static class LayoutHelperTests
                         ),
                     }
                 ));
-            yield return new object[] { new TestCase(testName, previewStyle, displayInfo, activatedScreen, activatedLocation, expectedResult) };
+            yield return new object[] { new TestCase(testName, previewStyle, displayInfo, activatedScreen, activatedLocation, expectedResult, expectedWindowBounds: new(1760, 607.5m, 1600, 225)) };
 
             // TODO: add a test to make sure the form is nudged into the bounds
             // of the screen if it's activated near an edge or corner
@@ -562,7 +585,7 @@ public static class LayoutHelperTests
             // (int)1280.000000000000 -> 1280
             // so we'll compare the raw values, *and* convert to an int-based
             // Rectangle to compare rounded values
-            var actual = LayoutHelper.GetFormLayout(data.PreviewStyle, data.DisplayInfo, data.ActivatedScreen, data.ActivatedLocation);
+            var actual = LayoutHelper.GetPreviewLayout(data.PreviewStyle, data.DisplayInfo, data.ActivatedScreen);
             var expected = data.ExpectedResult;
             var options = new JsonSerializerOptions
             {
@@ -571,6 +594,19 @@ public static class LayoutHelperTests
             var actualJson = JsonSerializer.Serialize(actual, options);
             var expectedJson = JsonSerializer.Serialize(expected, options);
             Assert.AreEqual(expectedJson, actualJson);
+
+            // PreviewLayout itself no longer knows its own desktop position - verify a host
+            // wrapping it in its own box and positioning the result still ends up in the same
+            // place a pre-split FormBounds/PreviewBounds would have (this is coverage that
+            // used to live inside GetPreviewLayout itself, before the position/size split).
+            var hostBoxStyle = LayoutHelper.GetHostBoxStyle(data.PreviewStyle.CanvasStyle);
+            var hostBounds = LayoutHelper.GetHostBounds(new RectangleInfo(actual.PreviewSize), hostBoxStyle);
+            var actualWindowBounds = LayoutHelper.PositionOnScreen(hostBounds.OuterBounds, data.ActivatedScreen, data.ActivatedLocation);
+            var expectedWindowBounds = data.ExpectedWindowBounds;
+            Assert.AreEqual(expectedWindowBounds.X, actualWindowBounds.X);
+            Assert.AreEqual(expectedWindowBounds.Y, actualWindowBounds.Y);
+            Assert.AreEqual(expectedWindowBounds.Width, actualWindowBounds.Width);
+            Assert.AreEqual(expectedWindowBounds.Height, actualWindowBounds.Height);
         }
 
         /// <summary>
@@ -645,12 +681,11 @@ public static class LayoutHelperTests
                     ),
                 });
             var activatedScreen = displayInfo.Devices[0].Screens[0];
-            var activatedLocation = activatedScreen.DisplayArea.Midpoint;
 
             var timer = Stopwatch.StartNew();
             for (var i = 0; i < 10_000; i++)
             {
-                var formLayout = LayoutHelper.GetFormLayout(previewStyle, displayInfo, activatedScreen, activatedLocation);
+                var previewLayout = LayoutHelper.GetPreviewLayout(previewStyle, displayInfo, activatedScreen);
             }
 
             timer.Stop();
