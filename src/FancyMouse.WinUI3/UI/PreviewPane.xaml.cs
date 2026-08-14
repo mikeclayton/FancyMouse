@@ -161,6 +161,23 @@ public sealed partial class PreviewPane : UserControl
                 // image, since the screenshot it was showing is now stale desktop state
                 // regardless of whether the bezel itself changed
                 previousSlot.ContentImage.Source = null;
+
+                // CanReuse only guarantees the *physical-pixel* bounds are unchanged - the
+                // DIP-space Width/Height/Canvas.Left/Top these elements were last positioned
+                // at also depend on scale (see GetRasterizationScale), which can differ from
+                // last time if this activation's window landed on a different-DPI monitor
+                // than the previous one. Reapplying position/size here is cheap (a handful of
+                // property writes, no re-render) and keeps that in sync even though the
+                // visuals themselves are being reused as-is.
+                var screenBounds = screenLayout.ScreenBounds;
+                PreviewPane.PositionElement(previousSlot.BezelImage, screenBounds.OuterBounds, scale);
+                if (previousSlot.PlaceholderRectangle is not null)
+                {
+                    PreviewPane.PositionElement(previousSlot.PlaceholderRectangle, screenBounds.PaddingBounds, scale);
+                }
+
+                PreviewPane.PositionElement(previousSlot.ContentImage, screenBounds.ContentBounds, scale);
+
                 newSlots.Add(new ScreenSlot(
                     screenLayout, previousSlot.BezelImage, previousSlot.PlaceholderRectangle, previousSlot.ContentImage));
             }

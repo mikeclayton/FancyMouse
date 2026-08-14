@@ -67,51 +67,70 @@ public sealed class DesktopScreenshotCaptureProvider : IScreenshotCaptureProvide
         RectangleInfo sourceArea,
         SizeInfo thumbnailSize)
     {
-        ////var setupStopwatch = Stopwatch.StartNew();
-
         var target = thumbnailSize.Round().ToSize();
         var thumbnailImage = new Bitmap(target.Width, target.Height, PixelFormat.Format32bppPArgb);
-        using var thumbnailGraphics = Graphics.FromImage(thumbnailImage);
+        try
+        {
+            ////var setupStopwatch = Stopwatch.StartNew();
+            using var thumbnailGraphics = Graphics.FromImage(thumbnailImage);
 
-        var (desktopHwnd, desktopHdc) = DesktopScreenshotCaptureProvider.GetDesktopDeviceContext();
-        var thumbnailHdc = DesktopScreenshotCaptureProvider.GetGraphicsDeviceContext(
-            thumbnailGraphics, STRETCH_BLT_MODE.STRETCH_HALFTONE);
-        ////setupStopwatch.Stop();
+            var desktopHwnd = HWND.Null;
+            var desktopHdc = HDC.Null;
+            var thumbnailHdc = HDC.Null;
+            try
+            {
+                (desktopHwnd, desktopHdc) = DesktopScreenshotCaptureProvider.GetDesktopDeviceContext();
+                thumbnailHdc = DesktopScreenshotCaptureProvider.GetGraphicsDeviceContext(
+                    thumbnailGraphics, STRETCH_BLT_MODE.STRETCH_HALFTONE);
+                ////setupStopwatch.Stop();
 
-        ////var bltStopwatch = Stopwatch.StartNew();
-        var source = sourceArea.ToRectangle();
-        _ = Gdi32.StretchBlt(
-            thumbnailHdc,
-            0,
-            0,
-            target.Width,
-            target.Height,
-            desktopHdc,
-            source.X,
-            source.Y,
-            source.Width,
-            source.Height,
-            ROP_CODE.SRCCOPY)
-            .ThrowIfFailed();
-        ////bltStopwatch.Stop();
+                ////var bltStopwatch = Stopwatch.StartNew();
+                var source = sourceArea.ToRectangle();
+                _ = Gdi32.StretchBlt(
+                    thumbnailHdc,
+                    0,
+                    0,
+                    target.Width,
+                    target.Height,
+                    desktopHdc,
+                    source.X,
+                    source.Y,
+                    source.Width,
+                    source.Height,
+                    ROP_CODE.SRCCOPY)
+                    .ThrowIfFailed();
+                ////bltStopwatch.Stop();
+            }
+            finally
+            {
+                ////var cleanupStopwatch = Stopwatch.StartNew();
 
-        ////var cleanupStopwatch = Stopwatch.StartNew();
+                // we need to release the graphics device context handle before anything
+                // else tries to use the Graphics object - otherwise it'll give an error from
+                // GDI saying "Object is currently in use elsewhere". Both releases have to run
+                // here, not just on the success path, so a StretchBlt (or context acquisition)
+                // failure can't leak either device context handle - Free*DeviceContext is a
+                // no-op for whichever one (if any) was never actually acquired.
+                DesktopScreenshotCaptureProvider.FreeGraphicsDeviceContext(thumbnailGraphics, ref thumbnailHdc);
+                DesktopScreenshotCaptureProvider.FreeDesktopDeviceContext(ref desktopHwnd, ref desktopHdc);
+                ////cleanupStopwatch.Stop();
+            }
 
-        // we need to release the graphics device context handle before anything
-        // else tries to use the Graphics object - otherwise it'll give an error
-        // from GDI saying "Object is currently in use elsewhere"
-        DesktopScreenshotCaptureProvider.FreeGraphicsDeviceContext(thumbnailGraphics, ref thumbnailHdc);
+            ////diagnosticLogger?.Invoke(
+            ////    $"DIAG capture phases for {target.Width}x{target.Height}: " +
+            ////    $"setup={setupStopwatch.ElapsedMilliseconds}ms, " +
+            ////    $"stretchBlt={bltStopwatch.ElapsedMilliseconds}ms, " +
+            ////    $"cleanup={cleanupStopwatch.ElapsedMilliseconds}ms");
 
-        DesktopScreenshotCaptureProvider.FreeDesktopDeviceContext(ref desktopHwnd, ref desktopHdc);
-        ////cleanupStopwatch.Stop();
-
-        ////diagnosticLogger?.Invoke(
-        ////    $"DIAG capture phases for {target.Width}x{target.Height}: " +
-        ////    $"setup={setupStopwatch.ElapsedMilliseconds}ms, " +
-        ////    $"stretchBlt={bltStopwatch.ElapsedMilliseconds}ms, " +
-        ////    $"cleanup={cleanupStopwatch.ElapsedMilliseconds}ms");
-
-        return thumbnailImage;
+            return thumbnailImage;
+        }
+        catch
+        {
+            // capture failed after we'd already allocated the thumbnail bitmap - nobody else
+            // is going to receive or dispose it, so it's this method's job to clean it up
+            thumbnailImage.Dispose();
+            throw;
+        }
     }
 
     private static (HWND DesktopHwnd, HDC DesktopHdc) GetDesktopDeviceContext()

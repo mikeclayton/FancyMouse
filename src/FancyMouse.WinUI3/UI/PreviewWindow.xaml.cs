@@ -328,10 +328,13 @@ public sealed partial class PreviewWindow : Window
         this.PreviewPane.Layout = null;
         this.PreviewPane.ActiveScreen = null;
 
-        // force preview image memory to be released - otherwise
-        // all the disposed images can pile up without being GC'ed
-        GC.Collect();
-        GC.WaitForPendingFinalizers();
+        // each activation churns through several WriteableBitmap-sized pixel buffers
+        // (background, bezels, content) - left to the GC's own schedule, those pile up as
+        // uncollected garbage quickly enough under repeat activation to show up as inflated
+        // memory usage in Task Manager, even though most of it is just waiting to be freed.
+        // A background (non-blocking) collection reclaims it without stalling this thread the
+        // way a blocking GC.Collect() + WaitForPendingFinalizers() would.
+        GC.Collect(2, GCCollectionMode.Optimized, blocking: false);
     }
 
     /// <summary>

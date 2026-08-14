@@ -15,7 +15,6 @@
         lines up exactly with the transparent hole in the middle of the border image.
     -->
     <Grid
-        x:Name="RootGrid"
         HorizontalAlignment="Stretch"
         VerticalAlignment="Stretch">
         <Image

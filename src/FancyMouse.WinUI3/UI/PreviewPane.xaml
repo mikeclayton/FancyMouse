@@ -14,7 +14,7 @@
         layered on top and populated in code-behind with one bezel/placeholder/content element
         per screen, each positioned absolutely to match its ScreenLayout bounds.
     -->
-    <Grid x:Name="RootGrid">
+    <Grid>
         <Image
             x:Name="BackgroundImage"
             Stretch="Fill"

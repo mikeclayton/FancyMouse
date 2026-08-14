@@ -18,9 +18,8 @@ public interface IScreenshotCaptureProvider
 {
     /// <summary>
     /// Captures <paramref name="sourceArea"/> and returns it as a new bitmap scaled to
-    /// <paramref name="thumbnailSize"/>. If <paramref name="cancellationToken"/> is cancelled
-    /// before this request has actually started capturing (e.g. it's still queued behind
-    /// another request on the same provider), it's abandoned without ever running.
+    /// <paramref name="thumbnailSize"/>. If <paramref name="cancellationToken"/> is already
+    /// cancelled before this request starts, it's abandoned without ever running.
     /// </summary>
     Task<Bitmap> CaptureAsync(
         RectangleInfo sourceArea,
