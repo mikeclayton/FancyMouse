@@ -2,7 +2,7 @@ using System.Drawing;
 
 using FancyMouse.Models.Drawing;
 
-namespace FancyMouse.Common.Imaging;
+namespace FancyMouse.Common.Capture;
 
 /// <summary>
 /// Represents a screenshot capture implementation for a specific device. A caller may issue
@@ -18,9 +18,12 @@ public interface IScreenshotCaptureProvider
 {
     /// <summary>
     /// Captures <paramref name="sourceArea"/> and returns it as a new bitmap scaled to
-    /// <paramref name="thumbnailSize"/>.
+    /// <paramref name="thumbnailSize"/>. If <paramref name="cancellationToken"/> is cancelled
+    /// before this request has actually started capturing (e.g. it's still queued behind
+    /// another request on the same provider), it's abandoned without ever running.
     /// </summary>
     Task<Bitmap> CaptureAsync(
         RectangleInfo sourceArea,
-        SizeInfo thumbnailSize);
+        SizeInfo thumbnailSize,
+        CancellationToken cancellationToken = default);
 }

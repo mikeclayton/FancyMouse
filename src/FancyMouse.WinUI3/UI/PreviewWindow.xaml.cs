@@ -1,10 +1,11 @@
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.WindowsRuntime;
 
+using FancyMouse.Common.Capture;
 using FancyMouse.Common.Helpers;
-using FancyMouse.Common.Imaging;
 using FancyMouse.Models.Display;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Layout;
@@ -14,11 +15,9 @@ using FancyMouse.WinUI3.Win32Gen;
 
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media.Imaging;
 
 using Windows.Graphics;
-using Windows.System;
 using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.UI.WindowsAndMessaging;
@@ -43,6 +42,24 @@ public sealed partial class PreviewWindow : Window
     {
         get;
     }
+
+    /// <summary>
+    /// Governs every screenshot capture started by the current activation's
+    /// <see cref="ScreenshotCapturePipeline"/> - cancelled (and replaced) whenever the preview
+    /// is cleared, whether that's because a new activation superseded this one or because the
+    /// window was simply hidden (see <see cref="ClearPreview"/>), so outstanding captures for a
+    /// no-longer-relevant activation don't keep doing GDI work in the background.
+    /// </summary>
+    private CancellationTokenSource? activationCancellation;
+
+    /// <summary>
+    /// Maximum time to wait for every screen's capture to finish before showing the window
+    /// anyway - long enough that a typical (fast, local) activation shows fully populated with
+    /// no visible placeholder-then-backfill repainting, short enough that one slow screen (e.g.
+    /// a future remote capture provider) can't make the window feel unresponsive. Matches the
+    /// grace period the legacy WinForms version used.
+    /// </summary>
+    private static readonly TimeSpan ScreenshotGracePeriod = TimeSpan.FromMilliseconds(250);
 
     /// <summary>
     /// Initializes some settings on the application window.
@@ -81,9 +98,8 @@ public sealed partial class PreviewWindow : Window
         }
 
         this.Activated += this.PreviewWindow_Activated;
-        this.RootGrid.PreviewKeyDown += this.PreviewWindow_PreviewKeyDown;
-        this.PreviewPane.PreviewKeyDown += this.PreviewWindow_PreviewKeyDown;
-        this.PreviewPane.ScreenshotClicked += this.PreviewPane_ScreenshotClicked;
+        this.PreviewPane.NavigateTo += this.PreviewPane_NavigateTo;
+        this.PreviewPane.Cancel += this.PreviewPane_Cancel;
     }
 
     private void PreviewWindow_Activated(object sender, WindowActivatedEventArgs e)
@@ -91,7 +107,7 @@ public sealed partial class PreviewWindow : Window
         switch (e.WindowActivationState)
         {
             case WindowActivationState.CodeActivated:
-                this.PreviewPane.Focus(FocusState.Programmatic);
+                this.FocusPreviewPane();
                 break;
             case WindowActivationState.Deactivated:
                 this.HideWindow();
@@ -101,92 +117,31 @@ public sealed partial class PreviewWindow : Window
         }
     }
 
-    private void PreviewWindow_PreviewKeyDown(object sender, KeyRoutedEventArgs e)
-    {
-        if (e.Key == VirtualKey.Escape)
-        {
-            this.HideWindow();
-            return;
-        }
-
-        var screens = ScreenHelper.GetAllScreens().ToList();
-        if (screens.Count == 0)
-        {
-            return;
-        }
-
-        var currentLocation = MouseHelper.GetCursorPosition();
-        var currentScreen = ScreenHelper.GetScreenFromPoint(screens, currentLocation);
-        var currentScreenIndex = screens.IndexOf(currentScreen);
-        var targetScreen = default(ScreenInfo?);
-
-        switch (e.Key)
-        {
-            case >= VirtualKey.Number1 and <= VirtualKey.Number9:
-                {
-                    // number keys 1-9 - move to the numbered screen
-                    var screenNumber = e.Key - VirtualKey.Number0;
-                    /* note - screen *numbers* are 1-based, screen *indexes* are 0-based */
-                    targetScreen = (screenNumber <= screens.Count)
-                        ? targetScreen = screens[screenNumber - 1]
-                        : null;
-                    break;
-                }
-
-            case >= VirtualKey.NumberPad1 and <= VirtualKey.NumberPad9:
-                {
-                    // numpad keys 1-9 - move to the numbered screen
-                    var screenNumber = e.Key - VirtualKey.NumberPad0;
-                    /* note - screen *numbers* are 1-based, screen *indexes* are 0-based */
-                    targetScreen = (screenNumber <= screens.Count)
-                        ? targetScreen = screens[screenNumber - 1]
-                        : null;
-                    break;
-                }
-
-            case VirtualKey.P:
-                // "P" - move to the primary screen
-                targetScreen = screens.Single(screen => screen.Primary);
-                break;
-            case VirtualKey.Left:
-                // move to the previous screen, looping back to the end if needed
-                var prevIndex = (currentScreenIndex - 1 + screens.Count) % screens.Count;
-                targetScreen = screens[prevIndex];
-                break;
-            case VirtualKey.Right:
-                // move to the next screen, looping round to the start if needed
-                var nextIndex = (currentScreenIndex + 1) % screens.Count;
-                targetScreen = screens[nextIndex];
-                break;
-            case VirtualKey.Home:
-                // move to the first screen
-                targetScreen = screens.First();
-                break;
-            case VirtualKey.End:
-                // move to the last screen
-                targetScreen = screens.Last();
-                break;
-        }
-
-        if (targetScreen is not null)
-        {
-            MouseHelper.SetCursorPosition(targetScreen.DisplayArea.Midpoint);
-            this.HideWindow();
-        }
-    }
-
-    private void PreviewPane_ScreenshotClicked(object? sender, ScreenshotClickedEventArgs e)
+    /// <summary>
+    /// Handles a navigation intent from <see cref="PreviewPane"/> - a screenshot click or the
+    /// equivalent keyboard shortcut (see <see cref="PreviewPane.NavigateTo"/>). Only local
+    /// devices exist today (see <see cref="Common.Helpers.DeviceHelper.GetDisplayInfo"/>), so
+    /// this always moves the local cursor; <see cref="NavigateToEventArgs.Device"/> is there for
+    /// when a remote (Mouse Without Borders) device needs routing elsewhere instead.
+    /// </summary>
+    private void PreviewPane_NavigateTo(object? sender, NavigateToEventArgs e)
     {
         var logger = this.Logger;
 
         logger.Info(string.Join(
             '\n',
             "-----------",
-            nameof(PreviewWindow.PreviewPane_ScreenshotClicked),
+            nameof(PreviewWindow.PreviewPane_NavigateTo),
             "-----------",
-            $"clicked location = {e.Location}"));
+            $"device   = {e.Device.Hostname}",
+            $"location = {e.Location}"));
 
         MouseHelper.SetCursorPosition(e.Location);
+        this.HideWindow();
+    }
+
+    private void PreviewPane_Cancel(object? sender, EventArgs e)
+    {
         this.HideWindow();
     }
 
@@ -200,9 +155,22 @@ public sealed partial class PreviewWindow : Window
             nameof(PreviewWindow.ShowPreviewAsync),
             "-----------"));
 
+        // claim the foreground window as early as possible - see ClaimForegroundWindow
+        // remarks for why this needs to happen now, before any of the capture/layout work
+        // below, rather than later when we actually show the window
+        this.ClaimForegroundWindow();
+
+        // TEMPORARY - bracketing every step up to the point captures are kicked off, to find
+        // out where time goes before capture instrumentation (see DesktopScreenshotCaptureProvider)
+        // even starts measuring anything. Remove alongside that once this is understood.
+        var diagStopwatch = Stopwatch.StartNew();
+        void DiagCheckpoint(string label)
+            => logger.Info($"DIAG checkpoint {label}: elapsed={diagStopwatch.ElapsedMilliseconds}ms");
+
         // hide the form while we redraw it...
         await this.HideWindowAsync()
             .ConfigureAwait(false);
+        DiagCheckpoint("HideWindowAsync done");
 
         // capture this first so we get an accurate current mouse location
         // (in case the user moves it a few pixels while the form is rendered)
@@ -211,6 +179,7 @@ public sealed partial class PreviewWindow : Window
         var appSettings = ConfigHelper.AppSettings ?? throw new InvalidOperationException();
 
         var displayInfo = DeviceHelper.GetDisplayInfo();
+        DiagCheckpoint("GetDisplayInfo done");
 
         var activatedScreen = DeviceHelper.GetActivatedScreen(displayInfo.Devices[0], activatedLocation);
 
@@ -219,6 +188,7 @@ public sealed partial class PreviewWindow : Window
             previewStyle,
             displayInfo,
             activatedScreen: activatedScreen);
+        DiagCheckpoint("GetPreviewLayout done");
 
         // the outer border is this window's own responsibility, not the preview pane's -
         // see LayoutHelper.GetHostBoxStyle. PreviewLayout itself has no desktop position
@@ -231,94 +201,125 @@ public sealed partial class PreviewWindow : Window
 
         await this.PositionWindowAsync(positionedHostOuterBounds)
             .ConfigureAwait(false);
+        DiagCheckpoint("PositionWindowAsync done");
 
         await this.RenderBorderAsync(previewLayout, hostBoxStyle)
             .ConfigureAwait(false);
+        DiagCheckpoint("RenderBorderAsync done");
 
         // builds every screen's bezel + placeholder fill immediately, so there's something to
         // show as soon as the window becomes visible - screenshots backfill afterwards
-        await this.SetPreviewPaneLayoutAsync(previewLayout)
+        await this.SetPreviewPaneLayoutAsync(previewLayout, activatedScreen)
             .ConfigureAwait(false);
+        DiagCheckpoint("SetPreviewPaneLayoutAsync done");
+
+        // cancel whatever the previous activation - if any - might still have running, and
+        // start a fresh cancellation scope for this one (see ClearPreview and the
+        // activationCancellation remarks)
+        this.activationCancellation?.Cancel();
+        this.activationCancellation?.Dispose();
+        var cancellation = new CancellationTokenSource();
+        this.activationCancellation = cancellation;
+
+        var pipeline = new ScreenshotCapturePipeline(new PreviewPaneScreenshotSink(this), cancellation.Token);
 
         // one capture provider per device - see IScreenshotCaptureProvider/
         // DesktopScreenshotCaptureProvider remarks for why a single instance is safe (and
-        // necessary) to share across all of that device's screens
-        var captureProviders = displayInfo.Devices
-            .Select(deviceInfo => (IScreenshotCaptureProvider)new DesktopScreenshotCaptureProvider())
-            .ToList();
+        // necessary) to share across all of that device's screens. Ownership of each provider
+        // transfers to the pipeline - see ScreenshotCapturePipeline.DisposeAsync.
+        var captureTasks = new List<(ScreenLayout ScreenLayout, Task<Bitmap> CaptureTask)>();
+        foreach (var deviceLayout in previewLayout.CanvasLayout.DeviceLayouts)
+        {
+            // TEMPORARY - the diagnosticLogger argument, see DesktopScreenshotCaptureProvider remarks
+            captureTasks.AddRange(pipeline.AddCaptureTasks(
+                deviceLayout, new DesktopScreenshotCaptureProvider(msg => this.Logger.Info(msg))));
+        }
 
-        // kick off a capture request per screen without awaiting them yet, so they can all
-        // start running (subject to each provider's own parallel-vs-series capabilities)
-        var captureRequests = previewLayout.CanvasLayout.DeviceLayouts
-            .SelectMany((deviceLayout, deviceIndex) => deviceLayout.ScreenLayouts.Select(
-                screenLayout => new ScreenCaptureRequest(
-                    screenLayout,
-                    captureProviders[deviceIndex].CaptureAsync(
-                        screenLayout.ScreenInfo.DisplayArea,
-                        screenLayout.ScreenBounds.ContentBounds.Size))))
-            .ToList();
+        DiagCheckpoint("all capture requests kicked off");
 
-        // the activated screen's own capture must complete - and be applied - before the
-        // window is shown, otherwise a *later* capture of that screen would risk capturing
-        // the preview window itself, since it's positioned on top of the activated screen
-        var activatedRequest = captureRequests.Single(
-            request => object.ReferenceEquals(request.ScreenLayout.ScreenInfo, activatedScreen));
-        await this.ApplyScreenshotAsync(activatedRequest)
-            .ConfigureAwait(false);
+        // the activated screen's own capture must complete before the window is shown,
+        // otherwise a *later* capture of that screen would risk capturing the preview window
+        // itself, since it's positioned on top of the activated screen. We only need the
+        // capture itself to be done here, not for it to have reached the PreviewPane yet - the
+        // pipeline pushes every result to the pane independently, in the background.
+        var activatedCaptureTask = captureTasks
+            .Single(entry => object.ReferenceEquals(entry.ScreenLayout.ScreenInfo, activatedScreen))
+            .CaptureTask;
 
-        await this.ShowWindowAsync()
-            .ConfigureAwait(false);
-
-        // backfill the remaining screens in the background, in whatever order their captures
-        // actually complete - "slow" sources (e.g. a future remote capture provider) shouldn't
-        // hold up screens that are already done
-        var remainingRequests = captureRequests
-            .Where(request => !object.ReferenceEquals(request, activatedRequest))
-            .ToList();
-        _ = this.BackfillScreenshotsAsync(remainingRequests, captureProviders);
-    }
-
-    /// <summary>
-    /// Awaits the remaining screen captures in completion order (not list order) and applies
-    /// each one as soon as it's ready, then disposes <paramref name="captureProviders"/> once
-    /// every request for this activation - including the activated screen's own, already
-    /// applied before this was called - has finished with them.
-    /// </summary>
-    private async Task BackfillScreenshotsAsync(
-        List<ScreenCaptureRequest> requests, List<IScreenshotCaptureProvider> captureProviders)
-    {
         try
         {
-            var pending = requests.ToList();
-            while (pending.Count > 0)
-            {
-                var completedTask = await Task.WhenAny(pending.Select(request => request.CaptureTask))
-                    .ConfigureAwait(false);
-                var completedRequest = pending.Single(request => request.CaptureTask == completedTask);
-                pending.Remove(completedRequest);
-                await this.ApplyScreenshotAsync(completedRequest)
-                    .ConfigureAwait(false);
-            }
+            // give every screen up to ScreenshotGracePeriod to finish capturing before
+            // showing the window - a typical (fast, local) activation finishes well within
+            // that and shows fully populated, with none of the placeholder-then-backfill
+            // repainting a reader would otherwise see. A screen that's still slow after that
+            // (e.g. a future remote capture provider) doesn't hold the window hostage though
+            // - it just backfills afterwards, same as it would have anyway. The activated
+            // screen's own capture is still awaited separately below regardless of which way
+            // the race went, since that one's non-negotiable (see above).
+            var allCaptureTasks = captureTasks.Select(entry => entry.CaptureTask).ToArray();
+            await Task.WhenAny(Task.WhenAll(allCaptureTasks), Task.Delay(PreviewWindow.ScreenshotGracePeriod, cancellation.Token))
+                .ConfigureAwait(false);
+            DiagCheckpoint("grace period race done");
+            await activatedCaptureTask
+                .ConfigureAwait(false);
+            DiagCheckpoint("activated screen capture done");
+
+            await this.ShowWindowAsync()
+                .ConfigureAwait(false);
+            DiagCheckpoint("ShowWindowAsync done - window visible");
+        }
+        catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+        {
+            // a newer activation superseded this one while we were still waiting on captures
+            // - let it own showing the window instead of us doing so with what's now stale
+            // layout/position state
+        }
+        catch (Exception ex)
+        {
+            // a genuine (non-cancellation) failure capturing the activated screen - unlike a
+            // backfill screen's failure (see ObserveAndDisposeAsync), this one has to stop us
+            // from showing the window at all, since we can't guarantee it's safe to reveal
+            // without knowing that screen was actually captured
+            logger.Error(ex, $"failed to capture the activated screen ({activatedScreen}); not showing the preview window");
         }
         finally
         {
-            foreach (var provider in captureProviders.OfType<IDisposable>())
-            {
-                provider.Dispose();
-            }
+            // don't hold ShowPreviewAsync open waiting for every screen to finish
+            // backfilling - ObserveAndDisposeAsync logs any backfill capture failure and
+            // disposes the pipeline's providers once everything's settled, whether or not we
+            // ended up showing the window above
+            _ = this.ObserveAndDisposeAsync(pipeline);
         }
     }
 
-    private async Task ApplyScreenshotAsync(ScreenCaptureRequest request)
+    /// <summary>
+    /// Waits for every screenshot capture this activation's <paramref name="pipeline"/> started
+    /// to finish, logging a failure if any of them - other than the activated screen, which is
+    /// handled separately in <see cref="ShowPreviewAsync"/> since it has to stop the window from
+    /// being shown at all - didn't succeed, then disposes the pipeline regardless.
+    /// </summary>
+    private async Task ObserveAndDisposeAsync(ScreenshotCapturePipeline pipeline)
     {
-        using var image = await request.CaptureTask.ConfigureAwait(false);
-        await this.InvokeOnUiThreadAsync(
-                () => this.PreviewPane.SetScreenshot(request.ScreenLayout, image))
-            .ConfigureAwait(false);
+        try
+        {
+            await pipeline.WaitForCompletionAsync().ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            this.Logger.Error(ex, "one or more screenshot captures failed");
+        }
+        finally
+        {
+            await pipeline.DisposeAsync().ConfigureAwait(false);
+        }
     }
 
     private void ClearPreview()
     {
+        this.activationCancellation?.Cancel();
+        this.activationCancellation?.Dispose();
+        this.activationCancellation = null;
+
         if ((this.BorderImage.Source is null) && (this.PreviewPane.Layout is null))
         {
             return;
@@ -326,6 +327,7 @@ public sealed partial class PreviewWindow : Window
 
         this.BorderImage.Source = null;
         this.PreviewPane.Layout = null;
+        this.PreviewPane.ActiveScreen = null;
 
         // force preview image memory to be released - otherwise
         // all the disposed images can pile up without being GC'ed
@@ -405,8 +407,46 @@ public sealed partial class PreviewWindow : Window
 
                 // we have to activate the window to make sure the deactivate event fires
                 this.Activate();
-                this.PreviewPane.Focus(FocusState.Programmatic);
+                this.FocusPreviewPane();
             }).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Claims the OS foreground window - and with it, real keyboard focus - for this window.
+    /// Windows silently refuses <see cref="SetForegroundWindow"/> for a background process
+    /// unless (among other exemptions) that process "received the last input event". Unlike a
+    /// typical background process, this one genuinely does: <see cref="FancyMouse.HotKeys.HotKeyManager"/>
+    /// registers the global hotkey and receives <c>WM_HOTKEY</c> in-process (see its remarks),
+    /// so this process is the one that just received real user input - no synthetic input
+    /// needs simulating, unlike the more common workaround for this restriction. What matters
+    /// is calling this the moment we're responding to that hotkey, before the exemption lapses
+    /// - see the call at the top of <see cref="ShowPreviewAsync"/>, well before the
+    /// capture/layout work that used to sit in front of this call and made it unreliable.
+    /// </summary>
+    private void ClaimForegroundWindow()
+    {
+        var hWnd = (HWND)WinRT.Interop.WindowNative.GetWindowHandle(this);
+        _ = User32.SetForegroundWindow(hWnd)
+            .IgnoreFailure();
+    }
+
+    /// <summary>
+    /// Sets keyboard focus on <see cref="PreviewPane"/>, which owns all keyboard navigation
+    /// (see <see cref="PreviewPane.NavigateTo"/>) via its own <c>PreviewKeyDown</c> - unlike a
+    /// window-level key handler, that only fires if focus actually lands inside the pane's own
+    /// subtree, not just anywhere in the window. <c>Control.Focus</c> can fail silently (returns
+    /// <see langword="false"/>) if the pane hasn't finished layout yet - most likely the very
+    /// first time the window is ever shown after the app starts - so this retries once on the
+    /// next UI thread tick rather than assuming the first attempt landed.
+    /// </summary>
+    private void FocusPreviewPane()
+    {
+        if (this.PreviewPane.Focus(FocusState.Programmatic))
+        {
+            return;
+        }
+
+        this.DispatcherQueue.TryEnqueue(() => this.PreviewPane.Focus(FocusState.Programmatic));
     }
 
     /// <summary>
@@ -471,12 +511,13 @@ public sealed partial class PreviewWindow : Window
             }).ConfigureAwait(false);
     }
 
-    private async Task SetPreviewPaneLayoutAsync(PreviewLayout previewLayout)
+    private async Task SetPreviewPaneLayoutAsync(PreviewLayout previewLayout, ScreenInfo activatedScreen)
     {
         await this.InvokeOnUiThreadAsync(
             () =>
             {
                 this.PreviewPane.Layout = previewLayout;
+                this.PreviewPane.ActiveScreen = activatedScreen;
             }).ConfigureAwait(false);
     }
 
@@ -512,9 +553,23 @@ public sealed partial class PreviewWindow : Window
     }
 
     /// <summary>
-    /// Pairs a screen with its in-flight capture request, so a result can be routed back to
-    /// the right <see cref="PreviewPane"/> slot once it completes (see
-    /// <see cref="PreviewPane.SetScreenshot"/>).
+    /// Adapts <see cref="PreviewPane.SetScreenshot"/> to <see cref="IScreenshotCaptureSink"/> -
+    /// marshals onto the UI thread, since <see cref="ScreenshotCapturePipeline"/> pushes results
+    /// as soon as they're captured, which generally isn't the UI thread.
     /// </summary>
-    private sealed record ScreenCaptureRequest(ScreenLayout ScreenLayout, Task<Bitmap> CaptureTask);
+    private sealed class PreviewPaneScreenshotSink : IScreenshotCaptureSink
+    {
+        public PreviewPaneScreenshotSink(PreviewWindow window)
+        {
+            this.Window = window;
+        }
+
+        private PreviewWindow Window
+        {
+            get;
+        }
+
+        public Task SetScreenshotAsync(ScreenLayout screenLayout, Bitmap bitmap)
+            => this.Window.InvokeOnUiThreadAsync(() => this.Window.PreviewPane.SetScreenshot(screenLayout, bitmap));
+    }
 }

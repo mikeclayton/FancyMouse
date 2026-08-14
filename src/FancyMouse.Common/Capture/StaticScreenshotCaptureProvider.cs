@@ -4,7 +4,7 @@ using System.Drawing.Imaging;
 
 using FancyMouse.Models.Drawing;
 
-namespace FancyMouse.Common.Imaging;
+namespace FancyMouse.Common.Capture;
 
 /// <summary>
 /// Implements an <see cref="IScreenshotCaptureProvider"/> that captures from a fixed source
@@ -25,8 +25,11 @@ public sealed class StaticScreenshotCaptureProvider : IScreenshotCaptureProvider
 
     public Task<Bitmap> CaptureAsync(
         RectangleInfo sourceArea,
-        SizeInfo thumbnailSize)
+        SizeInfo thumbnailSize,
+        CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         var target = thumbnailSize.Round().ToSize();
         var thumbnailImage = new Bitmap(target.Width, target.Height, PixelFormat.Format32bppPArgb);
         using (var thumbnailGraphics = Graphics.FromImage(thumbnailImage))

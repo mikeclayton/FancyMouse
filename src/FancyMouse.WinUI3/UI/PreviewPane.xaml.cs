@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.WindowsRuntime;
 
 using FancyMouse.Common.Helpers;
+using FancyMouse.Models.Display;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Layout;
 
@@ -13,6 +14,8 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
+
+using Windows.System;
 
 using Image = Microsoft.UI.Xaml.Controls.Image;
 
@@ -27,7 +30,9 @@ namespace FancyMouse.WinUI3.UI;
 /// internally from <see cref="Layout"/> as soon as it's set, and each screen starts out
 /// showing a placeholder fill until the hosting window backfills its real screenshot via
 /// <see cref="SetScreenshot"/> (screenshot capture needs the host's own capture pipeline,
-/// which this control has no access to).
+/// which this control has no access to). This control also owns turning raw mouse/keyboard
+/// input into navigation intent - see <see cref="NavigateTo"/>/<see cref="Cancel"/> - so the
+/// host doesn't need its own copy of "which screen is that" or "which screen is next" logic.
 /// </summary>
 public sealed partial class PreviewPane : UserControl
 {
@@ -37,12 +42,19 @@ public sealed partial class PreviewPane : UserControl
         typeof(PreviewPane),
         new PropertyMetadata(null, PreviewPane.OnLayoutChanged));
 
+    public static readonly DependencyProperty ActiveScreenProperty = DependencyProperty.Register(
+        nameof(PreviewPane.ActiveScreen),
+        typeof(ScreenInfo),
+        typeof(PreviewPane),
+        new PropertyMetadata(null));
+
     private List<ScreenSlot> screenSlots = new();
 
     public PreviewPane()
     {
         this.InitializeComponent();
         this.PointerPressed += this.PreviewPane_PointerPressed;
+        this.PreviewKeyDown += this.PreviewPane_PreviewKeyDown;
     }
 
     /// <summary>
@@ -57,12 +69,32 @@ public sealed partial class PreviewPane : UserControl
     }
 
     /// <summary>
-    /// Raised when the pointer clicks a location that maps onto one of the screen bezels -
-    /// <see cref="ScreenshotClickedEventArgs.Location"/> is already resolved to the
-    /// corresponding physical location on that screen's own display area, so the host only
-    /// needs to forward it to <c>MouseHelper.SetCursorPosition</c>.
+    /// Gets or sets the screen that keyboard navigation (Left/Right in particular) is relative
+    /// to - set by the hosting window alongside <see cref="Layout"/>, normally to whichever
+    /// screen was activated. This control never changes it itself: every navigation key acts
+    /// immediately and the host is expected to close the preview afterwards (see
+    /// <see cref="NavigateTo"/>), so there's no in-preview "browse mode" that would need this to
+    /// track a moving selection.
     /// </summary>
-    public event EventHandler<ScreenshotClickedEventArgs>? ScreenshotClicked;
+    public ScreenInfo? ActiveScreen
+    {
+        get => (ScreenInfo?)this.GetValue(PreviewPane.ActiveScreenProperty);
+        set => this.SetValue(PreviewPane.ActiveScreenProperty, value);
+    }
+
+    /// <summary>
+    /// Raised when the pointer clicks a screen, or a keyboard shortcut that means the same
+    /// thing (1-9, arrow keys relative to <see cref="ActiveScreen"/>, P for primary, Home/End)
+    /// resolves to one. <see cref="NavigateToEventArgs.Location"/> is already resolved to the
+    /// corresponding physical location on that screen's own display area.
+    /// </summary>
+    public event EventHandler<NavigateToEventArgs>? NavigateTo;
+
+    /// <summary>
+    /// Raised on a right-click or Escape - the host is expected to just close the preview
+    /// without moving the pointer anywhere.
+    /// </summary>
+    public event EventHandler? Cancel;
 
     /// <summary>
     /// Backfills the real screenshot for a single screen, replacing its placeholder fill -
@@ -93,7 +125,7 @@ public sealed partial class PreviewPane : UserControl
     private void ApplyLayout(PreviewLayout? layout)
     {
         this.ScreensCanvas.Children.Clear();
-        this.screenSlots = new List<ScreenSlot>();
+        this.screenSlots = [];
 
         if (layout is null)
         {
@@ -221,6 +253,12 @@ public sealed partial class PreviewPane : UserControl
         }
 
         var pointerPoint = e.GetCurrentPoint(this);
+        if (pointerPoint.Properties.IsRightButtonPressed)
+        {
+            this.Cancel?.Invoke(this, EventArgs.Empty);
+            return;
+        }
+
         if (!pointerPoint.Properties.IsLeftButtonPressed)
         {
             return;
@@ -238,12 +276,13 @@ public sealed partial class PreviewPane : UserControl
         var pointerLocation = new PointInfo((decimal)pointerPoint.Position.X, (decimal)pointerPoint.Position.Y)
             .Scale((decimal)scale);
 
-        // work out which screenshot was clicked
-        var clickedScreen = layout.CanvasLayout.DeviceLayouts
-            .SelectMany(deviceLayout => deviceLayout.ScreenLayouts)
+        // work out which screenshot was clicked, keeping the owning device too
+        var clickedEntry = layout.CanvasLayout.DeviceLayouts
+            .SelectMany(deviceLayout => deviceLayout.ScreenLayouts.Select(
+                screenLayout => (DeviceLayout: deviceLayout, ScreenLayout: screenLayout)))
             .SingleOrDefault(
-                screenLayout => screenLayout.ScreenBounds.OuterBounds.Contains(pointerLocation));
-        if (clickedScreen is null)
+                entry => entry.ScreenLayout.ScreenBounds.OuterBounds.Contains(pointerLocation));
+        if (clickedEntry.ScreenLayout is null)
         {
             return;
         }
@@ -251,10 +290,10 @@ public sealed partial class PreviewPane : UserControl
         // scale up the click onto the physical screen - the aspect ratio of the screenshot
         // might be distorted compared to the physical screen due to the borders around the
         // screenshot, so we need to work out the target location on the physical screen first
-        var clickedDisplayArea = clickedScreen.ScreenInfo.DisplayArea;
+        var clickedDisplayArea = clickedEntry.ScreenLayout.ScreenInfo.DisplayArea;
         var clickedLocation = pointerLocation
             .Stretch(
-                source: clickedScreen.ScreenBounds.ContentBounds,
+                source: clickedEntry.ScreenLayout.ScreenBounds.ContentBounds,
                 target: clickedDisplayArea)
             .Clamp(
                 new(
@@ -264,8 +303,79 @@ public sealed partial class PreviewPane : UserControl
                     height: clickedDisplayArea.Height - 1))
             .Truncate();
 
-        this.ScreenshotClicked?.Invoke(this, new ScreenshotClickedEventArgs(clickedLocation));
+        this.NavigateTo?.Invoke(
+            this, new NavigateToEventArgs(clickedEntry.DeviceLayout.DeviceInfo, clickedLocation));
     }
+
+    /// <summary>
+    /// Maps 1-9/numpad/P/Left/Right/Home/End to <see cref="NavigateTo"/> and Escape to
+    /// <see cref="Cancel"/>, entirely from <see cref="Layout"/> and <see cref="ActiveScreen"/> -
+    /// no live desktop/cursor state needed. Screen numbering and Home/End use the flattened
+    /// device/screen order (<see cref="GetOrderedScreens"/>), which matches
+    /// <c>ScreenHelper.GetAllScreens()</c>'s order since <c>LayoutHelper.GetPreviewLayout</c>
+    /// builds <see cref="Layout"/> from that same list via order-preserving projections.
+    /// </summary>
+    private void PreviewPane_PreviewKeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        if (e.Key == VirtualKey.Escape)
+        {
+            this.Cancel?.Invoke(this, EventArgs.Empty);
+            return;
+        }
+
+        var layout = this.Layout;
+        var activeScreen = this.ActiveScreen;
+        if (layout is null || activeScreen is null)
+        {
+            return;
+        }
+
+        var orderedScreens = this.GetOrderedScreens(layout);
+        if (orderedScreens.Count == 0)
+        {
+            return;
+        }
+
+        var currentIndex = orderedScreens.FindIndex(
+            entry => entry.ScreenLayout.ScreenInfo.Equals(activeScreen));
+
+        var target = e.Key switch
+        {
+            >= VirtualKey.Number1 and <= VirtualKey.Number9 =>
+                PreviewPane.ElementAtOrDefault(orderedScreens, (e.Key - VirtualKey.Number0) - 1),
+            >= VirtualKey.NumberPad1 and <= VirtualKey.NumberPad9 =>
+                PreviewPane.ElementAtOrDefault(orderedScreens, (e.Key - VirtualKey.NumberPad0) - 1),
+            VirtualKey.P =>
+                orderedScreens.SingleOrDefault(entry => entry.ScreenLayout.ScreenInfo.Primary),
+            VirtualKey.Left when currentIndex >= 0 =>
+                orderedScreens[(currentIndex - 1 + orderedScreens.Count) % orderedScreens.Count],
+            VirtualKey.Right when currentIndex >= 0 =>
+                orderedScreens[(currentIndex + 1) % orderedScreens.Count],
+            VirtualKey.Home => orderedScreens[0],
+            VirtualKey.End => orderedScreens[^1],
+            _ => default,
+        };
+
+        if (target.ScreenLayout is null)
+        {
+            return;
+        }
+
+        this.NavigateTo?.Invoke(
+            this,
+            new NavigateToEventArgs(
+                target.DeviceLayout.DeviceInfo, target.ScreenLayout.ScreenInfo.DisplayArea.Midpoint));
+    }
+
+    private List<(DeviceLayout DeviceLayout, ScreenLayout ScreenLayout)> GetOrderedScreens(PreviewLayout layout)
+        => layout.CanvasLayout.DeviceLayouts
+            .SelectMany(deviceLayout => deviceLayout.ScreenLayouts.Select(
+                screenLayout => (DeviceLayout: deviceLayout, ScreenLayout: screenLayout)))
+            .ToList();
+
+    private static (DeviceLayout DeviceLayout, ScreenLayout ScreenLayout) ElementAtOrDefault(
+        List<(DeviceLayout DeviceLayout, ScreenLayout ScreenLayout)> screens, int index)
+        => (index >= 0 && index < screens.Count) ? screens[index] : default;
 
     private sealed class ScreenSlot
     {

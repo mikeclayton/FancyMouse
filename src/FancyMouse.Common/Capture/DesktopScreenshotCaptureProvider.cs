@@ -8,7 +8,7 @@ using FancyMouse.Models.Drawing;
 using Windows.Win32.Foundation;
 using Windows.Win32.Graphics.Gdi;
 
-namespace FancyMouse.Common.Imaging;
+namespace FancyMouse.Common.Capture;
 
 /// <summary>
 /// Implements an <see cref="IScreenshotCaptureProvider"/> that captures from the current
@@ -26,19 +26,48 @@ public sealed class DesktopScreenshotCaptureProvider : IScreenshotCaptureProvide
 {
     private readonly SemaphoreSlim captureLock = new(1, 1);
 
+    // TEMPORARY - diagnosing where per-screen capture time actually goes. Remove this
+    // constructor parameter and every diagnosticLogger call alongside it once that's understood.
+    private readonly Action<string>? diagnosticLogger;
+
+    public DesktopScreenshotCaptureProvider(Action<string>? diagnosticLogger = null)
+    {
+        this.diagnosticLogger = diagnosticLogger;
+    }
+
     public void Dispose()
         => this.captureLock.Dispose();
 
     public async Task<Bitmap> CaptureAsync(
         RectangleInfo sourceArea,
-        SizeInfo thumbnailSize)
+        SizeInfo thumbnailSize,
+        CancellationToken cancellationToken = default)
     {
-        await this.captureLock.WaitAsync().ConfigureAwait(false);
+        // if this request is still queued behind another screen's capture when it's
+        // cancelled (e.g. a newer activation superseded it), it's abandoned here without
+        // ever running - this is the main payoff of cancellation for this provider, since
+        // once StretchBlt actually starts it's a single fast call that isn't worth
+        // interrupting mid-flight
+        var waitStopwatch = Stopwatch.StartNew();
+        await this.captureLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        waitStopwatch.Stop();
         try
         {
-            return await Task.Run(
-                () => DesktopScreenshotCaptureProvider.Capture(sourceArea, thumbnailSize))
+            cancellationToken.ThrowIfCancellationRequested();
+            var dispatchStopwatch = Stopwatch.StartNew();
+            var result = await Task.Run(
+                () => DesktopScreenshotCaptureProvider.Capture(sourceArea, thumbnailSize, this.diagnosticLogger),
+                cancellationToken)
                 .ConfigureAwait(false);
+            dispatchStopwatch.Stop();
+
+            // TEMPORARY - see diagnosticLogger remarks above
+            this.diagnosticLogger?.Invoke(
+                $"DIAG capture {sourceArea} -> {thumbnailSize}: " +
+                $"lockWait={waitStopwatch.ElapsedMilliseconds}ms, " +
+                $"dispatchToDone={dispatchStopwatch.ElapsedMilliseconds}ms (includes Task.Run hop)");
+
+            return result;
         }
         finally
         {
@@ -48,9 +77,10 @@ public sealed class DesktopScreenshotCaptureProvider : IScreenshotCaptureProvide
 
     private static Bitmap Capture(
         RectangleInfo sourceArea,
-        SizeInfo thumbnailSize)
+        SizeInfo thumbnailSize,
+        Action<string>? diagnosticLogger)
     {
-        var stopwatch = Stopwatch.StartNew();
+        var setupStopwatch = Stopwatch.StartNew();
 
         var target = thumbnailSize.Round().ToSize();
         var thumbnailImage = new Bitmap(target.Width, target.Height, PixelFormat.Format32bppPArgb);
@@ -59,8 +89,9 @@ public sealed class DesktopScreenshotCaptureProvider : IScreenshotCaptureProvide
         var (desktopHwnd, desktopHdc) = DesktopScreenshotCaptureProvider.GetDesktopDeviceContext();
         var thumbnailHdc = DesktopScreenshotCaptureProvider.GetGraphicsDeviceContext(
             thumbnailGraphics, STRETCH_BLT_MODE.STRETCH_HALFTONE);
-        stopwatch.Stop();
+        setupStopwatch.Stop();
 
+        var bltStopwatch = Stopwatch.StartNew();
         var source = sourceArea.ToRectangle();
         _ = Gdi32.StretchBlt(
             thumbnailHdc,
@@ -75,6 +106,9 @@ public sealed class DesktopScreenshotCaptureProvider : IScreenshotCaptureProvide
             source.Height,
             ROP_CODE.SRCCOPY)
             .ThrowIfFailed();
+        bltStopwatch.Stop();
+
+        var cleanupStopwatch = Stopwatch.StartNew();
 
         // we need to release the graphics device context handle before anything
         // else tries to use the Graphics object - otherwise it'll give an error
@@ -82,6 +116,14 @@ public sealed class DesktopScreenshotCaptureProvider : IScreenshotCaptureProvide
         DesktopScreenshotCaptureProvider.FreeGraphicsDeviceContext(thumbnailGraphics, ref thumbnailHdc);
 
         DesktopScreenshotCaptureProvider.FreeDesktopDeviceContext(ref desktopHwnd, ref desktopHdc);
+        cleanupStopwatch.Stop();
+
+        // TEMPORARY - see diagnosticLogger remarks on the constructor
+        diagnosticLogger?.Invoke(
+            $"DIAG capture phases for {target.Width}x{target.Height}: " +
+            $"setup={setupStopwatch.ElapsedMilliseconds}ms, " +
+            $"stretchBlt={bltStopwatch.ElapsedMilliseconds}ms, " +
+            $"cleanup={cleanupStopwatch.ElapsedMilliseconds}ms");
 
         return thumbnailImage;
     }
