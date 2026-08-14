@@ -16,16 +16,18 @@ namespace FancyMouse.Common.Capture;
 /// runtime to generate preview images of the desktop.
 /// </summary>
 /// <remarks>
-/// A single instance of this provider is shared across every screen on the same device, but
-/// the underlying GDI device contexts this uses can only service one <c>StretchBlt</c> call at
-/// a time - concurrent <see cref="CaptureAsync"/> calls are accepted (each returns a pending
-/// <see cref="Task{Bitmap}"/> immediately) but are then serialized internally via
-/// <see cref="captureLock"/>, so callers don't need to know or care about this limitation.
+/// EXPERIMENTAL - a single instance of this provider is shared across every screen on the same
+/// device. It used to serialize every <see cref="CaptureAsync"/> call through a lock, on the
+/// assumption that the underlying GDI device contexts could only service one <c>StretchBlt</c>
+/// call at a time - that serialization is temporarily removed to test whether that assumption
+/// actually holds, since each call already acquires its own independent desktop device context
+/// (see <see cref="GetDesktopDeviceContext"/>) rather than sharing one, so this is testing
+/// genuinely concurrent <c>StretchBlt</c> calls against independent handles, not concurrent use
+/// of a shared handle. If captures come back corrupted or GDI errors show up, that's the
+/// answer, and the lock needs putting back.
 /// </remarks>
 public sealed class DesktopScreenshotCaptureProvider : IScreenshotCaptureProvider, IDisposable
 {
-    private readonly SemaphoreSlim captureLock = new(1, 1);
-
     // TEMPORARY - diagnosing where per-screen capture time actually goes. Remove this
     // constructor parameter and every diagnosticLogger call alongside it once that's understood.
     private readonly Action<string>? diagnosticLogger;
@@ -36,43 +38,29 @@ public sealed class DesktopScreenshotCaptureProvider : IScreenshotCaptureProvide
     }
 
     public void Dispose()
-        => this.captureLock.Dispose();
+    {
+        // nothing to release here while the capture lock is out - see the class remarks
+    }
 
     public async Task<Bitmap> CaptureAsync(
         RectangleInfo sourceArea,
         SizeInfo thumbnailSize,
         CancellationToken cancellationToken = default)
     {
-        // if this request is still queued behind another screen's capture when it's
-        // cancelled (e.g. a newer activation superseded it), it's abandoned here without
-        // ever running - this is the main payoff of cancellation for this provider, since
-        // once StretchBlt actually starts it's a single fast call that isn't worth
-        // interrupting mid-flight
-        var waitStopwatch = Stopwatch.StartNew();
-        await this.captureLock.WaitAsync(cancellationToken).ConfigureAwait(false);
-        waitStopwatch.Stop();
-        try
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            var dispatchStopwatch = Stopwatch.StartNew();
-            var result = await Task.Run(
-                () => DesktopScreenshotCaptureProvider.Capture(sourceArea, thumbnailSize, this.diagnosticLogger),
-                cancellationToken)
-                .ConfigureAwait(false);
-            dispatchStopwatch.Stop();
+        cancellationToken.ThrowIfCancellationRequested();
+        var dispatchStopwatch = Stopwatch.StartNew();
+        var result = await Task.Run(
+            () => DesktopScreenshotCaptureProvider.Capture(sourceArea, thumbnailSize, this.diagnosticLogger),
+            cancellationToken)
+            .ConfigureAwait(false);
+        dispatchStopwatch.Stop();
 
-            // TEMPORARY - see diagnosticLogger remarks above
-            this.diagnosticLogger?.Invoke(
-                $"DIAG capture {sourceArea} -> {thumbnailSize}: " +
-                $"lockWait={waitStopwatch.ElapsedMilliseconds}ms, " +
-                $"dispatchToDone={dispatchStopwatch.ElapsedMilliseconds}ms (includes Task.Run hop)");
+        // TEMPORARY - see diagnosticLogger remarks above
+        this.diagnosticLogger?.Invoke(
+            $"DIAG capture {sourceArea} -> {thumbnailSize}: " +
+            $"dispatchToDone={dispatchStopwatch.ElapsedMilliseconds}ms (includes Task.Run hop)");
 
-            return result;
-        }
-        finally
-        {
-            this.captureLock.Release();
-        }
+        return result;
     }
 
     private static Bitmap Capture(
