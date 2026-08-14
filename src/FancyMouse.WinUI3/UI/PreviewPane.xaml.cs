@@ -7,6 +7,7 @@ using FancyMouse.Common.Helpers;
 using FancyMouse.Models.Display;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Layout;
+using FancyMouse.Models.Styles;
 
 using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
@@ -124,11 +125,10 @@ public sealed partial class PreviewPane : UserControl
 
     private void ApplyLayout(PreviewLayout? layout)
     {
-        this.ScreensCanvas.Children.Clear();
-        this.screenSlots = [];
-
         if (layout is null)
         {
+            this.ScreensCanvas.Children.Clear();
+            this.screenSlots = [];
             this.Width = 0;
             this.Height = 0;
             this.BackgroundImage.Source = null;
@@ -143,10 +143,93 @@ public sealed partial class PreviewPane : UserControl
         using var backgroundBitmap = DrawingHelper.RenderBackground(layout.CanvasLayout);
         this.BackgroundImage.Source = PreviewPane.ToBitmapImage(backgroundBitmap);
 
-        this.screenSlots = layout.CanvasLayout.DeviceLayouts
+        var newScreenLayouts = layout.CanvasLayout.DeviceLayouts
             .SelectMany(deviceLayout => deviceLayout.ScreenLayouts)
-            .Select(screenLayout => this.CreateScreenSlot(screenLayout, scale))
             .ToList();
+
+        var newSlots = new List<ScreenSlot>(newScreenLayouts.Count);
+        for (var i = 0; i < newScreenLayouts.Count; i++)
+        {
+            var screenLayout = newScreenLayouts[i];
+            var previousSlot = (i < this.screenSlots.Count) ? this.screenSlots[i] : null;
+
+            if (previousSlot is not null && PreviewPane.CanReuse(previousSlot.ScreenLayout, screenLayout))
+            {
+                // pixel-identical bezel/placeholder to what's already on screen at this
+                // position - keep the visuals, just point the slot at the new ScreenLayout
+                // instance (SetScreenshot looks slots up by reference) and clear the content
+                // image, since the screenshot it was showing is now stale desktop state
+                // regardless of whether the bezel itself changed
+                previousSlot.ContentImage.Source = null;
+                newSlots.Add(new ScreenSlot(
+                    screenLayout, previousSlot.BezelImage, previousSlot.PlaceholderRectangle, previousSlot.ContentImage));
+            }
+            else
+            {
+                this.RemoveScreenSlot(previousSlot);
+                newSlots.Add(this.CreateScreenSlot(screenLayout, scale));
+            }
+        }
+
+        // trim any slots left over from a layout that had more screens than this one does
+        // (e.g. a monitor was unplugged) - everything up to newScreenLayouts.Count was
+        // already handled (reused or replaced) above
+        for (var i = newScreenLayouts.Count; i < this.screenSlots.Count; i++)
+        {
+            this.RemoveScreenSlot(this.screenSlots[i]);
+        }
+
+        this.screenSlots = newSlots;
+    }
+
+    /// <summary>
+    /// Reports whether <paramref name="current"/> would produce a pixel-identical bezel and
+    /// placeholder to <paramref name="previous"/> - if so, <see cref="ApplyLayout"/> reuses the
+    /// existing visuals instead of re-rendering them. Deliberately narrow: only the fields that
+    /// actually feed <see cref="CreateScreenSlot"/> are compared (the three bounds rectangles
+    /// used for positioning, the border style used for the bezel, and the background color used
+    /// for the placeholder) - margin/padding style and the rest of <see cref="BoxStyle"/> only
+    /// matter insofar as they already show up in the bounds, so comparing bounds directly covers
+    /// them without needing to compare every style field individually.
+    /// </summary>
+    private static bool CanReuse(ScreenLayout previous, ScreenLayout current)
+        => PreviewPane.CanReuse(previous.ScreenBounds, current.ScreenBounds)
+        && PreviewPane.CanReuse(previous.ScreenStyle.BorderStyle, current.ScreenStyle.BorderStyle)
+        && previous.ScreenStyle.BackgroundStyle.Color1 == current.ScreenStyle.BackgroundStyle.Color1;
+
+    private static bool CanReuse(BoxBounds previous, BoxBounds current)
+        => PreviewPane.CanReuse(previous.OuterBounds, current.OuterBounds)
+        && PreviewPane.CanReuse(previous.PaddingBounds, current.PaddingBounds)
+        && PreviewPane.CanReuse(previous.ContentBounds, current.ContentBounds);
+
+    private static bool CanReuse(RectangleInfo previous, RectangleInfo current)
+        => previous.X == current.X
+        && previous.Y == current.Y
+        && previous.Width == current.Width
+        && previous.Height == current.Height;
+
+    private static bool CanReuse(BorderStyle previous, BorderStyle current)
+        => previous.Color == current.Color
+        && previous.Left == current.Left
+        && previous.Top == current.Top
+        && previous.Right == current.Right
+        && previous.Bottom == current.Bottom
+        && previous.Depth == current.Depth;
+
+    private void RemoveScreenSlot(ScreenSlot? slot)
+    {
+        if (slot is null)
+        {
+            return;
+        }
+
+        this.ScreensCanvas.Children.Remove(slot.BezelImage);
+        if (slot.PlaceholderRectangle is not null)
+        {
+            this.ScreensCanvas.Children.Remove(slot.PlaceholderRectangle);
+        }
+
+        this.ScreensCanvas.Children.Remove(slot.ContentImage);
     }
 
     /// <summary>
@@ -162,10 +245,11 @@ public sealed partial class PreviewPane : UserControl
     {
         var screenBounds = screenLayout.ScreenBounds;
 
+        Image bezelImage;
         using (var bezelBitmap = DrawingHelper.RenderBorder(
             screenBounds.MoveTo(new PointInfo(0, 0)), screenLayout.ScreenStyle))
         {
-            var bezelImage = new Image
+            bezelImage = new Image
             {
                 Source = PreviewPane.ToBitmapImage(bezelBitmap),
                 Stretch = Stretch.Fill,
@@ -174,10 +258,11 @@ public sealed partial class PreviewPane : UserControl
             this.ScreensCanvas.Children.Add(bezelImage);
         }
 
+        Microsoft.UI.Xaml.Shapes.Rectangle? placeholder = null;
         var placeholderColor = screenLayout.ScreenStyle.BackgroundStyle.Color1;
         if (placeholderColor is not null)
         {
-            var placeholder = new Microsoft.UI.Xaml.Shapes.Rectangle
+            placeholder = new Microsoft.UI.Xaml.Shapes.Rectangle
             {
                 Fill = new SolidColorBrush(PreviewPane.ToWindowsColor(placeholderColor.Value)),
             };
@@ -192,7 +277,7 @@ public sealed partial class PreviewPane : UserControl
         PreviewPane.PositionElement(contentImage, screenBounds.ContentBounds, scale);
         this.ScreensCanvas.Children.Add(contentImage);
 
-        return new ScreenSlot(screenLayout, contentImage);
+        return new ScreenSlot(screenLayout, bezelImage, placeholder, contentImage);
     }
 
     private double GetRasterizationScale()
@@ -379,13 +464,26 @@ public sealed partial class PreviewPane : UserControl
 
     private sealed class ScreenSlot
     {
-        public ScreenSlot(ScreenLayout screenLayout, Image contentImage)
+        public ScreenSlot(
+            ScreenLayout screenLayout, Image bezelImage, Microsoft.UI.Xaml.Shapes.Rectangle? placeholderRectangle, Image contentImage)
         {
             this.ScreenLayout = screenLayout;
+            this.BezelImage = bezelImage;
+            this.PlaceholderRectangle = placeholderRectangle;
             this.ContentImage = contentImage;
         }
 
         public ScreenLayout ScreenLayout
+        {
+            get;
+        }
+
+        public Image BezelImage
+        {
+            get;
+        }
+
+        public Microsoft.UI.Xaml.Shapes.Rectangle? PlaceholderRectangle
         {
             get;
         }
