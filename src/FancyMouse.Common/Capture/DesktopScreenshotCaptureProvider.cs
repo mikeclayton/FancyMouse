@@ -16,30 +16,31 @@ namespace FancyMouse.Common.Capture;
 /// runtime to generate preview images of the desktop.
 /// </summary>
 /// <remarks>
-/// EXPERIMENTAL - a single instance of this provider is shared across every screen on the same
-/// device. It used to serialize every <see cref="CaptureAsync"/> call through a lock, on the
-/// assumption that the underlying GDI device contexts could only service one <c>StretchBlt</c>
-/// call at a time - that serialization is temporarily removed to test whether that assumption
-/// actually holds, since each call already acquires its own independent desktop device context
-/// (see <see cref="GetDesktopDeviceContext"/>) rather than sharing one, so this is testing
-/// genuinely concurrent <c>StretchBlt</c> calls against independent handles, not concurrent use
-/// of a shared handle. If captures come back corrupted or GDI errors show up, that's the
-/// answer, and the lock needs putting back.
+/// A single instance of this provider is shared across every screen on the same device, and
+/// captures for different screens are allowed to run concurrently - each call acquires its own
+/// independent desktop device context (see <see cref="GetDesktopDeviceContext"/>) and writes
+/// into its own <see cref="Bitmap"/>, so there's no shared GDI state for concurrent
+/// <c>StretchBlt</c> calls to contend over. Verified against real multi-monitor hardware
+/// (including virtual/software monitors) with no corruption or GDI errors. An earlier
+/// (WinForms-era) version of this codebase did need a lock here, but that was because it drew
+/// every screen directly into one shared composite bitmap - a genuinely unsafe concurrent write
+/// - not because of contention between independent device contexts like this.
 /// </remarks>
 public sealed class DesktopScreenshotCaptureProvider : IScreenshotCaptureProvider, IDisposable
 {
-    // TEMPORARY - diagnosing where per-screen capture time actually goes. Remove this
-    // constructor parameter and every diagnosticLogger call alongside it once that's understood.
-    private readonly Action<string>? diagnosticLogger;
-
-    public DesktopScreenshotCaptureProvider(Action<string>? diagnosticLogger = null)
-    {
-        this.diagnosticLogger = diagnosticLogger;
-    }
+    ////// diagnostic timing - not wired up live, but kept here (and in Capture below) as a
+    ////// ready-made way to see where per-capture time goes if that's ever worth investigating
+    ////// again. Uncomment when needed; don't ship it live.
+    ////private readonly Action<string>? diagnosticLogger;
+    ////
+    ////public DesktopScreenshotCaptureProvider(Action<string>? diagnosticLogger = null)
+    ////{
+    ////    this.diagnosticLogger = diagnosticLogger;
+    ////}
 
     public void Dispose()
     {
-        // nothing to release here while the capture lock is out - see the class remarks
+        // nothing to release
     }
 
     public async Task<Bitmap> CaptureAsync(
@@ -48,27 +49,25 @@ public sealed class DesktopScreenshotCaptureProvider : IScreenshotCaptureProvide
         CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var dispatchStopwatch = Stopwatch.StartNew();
+
+        ////var dispatchStopwatch = Stopwatch.StartNew();
         var result = await Task.Run(
-            () => DesktopScreenshotCaptureProvider.Capture(sourceArea, thumbnailSize, this.diagnosticLogger),
+            () => DesktopScreenshotCaptureProvider.Capture(sourceArea, thumbnailSize),
             cancellationToken)
             .ConfigureAwait(false);
-        dispatchStopwatch.Stop();
-
-        // TEMPORARY - see diagnosticLogger remarks above
-        this.diagnosticLogger?.Invoke(
-            $"DIAG capture {sourceArea} -> {thumbnailSize}: " +
-            $"dispatchToDone={dispatchStopwatch.ElapsedMilliseconds}ms (includes Task.Run hop)");
+        ////dispatchStopwatch.Stop();
+        ////this.diagnosticLogger?.Invoke(
+        ////    $"DIAG capture {sourceArea} -> {thumbnailSize}: " +
+        ////    $"dispatchToDone={dispatchStopwatch.ElapsedMilliseconds}ms (includes Task.Run hop)");
 
         return result;
     }
 
     private static Bitmap Capture(
         RectangleInfo sourceArea,
-        SizeInfo thumbnailSize,
-        Action<string>? diagnosticLogger)
+        SizeInfo thumbnailSize)
     {
-        var setupStopwatch = Stopwatch.StartNew();
+        ////var setupStopwatch = Stopwatch.StartNew();
 
         var target = thumbnailSize.Round().ToSize();
         var thumbnailImage = new Bitmap(target.Width, target.Height, PixelFormat.Format32bppPArgb);
@@ -77,9 +76,9 @@ public sealed class DesktopScreenshotCaptureProvider : IScreenshotCaptureProvide
         var (desktopHwnd, desktopHdc) = DesktopScreenshotCaptureProvider.GetDesktopDeviceContext();
         var thumbnailHdc = DesktopScreenshotCaptureProvider.GetGraphicsDeviceContext(
             thumbnailGraphics, STRETCH_BLT_MODE.STRETCH_HALFTONE);
-        setupStopwatch.Stop();
+        ////setupStopwatch.Stop();
 
-        var bltStopwatch = Stopwatch.StartNew();
+        ////var bltStopwatch = Stopwatch.StartNew();
         var source = sourceArea.ToRectangle();
         _ = Gdi32.StretchBlt(
             thumbnailHdc,
@@ -94,9 +93,9 @@ public sealed class DesktopScreenshotCaptureProvider : IScreenshotCaptureProvide
             source.Height,
             ROP_CODE.SRCCOPY)
             .ThrowIfFailed();
-        bltStopwatch.Stop();
+        ////bltStopwatch.Stop();
 
-        var cleanupStopwatch = Stopwatch.StartNew();
+        ////var cleanupStopwatch = Stopwatch.StartNew();
 
         // we need to release the graphics device context handle before anything
         // else tries to use the Graphics object - otherwise it'll give an error
@@ -104,14 +103,13 @@ public sealed class DesktopScreenshotCaptureProvider : IScreenshotCaptureProvide
         DesktopScreenshotCaptureProvider.FreeGraphicsDeviceContext(thumbnailGraphics, ref thumbnailHdc);
 
         DesktopScreenshotCaptureProvider.FreeDesktopDeviceContext(ref desktopHwnd, ref desktopHdc);
-        cleanupStopwatch.Stop();
+        ////cleanupStopwatch.Stop();
 
-        // TEMPORARY - see diagnosticLogger remarks on the constructor
-        diagnosticLogger?.Invoke(
-            $"DIAG capture phases for {target.Width}x{target.Height}: " +
-            $"setup={setupStopwatch.ElapsedMilliseconds}ms, " +
-            $"stretchBlt={bltStopwatch.ElapsedMilliseconds}ms, " +
-            $"cleanup={cleanupStopwatch.ElapsedMilliseconds}ms");
+        ////diagnosticLogger?.Invoke(
+        ////    $"DIAG capture phases for {target.Width}x{target.Height}: " +
+        ////    $"setup={setupStopwatch.ElapsedMilliseconds}ms, " +
+        ////    $"stretchBlt={bltStopwatch.ElapsedMilliseconds}ms, " +
+        ////    $"cleanup={cleanupStopwatch.ElapsedMilliseconds}ms");
 
         return thumbnailImage;
     }

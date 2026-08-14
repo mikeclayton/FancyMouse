@@ -160,17 +160,17 @@ public sealed partial class PreviewWindow : Window
         // below, rather than later when we actually show the window
         this.ClaimForegroundWindow();
 
-        // TEMPORARY - bracketing every step up to the point captures are kicked off, to find
-        // out where time goes before capture instrumentation (see DesktopScreenshotCaptureProvider)
-        // even starts measuring anything. Remove alongside that once this is understood.
-        var diagStopwatch = Stopwatch.StartNew();
-        void DiagCheckpoint(string label)
-            => logger.Info($"DIAG checkpoint {label}: elapsed={diagStopwatch.ElapsedMilliseconds}ms");
+        ////// diagnostic timing - not wired up live, but kept here as a ready-made way to see
+        ////// where activation time goes if that's ever worth investigating again. Uncomment
+        ////// (along with every DiagCheckpoint(...) call below) when needed; don't ship it live.
+        ////var diagStopwatch = Stopwatch.StartNew();
+        ////void DiagCheckpoint(string label)
+        ////    => logger.Info($"DIAG checkpoint {label}: elapsed={diagStopwatch.ElapsedMilliseconds}ms");
 
         // hide the form while we redraw it...
         await this.HideWindowAsync()
             .ConfigureAwait(false);
-        DiagCheckpoint("HideWindowAsync done");
+        ////DiagCheckpoint("HideWindowAsync done");
 
         // capture this first so we get an accurate current mouse location
         // (in case the user moves it a few pixels while the form is rendered)
@@ -179,7 +179,7 @@ public sealed partial class PreviewWindow : Window
         var appSettings = ConfigHelper.AppSettings ?? throw new InvalidOperationException();
 
         var displayInfo = DeviceHelper.GetDisplayInfo();
-        DiagCheckpoint("GetDisplayInfo done");
+        ////DiagCheckpoint("GetDisplayInfo done");
 
         var activatedScreen = DeviceHelper.GetActivatedScreen(displayInfo.Devices[0], activatedLocation);
 
@@ -188,7 +188,7 @@ public sealed partial class PreviewWindow : Window
             previewStyle,
             displayInfo,
             activatedScreen: activatedScreen);
-        DiagCheckpoint("GetPreviewLayout done");
+        ////DiagCheckpoint("GetPreviewLayout done");
 
         // the outer border is this window's own responsibility, not the preview pane's -
         // see LayoutHelper.GetHostBoxStyle. PreviewLayout itself has no desktop position
@@ -201,17 +201,17 @@ public sealed partial class PreviewWindow : Window
 
         await this.PositionWindowAsync(positionedHostOuterBounds)
             .ConfigureAwait(false);
-        DiagCheckpoint("PositionWindowAsync done");
+        ////DiagCheckpoint("PositionWindowAsync done");
 
         await this.RenderBorderAsync(previewLayout, hostBoxStyle)
             .ConfigureAwait(false);
-        DiagCheckpoint("RenderBorderAsync done");
+        ////DiagCheckpoint("RenderBorderAsync done");
 
         // builds every screen's bezel + placeholder fill immediately, so there's something to
         // show as soon as the window becomes visible - screenshots backfill afterwards
         await this.SetPreviewPaneLayoutAsync(previewLayout, activatedScreen)
             .ConfigureAwait(false);
-        DiagCheckpoint("SetPreviewPaneLayoutAsync done");
+        ////DiagCheckpoint("SetPreviewPaneLayoutAsync done");
 
         // cancel whatever the previous activation - if any - might still have running, and
         // start a fresh cancellation scope for this one (see ClearPreview and the
@@ -230,12 +230,11 @@ public sealed partial class PreviewWindow : Window
         var captureTasks = new List<(ScreenLayout ScreenLayout, Task<Bitmap> CaptureTask)>();
         foreach (var deviceLayout in previewLayout.CanvasLayout.DeviceLayouts)
         {
-            // TEMPORARY - the diagnosticLogger argument, see DesktopScreenshotCaptureProvider remarks
             captureTasks.AddRange(pipeline.AddCaptureTasks(
-                deviceLayout, new DesktopScreenshotCaptureProvider(msg => this.Logger.Info(msg))));
+                deviceLayout, new DesktopScreenshotCaptureProvider()));
         }
 
-        DiagCheckpoint("all capture requests kicked off");
+        ////DiagCheckpoint("all capture requests kicked off");
 
         // the activated screen's own capture must complete before the window is shown,
         // otherwise a *later* capture of that screen would risk capturing the preview window
@@ -259,14 +258,14 @@ public sealed partial class PreviewWindow : Window
             var allCaptureTasks = captureTasks.Select(entry => entry.CaptureTask).ToArray();
             await Task.WhenAny(Task.WhenAll(allCaptureTasks), Task.Delay(PreviewWindow.ScreenshotGracePeriod, cancellation.Token))
                 .ConfigureAwait(false);
-            DiagCheckpoint("grace period race done");
+            ////DiagCheckpoint("grace period race done");
             await activatedCaptureTask
                 .ConfigureAwait(false);
-            DiagCheckpoint("activated screen capture done");
+            ////DiagCheckpoint("activated screen capture done");
 
             await this.ShowWindowAsync()
                 .ConfigureAwait(false);
-            DiagCheckpoint("ShowWindowAsync done - window visible");
+            ////DiagCheckpoint("ShowWindowAsync done - window visible");
         }
         catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
         {
