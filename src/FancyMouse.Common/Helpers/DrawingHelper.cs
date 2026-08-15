@@ -2,6 +2,7 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 
+using FancyMouse.Common.Bezels;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Layout;
 using FancyMouse.Models.Styles;
@@ -60,7 +61,7 @@ public static class DrawingHelper
     // Hardcoded 3-D lighting config shared by all bezels.
     // Values are compile-time constants; BezelConfig exists so the rendering
     // methods are parameterised and ready to accept per-bezel variation later.
-    private static readonly Drawing.ContouredBezels.BezelConfig ContouredBezelConfig = new(
+    private static readonly BezelConfig ContouredBezelConfig = new(
         fadeStart: 30.0,            // degrees from edge where corner rolloff begins
         fadeEnd: 60.0,              // degrees where rolloff reaches zero
         highlightMax: 0x44 / 255.0, // peak highlight opacity (~26.7 %)
@@ -87,7 +88,7 @@ public static class DrawingHelper
 
         // draw a contoured bezel
         var bounds = boxBounds.BorderBounds.ToRectangle();
-        using var renderer = new Drawing.ContouredBezels.BezelRenderer(
+        using var renderer = new BezelRenderer(
             borderStyle,
             DrawingHelper.ContouredBezelConfig);
         renderer.DrawBezel(graphics, bounds.X, bounds.Y, bounds.Width, bounds.Height);

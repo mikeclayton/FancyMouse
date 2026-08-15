@@ -1,4 +1,4 @@
-namespace FancyMouse.Drawing.ContouredBezels;
+namespace FancyMouse.Common.Bezels;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // BezelProfileRamped

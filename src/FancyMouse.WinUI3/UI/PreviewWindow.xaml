@@ -13,6 +13,12 @@
         host box's own outer bounds - see PreviewWindow.xaml.cs) - PreviewPane is positioned
         on top of it via an explicit Margin equal to the host's margin+border thickness, so it
         lines up exactly with the transparent hole in the middle of the border image.
+
+        The window itself is clipped to a rounded-rectangle region matching that same shape (see
+        PreviewWindow.ApplyWindowRegion) - an unpackaged WinUI3 window can't get real per-pixel
+        alpha transparency from DWM, so this is what actually makes the corners outside the
+        rounded border disappear against the real desktop, rather than BorderImage's own
+        transparent corners alone.
     -->
     <Grid
         HorizontalAlignment="Stretch"

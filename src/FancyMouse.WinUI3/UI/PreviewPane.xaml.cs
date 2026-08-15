@@ -50,10 +50,15 @@ public sealed partial class PreviewPane : UserControl
         new PropertyMetadata(null));
 
     /// <summary>
-    /// How strongly <see cref="GetHistoricalPlaceholder"/>'s stand-in screenshots are blurred -
-    /// see <see cref="BlurHelper.CreateBlurredCopy"/> for what the value means.
+    /// How strongly <see cref="GetHistoricalPlaceholder"/>'s stand-in screenshots are blurred,
+    /// desaturated and darkened - see <see cref="BlurHelper.CreateBlurredCopy"/> for what the
+    /// values mean. Muting the stand-in on top of blurring it is what makes the real screenshot
+    /// visually "pop" into place once it arrives, rather than the swap reading as a same-ish
+    /// image just sharpening.
     /// </summary>
-    private const decimal BlurIntensity = 0.15m;
+    private const decimal BlurIntensity = 0.75m;
+    private const double BlurSaturation = 0.5;
+    private const double BlurBrightness = 0.55;
 
     /// <summary>
     /// How long a screen's last real screenshot remains a reasonable stand-in for a fresh one -
@@ -148,7 +153,8 @@ public sealed partial class PreviewPane : UserControl
 
         this.screenSlots[index].ContentImage.Source = PreviewPane.ToBitmapImage(image);
 
-        using var blurredImage = BlurHelper.CreateBlurredCopy(image, PreviewPane.BlurIntensity);
+        using var blurredImage = BlurHelper.CreateBlurredCopy(
+            image, PreviewPane.BlurIntensity, PreviewPane.BlurSaturation, PreviewPane.BlurBrightness);
         this.screenshotHistory[index] = new ScreenshotHistoryEntry(
             PreviewPane.ToBitmapImage(blurredImage), DateTime.UtcNow);
     }

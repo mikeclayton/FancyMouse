@@ -26,6 +26,16 @@ namespace FancyMouse.Common.Capture;
 /// </remarks>
 public sealed class ScreenshotCapturePipeline : IAsyncDisposable
 {
+    // DEMO - artificial delay, randomised per screen, so the "blurred last screenshot as a
+    // placeholder while loading" effect (see PreviewPane.SetScreenshot/
+    // BlurHelper.CreateBlurredCopy) is actually visible to look at for long enough to judge,
+    // instead of usually being masked by how fast a real capture normally completes - and so
+    // screens don't all swap from blurred to sharp in visible lockstep. Currently disabled (see
+    // the commented-out await in ApplyWhenReadyAsync below) - uncomment both to re-enable for
+    // another look at the effect; remove entirely once it's no longer needed.
+    ////private static readonly TimeSpan DemoArtificialDelayMin = TimeSpan.FromMilliseconds(500);
+    ////private static readonly TimeSpan DemoArtificialDelayMax = TimeSpan.FromMilliseconds(1500);
+
     private readonly IScreenshotCaptureSink sink;
     private readonly CancellationToken cancellationToken;
     private readonly List<IScreenshotCaptureProvider> providers = new();
@@ -151,6 +161,10 @@ public sealed class ScreenshotCapturePipeline : IAsyncDisposable
 
         using (bitmap)
         {
+            // DEMO - see the DemoArtificialDelayMin/Max remarks above
+            ////var demoDelay = ScreenshotCapturePipeline.DemoArtificialDelayMin + ((ScreenshotCapturePipeline.DemoArtificialDelayMax - ScreenshotCapturePipeline.DemoArtificialDelayMin) * Random.Shared.NextDouble());
+            ////await Task.Delay(demoDelay, this.cancellationToken).ConfigureAwait(false);
+
             await this.sink.SetScreenshotAsync(screenLayout, bitmap).ConfigureAwait(false);
         }
     }

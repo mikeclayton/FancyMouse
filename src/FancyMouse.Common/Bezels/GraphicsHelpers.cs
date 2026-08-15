@@ -1,7 +1,7 @@
 ﻿using System.Drawing;
 using System.Drawing.Drawing2D;
 
-namespace FancyMouse.Drawing.ContouredBezels;
+namespace FancyMouse.Common.Bezels;
 
 internal static class GraphicsHelpers
 {

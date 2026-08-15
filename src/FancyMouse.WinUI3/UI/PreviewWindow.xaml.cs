@@ -20,6 +20,7 @@ using Microsoft.UI.Xaml.Media.Imaging;
 using Windows.Graphics;
 using Windows.Win32;
 using Windows.Win32.Foundation;
+using Windows.Win32.Graphics.Gdi;
 using Windows.Win32.UI.WindowsAndMessaging;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -62,18 +63,26 @@ public sealed partial class PreviewWindow : Window
     private static readonly TimeSpan ScreenshotGracePeriod = TimeSpan.FromMilliseconds(250);
 
     /// <summary>
+    /// This window's own handle - captured once in <see cref="InitializeWindow"/> and reused
+    /// wherever later code needs to talk to the real Win32 window (<see cref="ApplyWindowRegion"/>
+    /// in particular), rather than re-resolving it from <see cref="WinRT.Interop.WindowNative"/>
+    /// every time.
+    /// </summary>
+    private HWND hWnd;
+
+    /// <summary>
     /// Initializes some settings on the application window.
     /// </summary>
     private void InitializeWindow()
     {
+        this.hWnd = (HWND)WinRT.Interop.WindowNative.GetWindowHandle(this);
+
         var appWindow = this.AppWindow;
         var presenter = appWindow.Presenter as OverlappedPresenter;
         if (presenter != null)
         {
-            var hWnd = (HWND)WinRT.Interop.WindowNative.GetWindowHandle(this);
-
             // get the current window style
-            var result = User32.GetWindowLong(hWnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE)
+            var result = User32.GetWindowLong(this.hWnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE)
                 .ThrowIfFailed()
                 .GetValue();
 
@@ -81,11 +90,11 @@ public sealed partial class PreviewWindow : Window
             var style = (WINDOW_STYLE)result;
             style &= ~WINDOW_STYLE.WS_OVERLAPPEDWINDOW;
             style |= WINDOW_STYLE.WS_POPUP;
-            _ = User32.SetWindowLong(hWnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE, (int)style)
+            _ = User32.SetWindowLong(this.hWnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE, (int)style)
                 .ThrowIfFailed();
 
             // get the current extended window style
-            result = User32.GetWindowLong(hWnd, WINDOW_LONG_PTR_INDEX.GWL_EXSTYLE)
+            result = User32.GetWindowLong(this.hWnd, WINDOW_LONG_PTR_INDEX.GWL_EXSTYLE)
                 .ThrowIfFailed()
                 .GetValue();
 
@@ -93,13 +102,49 @@ public sealed partial class PreviewWindow : Window
             var exStyle = (WINDOW_EX_STYLE)result;
             exStyle |= WINDOW_EX_STYLE.WS_EX_TOOLWINDOW; // hide the taskbar icon
             exStyle |= WINDOW_EX_STYLE.WS_EX_TOPMOST;    // make topmost
-            _ = User32.SetWindowLong(hWnd, WINDOW_LONG_PTR_INDEX.GWL_EXSTYLE, (int)exStyle)
+            _ = User32.SetWindowLong(this.hWnd, WINDOW_LONG_PTR_INDEX.GWL_EXSTYLE, (int)exStyle)
                 .ThrowIfFailed();
         }
 
         this.Activated += this.PreviewWindow_Activated;
         this.PreviewPane.NavigateTo += this.PreviewPane_NavigateTo;
         this.PreviewPane.Cancel += this.PreviewPane_Cancel;
+    }
+
+    /// <summary>
+    /// Clips this window itself - not just its content - to a rounded-rectangle region sized
+    /// <paramref name="width"/> x <paramref name="height"/> with corner radius
+    /// <paramref name="cornerRadius"/>, matching <see cref="DrawingHelper.RenderBorder"/>'s own
+    /// outer bezel shape (see <c>BezelRenderer</c>'s remarks: bezel thickness sets both the ring
+    /// width and the outer corner radius). Pixels outside the region are never composited by the
+    /// OS at all - genuinely showing the real desktop through them, unlike
+    /// <see cref="BorderImage"/>'s own transparent corners, which an unpackaged WinUI3 window
+    /// can't turn into real per-pixel alpha against the desktop on their own.
+    /// </summary>
+    /// <remarks>
+    /// Reapplied on every activation, in step with <see cref="RenderBorderAsync"/> sizing
+    /// <see cref="BorderImage"/> to match, since the window's size (and therefore this region)
+    /// changes with the active device/screen layout. <see cref="Gdi32.CreateRoundRectRgn"/>'s
+    /// region handle is only freed by this method on failure - <c>SetWindowRgn</c> takes
+    /// ownership of it on success, and deleting it afterwards would be a use-after-free from the
+    /// OS's perspective.
+    /// </remarks>
+    private void ApplyWindowRegion(int width, int height, int cornerRadius)
+    {
+        var region = Gdi32.CreateRoundRectRgn(0, 0, width, height, cornerRadius * 2, cornerRadius * 2)
+            .ThrowIfFailed()
+            .GetValue();
+        try
+        {
+            _ = User32.SetWindowRgn(this.hWnd, region, bRedraw: true)
+                .ThrowIfFailed();
+        }
+        catch
+        {
+            _ = Gdi32.DeleteObject((HGDIOBJ)region)
+                .IgnoreFailure();
+            throw;
+        }
     }
 
     private void PreviewWindow_Activated(object sender, WindowActivatedEventArgs e)
@@ -481,9 +526,10 @@ public sealed partial class PreviewWindow : Window
 
     /// <summary>
     /// Renders this window's own border - see <see cref="LayoutHelper.GetHostBoxStyle"/> -
-    /// and assigns it to <see cref="BorderImage"/>. Unlike <see cref="PreviewPane"/>'s
-    /// content, this is rendered directly by the host rather than the pane, since the border
-    /// is deliberately not one of the pane's concerns.
+    /// and assigns it to <see cref="BorderImage"/>, and clips the real window to match (see
+    /// <see cref="ApplyWindowRegion"/>). Unlike <see cref="PreviewPane"/>'s content, this is
+    /// rendered directly by the host rather than the pane, since the border is deliberately not
+    /// one of the pane's concerns.
     /// </summary>
     private async Task RenderBorderAsync(PreviewLayout previewLayout, BoxStyle hostBoxStyle)
     {
@@ -499,6 +545,8 @@ public sealed partial class PreviewWindow : Window
         await this.InvokeOnUiThreadAsync(
             () =>
             {
+                this.ApplyWindowRegion(borderBitmap.Width, borderBitmap.Height, (int)hostBoxStyle.BorderStyle.Left);
+
                 var highDpiScalingRatio = this.GetHighDpiScalingRatio();
                 this.BorderImage.Width = borderBitmap.Width * highDpiScalingRatio;
                 this.BorderImage.Height = borderBitmap.Height * highDpiScalingRatio;
