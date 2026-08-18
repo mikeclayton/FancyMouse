@@ -44,15 +44,7 @@ public partial class App : Application
         var logger = LogManager.GetCurrentClassLogger();
         logger.Info("app launched");
 
-        // one file per launch, same naming scheme as NLog.config's logfile target, so
-        // activation timings from any given run are easy to find and compare against another.
         Telemetry.SetCurrent(TelemetryContext.Create(nameof(FancyMouse)));
-        var telemetryPath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "FancyMouse",
-            "Telemetry",
-            $"telemetry_{DateTime.Now:yyyy-MM-dd_HH_mm_ss}.jsonl");
-        Telemetry.Current.Start(new FileTelemetryWriter(telemetryPath));
 
         try
         {
@@ -74,6 +66,22 @@ public partial class App : Application
             ConfigHelper.LoadAppSettings();
             ConfigHelper.StartAppSettingsWatcher();
             logger.Info("loaded app settings");
+
+            // opt-in, off by default - see AppSettings.TelemetryEnabled remarks. Deliberately
+            // only constructs FileTelemetryWriter (which creates the file immediately, even
+            // before anything's written to it) when actually enabled, so a default install
+            // never leaves a telemetry file behind at all. One file per launch, same naming
+            // scheme as NLog.config's logfile target, so activation timings from any given run
+            // are easy to find and compare against another.
+            if (ConfigHelper.AppSettings?.TelemetryEnabled == true)
+            {
+                var telemetryPath = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "FancyMouse",
+                    "Telemetry",
+                    $"telemetry_{DateTime.Now:yyyy-MM-dd_HH_mm_ss}.jsonl");
+                Telemetry.Current.Start(new FileTelemetryWriter(telemetryPath));
+            }
 
             logger.Info("starting hotkey handler");
 

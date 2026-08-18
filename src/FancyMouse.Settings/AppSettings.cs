@@ -60,15 +60,18 @@ public sealed class AppSettings
                 Color.Blue,
                 Color.Green,
             }
-        )
+        ),
+        telemetryEnabled: false
     );
 
     public AppSettings(
         Keystroke hotkey,
-        PreviewStyle previewStyle)
+        PreviewStyle previewStyle,
+        bool telemetryEnabled)
     {
         this.Hotkey = hotkey ?? throw new ArgumentNullException(nameof(hotkey));
         this.PreviewStyle = previewStyle ?? throw new ArgumentNullException(nameof(previewStyle));
+        this.TelemetryEnabled = telemetryEnabled;
     }
 
     public Keystroke Hotkey
@@ -77,6 +80,17 @@ public sealed class AppSettings
     }
 
     public PreviewStyle PreviewStyle
+    {
+        get;
+    }
+
+    /// <summary>
+    /// Opt-in, off by default - an install with no "telemetry" section at all (or an explicit
+    /// "enabled": false) never starts <see cref="Common.Telemetry.Telemetry.Current"/>, so no
+    /// telemetry file is ever created. Set "telemetry": { "enabled": true } in the config file
+    /// to turn it on (e.g. when asking a user experiencing a problem to help diagnose it).
+    /// </summary>
+    public bool TelemetryEnabled
     {
         get;
     }
