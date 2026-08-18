@@ -28,11 +28,11 @@ public sealed class AppSettings
                 marginStyle: MarginStyle.Empty,
                 borderStyle: new(
                     color: SystemColors.Highlight,
-                    all: 6,
-                    depth: 0
+                    all: 8,
+                    depth: 2
                 ),
                 paddingStyle: new(
-                    all: 4
+                    all: 6
                 ),
                 backgroundStyle: new(
                     color1: Color.FromArgb(0xFF, 0x0D, 0x57, 0xD2),
