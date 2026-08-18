@@ -65,6 +65,16 @@ public partial class App : Application
             logger.Info("loaded app settings");
 
             logger.Info("starting hotkey handler");
+
+            // owns making sure only one PreviewWindow.ShowPreviewAsync call is ever running at
+            // a time - PreviewWindow itself is deliberately unaware of this; it just accepts a
+            // CancellationToken and stops promptly when told to (see ShowPreviewAsync's
+            // remarks). Rapid repeat activation (e.g. spam-pressing the hotkey) would otherwise
+            // let two calls interleave and mutate the window's UI state at the same time, which
+            // is visible as a brief white flash before the correct content redraws.
+            CancellationTokenSource? activationCancellation = null;
+            var activationTask = Task.CompletedTask;
+
             ConfigHelper.SetHotKeyEventHandler(
                 (_, _) =>
                 {
@@ -74,7 +84,43 @@ public partial class App : Application
                     previewWindow.DispatcherQueue.TryEnqueue(
                         async () =>
                         {
-                            await previewWindow.ShowPreviewAsync();
+                            // supersede whatever activation is currently running (if any), and
+                            // wait for it to actually stop before this one starts - not just
+                            // signal cancellation and hope
+                            activationCancellation?.Cancel();
+                            try
+                            {
+                                await activationTask.ConfigureAwait(false);
+                            }
+                            catch (OperationCanceledException)
+                            {
+                                // expected - the previous activation observed the cancellation
+                                // above and stopped
+                            }
+
+                            activationCancellation?.Dispose();
+                            var cancellation = new CancellationTokenSource();
+                            activationCancellation = cancellation;
+
+                            var task = previewWindow.ShowPreviewAsync(cancellation.Token);
+                            activationTask = task;
+                            try
+                            {
+                                await task.ConfigureAwait(false);
+                            }
+                            catch (OperationCanceledException)
+                            {
+                                // expected - superseded by a newer activation before this one
+                                // finished
+                            }
+                            catch (Exception ex)
+                            {
+                                // this callback runs as a fire-and-forget async lambda passed to
+                                // DispatcherQueue.TryEnqueue - anything other than
+                                // OperationCanceledException would otherwise vanish silently
+                                // instead of surfacing anywhere
+                                logger.Error(ex, "unhandled exception while showing the preview window");
+                            }
                         });
                 });
             logger.Info("started hotkey handler");

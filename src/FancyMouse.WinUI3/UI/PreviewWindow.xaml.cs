@@ -46,10 +46,12 @@ public sealed partial class PreviewWindow : Window
 
     /// <summary>
     /// Governs every screenshot capture started by the current activation's
-    /// <see cref="ScreenshotCapturePipeline"/> - cancelled (and replaced) whenever the preview
-    /// is cleared, whether that's because a new activation superseded this one or because the
-    /// window was simply hidden (see <see cref="ClearPreview"/>), so outstanding captures for a
-    /// no-longer-relevant activation don't keep doing GDI work in the background.
+    /// <see cref="ScreenshotCapturePipeline"/> - linked to the <see cref="CancellationToken"/>
+    /// <see cref="ShowPreviewAsync"/> was called with (see its remarks for what that guards
+    /// against), and *also* cancelled whenever the preview is cleared for any other reason (see
+    /// <see cref="ClearPreview"/> - e.g. the user dismissed the window while backfill captures
+    /// were still running), so outstanding captures for a no-longer-relevant activation don't
+    /// keep doing GDI work in the background either way.
     /// </summary>
     private CancellationTokenSource? activationCancellation;
 
@@ -109,6 +111,14 @@ public sealed partial class PreviewWindow : Window
         this.Activated += this.PreviewWindow_Activated;
         this.PreviewPane.NavigateTo += this.PreviewPane_NavigateTo;
         this.PreviewPane.Cancel += this.PreviewPane_Cancel;
+
+        // this window is never actually Hide()/Show()'d again after this point - "hidden" is
+        // instead an empty SetWindowRgn clip (see ClipWindowToNothing/HideWindow), so DWM keeps
+        // compositing it continuously in the background instead of presenting a blank first
+        // frame on every reveal. Clip to nothing *before* ever showing it, so there's no
+        // on-screen flash of its default (unstyled) content at startup either.
+        this.ClipWindowToNothing();
+        this.AppWindow.Show();
     }
 
     /// <summary>
@@ -122,18 +132,51 @@ public sealed partial class PreviewWindow : Window
     /// can't turn into real per-pixel alpha against the desktop on their own.
     /// </summary>
     /// <remarks>
-    /// Reapplied on every activation, in step with <see cref="RenderBorderAsync"/> sizing
-    /// <see cref="BorderImage"/> to match, since the window's size (and therefore this region)
-    /// changes with the active device/screen layout. <see cref="Gdi32.CreateRoundRectRgn"/>'s
-    /// region handle is only freed by this method on failure - <c>SetWindowRgn</c> takes
-    /// ownership of it on success, and deleting it afterwards would be a use-after-free from the
-    /// OS's perspective.
+    /// Called by <see cref="ShowWindowAsync"/> with the real, just-rendered size to reveal the
+    /// window - see <see cref="ClipWindowToNothing"/> for the "hidden" counterpart. Since the
+    /// window is never really Hide()/Show()'d after <see cref="InitializeWindow"/>'s first call,
+    /// there's no "first frame" to flash blank on reveal - only a cheap region swap.
+    /// <see cref="Gdi32.CreateRoundRectRgn"/>'s region handle is only freed by this method on
+    /// failure - <c>SetWindowRgn</c> takes ownership of it on success, and deleting it afterwards
+    /// would be a use-after-free from the OS's perspective.
     /// </remarks>
     private void ApplyWindowRegion(int width, int height, int cornerRadius)
     {
-        var region = Gdi32.CreateRoundRectRgn(0, 0, width, height, cornerRadius * 2, cornerRadius * 2)
+        // CreateRoundRectRgn's bottom-right point is exclusive (the region covers columns
+        // [0, x2) and rows [0, y2), not [0, x2]) - confirmed by disabling SetWindowRgn entirely
+        // and finding the window's own rendering was already correct and complete right up to
+        // its true edge. Using width/height directly here was clipping away that genuinely
+        // rendered last row/column; +1 on each makes the region cover the full width x height
+        // window instead of width-1 x height-1 of it.
+        var region = Gdi32.CreateRoundRectRgn(0, 0, width + 1, height + 1, cornerRadius * 2, cornerRadius * 2)
             .ThrowIfFailed()
             .GetValue();
+        this.SetWindowRegion(region);
+    }
+
+    /// <summary>
+    /// Clips this window to nothing at all, making it fully invisible while it stays actively
+    /// composited by DWM - see <see cref="HideWindow"/>/<see cref="InitializeWindow"/>, and
+    /// <see cref="ApplyWindowRegion"/>'s remarks for why that matters.
+    /// </summary>
+    /// <remarks>
+    /// Deliberately <c>CreateRectRgn(0, 0, 0, 0)</c>, not <c>CreateRoundRectRgn</c> with all-zero
+    /// arguments: only <c>CreateRectRgn</c> documents that setting both diametrically-opposite
+    /// corners to (0,0) creates a genuinely empty region.
+    /// <c>CreateRoundRectRgn</c> makes no such guarantee for a degenerate rectangle - it can
+    /// return <see langword="null"/> (a real failure this codebase saw), rather than an empty
+    /// region.
+    /// </remarks>
+    private void ClipWindowToNothing()
+    {
+        var region = Gdi32.CreateRectRgn(0, 0, 0, 0)
+            .ThrowIfFailed()
+            .GetValue();
+        this.SetWindowRegion(region);
+    }
+
+    private void SetWindowRegion(HRGN region)
+    {
         try
         {
             _ = User32.SetWindowRgn(this.hWnd, region, bRedraw: true)
@@ -190,7 +233,18 @@ public sealed partial class PreviewWindow : Window
         this.HideWindow();
     }
 
-    public async Task ShowPreviewAsync()
+    /// <summary>
+    /// Builds and shows the preview for a single activation. Doesn't guard against being called
+    /// again before it's finished - that's deliberately the caller's job, not this method's (see
+    /// the hotkey handler in <c>App.xaml.cs</c>): the caller is expected to cancel
+    /// <paramref name="cancellationToken"/>'s source and wait for any previous call to this
+    /// method to actually finish before starting a new one, so two calls can never be mutating
+    /// this window's UI state at the same time. This method's own part of that contract is just
+    /// to check <paramref name="cancellationToken"/> between its main steps and stop promptly
+    /// (by throwing <see cref="OperationCanceledException"/>, same as any other cancellable
+    /// async method) if it's been superseded, rather than finishing a layout nobody wants.
+    /// </summary>
+    public async Task ShowPreviewAsync(CancellationToken cancellationToken)
     {
         var logger = this.Logger;
 
@@ -212,7 +266,10 @@ public sealed partial class PreviewWindow : Window
         ////void DiagCheckpoint(string label)
         ////    => logger.Info($"DIAG checkpoint {label}: elapsed={diagStopwatch.ElapsedMilliseconds}ms");
 
-        // hide the form while we redraw it...
+        // hide the form while we redraw it... (also cancels whatever the *previous* activation's
+        // own activationCancellation was, via ClearPreview - harmless if the caller already
+        // cancelled and awaited it before calling this method, since cancelling an
+        // already-cancelled source is a no-op)
         await this.HideWindowAsync()
             .ConfigureAwait(false);
         ////DiagCheckpoint("HideWindowAsync done");
@@ -244,13 +301,20 @@ public sealed partial class PreviewWindow : Window
         var hostBounds = LayoutHelper.GetHostBounds(new RectangleInfo(previewLayout.PreviewSize), hostBoxStyle);
         var positionedHostOuterBounds = LayoutHelper.PositionOnScreen(hostBounds.OuterBounds, activatedScreen, activatedLocation);
 
+        // a newer activation superseding this one is the common, expected case under rapid
+        // repeat activation - check here, before paying for the border render below, rather
+        // than only ever noticing via a later awaited call
+        cancellationToken.ThrowIfCancellationRequested();
+
         await this.PositionWindowAsync(positionedHostOuterBounds)
             .ConfigureAwait(false);
         ////DiagCheckpoint("PositionWindowAsync done");
 
-        await this.RenderBorderAsync(previewLayout, hostBoxStyle)
+        var windowRegion = await this.RenderBorderAsync(previewLayout, hostBoxStyle)
             .ConfigureAwait(false);
         ////DiagCheckpoint("RenderBorderAsync done");
+
+        cancellationToken.ThrowIfCancellationRequested();
 
         // builds every screen's bezel + placeholder fill immediately, so there's something to
         // show as soon as the window becomes visible - screenshots backfill afterwards
@@ -258,12 +322,14 @@ public sealed partial class PreviewWindow : Window
             .ConfigureAwait(false);
         ////DiagCheckpoint("SetPreviewPaneLayoutAsync done");
 
-        // cancel whatever the previous activation - if any - might still have running, and
-        // start a fresh cancellation scope for this one (see ClearPreview and the
-        // activationCancellation remarks)
-        this.activationCancellation?.Cancel();
-        this.activationCancellation?.Dispose();
-        var cancellation = new CancellationTokenSource();
+        // start a fresh cancellation scope right before it's first needed, rather than earlier
+        // in the method - the gap between creating this and using it is exactly the window in
+        // which a spurious PreviewWindow_Activated Deactivated event (e.g. from moving/hiding
+        // the window above) could call ClearPreview and dispose it out from under us, so keep
+        // that gap as small as possible. Linked to the caller's token, so either the caller
+        // superseding this activation *or* the preview being cleared for any other reason (see
+        // ClearPreview) stops the capture pipeline below.
+        var cancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         this.activationCancellation = cancellation;
 
         var pipeline = new ScreenshotCapturePipeline(new PreviewPaneScreenshotSink(this), cancellation.Token);
@@ -308,7 +374,7 @@ public sealed partial class PreviewWindow : Window
                 .ConfigureAwait(false);
             ////DiagCheckpoint("activated screen capture done");
 
-            await this.ShowWindowAsync()
+            await this.ShowWindowAsync(windowRegion.Width, windowRegion.Height, windowRegion.CornerRadius)
                 .ConfigureAwait(false);
             ////DiagCheckpoint("ShowWindowAsync done - window visible");
         }
@@ -421,7 +487,8 @@ public sealed partial class PreviewWindow : Window
 
     private void HideWindow()
     {
-        this.AppWindow.Hide();
+        // clip to nothing rather than AppWindow.Hide() - see ClipWindowToNothing's remarks
+        this.ClipWindowToNothing();
         this.ClearPreview();
     }
 
@@ -434,7 +501,16 @@ public sealed partial class PreviewWindow : Window
             }).ConfigureAwait(false);
     }
 
-    private async Task ShowWindowAsync()
+    /// <summary>
+    /// Reveals the window built by <see cref="RenderBorderAsync"/>/<see cref="SetPreviewPaneLayoutAsync"/>
+    /// by swapping its clip region from empty (see <see cref="HideWindow"/>) to
+    /// <paramref name="width"/> x <paramref name="height"/> with corner radius
+    /// <paramref name="cornerRadius"/> - the same values <see cref="RenderBorderAsync"/> rendered
+    /// against, passed back in here rather than reapplied as part of that method, so the region
+    /// only ever shows real, fully-built content instead of becoming visible partway through
+    /// rendering it.
+    /// </summary>
+    private async Task ShowWindowAsync(int width, int height, int cornerRadius)
     {
         await this.InvokeOnUiThreadAsync(
             () =>
@@ -442,15 +518,12 @@ public sealed partial class PreviewWindow : Window
                 var presenter = this.AppWindow.Presenter as OverlappedPresenter
                     ?? throw new InvalidOperationException();
 
-                if (!this.Visible)
-                {
-                    // we seem to need to turn off topmost and then re-enable it again
-                    // when we show the form - otherwise it doesn't always get shown topmost...
-                    presenter.IsAlwaysOnTop = false;
-                    presenter.IsAlwaysOnTop = true;
-                }
+                // we seem to need to turn off topmost and then re-enable it again
+                // when we show the form - otherwise it doesn't always get shown topmost...
+                presenter.IsAlwaysOnTop = false;
+                presenter.IsAlwaysOnTop = true;
 
-                this.AppWindow.Show();
+                this.ApplyWindowRegion(width, height, cornerRadius);
 
                 // we have to activate the window to make sure the deactivate event fires
                 this.Activate();
@@ -526,12 +599,18 @@ public sealed partial class PreviewWindow : Window
 
     /// <summary>
     /// Renders this window's own border - see <see cref="LayoutHelper.GetHostBoxStyle"/> -
-    /// and assigns it to <see cref="BorderImage"/>, and clips the real window to match (see
-    /// <see cref="ApplyWindowRegion"/>). Unlike <see cref="PreviewPane"/>'s content, this is
-    /// rendered directly by the host rather than the pane, since the border is deliberately not
-    /// one of the pane's concerns.
+    /// and assigns it to <see cref="BorderImage"/>. Unlike <see cref="PreviewPane"/>'s content,
+    /// this is rendered directly by the host rather than the pane, since the border is
+    /// deliberately not one of the pane's concerns.
     /// </summary>
-    private async Task RenderBorderAsync(PreviewLayout previewLayout, BoxStyle hostBoxStyle)
+    /// <returns>
+    /// The window-region dimensions (see <see cref="ApplyWindowRegion"/>) that match the
+    /// rendered border - deliberately *not* applied here, so the window's clip region only ever
+    /// changes once <see cref="ShowWindowAsync"/> reveals fully-built content, not partway
+    /// through rendering it. The caller passes these straight back into
+    /// <see cref="ShowWindowAsync"/>.
+    /// </returns>
+    private async Task<(int Width, int Height, int CornerRadius)> RenderBorderAsync(PreviewLayout previewLayout, BoxStyle hostBoxStyle)
     {
         // render against a zero-based host box - a border image is its own bitmap, so its
         // pixel coordinates need to start at (0,0) regardless of where the (possibly
@@ -545,8 +624,6 @@ public sealed partial class PreviewWindow : Window
         await this.InvokeOnUiThreadAsync(
             () =>
             {
-                this.ApplyWindowRegion(borderBitmap.Width, borderBitmap.Height, (int)hostBoxStyle.BorderStyle.Left);
-
                 var highDpiScalingRatio = this.GetHighDpiScalingRatio();
                 this.BorderImage.Width = borderBitmap.Width * highDpiScalingRatio;
                 this.BorderImage.Height = borderBitmap.Height * highDpiScalingRatio;
@@ -559,6 +636,8 @@ public sealed partial class PreviewWindow : Window
                 var offsetY = (localHostBounds.ContentBounds.Y - localHostBounds.OuterBounds.Y) * (decimal)highDpiScalingRatio;
                 this.PreviewPane.Margin = new Thickness((double)offsetX, (double)offsetY, 0, 0);
             }).ConfigureAwait(false);
+
+        return (borderBitmap.Width, borderBitmap.Height, (int)hostBoxStyle.BorderStyle.Left);
     }
 
     private async Task SetPreviewPaneLayoutAsync(PreviewLayout previewLayout, ScreenInfo activatedScreen)

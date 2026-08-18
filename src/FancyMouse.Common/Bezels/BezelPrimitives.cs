@@ -9,13 +9,13 @@ internal static class BezelPrimitives
     /// smooth transition between two values on a continuous axis
     /// within an interval.
     /// <code>
-    ///  +-----+---+-----+
-    ///   -----.   .       - start value
-    ///        .\  .
-    ///        . \ .
-    ///        .  \.
-    ///        .   .-----  - end value
-    ///  +-----+---+-----+
+    ///  +-----+-----+-----+
+    ///   -----._    .       - start value
+    ///        . \   .
+    ///        .  \  .
+    ///        .   \ .
+    ///        .    -._____  _ end value
+    ///  +-----+-----+-----+
     ///        ^   ^
     ///        |   easing interval end
     ///        easing interval start

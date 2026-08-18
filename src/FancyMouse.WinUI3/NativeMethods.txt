@@ -9,5 +9,6 @@ GetDpiForWindow
 SetForegroundWindow
 SetWindowRgn
 
+CreateRectRgn
 CreateRoundRectRgn
 DeleteObject

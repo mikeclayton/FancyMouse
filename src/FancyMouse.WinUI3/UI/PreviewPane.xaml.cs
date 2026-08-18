@@ -14,6 +14,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Media.Imaging;
 
 using Windows.System;
@@ -77,6 +78,15 @@ public sealed partial class PreviewPane : UserControl
     /// throws <see cref="screenSlots"/> itself away every time the window closes.
     /// </summary>
     private List<ScreenshotHistoryEntry?> screenshotHistory = new();
+
+    /// <summary>
+    /// How long <see cref="CrossfadeContent"/> takes to fade a screen's content in. Short enough
+    /// not to read as a deliberate animation, but spreading the change across enough frames
+    /// (roughly 6, at 60Hz) that no single frame carries more than a fraction of the total
+    /// change - the goal is specifically to avoid a hard single-frame swap's sudden luminance
+    /// change catching peripheral vision, not to make the fade itself noticeable.
+    /// </summary>
+    private static readonly TimeSpan ContentTransitionDuration = TimeSpan.FromMilliseconds(100);
 
     public PreviewPane()
     {
@@ -151,12 +161,55 @@ public sealed partial class PreviewPane : UserControl
             return;
         }
 
-        this.screenSlots[index].ContentImage.Source = PreviewPane.ToBitmapImage(image);
+        this.CrossfadeContent(this.screenSlots[index], PreviewPane.ToBitmapImage(image));
 
         using var blurredImage = BlurHelper.CreateBlurredCopy(
             image, PreviewPane.BlurIntensity, PreviewPane.BlurSaturation, PreviewPane.BlurBrightness);
         this.screenshotHistory[index] = new ScreenshotHistoryEntry(
             PreviewPane.ToBitmapImage(blurredImage), DateTime.UtcNow);
+    }
+
+    /// <summary>
+    /// Fades <paramref name="newSource"/> in over <paramref name="slot"/>'s existing content, rather
+    /// than swapping <see cref="ScreenSlot.ContentImage"/>'s own <c>Source</c> instantly - WinUI
+    /// has no built-in way to crossfade an <see cref="Image"/> between two sources, so this adds
+    /// a temporary overlay <see cref="Image"/> at the same position, animates its
+    /// <see cref="UIElement.Opacity"/> from 0 to 1, then (once that's done) makes
+    /// <paramref name="newSource"/> the slot's own real content and discards the overlay - by
+    /// then it's fully opaque, so the swap itself is invisible.
+    /// </summary>
+    private void CrossfadeContent(ScreenSlot slot, ImageSource newSource)
+    {
+        var overlay = new Image
+        {
+            Source = newSource,
+            Stretch = Stretch.Fill,
+            Opacity = 0,
+            Width = slot.ContentImage.Width,
+            Height = slot.ContentImage.Height,
+        };
+        Canvas.SetLeft(overlay, Canvas.GetLeft(slot.ContentImage));
+        Canvas.SetTop(overlay, Canvas.GetTop(slot.ContentImage));
+        this.ScreensCanvas.Children.Add(overlay);
+
+        var animation = new DoubleAnimation
+        {
+            From = 0,
+            To = 1,
+            Duration = new Duration(PreviewPane.ContentTransitionDuration),
+            EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut },
+        };
+        Storyboard.SetTarget(animation, overlay);
+        Storyboard.SetTargetProperty(animation, "Opacity");
+
+        var storyboard = new Storyboard();
+        storyboard.Children.Add(animation);
+        storyboard.Completed += (_, _) =>
+        {
+            slot.ContentImage.Source = newSource;
+            this.ScreensCanvas.Children.Remove(overlay);
+        };
+        storyboard.Begin();
     }
 
     /// <summary>
