@@ -7,11 +7,11 @@ namespace FancyMouse.Common.Bezels;
 public static class BezelGraphics
 {
     /// <summary>
-    /// Creates a <see cref="GraphicsPath"/> for an axis-aligned rounded rectangle.
+    /// Creates a <see cref="GraphicsPath"/> for a rectangle with rounded corners.
     ///
     /// The path consists of four quarter-circle arcs joined into a single closed
-    /// figure.  When <paramref name="radius"/> is zero the path degenerates to a
-    /// plain rectangle.  The caller owns the returned path and is responsible for
+    /// figure. When <paramref name="radius"/> is zero the path degenerates to a
+    /// plain rectangle. The caller owns the returned path and is responsible for
     /// disposing it.
     /// </summary>
     public static GraphicsPath GetRoundedRectanglePath(int x, int y, int width, int height, int radius)

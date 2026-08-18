@@ -8,12 +8,7 @@ namespace FancyMouse.Common.Blurring;
 /// <summary>
 /// Generates and retains a blurred stand-in screenshot per physical screen, for use as an
 /// activation's initial placeholder while its own fresh screenshot is still loading - see
-/// <see cref="BlurHelper.CreateBlurredCopy"/> for what "blurred" means here. Keyed by
-/// <see cref="ScreenInfo"/> (the physical screen) rather than any per-activation layout
-/// position, so a monitor keeps its own cached blur across activations regardless of where it
-/// falls in any particular activation's screen list - fixes a bug where a positionally-indexed
-/// cache could show one monitor's stale content under a *different* monitor's bezel after the
-/// connected monitor set changed between activations.
+/// <see cref="BlurHelper.CreateBlurredCopy"/> for what "blurred" means here.
 /// </summary>
 /// <remarks>
 /// Each screen has three slots: at most one blur actually running ("doing"), at most one
@@ -44,13 +39,13 @@ public sealed class ScreenshotBlurPipeline
     private readonly object sync = new();
     private readonly Dictionary<ScreenInfo, ScreenshotBlurState> screens = new();
 
-    /// <summary>
+    /// <remarks>
     /// <see cref="global::FancyMouse.Common.Telemetry.Telemetry.Current"/>, renamed here because
     /// "Telemetry" (the class) collides with the sibling <c>FancyMouse.Common.Telemetry</c>
     /// namespace - a plain <c>using</c> can't fix this (enclosing-namespace lookup wins over
     /// using-aliases for a name reachable that way), so this avoids needing every call site
     /// below to fully-qualify it instead.
-    /// </summary>
+    /// </remarks>
     private static global::FancyMouse.Common.Telemetry.TelemetryContext CurrentTelemetry
         => global::FancyMouse.Common.Telemetry.Telemetry.Current;
 
@@ -59,10 +54,10 @@ public sealed class ScreenshotBlurPipeline
     /// <paramref name="screenshotImage"/> - see <see cref="Capture.IScreenshotCaptureSink.SetScreenshotAsync"/>
     /// for the same convention this mirrors. If <paramref name="screenInfo"/> isn't one of the
     /// currently active screens (see <see cref="SetActiveScreens"/>), disposes
-    /// <paramref name="screenshotImage"/> and returns - a stale, superseded screen has nowhere
-    /// left to go. Otherwise, either starts blurring it immediately (nothing already in
-    /// progress for this screen) or queues it as this screen's "todo" - replacing, and
-    /// disposing, whatever was previously queued, since only the latest matters.
+    /// <paramref name="screenshotImage"/> and returns. Otherwise, either starts blurring
+    /// it immediately if nothing is already in progress for this screen, or queues it as this
+    /// screen's "todo" - replacing, and disposing, whatever was previously queued, since only
+    /// the latest matters.
     /// </summary>
     public void SetScreenshot(ScreenInfo screenInfo, Bitmap screenshotImage)
     {
@@ -92,21 +87,21 @@ public sealed class ScreenshotBlurPipeline
     }
 
     /// <summary>
-    /// If a blurred stand-in for <paramref name="screenInfo"/> is available and still within
+    /// If a blurred placeholder for <paramref name="screenInfo"/> is available and still within
     /// <see cref="ClaimWindow"/> of completing, invokes <paramref name="use"/> with it and
-    /// returns <see langword="true"/> - otherwise returns <see langword="false"/> without
-    /// invoking <paramref name="use"/>. <paramref name="use"/> runs synchronously while this
-    /// pipeline's own lock is still held, directly against its retained copy (no clone) - it
-    /// must not retain the <see cref="Bitmap"/> passed to it beyond the call, since the pipeline
-    /// is free to dispose it the moment <paramref name="use"/> returns (e.g. once superseded by
-    /// a newer completed blur). The same completed blur may still be passed to a later call
-    /// before it expires or is superseded. If a blur for this screen is still in progress, it's
-    /// left running (see the class remarks) - this call only ever reports what's already
-    /// finished. Records which of three outcomes happened - "found" (a fresh completed blur was
-    /// passed to <paramref name="use"/>), "not complete" (this screen has a blur queued or
-    /// running, just not ready yet), or "not found" (nothing tracked for this screen at all) - to
-    /// make the caching behaviour directly observable in telemetry.
+    /// returns <see langword="true"/>, otherwise returns <see langword="false"/> without
+    /// invoking <paramref name="use"/>. TryGet locks pipeline and passes the screen's bitmap
+    /// directly (no cloning) to the <paramref name="use"/> Action synchronously while this
+    /// pipeline's own lock is still held. The <paramref name="use"/> Action must not retain
+    /// the <see cref="Bitmap"/> passed to it beyond the call, since the pipeline is free to
+    /// dispose it the moment <paramref name="use"/> returns.
     /// </summary>
+    /// <remarks>
+    /// Emits one of three outcomes to telemtry - "found" (a fresh completed blur was passed
+    /// to <paramref name="use"/>), "not complete" (this screen has a blur queued or running,
+    /// just not ready yet), or "not found" (nothing tracked for this screen at all) - to
+    /// make the caching behaviour directly observable in telemetry (where enabled).
+    /// </remarks>
     public bool TryGet(ScreenInfo screenInfo, Action<Bitmap> use)
     {
         ArgumentNullException.ThrowIfNull(screenInfo);
@@ -142,13 +137,15 @@ public sealed class ScreenshotBlurPipeline
     }
 
     /// <summary>
-    /// Reconciles tracked state against <paramref name="currentScreens"/> - the full set of
-    /// currently connected physical screens, supplied once per activation. Anything tracked for
-    /// a screen no longer in this list (todo/done bitmaps) is disposed and dropped entirely; a
-    /// blur still actively running for a dropped screen can't be interrupted (see the class
-    /// remarks), but <see cref="RunBlur"/> checks against the current set itself before writing
-    /// back, so its result is discarded harmlessly once it finishes. New screens not seen before
-    /// start with empty state.
+    /// Reconciles current blur tasks and state against <paramref name="currentScreens"/> and
+    /// culls anything that is no longer valid (e.g. blurred images for monitors that have
+    /// been disconnected). <paramref name="currentScreens"/> is the full set of currently
+    /// connected physical screens, supplied once per activation - anything tracked for
+    /// a screen no longer in this list (todo/done bitmaps) is disposed and dropped entirely.
+    /// Any blurs still in progress for a dropped screen can't be interrupted (see the class
+    /// remarks), but <see cref="RunBlur"/> checks against the current set itself before
+    /// writing back, so its result is discarded harmlessly once it finishes. New screens
+    /// not seen before are initialised with empty state.
     /// </summary>
     public void SetActiveScreens(IReadOnlyCollection<ScreenInfo> currentScreens)
     {
@@ -175,12 +172,15 @@ public sealed class ScreenshotBlurPipeline
     }
 
     /// <summary>
-    /// Blurs <paramref name="image"/> on this background thread (disposing it once read from -
-    /// ownership transferred in via <see cref="SetScreenshot"/>), then writes the result into
-    /// this screen's "done" slot - unless <paramref name="screenInfo"/> has since been dropped
+    /// Blurs <paramref name="image"/> on this background thread, then writes the result into
+    /// this screen's "done" slot, unless <paramref name="screenInfo"/> has since been dropped
     /// via <see cref="SetActiveScreens"/>, in which case the result is discarded instead. If a
     /// newer screenshot was queued in the meantime ("todo"), starts blurring that next.
     /// </summary>
+    /// <remarks>
+    /// Ownership of <paramref name="image"/> is transferred to RunBlur, and the image is disposed
+    /// once it has been read from.
+    /// </remarks>
     private void RunBlur(ScreenInfo screenInfo, Bitmap image)
     {
         Bitmap blurredImage;

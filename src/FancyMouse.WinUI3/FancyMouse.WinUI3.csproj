@@ -44,6 +44,30 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <Compile Update="UI\PreviewWindow.events.cs">
+            <DependentUpon>PreviewWindow.xaml</DependentUpon>
+        </Compile>
+        <Compile Update="UI\PreviewWindow.utils.cs">
+            <DependentUpon>PreviewWindow.xaml</DependentUpon>
+        </Compile>
+        <Compile Update="UI\PreviewWindow.window.cs">
+            <DependentUpon>PreviewWindow.xaml</DependentUpon>
+        </Compile>
+        <Compile Update="UI\PreviewWindow.win32.cs">
+            <DependentUpon>PreviewWindow.xaml</DependentUpon>
+        </Compile>
+        <Compile Update="UI\PreviewPane.layout.cs">
+            <DependentUpon>PreviewPane.xaml</DependentUpon>
+        </Compile>
+        <Compile Update="UI\PreviewPane.screenshots.cs">
+            <DependentUpon>PreviewPane.xaml</DependentUpon>
+        </Compile>
+        <Compile Update="UI\PreviewPane.input.cs">
+            <DependentUpon>PreviewPane.xaml</DependentUpon>
+        </Compile>
+    </ItemGroup>
+
+    <ItemGroup>
         <None Remove="appSettings.json" />
     </ItemGroup>
 

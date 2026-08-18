@@ -84,12 +84,12 @@ public sealed class AppSettings
         get;
     }
 
-    /// <summary>
+    /// <remarks>
     /// Opt-in, off by default - an install with no "telemetry" section at all (or an explicit
     /// "enabled": false) never starts <see cref="Common.Telemetry.Telemetry.Current"/>, so no
     /// telemetry file is ever created. Set "telemetry": { "enabled": true } in the config file
     /// to turn it on (e.g. when asking a user experiencing a problem to help diagnose it).
-    /// </summary>
+    /// </remarks>
     public bool TelemetryEnabled
     {
         get;

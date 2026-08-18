@@ -4,7 +4,10 @@ using System.Drawing.Imaging;
 namespace FancyMouse.Common.Helpers;
 
 /// <summary>
-/// Blur used to soften a screen's last real screenshot for use as a stand-in placeholder while a
+/// Helpers to apply a blur to an image and return the result as a new image.
+/// </summary>
+/// <remarks>
+/// Blur is used to soften a screen's last real screenshot for use as a stand-in placeholder while a
 /// fresh one is still loading. Runs a three-pass separable box blur (each pass a horizontal then
 /// a vertical sliding-window average) directly on the bitmap's own pixels - three passes closely
 /// approximates a true Gaussian blur, without the cost of a real Gaussian convolution kernel, and
@@ -13,7 +16,7 @@ namespace FancyMouse.Common.Helpers;
 /// any latency-critical path (it happens once a real screenshot has already arrived, well after
 /// the window is showing - see <see cref="Capture.ScreenshotCapturePipeline"/>), so there's no
 /// reason to trade visual quality for speed here the way there is elsewhere.
-/// </summary>
+/// </remarks>
 public static class BlurHelper
 {
     /// <summary>
