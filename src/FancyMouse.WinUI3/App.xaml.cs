@@ -1,6 +1,7 @@
 ﻿using System.Globalization;
 
 using FancyMouse.Common.Helpers;
+using FancyMouse.Common.Telemetry;
 using FancyMouse.WinUI3.Internal.Helpers;
 using FancyMouse.WinUI3.UI;
 
@@ -42,6 +43,16 @@ public partial class App : Application
     {
         var logger = LogManager.GetCurrentClassLogger();
         logger.Info("app launched");
+
+        // one file per launch, same naming scheme as NLog.config's logfile target, so
+        // activation timings from any given run are easy to find and compare against another.
+        Telemetry.SetCurrent(TelemetryContext.Create(nameof(FancyMouse)));
+        var telemetryPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "FancyMouse",
+            "Telemetry",
+            $"telemetry_{DateTime.Now:yyyy-MM-dd_HH_mm_ss}.jsonl");
+        Telemetry.Current.Start(new FileTelemetryWriter(telemetryPath));
 
         try
         {
@@ -107,6 +118,20 @@ public partial class App : Application
                             try
                             {
                                 await task.ConfigureAwait(false);
+
+                                // each activation churns through several WriteableBitmap-sized
+                                // pixel buffers (background, bezels, content) - left to the GC's
+                                // own schedule, those pile up as uncollected garbage quickly
+                                // enough under repeat activation to show up as inflated memory
+                                // usage in Task Manager. Collecting here - only on a successful,
+                                // uninterrupted completion, i.e. the window is now shown and
+                                // nothing superseded this activation - is the true end of user
+                                // interaction, unlike ClearPreview's old GC.Collect() call, which
+                                // ran at the *start* of every activation and competed with it for
+                                // CPU. A background (non-blocking) collection avoids stalling this
+                                // thread the way a blocking GC.Collect() + WaitForPendingFinalizers()
+                                // would.
+                                GC.Collect(2, GCCollectionMode.Optimized, blocking: false);
                             }
                             catch (OperationCanceledException)
                             {

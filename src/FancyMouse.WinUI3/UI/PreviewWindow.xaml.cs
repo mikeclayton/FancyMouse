@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
@@ -6,6 +5,7 @@ using System.Runtime.InteropServices.WindowsRuntime;
 
 using FancyMouse.Common.Capture;
 using FancyMouse.Common.Helpers;
+using FancyMouse.Common.Telemetry;
 using FancyMouse.Models.Display;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Layout;
@@ -259,20 +259,17 @@ public sealed partial class PreviewWindow : Window
         // below, rather than later when we actually show the window
         this.ClaimForegroundWindow();
 
-        ////// diagnostic timing - not wired up live, but kept here as a ready-made way to see
-        ////// where activation time goes if that's ever worth investigating again. Uncomment
-        ////// (along with every DiagCheckpoint(...) call below) when needed; don't ship it live.
-        ////var diagStopwatch = Stopwatch.StartNew();
-        ////void DiagCheckpoint(string label)
-        ////    => logger.Info($"DIAG checkpoint {label}: elapsed={diagStopwatch.ElapsedMilliseconds}ms");
+        using var activationTimer = Telemetry.Current.BeginTimer(new { }, nameof(PreviewWindow.ShowPreviewAsync));
 
         // hide the form while we redraw it... (also cancels whatever the *previous* activation's
         // own activationCancellation was, via ClearPreview - harmless if the caller already
         // cancelled and awaited it before calling this method, since cancelling an
         // already-cancelled source is a no-op)
-        await this.HideWindowAsync()
-            .ConfigureAwait(false);
-        ////DiagCheckpoint("HideWindowAsync done");
+        using (Telemetry.Current.BeginTimer(new { }, "HideWindowAsync"))
+        {
+            await this.HideWindowAsync()
+                .ConfigureAwait(false);
+        }
 
         // capture this first so we get an accurate current mouse location
         // (in case the user moves it a few pixels while the form is rendered)
@@ -280,17 +277,23 @@ public sealed partial class PreviewWindow : Window
 
         var appSettings = ConfigHelper.AppSettings ?? throw new InvalidOperationException();
 
-        var displayInfo = DeviceHelper.GetDisplayInfo();
-        ////DiagCheckpoint("GetDisplayInfo done");
+        DisplayInfo displayInfo;
+        using (Telemetry.Current.BeginTimer(new { }, "GetDisplayInfo"))
+        {
+            displayInfo = DeviceHelper.GetDisplayInfo();
+        }
 
         var activatedScreen = DeviceHelper.GetActivatedScreen(displayInfo.Devices[0], activatedLocation);
 
         var previewStyle = appSettings.PreviewStyle;
-        var previewLayout = LayoutHelper.GetPreviewLayout(
-            previewStyle,
-            displayInfo,
-            activatedScreen: activatedScreen);
-        ////DiagCheckpoint("GetPreviewLayout done");
+        PreviewLayout previewLayout;
+        using (Telemetry.Current.BeginTimer(new { }, "GetPreviewLayout"))
+        {
+            previewLayout = LayoutHelper.GetPreviewLayout(
+                previewStyle,
+                displayInfo,
+                activatedScreen: activatedScreen);
+        }
 
         // the outer border is this window's own responsibility, not the preview pane's -
         // see LayoutHelper.GetHostBoxStyle. PreviewLayout itself has no desktop position
@@ -306,21 +309,28 @@ public sealed partial class PreviewWindow : Window
         // than only ever noticing via a later awaited call
         cancellationToken.ThrowIfCancellationRequested();
 
-        await this.PositionWindowAsync(positionedHostOuterBounds)
-            .ConfigureAwait(false);
-        ////DiagCheckpoint("PositionWindowAsync done");
+        using (Telemetry.Current.BeginTimer(new { }, "PositionWindowAsync"))
+        {
+            await this.PositionWindowAsync(positionedHostOuterBounds)
+                .ConfigureAwait(false);
+        }
 
-        var windowRegion = await this.RenderBorderAsync(previewLayout, hostBoxStyle)
-            .ConfigureAwait(false);
-        ////DiagCheckpoint("RenderBorderAsync done");
+        (int Width, int Height, int CornerRadius) windowRegion;
+        using (Telemetry.Current.BeginTimer(new { }, "RenderBorderAsync"))
+        {
+            windowRegion = await this.RenderBorderAsync(previewLayout, hostBoxStyle)
+                .ConfigureAwait(false);
+        }
 
         cancellationToken.ThrowIfCancellationRequested();
 
         // builds every screen's bezel + placeholder fill immediately, so there's something to
         // show as soon as the window becomes visible - screenshots backfill afterwards
-        await this.SetPreviewPaneLayoutAsync(previewLayout, activatedScreen)
-            .ConfigureAwait(false);
-        ////DiagCheckpoint("SetPreviewPaneLayoutAsync done");
+        using (Telemetry.Current.BeginTimer(new { }, "SetPreviewPaneLayoutAsync"))
+        {
+            await this.SetPreviewPaneLayoutAsync(previewLayout, activatedScreen)
+                .ConfigureAwait(false);
+        }
 
         // start a fresh cancellation scope right before it's first needed, rather than earlier
         // in the method - the gap between creating this and using it is exactly the window in
@@ -339,13 +349,14 @@ public sealed partial class PreviewWindow : Window
         // necessary) to share across all of that device's screens. Ownership of each provider
         // transfers to the pipeline - see ScreenshotCapturePipeline.DisposeAsync.
         var captureTasks = new List<(ScreenLayout ScreenLayout, Task<Bitmap> CaptureTask)>();
-        foreach (var deviceLayout in previewLayout.CanvasLayout.DeviceLayouts)
+        using (Telemetry.Current.BeginTimer(new { }, "kickOffCaptureRequests"))
         {
-            captureTasks.AddRange(pipeline.AddCaptureTasks(
-                deviceLayout, new DesktopScreenshotCaptureProvider()));
+            foreach (var deviceLayout in previewLayout.CanvasLayout.DeviceLayouts)
+            {
+                captureTasks.AddRange(pipeline.AddCaptureTasks(
+                    deviceLayout, new DesktopScreenshotCaptureProvider()));
+            }
         }
-
-        ////DiagCheckpoint("all capture requests kicked off");
 
         // the activated screen's own capture must complete before the window is shown,
         // otherwise a *later* capture of that screen would risk capturing the preview window
@@ -367,16 +378,23 @@ public sealed partial class PreviewWindow : Window
             // screen's own capture is still awaited separately below regardless of which way
             // the race went, since that one's non-negotiable (see above).
             var allCaptureTasks = captureTasks.Select(entry => entry.CaptureTask).ToArray();
-            await Task.WhenAny(Task.WhenAll(allCaptureTasks), Task.Delay(PreviewWindow.ScreenshotGracePeriod, cancellation.Token))
-                .ConfigureAwait(false);
-            ////DiagCheckpoint("grace period race done");
-            await activatedCaptureTask
-                .ConfigureAwait(false);
-            ////DiagCheckpoint("activated screen capture done");
+            using (Telemetry.Current.BeginTimer(new { }, "gracePeriodRace"))
+            {
+                await Task.WhenAny(Task.WhenAll(allCaptureTasks), Task.Delay(PreviewWindow.ScreenshotGracePeriod, cancellation.Token))
+                    .ConfigureAwait(false);
+            }
 
-            await this.ShowWindowAsync(windowRegion.Width, windowRegion.Height, windowRegion.CornerRadius)
-                .ConfigureAwait(false);
-            ////DiagCheckpoint("ShowWindowAsync done - window visible");
+            using (Telemetry.Current.BeginTimer(new { }, "activatedScreenCapture"))
+            {
+                await activatedCaptureTask
+                    .ConfigureAwait(false);
+            }
+
+            using (Telemetry.Current.BeginTimer(new { }, "ShowWindowAsync"))
+            {
+                await this.ShowWindowAsync(windowRegion.Width, windowRegion.Height, windowRegion.CornerRadius)
+                    .ConfigureAwait(false);
+            }
         }
         catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
         {
@@ -440,12 +458,12 @@ public sealed partial class PreviewWindow : Window
         this.PreviewPane.ActiveScreen = null;
 
         // each activation churns through several WriteableBitmap-sized pixel buffers
-        // (background, bezels, content) - left to the GC's own schedule, those pile up as
-        // uncollected garbage quickly enough under repeat activation to show up as inflated
-        // memory usage in Task Manager, even though most of it is just waiting to be freed.
-        // A background (non-blocking) collection reclaims it without stalling this thread the
-        // way a blocking GC.Collect() + WaitForPendingFinalizers() would.
-        GC.Collect(2, GCCollectionMode.Optimized, blocking: false);
+        // (background, bezels, content) - releasing these references here just makes them
+        // eligible for collection; the actual GC.Collect() call used to live here too, but
+        // ClearPreview runs at the *start* of every activation (via HideWindow), which meant
+        // forcing a collection right when the next activation needed CPU most. Moved to
+        // App.xaml.cs's hotkey handler, after a successful ShowPreviewAsync completes - the
+        // true end of user interaction, once there's no performance pressure left.
     }
 
     /// <summary>
