@@ -3,6 +3,7 @@ using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.WindowsRuntime;
 
+using FancyMouse.Common.Blurring;
 using FancyMouse.Common.Helpers;
 using FancyMouse.Models.Display;
 using FancyMouse.Models.Drawing;
@@ -51,33 +52,14 @@ public sealed partial class PreviewPane : UserControl
         new PropertyMetadata(null));
 
     /// <summary>
-    /// How strongly <see cref="GetHistoricalPlaceholder"/>'s stand-in screenshots are blurred,
-    /// desaturated and darkened - see <see cref="BlurHelper.CreateBlurredCopy"/> for what the
-    /// values mean. Muting the stand-in on top of blurring it is what makes the real screenshot
-    /// visually "pop" into place once it arrives, rather than the swap reading as a same-ish
-    /// image just sharpening.
+    /// Generates and retains each screen's blurred stand-in placeholder, keyed by physical
+    /// screen rather than layout position - see <see cref="ScreenshotBlurPipeline"/>. One long-lived
+    /// instance for this control's whole lifetime; <see cref="ApplyLayout"/> tells it which
+    /// screens currently exist (<see cref="ScreenshotBlurPipeline.SetActiveScreens"/>) once per activation.
     /// </summary>
-    private const decimal BlurIntensity = 0.75m;
-    private const double BlurSaturation = 0.5;
-    private const double BlurBrightness = 0.55;
-
-    /// <summary>
-    /// How long a screen's last real screenshot remains a reasonable stand-in for a fresh one -
-    /// see <see cref="GetHistoricalPlaceholder"/>.
-    /// </summary>
-    private static readonly TimeSpan ScreenshotHistoryMaxAge = TimeSpan.FromMinutes(2);
+    private readonly ScreenshotBlurPipeline blurPipeline = new();
 
     private List<ScreenSlot> screenSlots = new();
-
-    /// <summary>
-    /// Each screen's last real screenshot, blurred, for use as a stand-in placeholder while a
-    /// fresh one is loading (see <see cref="GetHistoricalPlaceholder"/>/<see cref="SetScreenshot"/>).
-    /// Indexed the same way as <see cref="screenSlots"/> - position within the flattened
-    /// device/screen list - rather than tied to any particular <see cref="ScreenSlot"/> instance,
-    /// so a screen's history survives being hidden/reshown even though <see cref="ApplyLayout"/>
-    /// throws <see cref="screenSlots"/> itself away every time the window closes.
-    /// </summary>
-    private List<ScreenshotHistoryEntry?> screenshotHistory = new();
 
     /// <summary>
     /// How long <see cref="CrossfadeContent"/> takes to fade a screen's content in. Short enough
@@ -137,17 +119,18 @@ public sealed partial class PreviewPane : UserControl
     /// <summary>
     /// Backfills the real screenshot for a single screen, replacing its placeholder fill -
     /// called by the hosting window once its capture pipeline has produced the image for that
-    /// screen. If <paramref name="screenLayout"/> isn't part of the current <see cref="Layout"/>
-    /// any more (e.g. a newer activation replaced it while this capture was still in flight),
-    /// the call is silently ignored rather than throwing - a stale, superseded capture result
-    /// has nowhere left to go.
+    /// screen. Takes ownership of <paramref name="image"/> - see <see cref="IScreenshotCaptureSink.SetScreenshotAsync"/>.
+    /// If <paramref name="screenLayout"/> isn't part of the current <see cref="Layout"/> any more
+    /// (e.g. a newer activation replaced it while this capture was still in flight), the call
+    /// disposes <paramref name="image"/> and returns rather than throwing - a stale, superseded
+    /// capture result has nowhere left to go.
     /// </summary>
     /// <remarks>
-    /// Also stashes a blurred copy of <paramref name="image"/> in <see cref="screenshotHistory"/>
-    /// at this screen's position, for <see cref="GetHistoricalPlaceholder"/> to use as the next
-    /// activation's initial placeholder while its own fresh screenshot is still loading. Blurring
-    /// is done inline here, on the UI thread - at thumbnail sizes it's fast enough (see
-    /// <see cref="BlurHelper.CreateBlurredCopy"/>) not to be worth moving off it.
+    /// Also hands <paramref name="image"/> to <see cref="blurPipeline"/>, which generates and
+    /// retains a blurred stand-in from it for <see cref="GetHistoricalPlaceholder"/> to use as a
+    /// *future* activation's initial placeholder while its own fresh screenshot is still
+    /// loading - see <see cref="ScreenshotBlurPipeline"/> for how that's kept off the UI thread and how
+    /// stale/superseded work gets discarded.
     /// </remarks>
     public void SetScreenshot(ScreenLayout screenLayout, Bitmap image)
     {
@@ -158,15 +141,12 @@ public sealed partial class PreviewPane : UserControl
             s => object.ReferenceEquals(s.ScreenLayout, screenLayout));
         if (index < 0)
         {
+            image.Dispose();
             return;
         }
 
         this.CrossfadeContent(this.screenSlots[index], PreviewPane.ToBitmapImage(image));
-
-        using var blurredImage = BlurHelper.CreateBlurredCopy(
-            image, PreviewPane.BlurIntensity, PreviewPane.BlurSaturation, PreviewPane.BlurBrightness);
-        this.screenshotHistory[index] = new ScreenshotHistoryEntry(
-            PreviewPane.ToBitmapImage(blurredImage), DateTime.UtcNow);
+        this.blurPipeline.SetScreenshot(screenLayout.ScreenInfo, image);
     }
 
     /// <summary>
@@ -213,25 +193,16 @@ public sealed partial class PreviewPane : UserControl
     }
 
     /// <summary>
-    /// Returns this position's last real screenshot, blurred, if it's still fresh enough to be a
-    /// reasonable stand-in for a screen whose current activation hasn't captured yet - or
-    /// <see langword="null"/> (falling back to the plain placeholder fill) if there isn't one or
-    /// it's older than <see cref="ScreenshotHistoryMaxAge"/>.
+    /// Returns this screen's last real screenshot, blurred, if <see cref="blurPipeline"/> still
+    /// has one available - or <see langword="null"/> (falling back to the plain placeholder
+    /// fill) if not - for a screen whose current activation hasn't captured yet. See
+    /// <see cref="ScreenshotBlurPipeline.TryGet"/> for the freshness rules.
     /// </summary>
-    private ImageSource? GetHistoricalPlaceholder(int index)
+    private WriteableBitmap? GetHistoricalPlaceholder(ScreenInfo screenInfo)
     {
-        if (index >= this.screenshotHistory.Count)
-        {
-            return null;
-        }
-
-        var entry = this.screenshotHistory[index];
-        if (entry is null || (DateTime.UtcNow - entry.CapturedAt) > PreviewPane.ScreenshotHistoryMaxAge)
-        {
-            return null;
-        }
-
-        return entry.BlurredImage;
+        WriteableBitmap? result = null;
+        this.blurPipeline.TryGet(screenInfo, blurredImage => result = PreviewPane.ToBitmapImage(blurredImage));
+        return result;
     }
 
     private static void OnLayoutChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
@@ -261,20 +232,11 @@ public sealed partial class PreviewPane : UserControl
             .SelectMany(deviceLayout => deviceLayout.ScreenLayouts)
             .ToList();
 
-        // keep screenshotHistory sized to match, indexed the same way as newSlots below. Entries
-        // within range survive regardless of whether their slot gets reused or rebuilt this pass
-        // (see the screenshotHistory field remarks) - only entries past the new count (e.g. a
-        // monitor was unplugged) get dropped.
-        while (this.screenshotHistory.Count < newScreenLayouts.Count)
-        {
-            this.screenshotHistory.Add(null);
-        }
-
-        if (this.screenshotHistory.Count > newScreenLayouts.Count)
-        {
-            this.screenshotHistory.RemoveRange(
-                newScreenLayouts.Count, this.screenshotHistory.Count - newScreenLayouts.Count);
-        }
+        // a new activation - tell blurPipeline which physical screens currently exist, before
+        // consulting it for placeholders below, so only blurs for screens that are actually
+        // still connected ever get used (see ScreenshotBlurPipeline.SetActiveScreens)
+        this.blurPipeline.SetActiveScreens(
+            newScreenLayouts.Select(screenLayout => screenLayout.ScreenInfo).ToList());
 
         var newSlots = new List<ScreenSlot>(newScreenLayouts.Count);
         for (var i = 0; i < newScreenLayouts.Count; i++)
@@ -287,10 +249,10 @@ public sealed partial class PreviewPane : UserControl
                 // pixel-identical bezel/placeholder to what's already on screen at this
                 // position - keep the visuals, just point the slot at the new ScreenLayout
                 // instance (SetScreenshot looks slots up by reference) and clear the content
-                // image (falling back to this position's blurred screenshot history, if any -
-                // see GetHistoricalPlaceholder) since the screenshot it was showing is now stale
+                // image (falling back to this screen's blurred stand-in, if any - see
+                // GetHistoricalPlaceholder) since the screenshot it was showing is now stale
                 // desktop state regardless of whether the bezel itself changed
-                previousSlot.ContentImage.Source = this.GetHistoricalPlaceholder(i);
+                previousSlot.ContentImage.Source = this.GetHistoricalPlaceholder(screenLayout.ScreenInfo);
 
                 // CanReuse only guarantees the *physical-pixel* bounds are unchanged - the
                 // DIP-space Width/Height/Canvas.Left/Top these elements were last positioned
@@ -314,7 +276,7 @@ public sealed partial class PreviewPane : UserControl
             else
             {
                 this.RemoveScreenSlot(previousSlot);
-                newSlots.Add(this.CreateScreenSlot(screenLayout, scale, i));
+                newSlots.Add(this.CreateScreenSlot(screenLayout, scale));
             }
         }
 
@@ -383,13 +345,13 @@ public sealed partial class PreviewPane : UserControl
     /// Creates the visual elements for a single screen - a bezel (rendered the same way as the
     /// host's own outer border, see <see cref="DrawingHelper.RenderBorder"/>), a placeholder
     /// fill shown until the real screenshot arrives, and a content <see cref="Image"/> that
-    /// starts either blank or showing this position's last real screenshot, blurred (see
+    /// starts either blank or showing this screen's last real screenshot, blurred (see
     /// <see cref="GetHistoricalPlaceholder"/>), until it's populated for real via
     /// <see cref="SetScreenshot"/>. The bezel and placeholder/content don't overlap - a screen's
     /// border ring and its content area are disjoint (see <see cref="Models.Drawing.BoxBounds"/>)
     /// - so paint order between them doesn't matter.
     /// </summary>
-    private ScreenSlot CreateScreenSlot(ScreenLayout screenLayout, double scale, int index)
+    private ScreenSlot CreateScreenSlot(ScreenLayout screenLayout, double scale)
     {
         var screenBounds = screenLayout.ScreenBounds;
 
@@ -420,7 +382,7 @@ public sealed partial class PreviewPane : UserControl
 
         var contentImage = new Image
         {
-            Source = this.GetHistoricalPlaceholder(index),
+            Source = this.GetHistoricalPlaceholder(screenLayout.ScreenInfo),
             Stretch = Stretch.Fill,
         };
         PreviewPane.PositionElement(contentImage, screenBounds.ContentBounds, scale);
@@ -610,58 +572,4 @@ public sealed partial class PreviewPane : UserControl
     private static (DeviceLayout DeviceLayout, ScreenLayout ScreenLayout) ElementAtOrDefault(
         List<(DeviceLayout DeviceLayout, ScreenLayout ScreenLayout)> screens, int index)
         => (index >= 0 && index < screens.Count) ? screens[index] : default;
-
-    private sealed class ScreenSlot
-    {
-        public ScreenSlot(
-            ScreenLayout screenLayout, Image bezelImage, Microsoft.UI.Xaml.Shapes.Rectangle? placeholderRectangle, Image contentImage)
-        {
-            this.ScreenLayout = screenLayout;
-            this.BezelImage = bezelImage;
-            this.PlaceholderRectangle = placeholderRectangle;
-            this.ContentImage = contentImage;
-        }
-
-        public ScreenLayout ScreenLayout
-        {
-            get;
-        }
-
-        public Image BezelImage
-        {
-            get;
-        }
-
-        public Microsoft.UI.Xaml.Shapes.Rectangle? PlaceholderRectangle
-        {
-            get;
-        }
-
-        public Image ContentImage
-        {
-            get;
-        }
-    }
-
-    /// <summary>
-    /// See the <see cref="screenshotHistory"/> field remarks.
-    /// </summary>
-    private sealed class ScreenshotHistoryEntry
-    {
-        public ScreenshotHistoryEntry(ImageSource blurredImage, DateTime capturedAt)
-        {
-            this.BlurredImage = blurredImage;
-            this.CapturedAt = capturedAt;
-        }
-
-        public ImageSource BlurredImage
-        {
-            get;
-        }
-
-        public DateTime CapturedAt
-        {
-            get;
-        }
-    }
 }

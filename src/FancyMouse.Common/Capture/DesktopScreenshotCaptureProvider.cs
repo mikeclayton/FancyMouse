@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 
@@ -28,16 +27,6 @@ namespace FancyMouse.Common.Capture;
 /// </remarks>
 public sealed class DesktopScreenshotCaptureProvider : IScreenshotCaptureProvider, IDisposable
 {
-    ////// diagnostic timing - not wired up live, but kept here (and in Capture below) as a
-    ////// ready-made way to see where per-capture time goes if that's ever worth investigating
-    ////// again. Uncomment when needed; don't ship it live.
-    ////private readonly Action<string>? diagnosticLogger;
-    ////
-    ////public DesktopScreenshotCaptureProvider(Action<string>? diagnosticLogger = null)
-    ////{
-    ////    this.diagnosticLogger = diagnosticLogger;
-    ////}
-
     public void Dispose()
     {
         // nothing to release
@@ -50,15 +39,10 @@ public sealed class DesktopScreenshotCaptureProvider : IScreenshotCaptureProvide
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        ////var dispatchStopwatch = Stopwatch.StartNew();
         var result = await Task.Run(
             () => DesktopScreenshotCaptureProvider.Capture(sourceArea, thumbnailSize),
             cancellationToken)
             .ConfigureAwait(false);
-        ////dispatchStopwatch.Stop();
-        ////this.diagnosticLogger?.Invoke(
-        ////    $"DIAG capture {sourceArea} -> {thumbnailSize}: " +
-        ////    $"dispatchToDone={dispatchStopwatch.ElapsedMilliseconds}ms (includes Task.Run hop)");
 
         return result;
     }
@@ -71,7 +55,6 @@ public sealed class DesktopScreenshotCaptureProvider : IScreenshotCaptureProvide
         var thumbnailImage = new Bitmap(target.Width, target.Height, PixelFormat.Format32bppPArgb);
         try
         {
-            ////var setupStopwatch = Stopwatch.StartNew();
             using var thumbnailGraphics = Graphics.FromImage(thumbnailImage);
 
             var desktopHwnd = HWND.Null;
@@ -82,9 +65,7 @@ public sealed class DesktopScreenshotCaptureProvider : IScreenshotCaptureProvide
                 (desktopHwnd, desktopHdc) = DesktopScreenshotCaptureProvider.GetDesktopDeviceContext();
                 thumbnailHdc = DesktopScreenshotCaptureProvider.GetGraphicsDeviceContext(
                     thumbnailGraphics, STRETCH_BLT_MODE.STRETCH_HALFTONE);
-                ////setupStopwatch.Stop();
 
-                ////var bltStopwatch = Stopwatch.StartNew();
                 var source = sourceArea.ToRectangle();
                 _ = Gdi32.StretchBlt(
                     thumbnailHdc,
@@ -99,12 +80,9 @@ public sealed class DesktopScreenshotCaptureProvider : IScreenshotCaptureProvide
                     source.Height,
                     ROP_CODE.SRCCOPY)
                     .ThrowIfFailed();
-                ////bltStopwatch.Stop();
             }
             finally
             {
-                ////var cleanupStopwatch = Stopwatch.StartNew();
-
                 // we need to release the graphics device context handle before anything
                 // else tries to use the Graphics object - otherwise it'll give an error from
                 // GDI saying "Object is currently in use elsewhere". Both releases have to run
@@ -113,14 +91,7 @@ public sealed class DesktopScreenshotCaptureProvider : IScreenshotCaptureProvide
                 // no-op for whichever one (if any) was never actually acquired.
                 DesktopScreenshotCaptureProvider.FreeGraphicsDeviceContext(thumbnailGraphics, ref thumbnailHdc);
                 DesktopScreenshotCaptureProvider.FreeDesktopDeviceContext(ref desktopHwnd, ref desktopHdc);
-                ////cleanupStopwatch.Stop();
             }
-
-            ////diagnosticLogger?.Invoke(
-            ////    $"DIAG capture phases for {target.Width}x{target.Height}: " +
-            ////    $"setup={setupStopwatch.ElapsedMilliseconds}ms, " +
-            ////    $"stretchBlt={bltStopwatch.ElapsedMilliseconds}ms, " +
-            ////    $"cleanup={cleanupStopwatch.ElapsedMilliseconds}ms");
 
             return thumbnailImage;
         }

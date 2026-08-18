@@ -30,6 +30,7 @@
             IsHitTestVisible="False" />
         <local:PreviewPane
             x:Name="PreviewPane"
+            x:FieldModifier="internal"
             HorizontalAlignment="Left"
             VerticalAlignment="Top" />
     </Grid>

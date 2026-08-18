@@ -479,7 +479,7 @@ public sealed partial class PreviewWindow : Window
         return scalingRatio;
     }
 
-    private async Task InvokeOnUiThreadAsync(Action action)
+    internal async Task InvokeOnUiThreadAsync(Action action)
     {
         // this might be called from a task that we're awaiting
         // so we need to make sure we use the UI thread
@@ -697,26 +697,5 @@ public sealed partial class PreviewWindow : Window
 
         writeableBitmap.Invalidate();
         return writeableBitmap;
-    }
-
-    /// <summary>
-    /// Adapts <see cref="PreviewPane.SetScreenshot"/> to <see cref="IScreenshotCaptureSink"/> -
-    /// marshals onto the UI thread, since <see cref="ScreenshotCapturePipeline"/> pushes results
-    /// as soon as they're captured, which generally isn't the UI thread.
-    /// </summary>
-    private sealed class PreviewPaneScreenshotSink : IScreenshotCaptureSink
-    {
-        public PreviewPaneScreenshotSink(PreviewWindow window)
-        {
-            this.Window = window;
-        }
-
-        private PreviewWindow Window
-        {
-            get;
-        }
-
-        public Task SetScreenshotAsync(ScreenLayout screenLayout, Bitmap bitmap)
-            => this.Window.InvokeOnUiThreadAsync(() => this.Window.PreviewPane.SetScreenshot(screenLayout, bitmap));
     }
 }

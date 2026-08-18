@@ -157,12 +157,12 @@ public sealed class ScreenshotCapturePipeline : IAsyncDisposable
                 $"Screenshot capture failed for {screenLayout.ScreenInfo}.", ex);
         }
 
-        using (bitmap)
-        {
-            // see the DemoArtificialDelay remarks above
-            ////await Task.Delay(ScreenshotCapturePipeline.DemoArtificialDelay, this.cancellationToken).ConfigureAwait(false);
+        // see the DemoArtificialDelay remarks above
+        ////await Task.Delay(ScreenshotCapturePipeline.DemoArtificialDelay, this.cancellationToken).ConfigureAwait(false);
 
-            await this.sink.SetScreenshotAsync(screenLayout, bitmap).ConfigureAwait(false);
-        }
+        // ownership of bitmap transfers to the sink from here - see IScreenshotCaptureSink's
+        // remarks - so no using/Dispose here even though this method "created" it via the
+        // capture task above
+        await this.sink.SetScreenshotAsync(screenLayout, bitmap).ConfigureAwait(false);
     }
 }
