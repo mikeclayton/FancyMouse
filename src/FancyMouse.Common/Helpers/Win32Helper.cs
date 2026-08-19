@@ -4,7 +4,6 @@ using System.Runtime.InteropServices;
 using FancyMouse.Common.Interop;
 using FancyMouse.Common.Win32Gen;
 
-using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.Graphics.Gdi;
 using Windows.Win32.UI.WindowsAndMessaging;

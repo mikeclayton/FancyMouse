@@ -123,7 +123,8 @@ public sealed class AppSettingsReaderTests
                     ),
                     canvasStyle: AppSettings.DefaultSettings.PreviewStyle.CanvasStyle,
                     screenStyle: AppSettings.DefaultSettings.PreviewStyle.ScreenStyle,
-                    extraColors: AppSettings.DefaultSettings.PreviewStyle.ExtraColors));
+                    extraColors: AppSettings.DefaultSettings.PreviewStyle.ExtraColors),
+                telemetryEnabled: false);
             Assert.AreEqual(
                 JsonSerializer.Serialize(expected),
                 JsonSerializer.Serialize(actual));
@@ -198,6 +199,10 @@ public sealed class AppSettingsReaderTests
                             },
                         },
                     },
+                    telemetry = new
+                    {
+                        enabled = true,
+                    },
                 });
             var actual = AppSettingsReader.ParseJson(json);
             var expected = new AppSettings(
@@ -240,10 +245,55 @@ public sealed class AppSettingsReaderTests
                             color2: Color.Pink
                         )
                     ),
-                    extraColors: AppSettings.DefaultSettings.PreviewStyle.ExtraColors));
+                    extraColors: AppSettings.DefaultSettings.PreviewStyle.ExtraColors),
+                telemetryEnabled: true);
             Assert.AreEqual(
                 JsonSerializer.Serialize(expected),
                 JsonSerializer.Serialize(actual));
+        }
+
+        [TestMethod]
+        public void Version2WithTelemetryOmittedShouldDefaultToDisabled()
+        {
+            var json = SerializationUtils.SerializeAnonymousType(
+                new
+                {
+                    version = 2,
+                });
+            var actual = AppSettingsReader.ParseJson(json);
+            Assert.IsFalse(actual.TelemetryEnabled);
+        }
+
+        [TestMethod]
+        public void Version2WithTelemetryEnabledNullShouldDefaultToDisabled()
+        {
+            var json = SerializationUtils.SerializeAnonymousType(
+                new
+                {
+                    version = 2,
+                    telemetry = new
+                    {
+                        enabled = (bool?)null,
+                    },
+                });
+            var actual = AppSettingsReader.ParseJson(json);
+            Assert.IsFalse(actual.TelemetryEnabled);
+        }
+
+        [TestMethod]
+        public void Version2WithTelemetryEnabledFalseShouldParse()
+        {
+            var json = SerializationUtils.SerializeAnonymousType(
+                new
+                {
+                    version = 2,
+                    telemetry = new
+                    {
+                        enabled = false,
+                    },
+                });
+            var actual = AppSettingsReader.ParseJson(json);
+            Assert.IsFalse(actual.TelemetryEnabled);
         }
 
         [TestMethod]
