@@ -249,6 +249,11 @@ public partial class App : Application
         var trayIcon = new TrayIcon();
         trayIcon.ExitCommandClicked += (sender, e) =>
         {
+            // FileTelemetryWriter only flushes its buffered lines on Stop()/Dispose() (a
+            // deliberate trade-off against flushing on every single record) - nothing else in
+            // the app's lifetime calls that, so without this, telemetry from the whole session
+            // never reaches disk at all once the process exits.
+            Telemetry.Current.Stop();
             App.Current.Exit();
         };
         this.TrayIcon = trayIcon;

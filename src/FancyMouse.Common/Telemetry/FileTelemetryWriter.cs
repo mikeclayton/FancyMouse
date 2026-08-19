@@ -1,5 +1,7 @@
 using System.Text.Json;
 
+using FancyMouse.Models;
+
 namespace FancyMouse.Common.Telemetry;
 
 /// <summary>
@@ -12,6 +14,23 @@ namespace FancyMouse.Common.Telemetry;
 /// </summary>
 public sealed class FileTelemetryWriter : ITelemetryWriter, IDisposable
 {
+    /// <summary>
+    /// <see cref="Write"/> serializes each record's properties as a loosely-typed
+    /// <see cref="Dictionary{TKey, TValue}"/> of <see cref="object"/> values, so
+    /// <see cref="System.Text.Json"/> resolves a converter from each value's own runtime type -
+    /// unlike a strongly-typed model, a <c>[JsonConverter]</c> attribute on some property
+    /// somewhere else (e.g. <c>ScreenInfo.Handle</c>) never gets consulted here. Win32 handles
+    /// (<c>HMONITOR</c>, <c>HWND</c>, ...) are <see cref="nint"/> under the hood and turn up
+    /// fairly often in telemetry properties (e.g. <c>new { handle = screenInfo.Handle }</c>) -
+    /// without this, serializing one throws <see cref="NotSupportedException"/> (nint isn't
+    /// natively supported), which previously went unnoticed because nothing ever flushed the
+    /// writer far enough to actually hit it.
+    /// </summary>
+    private static readonly JsonSerializerOptions SerializerOptions = new()
+    {
+        Converters = { new NintJsonConverter() },
+    };
+
     private readonly StreamWriter writer;
 
     public FileTelemetryWriter(string filePath)
@@ -41,7 +60,7 @@ public sealed class FileTelemetryWriter : ITelemetryWriter, IDisposable
             fields["parentSpanId"] = record.ParentSpanId;
         }
 
-        this.writer.WriteLine(JsonSerializer.Serialize(fields));
+        this.writer.WriteLine(JsonSerializer.Serialize(fields, FileTelemetryWriter.SerializerOptions));
     }
 
     public void Flush()

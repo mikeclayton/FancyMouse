@@ -165,7 +165,7 @@ public sealed partial class PreviewWindow
 
             using (Telemetry.Current.BeginTimer(new { }, "ShowWindowAsync"))
             {
-                await this.ShowWindowAsync(windowRegion.Width, windowRegion.Height, windowRegion.CornerRadius)
+                await this.ShowWindowAsync(windowRegion.Width, windowRegion.Height, windowRegion.CornerRadius, cancellation.Token)
                     .ConfigureAwait(false);
             }
         }
@@ -233,11 +233,23 @@ public sealed partial class PreviewWindow
     /// only ever shows real, fully-built content instead of becoming visible partway through
     /// rendering it.
     /// </summary>
-    private async Task ShowWindowAsync(int width, int height, int cornerRadius)
+    private async Task ShowWindowAsync(int width, int height, int cornerRadius, CancellationToken cancellationToken)
     {
         await this.InvokeOnUiThreadAsync(
             () =>
             {
+                // the activation can be cancelled (e.g. a right-click) in the gap between
+                // this callback being queued via DispatcherQueue.TryEnqueue and it actually
+                // running - that queuing is asynchronous even when called from the UI thread,
+                // while HideWindow/ClearPreview run synchronously the moment a right-click is
+                // handled, so without this check a queued reveal could still run *after* the
+                // content it's about to reveal has already been wiped, showing an empty,
+                // unstyled window instead of leaving it hidden
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    return;
+                }
+
                 var presenter = this.AppWindow.Presenter as OverlappedPresenter
                     ?? throw new InvalidOperationException();
 

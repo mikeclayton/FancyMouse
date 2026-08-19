@@ -39,6 +39,33 @@ public sealed class ScreenshotBlurPipeline
     private readonly object sync = new();
     private readonly Dictionary<ScreenInfo, ScreenshotBlurState> screens = new();
 
+    public ScreenshotBlurPipeline(TimeProvider? timeProvider = null)
+    {
+        this.TimeProvider = timeProvider ?? TimeProvider.System;
+    }
+
+    /// <summary>
+    /// Gets the clock this pipeline reads "now" from - <see cref="TryGet"/> and <see cref="RunBlur"/> use
+    /// this instead of calling <see cref="DateTime.UtcNow"/> directly, so a test can fast-forward
+    /// past <see cref="ClaimWindow"/>'s expiry deterministically instead of waiting on it for
+    /// real. Defaults to <see cref="TimeProvider.System"/> in production.
+    /// </summary>
+    private TimeProvider TimeProvider
+    {
+        get;
+    }
+
+    /// <summary>
+    /// Raised each time a background <see cref="RunBlur"/> call finishes, whether or not its
+    /// result actually got committed to "done" - a screen dropped via <see cref="SetActiveScreens"/>
+    /// while its blur was still running discards the result but still raises this, so a test can
+    /// always deterministically know the background work is over rather than risk waiting
+    /// forever for a result that was never going to arrive. Internal, test-only hook so a test
+    /// can await a specific screen's blur completing instead of polling <see cref="TryGet"/> in
+    /// a loop. Not used by production code.
+    /// </summary>
+    internal event Action<ScreenInfo>? BlurCompleted;
+
     /// <remarks>
     /// <see cref="global::FancyMouse.Common.Telemetry.Telemetry.Current"/>, renamed here because
     /// "Telemetry" (the class) collides with the sibling <c>FancyMouse.Common.Telemetry</c>
@@ -117,7 +144,7 @@ public sealed class ScreenshotBlurPipeline
 
             if (state.Done is not null)
             {
-                if (DateTime.UtcNow - state.DoneAt <= ScreenshotBlurPipeline.ClaimWindow)
+                if (this.TimeProvider.GetUtcNow() - state.DoneAt <= ScreenshotBlurPipeline.ClaimWindow)
                 {
                     ScreenshotBlurPipeline.CurrentTelemetry.WriteEvent(new { handle = screenInfo.Handle }, "blurRequestedFound");
                     use(state.Done);
@@ -191,26 +218,35 @@ public sealed class ScreenshotBlurPipeline
                 image, ScreenshotBlurPipeline.BlurIntensity, ScreenshotBlurPipeline.BlurSaturation, ScreenshotBlurPipeline.BlurBrightness);
         }
 
-        lock (this.sync)
+        try
         {
-            if (!this.screens.TryGetValue(screenInfo, out var state))
+            lock (this.sync)
             {
-                blurredImage.Dispose();
-                return;
-            }
+                if (!this.screens.TryGetValue(screenInfo, out var state))
+                {
+                    blurredImage.Dispose();
+                    return;
+                }
 
-            state.Done?.Dispose();
-            state.Done = blurredImage;
-            state.DoneAt = DateTime.UtcNow;
-            state.BlurInProgress = false;
+                state.Done?.Dispose();
+                state.Done = blurredImage;
+                state.DoneAt = this.TimeProvider.GetUtcNow();
+                state.BlurInProgress = false;
 
-            if (state.Todo is not null)
-            {
-                var next = state.Todo;
-                state.Todo = null;
-                state.BlurInProgress = true;
-                _ = Task.Run(() => this.RunBlur(screenInfo, next));
+                if (state.Todo is not null)
+                {
+                    var next = state.Todo;
+                    state.Todo = null;
+                    state.BlurInProgress = true;
+                    _ = Task.Run(() => this.RunBlur(screenInfo, next));
+                }
             }
+        }
+        finally
+        {
+            // raised outside the lock, so a subscriber is free to call back into this pipeline
+            // (e.g. TryGet) without risking a deadlock against the lock this method just held
+            this.BlurCompleted?.Invoke(screenInfo);
         }
     }
 }

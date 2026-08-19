@@ -27,7 +27,7 @@ internal sealed class ScreenshotBlurState
         set;
     }
 
-    public DateTime DoneAt
+    public DateTimeOffset DoneAt
     {
         get;
         set;
