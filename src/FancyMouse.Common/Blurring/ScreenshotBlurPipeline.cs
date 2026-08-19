@@ -37,7 +37,20 @@ public sealed class ScreenshotBlurPipeline
     private static readonly TimeSpan ClaimWindow = TimeSpan.FromMinutes(2);
 
     private readonly object sync = new();
-    private readonly Dictionary<ScreenInfo, ScreenshotBlurState> screens = new();
+
+    /// <summary>
+    /// Keyed by <see cref="ScreenInfo.Handle"/> - the <c>HMONITOR</c>, and the only field of
+    /// <see cref="ScreenInfo"/> that's actually stable across activations for the same physical
+    /// screen. Deliberately *not* keyed by <see cref="ScreenInfo"/> itself: it's a record, so its
+    /// equality compares every field, including <see cref="ScreenInfo.WorkingArea"/> - which
+    /// comes straight from <c>GetMonitorInfo</c>'s <c>rcWork</c> and can legitimately drift by a
+    /// pixel or two between calls (e.g. the taskbar auto-hiding) even when the monitor itself
+    /// hasn't changed at all. Keying by the whole record made every single activation see a
+    /// "new" screen and evict the previous one's cached blur before it could ever be reused -
+    /// confirmed via telemetry showing 100% cache misses despite the same handles being reused
+    /// throughout.
+    /// </summary>
+    private readonly Dictionary<nint, ScreenshotBlurState> screens = new();
 
     public ScreenshotBlurPipeline(TimeProvider? timeProvider = null)
     {
@@ -93,7 +106,7 @@ public sealed class ScreenshotBlurPipeline
 
         lock (this.sync)
         {
-            if (!this.screens.TryGetValue(screenInfo, out var state))
+            if (!this.screens.TryGetValue(screenInfo.Handle, out var state))
             {
                 screenshotImage.Dispose();
                 return;
@@ -136,7 +149,7 @@ public sealed class ScreenshotBlurPipeline
 
         lock (this.sync)
         {
-            if (!this.screens.TryGetValue(screenInfo, out var state))
+            if (!this.screens.TryGetValue(screenInfo.Handle, out var state))
             {
                 ScreenshotBlurPipeline.CurrentTelemetry.WriteEvent(new { handle = screenInfo.Handle }, "blurRequestedNotFound");
                 return false;
@@ -180,19 +193,21 @@ public sealed class ScreenshotBlurPipeline
 
         lock (this.sync)
         {
-            foreach (var screenInfo in this.screens.Keys.Except(currentScreens).ToList())
+            var currentHandles = currentScreens.Select(screenInfo => screenInfo.Handle).ToHashSet();
+
+            foreach (var handle in this.screens.Keys.Except(currentHandles).ToList())
             {
-                var state = this.screens[screenInfo];
+                var state = this.screens[handle];
                 state.Todo?.Dispose();
                 state.Done?.Dispose();
-                this.screens.Remove(screenInfo);
+                this.screens.Remove(handle);
             }
 
-            foreach (var screenInfo in currentScreens)
+            foreach (var handle in currentHandles)
             {
-                if (!this.screens.ContainsKey(screenInfo))
+                if (!this.screens.ContainsKey(handle))
                 {
-                    this.screens[screenInfo] = new ScreenshotBlurState();
+                    this.screens[handle] = new ScreenshotBlurState();
                 }
             }
         }
@@ -222,7 +237,7 @@ public sealed class ScreenshotBlurPipeline
         {
             lock (this.sync)
             {
-                if (!this.screens.TryGetValue(screenInfo, out var state))
+                if (!this.screens.TryGetValue(screenInfo.Handle, out var state))
                 {
                     blurredImage.Dispose();
                     return;
