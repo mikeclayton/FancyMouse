@@ -5,6 +5,10 @@ namespace FancyMouse.Common.Helpers;
 
 public static class ColorHelper
 {
+    /// <summary>
+    /// Converts a named color (e.g. Color.Red) to an equivalent unnamed ARGB color.
+    /// This forces serialization to emit the ARGB string instead of the color name.
+    /// </summary>
     public static Color? ToUnnamedColor(Color? value)
     {
         if (!value.HasValue)

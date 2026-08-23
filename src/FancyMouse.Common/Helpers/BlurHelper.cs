@@ -56,20 +56,18 @@ public static class BlurHelper
         }
 
         var mutedImage = new Bitmap(source.Width, source.Height, PixelFormat.Format32bppPArgb);
-        using (var graphics = Graphics.FromImage(mutedImage))
-        using (var imageAttributes = new ImageAttributes())
-        {
-            imageAttributes.SetColorMatrix(BlurHelper.GetMuteColorMatrix(saturation, brightness));
-            graphics.DrawImage(
-                source,
-                new Rectangle(0, 0, source.Width, source.Height),
-                0,
-                0,
-                source.Width,
-                source.Height,
-                GraphicsUnit.Pixel,
-                imageAttributes);
-        }
+        using var graphics = Graphics.FromImage(mutedImage);
+        using var imageAttributes = new ImageAttributes();
+        imageAttributes.SetColorMatrix(BlurHelper.GetMuteColorMatrix(saturation, brightness));
+        graphics.DrawImage(
+            source,
+            new Rectangle(0, 0, source.Width, source.Height),
+            0,
+            0,
+            source.Width,
+            source.Height,
+            GraphicsUnit.Pixel,
+            imageAttributes);
 
         var radius = Math.Max(1, (int)((1 - intensity) * BlurHelper.MaxBlurRadius));
         BlurHelper.ApplyBoxBlur(mutedImage, radius);
