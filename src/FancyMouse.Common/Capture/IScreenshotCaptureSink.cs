@@ -12,9 +12,10 @@ public interface IScreenshotCaptureSink
 {
     /// <summary>
     /// Applies <paramref name="bitmap"/> as the screenshot for <paramref name="screenLayout"/>.
-    /// The caller retains ownership of <paramref name="bitmap"/> and disposes it once this
-    /// returns, so implementations that need to keep the pixel data must copy it out before
-    /// returning rather than holding onto the bitmap itself.
+    /// Ownership of <paramref name="bitmap"/> transfers to the implementation - the caller never
+    /// disposes it, and never reuses the same instance for a later capture, so an implementation
+    /// is free to keep holding onto it (e.g. to read from on a background thread) well after
+    /// this returns, and is responsible for disposing it once actually done.
     /// </summary>
     Task SetScreenshotAsync(ScreenLayout screenLayout, Bitmap bitmap);
 }

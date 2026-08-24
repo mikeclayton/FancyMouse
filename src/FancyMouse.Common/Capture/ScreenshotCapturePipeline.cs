@@ -5,13 +5,15 @@ using FancyMouse.Models.Layout;
 namespace FancyMouse.Common.Capture;
 
 /// <summary>
-/// Orchestrates screenshot capture across every screen on every device for a single preview
-/// activation. <see cref="AddCaptureTasks"/> starts one capture per screen on a device and
-/// returns each screen's own capture task, so a caller can await whichever ones it specifically
-/// needs (typically just the activated screen, to know it's safe to reveal the preview window
-/// without a later capture of that same screen picking the window up). Every capture is also,
-/// independently, pushed into <see cref="IScreenshotCaptureSink"/> as soon as it completes, in
-/// whatever order that actually happens - the caller doesn't need to await that part at all.
+/// Captures screenshot images for screens for a single preview activation.
+/// <see cref="AddCaptureTasks"/> starts one capture per screen on a device
+/// and returns each screen's own capture task, so a caller can await whichever
+/// ones it specifically needs completed (typically just the activated screen,
+/// to know it's safe to reveal the preview window without a later capture of
+/// that same screen picking the window up). Every capture is also independently
+/// pushed into <see cref="IScreenshotCaptureSink"/> as soon as it completes, in
+/// whatever order that actually happens - the caller doesn't need to await
+/// that part at all.
 /// </summary>
 /// <remarks>
 /// <see cref="AddCaptureTasks"/> isn't safe to call concurrently with itself or with
@@ -149,9 +151,9 @@ public sealed class ScreenshotCapturePipeline : IAsyncDisposable
                 $"Screenshot capture failed for {screenLayout.ScreenInfo}.", ex);
         }
 
-        using (bitmap)
-        {
-            await this.sink.SetScreenshotAsync(screenLayout, bitmap).ConfigureAwait(false);
-        }
+        // ownership of the bitmap transfers to the sink from here - see IScreenshotCaptureSink's
+        // remarks - so no "using" or "Dispose" here even though this method "created" it via the
+        // capture task above
+        await this.sink.SetScreenshotAsync(screenLayout, bitmap).ConfigureAwait(false);
     }
 }

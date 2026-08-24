@@ -12,11 +12,13 @@ public sealed class AppConfig
     public AppConfig(
         int? version,
         string? hotkey,
-        PreviewStyleSettings? preview)
+        PreviewStyleSettings? preview,
+        TelemetrySettings? telemetry)
     {
         this.Version = version;
         this.Hotkey = hotkey;
         this.Preview = preview;
+        this.Telemetry = telemetry;
     }
 
     [JsonPropertyName("version")]
@@ -36,6 +38,13 @@ public sealed class AppConfig
     [JsonPropertyName("preview")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public PreviewStyleSettings? Preview
+    {
+        get;
+    }
+
+    [JsonPropertyName("telemetry")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public TelemetrySettings? Telemetry
     {
         get;
     }

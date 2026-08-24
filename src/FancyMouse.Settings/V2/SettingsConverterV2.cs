@@ -23,7 +23,8 @@ internal static class SettingsConverterV2
             ?? throw new InvalidOperationException();
         var hotkey = SettingsConverterV1.ConvertToKeystroke(appConfig.Hotkey);
         var previewStyle = SettingsConverterV2.MergePreviewStyles(appConfig.Preview, AppSettings.DefaultSettings.PreviewStyle);
-        var appSettings = new AppSettings(hotkey, previewStyle);
+        var telemetryEnabled = appConfig.Telemetry?.Enabled ?? false;
+        var appSettings = new AppSettings(hotkey, previewStyle, telemetryEnabled);
         return appSettings;
     }
 

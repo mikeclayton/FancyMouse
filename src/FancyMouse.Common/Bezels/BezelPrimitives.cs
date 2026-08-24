@@ -1,21 +1,21 @@
 ﻿using System.Drawing;
 
-namespace FancyMouse.Drawing.ContouredBezels;
+namespace FancyMouse.Common.Bezels;
 
 internal static class BezelPrimitives
 {
     /// <summary>
     /// Implements a cosine easing function that can be used to create a
-    /// smooth transition between two values on a continuous axis
-    /// within an interval.
+    /// smooth transition between two values on a continuous axis within
+    /// an interval.
     /// <code>
-    ///  +-----+---+-----+
-    ///   -----.   .       - start value
-    ///        .\  .
-    ///        . \ .
-    ///        .  \.
-    ///        .   .-----  - end value
-    ///  +-----+---+-----+
+    ///  +-----+-----+-----+
+    ///   -----._    .       - start value
+    ///        . \   .
+    ///        .  \  .
+    ///        .   \ .
+    ///        .    -._____  _ end value
+    ///  +-----+-----+-----+
     ///        ^   ^
     ///        |   easing interval end
     ///        easing interval start

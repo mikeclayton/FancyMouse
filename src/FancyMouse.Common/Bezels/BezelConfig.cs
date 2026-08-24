@@ -1,4 +1,4 @@
-namespace FancyMouse.Drawing.ContouredBezels;
+namespace FancyMouse.Common.Bezels;
 
 /// <summary>
 /// Immutable style settings that control the 3-D lighting effect on a bezel.

@@ -7,3 +7,8 @@ USER_DEFAULT_SCREEN_DPI
 GetDpiForWindow
 
 SetForegroundWindow
+SetWindowRgn
+
+CreateRectRgn
+CreateRoundRectRgn
+DeleteObject

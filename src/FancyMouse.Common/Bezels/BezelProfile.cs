@@ -1,6 +1,6 @@
 using System.Drawing;
 
-namespace FancyMouse.Drawing.ContouredBezels;
+namespace FancyMouse.Common.Bezels;
 
 /// <summary>
 /// Lighting helpers shared by all <see cref="IBezelProfile"/> implementations.

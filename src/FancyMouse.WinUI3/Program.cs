@@ -1,4 +1,6 @@
-﻿using Microsoft.UI.Dispatching;
+﻿using FancyMouse.Common.Telemetry;
+
+using Microsoft.UI.Dispatching;
 using Microsoft.Windows.AppLifecycle;
 using NLog;
 
@@ -27,6 +29,13 @@ public static class Program
         {
             logger.Warn("another instance is running. exiting");
         }
+
+        // Application.Start blocks until the message loop actually ends (e.g. the tray icon's
+        // Exit command calling App.Current.Exit()), so this is the one place a graceful shutdown
+        // reliably runs - unlike stopping the debugger, which kills the process outright and
+        // can't be flushed around. Stop() drains whatever's still queued and flushes/disposes
+        // the underlying writer (see TelemetryAdapter.Dispose).
+        Telemetry.Current.Stop();
 
         return;
     }

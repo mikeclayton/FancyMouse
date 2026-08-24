@@ -2,7 +2,7 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using FancyMouse.Models.Styles;
 
-namespace FancyMouse.Drawing.ContouredBezels;
+namespace FancyMouse.Common.Bezels;
 
 // ═════════════════════════════════════════════════════════════════════════════
 // BezelRenderer
