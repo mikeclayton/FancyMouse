@@ -72,8 +72,7 @@ internal static class CornerTemplates
         // |<-- N --->|
         using var cornerTemplates = CornerTemplates.DrawCornerRegions(
             cornerSize: n,
-            outerRadius: n,
-            innerRadius: 0,
+            cornerRadius: n,
             color: bezelColor);
 
         if (depth == 0)
@@ -231,7 +230,8 @@ internal static class CornerTemplates
                         // previous inOuterArc/inInnerArc flags that were sourced from overlay
                         // bitmaps. The flat bezel's pixel alpha (from GDI+ arc antialiasing) is
                         // left unchanged and handles outer-edge transparency automatically.
-                        var newColor = ApplyEffect(hl * effectMagnitude, sh * effectMagnitude, bezelColor, config.HighlightMax, config.ShadowMax);
+                        var highlighted = ApplyHighlight(bezelColor, hl * effectMagnitude, config.HighlightMax);
+                        var newColor = ApplyShadow(highlighted, sh * effectMagnitude, config.ShadowMax);
                         srcPixelArgb[0] = newColor.B;
                         srcPixelArgb[1] = newColor.G;
                         srcPixelArgb[2] = newColor.R;
@@ -271,7 +271,7 @@ internal static class CornerTemplates
     /// <summary>
     /// Draws four N×N corner regions packed into a 2N×2N image.
     /// </summary>
-    private static Bitmap DrawCornerRegions(int cornerSize, int outerRadius, int innerRadius, Color color)
+    private static Bitmap DrawCornerRegions(int cornerSize, int cornerRadius, Color color)
     {
         var n = cornerSize;
 
@@ -285,12 +285,11 @@ internal static class CornerTemplates
         {
             BezelGraphics.DrawFlatBezelRing(
                 g,
-                x: n - outerRadius,
-                y: n - outerRadius,
-                width: n + (2 * outerRadius),
-                height: n + (2 * outerRadius),
-                outerRadius: outerRadius,
-                innerRadius: innerRadius,
+                x: n - cornerRadius,
+                y: n - cornerRadius,
+                width: n + (2 * cornerRadius),
+                height: n + (2 * cornerRadius),
+                cornerRadius: cornerRadius,
                 color: color);
         }
 

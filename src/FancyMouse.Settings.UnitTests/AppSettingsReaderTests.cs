@@ -5,6 +5,7 @@ using System.Text.Json;
 using FancyMouse.HotKeys;
 using FancyMouse.Models.Styles;
 using FancyMouse.Settings.UnitTests.TestUtils;
+using FancyMouse.Settings.V2;
 
 namespace FancyMouse.Settings.UnitTests;
 
@@ -124,6 +125,7 @@ public sealed class AppSettingsReaderTests
                     canvasStyle: AppSettings.DefaultSettings.PreviewStyle.CanvasStyle,
                     screenStyle: AppSettings.DefaultSettings.PreviewStyle.ScreenStyle,
                     extraColors: AppSettings.DefaultSettings.PreviewStyle.ExtraColors),
+                previewType: PreviewType.Custom,
                 telemetryEnabled: false);
             Assert.AreEqual(
                 JsonSerializer.Serialize(expected),
@@ -246,6 +248,7 @@ public sealed class AppSettingsReaderTests
                         )
                     ),
                     extraColors: AppSettings.DefaultSettings.PreviewStyle.ExtraColors),
+                previewType: PreviewType.Bezelled,
                 telemetryEnabled: true);
             Assert.AreEqual(
                 JsonSerializer.Serialize(expected),

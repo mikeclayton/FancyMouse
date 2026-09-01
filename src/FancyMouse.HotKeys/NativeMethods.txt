@@ -15,3 +15,16 @@ RegisterHotKey
 UnregisterHotKey
 
 GetCurrentThreadId
+
+SetWindowsHookEx
+UnhookWindowsHookEx
+CallNextHookEx
+KBDLLHOOKSTRUCT
+WINDOWS_HOOK_ID
+HC_ACTION
+
+GetAsyncKeyState
+GetKeyNameText
+MapVirtualKey
+MAP_VIRTUAL_KEY_TYPE
+SendInput

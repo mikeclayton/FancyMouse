@@ -39,9 +39,27 @@ public sealed class BezelRenderer : IDisposable
 
     public BezelRenderer(BorderStyle borderStyle, BezelConfig config)
     {
-        _borderStyle = borderStyle ?? throw new ArgumentNullException(nameof(borderStyle));
+        ArgumentNullException.ThrowIfNull(borderStyle);
         _config = config ?? throw new ArgumentNullException(nameof(config));
-        _cornerAtlas = CornerTemplates.GetCornerTemplates(borderStyle, config);
+
+        _borderStyle = BezelRenderer.ClampDepth(borderStyle);
+        _cornerAtlas = CornerTemplates.GetCornerTemplates(_borderStyle, config);
+    }
+
+    /// <summary>
+    /// Returns a border style with the 3d effect depth limited to half the border thickness.
+    /// This prevents the "light" and "shadow" effects overlapping (or overwriting each other)
+    /// in the middle of the border.
+    /// </summary>
+    internal static BorderStyle ClampDepth(BorderStyle borderStyle)
+    {
+        var minThickness = Math.Min(
+            Math.Min(borderStyle.Left, borderStyle.Top),
+            Math.Min(borderStyle.Right, borderStyle.Bottom));
+        var maxDepth = minThickness / 2;
+        return (borderStyle.Depth <= maxDepth)
+            ? borderStyle
+            : borderStyle.WithDepth(maxDepth);
     }
 
     // ── Render ───────────────────────────────────────────────────────────────

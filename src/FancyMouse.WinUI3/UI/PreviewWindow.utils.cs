@@ -121,16 +121,19 @@ public sealed partial class PreviewWindow
     /// through rendering it. The caller passes these straight back into
     /// <see cref="ShowWindowAsync"/>.
     /// </returns>
-    private async Task<(int Width, int Height, int CornerRadius)> RenderBorderAsync(PreviewLayout previewLayout, BoxStyle hostBoxStyle)
+    private async Task<(int Width, int Height, int CornerRadius)> RenderBorderAsync(PreviewLayout previewLayout, BoxStyle previewWindowStyle)
     {
         // render against a zero-based host box - a border image is its own bitmap, so its
         // pixel coordinates need to start at (0,0) regardless of where the (possibly
         // negative, once enlarged outward from a zero-based content box) host bounds would
-        // otherwise place it.
-        var localHostBounds = LayoutHelper.GetHostBounds(previewLayout.CanvasLayout.CanvasBounds.OuterBounds, hostBoxStyle)
+        // otherwise place it. The SizeInfo overload of GetPreviewWindowBounds (rather than its
+        // RectangleInfo one) also makes this tall enough for the tip bar strip reserved beneath
+        // the grid - see its remarks - so the border rendered here already has room for it,
+        // rather than the tip bar overlapping the grid's own bezels.
+        var localHostBounds = LayoutHelper.GetPreviewWindowBounds(previewLayout.PreviewSize, previewWindowStyle, PreviewWindow.TipBarHeight)
             .MoveTo(new PointInfo(0, 0));
 
-        using var borderBitmap = DrawingHelper.RenderBorder(localHostBounds, hostBoxStyle);
+        using var borderBitmap = DrawingHelper.RenderBorder(localHostBounds.BorderBounds.Size, previewWindowStyle.BorderStyle);
 
         await this.InvokeOnUiThreadAsync(
             () =>
@@ -142,13 +145,15 @@ public sealed partial class PreviewWindow
 
                 // position PreviewPane so it lines up exactly with the transparent hole in
                 // the middle of the border image - the offset is always the host box's own
-                // margin+border thickness, regardless of where localHostBounds itself sits.
-                var offsetX = (localHostBounds.ContentBounds.X - localHostBounds.OuterBounds.X) * (decimal)highDpiScalingRatio;
-                var offsetY = (localHostBounds.ContentBounds.Y - localHostBounds.OuterBounds.Y) * (decimal)highDpiScalingRatio;
+                // border+padding thickness (margin is excluded - RenderBorder's bitmap starts
+                // at the border's own outer edge, not the margin's), regardless of where
+                // localHostBounds itself sits.
+                var offsetX = (localHostBounds.ContentBounds.X - localHostBounds.BorderBounds.X) * (decimal)highDpiScalingRatio;
+                var offsetY = (localHostBounds.ContentBounds.Y - localHostBounds.BorderBounds.Y) * (decimal)highDpiScalingRatio;
                 this.PreviewPane.Margin = new Thickness((double)offsetX, (double)offsetY, 0, 0);
             }).ConfigureAwait(false);
 
-        return (borderBitmap.Width, borderBitmap.Height, (int)hostBoxStyle.BorderStyle.Left);
+        return (borderBitmap.Width, borderBitmap.Height, (int)previewWindowStyle.BorderStyle.Left);
     }
 
     private async Task SetPreviewPaneLayoutAsync(PreviewLayout previewLayout, ScreenInfo activatedScreen)
@@ -158,6 +163,43 @@ public sealed partial class PreviewWindow
             {
                 this.PreviewPane.Layout = previewLayout;
                 this.PreviewPane.ActiveScreen = activatedScreen;
+            }).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Positions <see cref="TipBarControl"/> directly beneath <see cref="PreviewPane"/>, once
+    /// <see cref="PreviewPane"/>'s own size is known (must run after
+    /// <see cref="SetPreviewPaneLayoutAsync"/>). The space this sits in was already reserved by
+    /// <see cref="RenderBorderAsync"/> passing <see cref="TipBarHeight"/> into
+    /// <see cref="LayoutHelper.GetPreviewWindowBounds"/> - and by <see cref="ShowPreviewAsync"/>
+    /// passing the same value into <see cref="LayoutHelper.GetPreviewLayout"/> so the grid was
+    /// never scaled to overlap it in the first place - so this is purely a placement step, not
+    /// a space-reservation one.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="TipBarHeight"/> is in the same physical-pixel units as the rest of the layout
+    /// math (see <see cref="RenderBorderAsync"/>'s <c>localHostBounds</c>) - it has to be scaled
+    /// by <see cref="GetHighDpiScalingRatio"/> here, the same as <see cref="BorderImage"/>'s own
+    /// size, or the rendered bar and the space reserved for it disagree at any DPI other than
+    /// 100%, and the bar ends up drawn either short of, or overlapping, the border below it.
+    /// </remarks>
+    private async Task PositionTipBarAsync()
+    {
+        await this.InvokeOnUiThreadAsync(
+            () =>
+            {
+                var highDpiScalingRatio = this.GetHighDpiScalingRatio();
+
+                this.TipBarControl.Width = this.PreviewPane.Width;
+                this.TipBarControl.Height = (double)PreviewWindow.TipBarHeight * highDpiScalingRatio;
+                this.TipBarControl.Margin = new Thickness(
+                    this.PreviewPane.Margin.Left,
+                    this.PreviewPane.Margin.Top + this.PreviewPane.Height,
+                    0,
+                    0);
+
+                this.TipBarControl.CurrentTip = PreviewWindow.SampleTips[this.sampleTipIndex];
+                this.sampleTipIndex = (this.sampleTipIndex + 1) % PreviewWindow.SampleTips.Count;
             }).ConfigureAwait(false);
     }
 }

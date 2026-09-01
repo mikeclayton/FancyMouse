@@ -79,4 +79,15 @@
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </Content>
     </ItemGroup>
+
+    <ItemGroup>
+        <!-- Content/CopyToOutputDirectory, not embedded - a static ms-appx:/// image shown
+             directly by an <Image> in TipBar.xaml, no code-behind loading needed. Cropped from
+             wiki\images\fancymouse-banner.png (just the mouse-head icon and "fancyMouse"
+             wordmark, background keyed out to transparency) so TipBar can draw its own border
+             around it instead of baking the pill outline into the image. -->
+        <Content Include="Assets\fancymouse-wordmark.png">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
 </Project>

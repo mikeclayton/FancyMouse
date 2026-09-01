@@ -1,4 +1,6 @@
-﻿using FancyMouse.Common.Win32Gen;
+﻿using System.Runtime.InteropServices;
+
+using FancyMouse.Common.Win32Gen;
 using FancyMouse.Models.Drawing;
 
 using Windows.Win32;
@@ -111,7 +113,7 @@ public static class MouseHelper
         };
 
         // don't check return value - we aren't going to do anything if it fails
-        _ = User32.SendInput(inputs, inputs.Length)
+        _ = User32.SendInput(inputs, Marshal.SizeOf<INPUT>())
             .IgnoreFailure();
     }
 
