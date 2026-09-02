@@ -3,7 +3,6 @@
 using FancyMouse.Common.Win32Gen;
 using FancyMouse.Models.Drawing;
 
-using Windows.Win32;
 using Windows.Win32.UI.Input.KeyboardAndMouse;
 using Windows.Win32.UI.WindowsAndMessaging;
 

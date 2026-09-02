@@ -34,6 +34,15 @@ internal static class CornerTemplates
     /// are arranged in the "obvious" order - the image for the top left corner is
     /// in the top left cell of the grid, etc.
     ///
+    ///         TL   TR
+    ///       0    n   2n
+    ///     0 +----+----+
+    ///       | // | \\ |
+    ///     n +----+----+
+    ///       | \\ | // |
+    ///    2n +----+----+
+    ///         BL   BR
+    ///
     /// The template image needs to be recreated if the color, thickness or 3d effect
     /// depth settings change.
     /// </returns>
@@ -48,7 +57,7 @@ internal static class CornerTemplates
         // ── Step 1: render temporary bezel "ring" images ───────────────────
 
         // render a set of temporary bezels that we'll use to draw the
-        // corner images and apply highlight and shadow effects to
+        // corner images and apply highlight and shadow effects
         //
         // the images we'll generate are:
         //
@@ -83,7 +92,7 @@ internal static class CornerTemplates
         // ── Step 2: apply highlight and shadow effects ─────────────────────────
         double CornerEffectWeight(double theta) => BezelPrimitives.CornerEffectWeight(theta, config.FadeStart, config.FadeEnd);
 
-        var profile = new BezelProfileRamped(n, depth, config.RampAngleDegrees);
+        var profile = new BezelProfileCurved(n, depth);
 
         var cornerData = default(BitmapData);
 
@@ -226,12 +235,17 @@ internal static class CornerTemplates
                             }
                         }
 
-                        // effectMagnitude carries the effect intensity due to the ; the sign replaces the
-                        // previous inOuterArc/inInnerArc flags that were sourced from overlay
-                        // bitmaps. The flat bezel's pixel alpha (from GDI+ arc antialiasing) is
-                        // left unchanged and handles outer-edge transparency automatically.
+                        // effectMagnitude carries the effect intensity - the sign indicates
+                        // whether to apply a highlight or shadow. The flat bezel's pixel
+                        // alpha (from GDI+ arc antialiasing) is left unchanged and handles
+                        // outer-edge transparency automatically so the resulting pixel still
+                        // blends into the background image behind the bezel.
                         var highlighted = ApplyHighlight(bezelColor, hl * effectMagnitude, config.HighlightMax);
                         var newColor = ApplyShadow(highlighted, sh * effectMagnitude, config.ShadowMax);
+
+                        // note - this is *not* dead code! srcPixelArgb is a raw (unsafe) pointer
+                        // into the locked cornerTemplates bitmap not a normal managed array, so
+                        // the assignments below write directly into the image in-place.
                         srcPixelArgb[0] = newColor.B;
                         srcPixelArgb[1] = newColor.G;
                         srcPixelArgb[2] = newColor.R;
@@ -269,7 +283,7 @@ internal static class CornerTemplates
     }
 
     /// <summary>
-    /// Draws four N×N corner regions packed into a 2N×2N image.
+    /// Draws four n×n corner regions packed into a 2n×2n image.
     /// </summary>
     private static Bitmap DrawCornerRegions(int cornerSize, int cornerRadius, Color color)
     {
