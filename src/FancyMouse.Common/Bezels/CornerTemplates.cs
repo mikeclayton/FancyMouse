@@ -334,7 +334,7 @@ internal static class CornerTemplates
                 width: imageWidth,
                 height: imageHeight,
                 cornerRadius: cornerRadius,
-                color: borderColor);
+                bezelColor: bezelColor);
         }
 
         // set up the copy regions to extract the corner images from the bezel ring
