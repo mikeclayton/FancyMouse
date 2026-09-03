@@ -63,9 +63,9 @@ internal sealed class BezelProfileCurved : IBezelProfile
     ///              profile width in total) with the flat portion in the middle also
     ///              occupying half the profile width
     ///
-    ///     * 0.50 - the curves meet exactly in the middle of the profile, which is
-    ///              the largest allowed value (any larger and the curves would
-    ///              overlap in the middle of the profile)
+    ///     * 0.50 - the curves meet in the middle and form a perfect semi-circular
+    ///              profile, which is the largest allowed value (any larger and the
+    ///              curves would overlap in the middle of the profile)
     /// </remarks>
     private double CurveRadius
     {
@@ -106,7 +106,11 @@ internal sealed class BezelProfileCurved : IBezelProfile
 
         if (position < this.CurveRadius)
         {
-            return (position / this.CurveRadius) * (Math.PI / 2.0); // outer effect ring: 0 → π/2
+            // true quarter-circle: for a circular arc transitioning from a vertical
+            // tangent (facing the light) to a horizontal one (flat), horizontal
+            // displacement x relates to swept angle φ as x = radius * (1 - cos(φ)),
+            // so inverting for φ given a position/radius ratio t gives φ = acos(1 - t).
+            return Math.Acos(1.0 - (position / this.CurveRadius)); // outer effect ring: 0 → π/2
         }
 
         if (position < 1.0 - this.CurveRadius)
@@ -116,7 +120,7 @@ internal sealed class BezelProfileCurved : IBezelProfile
 
         if (position < 1.0)
         {
-            return Math.PI - (((1.0 - position) / this.CurveRadius) * (Math.PI / 2.0)); // inner effect ring: π/2 → π
+            return Math.PI - Math.Acos(1.0 - ((1.0 - position) / this.CurveRadius)); // inner effect ring: π/2 → π
         }
 
         return Math.PI; // at or beyond content boundary
