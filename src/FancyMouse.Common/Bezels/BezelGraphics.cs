@@ -143,7 +143,7 @@ public static class BezelGraphics
         int width,
         int height,
         BorderStyle borderStyle,
-        IBezelProfile profile)
+        IBezelProfile bezelProfile)
     {
         var n = (int)borderStyle.Left;
         var d = (int)borderStyle.Depth;
@@ -179,104 +179,92 @@ public static class BezelGraphics
         Color Pix(double hl, double sh) => BezelPrimitives.ApplyEffect(hl, sh, bezelColor, BezelConstants.HighlightMax, BezelConstants.ShadowMax);
         Color PixCS(double hl, double sh, double cs) => Pix(hl * cs, sh * cs);
 
-        // ── Outer + inner ring edge effects ───────────────────────────────────────
-        // pos=0 is the outermost pixel of the outer ring (arc boundary — full effect)
-        // and the innermost pixel of the inner ring (content boundary — full effect);
-        // pos=d-1 is the innermost outer-ring pixel and the outermost inner-ring
-        // pixel (both approaching the flat-zone junction — fading effect).
-        for (var pos = 0; pos < d; pos++)
+        // positions with a magnitude below this are in the flat zone - already
+        // covered by the flat fill above, so no line is drawn for them at all.
+        const double flatEdgeThreshold = 1e-10;
+
+        // iterate across the thickness of the border one pixel at a time and draw
+        // a layer of the bezel "ring" at each position. we work from the outside
+        // in on all four sides - the bezel profile faces "outward" on each side
+        // so the top and left edges face *toward* the light source while the
+        // bottom and right edges face *away* from it (i.e. they're reversed).
+        // as a result we need to calculate two sets of profile values ("forward"
+        // and "reverse") for each iteration.
+        for (var pos = 0; pos < n; pos++)
         {
-            var outerTop = y + pos;
-            var outerBottom = y + height - pos - 1;
-            var outerLeft = x + pos;
-            var outerRight = x + width - pos - 1;
+            // calculate the normal, intensity and magnitude for the Top and Left edges
+            // (the edge of these borders at 0 on the profile function faces upward / leftward)
+            var forwardNormal = bezelProfile.GetEdgeNormal(n, pos);
+            var forwardIntensity = BezelProfile.GetLightingEffectIntensity(forwardNormal);
+            var frontFacingLight = forwardIntensity > 0.0;
+            var forwardMagnitude = Math.Abs(forwardIntensity);
 
-            var innerTop = y + n - pos - 1;
-            var innerBottom = y + height - n + pos;
-            var innerLeft = x + n - pos - 1;
-            var innerRight = x + width - n + pos;
+            // calculate the normal, intensity and magnitude for the Bottom and Right edges
+            // (the edge of these borders at 0 on the profile function faces downward / rightward
+            // so the normal is reversed 180 degrees (or Math.PI radians) from the Top and Left edges above)
+            var reverseNormal = Math.PI - forwardNormal;
+            var reverseIntensity = BezelProfile.GetLightingEffectIntensity(reverseNormal);
+            var backFacingLight = reverseIntensity > 0.0;
+            var reverseMagnitude = Math.Abs(reverseIntensity);
 
-            var cs = profile.GetEdgeIntensity(n, pos);
+            // calculate the coordinates for the individual lines of the border edges
+            // that we're drawing in this iteration
+            var topLineY = y + pos;
+            var bottomLineY = y + height - pos - 1;
+            var leftLineX = x + pos;
+            var rightLineX = x + width - pos - 1;
 
-            // Top outer:    HL base, secondary HL from TL corner (left→right)
-            BezelGraphics.DrawBezelEdgeLine(
-                g: g,
-                x1: horizontalEdgeX1,
-                y1: outerTop,
-                x2: horizontalEdgeX2,
-                y2: outerTop,
-                fadeColor: PixCS(BezelConstants.EdgeForwardHighlightFade, 0.0, cs),
-                strongColor: PixCS(BezelConstants.EdgeForwardHighlightStrong, 0.0, cs));
+            // Top:    HL when facing light, SH when facing away (left→right)
+            if (forwardMagnitude >= flatEdgeThreshold)
+            {
+                BezelGraphics.DrawBezelEdgeLine(
+                    g: g,
+                    x1: horizontalEdgeX1,
+                    y1: topLineY,
+                    x2: horizontalEdgeX2,
+                    y2: topLineY,
+                    fadeColor: frontFacingLight ? PixCS(BezelConstants.EdgeForwardHighlightFade, 0.0, forwardMagnitude) : PixCS(0.0, BezelConstants.EdgeForwardShadowFade, forwardMagnitude),
+                    strongColor: frontFacingLight ? PixCS(BezelConstants.EdgeForwardHighlightStrong, 0.0, forwardMagnitude) : PixCS(0.0, BezelConstants.EdgeForwardShadowStrong, forwardMagnitude));
+            }
 
-            // Right outer:  SH base, secondary SH from BR corner (bottom→top)
-            BezelGraphics.DrawBezelEdgeLine(
-                g: g,
-                x1: outerRight,
-                y1: verticalEdgeY2,
-                x2: outerRight,
-                y2: verticalEdgeY1,
-                fadeColor: PixCS(0.0, BezelConstants.EdgeReverseShadowFade, cs),
-                strongColor: PixCS(0.0, BezelConstants.EdgeReverseShadowStrong, cs));
+            // Right:  HL when facing light, SH when facing away (bottom→top)
+            if (reverseMagnitude >= flatEdgeThreshold)
+            {
+                BezelGraphics.DrawBezelEdgeLine(
+                    g: g,
+                    x1: rightLineX,
+                    y1: verticalEdgeY2,
+                    x2: rightLineX,
+                    y2: verticalEdgeY1,
+                    fadeColor: backFacingLight ? PixCS(BezelConstants.EdgeReverseHighlightFade, 0.0, reverseMagnitude) : PixCS(0.0, BezelConstants.EdgeReverseShadowFade, reverseMagnitude),
+                    strongColor: backFacingLight ? PixCS(BezelConstants.EdgeReverseHighlightStrong, 0.0, reverseMagnitude) : PixCS(0.0, BezelConstants.EdgeReverseShadowStrong, reverseMagnitude));
+            }
 
-            // Bottom outer: SH base, secondary SH from BR corner (right→left)
-            BezelGraphics.DrawBezelEdgeLine(
-                g: g,
-                x1: horizontalEdgeX2,
-                y1: outerBottom,
-                x2: horizontalEdgeX1,
-                y2: outerBottom,
-                fadeColor: PixCS(0.0, BezelConstants.EdgeReverseShadowFade, cs),
-                strongColor: PixCS(0.0, BezelConstants.EdgeReverseShadowStrong, cs));
+            // Bottom: HL when facing light, SH when facing away (right→left)
+            if (reverseMagnitude >= flatEdgeThreshold)
+            {
+                BezelGraphics.DrawBezelEdgeLine(
+                    g: g,
+                    x1: horizontalEdgeX2,
+                    y1: bottomLineY,
+                    x2: horizontalEdgeX1,
+                    y2: bottomLineY,
+                    fadeColor: backFacingLight ? PixCS(BezelConstants.EdgeReverseHighlightFade, 0.0, reverseMagnitude) : PixCS(0.0, BezelConstants.EdgeReverseShadowFade, reverseMagnitude),
+                    strongColor: backFacingLight ? PixCS(BezelConstants.EdgeReverseHighlightStrong, 0.0, reverseMagnitude) : PixCS(0.0, BezelConstants.EdgeReverseShadowStrong, reverseMagnitude));
+            }
 
-            // Left outer:   HL base, secondary HL from TL corner (top→bottom)
-            BezelGraphics.DrawBezelEdgeLine(
-                g: g,
-                x1: outerLeft,
-                y1: verticalEdgeY1,
-                x2: outerLeft,
-                y2: verticalEdgeY2,
-                fadeColor: PixCS(BezelConstants.EdgeForwardHighlightFade, 0.0, cs),
-                strongColor: PixCS(BezelConstants.EdgeForwardHighlightStrong, 0.0, cs));
-
-            // Top inner:    SH base (reversed), secondary SH from TL inner corner
-            BezelGraphics.DrawBezelEdgeLine(
-                g: g,
-                x1: horizontalEdgeX1,
-                y1: innerTop,
-                x2: horizontalEdgeX2,
-                y2: innerTop,
-                fadeColor: PixCS(0.0, BezelConstants.EdgeForwardShadowFade, cs),
-                strongColor: PixCS(0.0, BezelConstants.EdgeForwardShadowStrong, cs));
-
-            // Right inner:  HL halved base (bottom→top)
-            BezelGraphics.DrawBezelEdgeLine(
-                g: g,
-                x1: innerRight,
-                y1: verticalEdgeY2,
-                x2: innerRight,
-                y2: verticalEdgeY1,
-                fadeColor: PixCS(BezelConstants.EdgeReverseHighlightFade, 0.0, cs),
-                strongColor: PixCS(BezelConstants.EdgeReverseHighlightStrong, 0.0, cs));
-
-            // Bottom inner: HL halved base (reversed), secondary HL from BR inner corner
-            BezelGraphics.DrawBezelEdgeLine(
-                g: g,
-                x1: horizontalEdgeX2,
-                y1: innerBottom,
-                x2: horizontalEdgeX1,
-                y2: innerBottom,
-                fadeColor: PixCS(BezelConstants.EdgeReverseHighlightFade, 0.0, cs),
-                strongColor: PixCS(BezelConstants.EdgeReverseHighlightStrong, 0.0, cs));
-
-            // Left inner:   SH base (top→bottom)
-            BezelGraphics.DrawBezelEdgeLine(
-                g: g,
-                x1: innerLeft,
-                y1: verticalEdgeY1,
-                x2: innerLeft,
-                y2: verticalEdgeY2,
-                fadeColor: PixCS(0.0, BezelConstants.EdgeForwardShadowFade, cs),
-                strongColor: PixCS(0.0, BezelConstants.EdgeForwardShadowStrong, cs));
+            // Left:   HL when facing light, SH when facing away (top→bottom)
+            if (forwardMagnitude >= flatEdgeThreshold)
+            {
+                BezelGraphics.DrawBezelEdgeLine(
+                    g: g,
+                    x1: leftLineX,
+                    y1: verticalEdgeY1,
+                    x2: leftLineX,
+                    y2: verticalEdgeY2,
+                    fadeColor: frontFacingLight ? PixCS(BezelConstants.EdgeForwardHighlightFade, 0.0, forwardMagnitude) : PixCS(0.0, BezelConstants.EdgeForwardShadowFade, forwardMagnitude),
+                    strongColor: frontFacingLight ? PixCS(BezelConstants.EdgeForwardHighlightStrong, 0.0, forwardMagnitude) : PixCS(0.0, BezelConstants.EdgeForwardShadowStrong, forwardMagnitude));
+            }
         }
     }
 
