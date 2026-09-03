@@ -40,17 +40,15 @@ public static class BezelGraphics
     }
 
     /// <summary>
-    /// Draws one straight bezel-edge segment as a 1-pixel-wide rectangle with a
-    /// 3-stage gradient effect, using SmoothingMode.None for crisp pixel-aligned fills.
-    ///
-    /// The gradient runs from (x1, y1) toward (x2, y2):
-    ///   Stage 1 — strongColor held at full intensity from position 0 to BezelConstants.EdgeGradientStart
-    ///   Stage 2 — fade from strongColor to fadeColor between EdgeGradientStart and EdgeGradientEnd
-    ///   Stage 3 — fadeColor held flat from BezelConstants.EdgeGradientEnd to the far end
-    ///
-    /// (x1, y1) is the corner end where the effect peaks; (x2, y2) is the plain end.
-    /// To draw an effect that peaks at the far corner, reverse the coordinates.
+    /// Draws a 1-pixel thick, 3-stage gradient line as part of a bezel's edge.
     /// </summary>
+    /// <remarks>
+    /// The line starts at (x1, y1) using strongColour and fades to fadeColour as it approaches (x2, y2).
+    /// The 3-stage gradient is asymmetrical - to reverse the direction swap (x1, y1) and (x2, y2)
+    /// (don't just swap the colours).
+    /// </remarks>
+    /// <param name="strongColor">The more intense colour, at the corner-adjacent end of the line.</param>
+    /// <param name="fadeColor">The colour the line fades to, away from the corner.</param>
     private static void DrawBezelEdgeLine(
         Graphics g,
         int x1,
@@ -60,6 +58,16 @@ public static class BezelGraphics
         Color strongColor,
         Color fadeColor)
     {
+        // make sure the coordinates represent a vertical or horizontal line,
+        // not an arbitrary rectangle - each pixel row (or column) of the bezel
+        // edge needs to be rendered separately to account for the bezel profile.
+        if ((x1 != x2) && (y1 != y2))
+        {
+            throw new ArgumentException("Coordinates must represent a single-pixel line, not a rectangle - i.e. x1 == x2 or y1 == y2.");
+        }
+
+        // the gradient is asymmetrical, but the direction is controlled by the
+        // brush not the drawing bounds, so we'll normalise the coordinates here
         var edgeBounds = (y1 == y2)
             ? new RectangleF(Math.Min(x1, x2), y1, Math.Abs(x2 - x1), 1f)
             : new RectangleF(x1, Math.Min(y1, y2), 1f, Math.Abs(y2 - y1));

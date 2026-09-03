@@ -106,7 +106,7 @@ internal static class BezelPrimitives
     /// Returns the GDI screen angle in degrees for a pixel offset (dx, dy) from an arc centre.
     /// 0° = rightward, increasing clockwise. Result is always in [0, 360).
     /// </summary>
-    internal static double GdiAngle(int dx, int dy)
+    internal static double GetGdiAngle(int dx, int dy)
     {
         // .    270
         //       |

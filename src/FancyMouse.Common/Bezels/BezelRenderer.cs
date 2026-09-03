@@ -19,10 +19,7 @@ public sealed class BezelRenderer : IDisposable
     {
         this.BezelStyle = BezelRenderer.ClampDepth(bezelStyle ?? throw new ArgumentNullException(nameof(bezelStyle)));
         this.Profile = new BezelProfileCurved((int)this.BezelStyle.Left, (int)this.BezelStyle.Depth);
-        _cornerAtlas = CornerTemplates.GetCornerTemplates(
-            (int)this.BezelStyle.Left,
-            this.BezelStyle.Color ?? Color.Transparent,
-            this.Profile);
+        this.CornerAtlas = this.DrawCornerTemplates();
     }
 
     private BorderStyle BezelStyle
@@ -39,10 +36,34 @@ public sealed class BezelRenderer : IDisposable
         get;
     }
 
-    // ── Corner atlas (owned; built eagerly at construction) ──────────────────
-    // 2N×2N sprite sheet with pre-rendered corners and baked-in 3-D effects.
-    // Layout: TL=(0,0)  TR=(N,0)  BL=(0,N)  BR=(N,N)  where N=Thickness.
-    private readonly Bitmap _cornerAtlas;
+    /// <summary>
+    /// Gets a 2N×2N sprite sheet with pre-rendered corners and baked-in 3-D effects.
+    /// Layout: TL=(0,0)  TR=(N,0)  BL=(0,N)  BR=(N,N)  where N=Thickness.
+    /// </summary>
+    private Bitmap CornerAtlas
+    {
+        get;
+    }
+
+    /// <summary>
+    /// Builds the corner atlas from <see cref="BorderStyle"/>, for use at construction.
+    /// </summary>
+    private Bitmap DrawCornerTemplates()
+    {
+        var bezelWidth = (int)this.BorderStyle.Left;
+
+        // 2x supersampled to match GetCornerTemplates' own corner-atlas resolution - this
+        // duplicates GetCornerTemplates' n/depth calculation for now; a later iteration will
+        // push profile construction further up so it isn't computed in two places.
+        var n = bezelWidth * 2;
+        var depth = (int)this.BorderStyle.Depth * 2;
+        var bezelProfile = new BezelProfileCurved(n, depth);
+
+        return CornerTemplates.GetCornerTemplates(
+            bezelWidth,
+            this.BorderStyle.Color ?? Color.Transparent,
+            bezelProfile);
+    }
 
     /// <summary>
     /// Returns a border style with the 3d effect depth limited to half the border thickness.
@@ -114,7 +135,7 @@ public sealed class BezelRenderer : IDisposable
 
         foreach (var (src, dest) in corners)
         {
-            g.DrawImage(_cornerAtlas, dest, src, GraphicsUnit.Pixel);
+            g.DrawImage(this.CornerAtlas, dest, src, GraphicsUnit.Pixel);
         }
 
         g.InterpolationMode = savedInterpolation;
@@ -123,6 +144,6 @@ public sealed class BezelRenderer : IDisposable
 
     public void Dispose()
     {
-        _cornerAtlas.Dispose();
+        this.CornerAtlas.Dispose();
     }
 }
