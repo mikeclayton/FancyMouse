@@ -35,9 +35,9 @@ public static class BezelGraphics
     /// 3-stage gradient effect, using SmoothingMode.None for crisp pixel-aligned fills.
     ///
     /// The gradient runs from (x1, y1) toward (x2, y2):
-    ///   Stage 1 — strongColor held at full intensity from position 0 to the plateau (5 %)
-    ///   Stage 2 — fade from strongColor to fadeColor between the plateau and fadeFraction
-    ///   Stage 3 — fadeColor held flat from fadeFraction to the far end
+    ///   Stage 1 — strongColor held at full intensity from position 0 to BezelConstants.EdgeGradientStart
+    ///   Stage 2 — fade from strongColor to fadeColor between EdgeGradientStart and EdgeGradientEnd
+    ///   Stage 3 — fadeColor held flat from BezelConstants.EdgeGradientEnd to the far end
     ///
     /// (x1, y1) is the corner end where the effect peaks; (x2, y2) is the plain end.
     /// To draw an effect that peaks at the far corner, reverse the coordinates.
@@ -49,8 +49,7 @@ public static class BezelGraphics
         int x2,
         int y2,
         Color fadeColor,
-        Color strongColor,
-        float fadeFraction)
+        Color strongColor)
     {
         var edgeBounds = (y1 == y2)
             ? new RectangleF(Math.Min(x1, x2), y1, Math.Abs(x2 - x1), 1f)
@@ -96,14 +95,11 @@ public static class BezelGraphics
         //                     and there's no visible bleed effect between tiles
         brush.WrapMode = WrapMode.TileFlipXY;
 
-        // a fixed percentage along the line before the lighting effect begins to fade
-        const float fadePlateau = 0.05f;
-
         // only draw lighting effects fade for valid gradient stepping points
-        if ((fadeFraction > fadePlateau) && (fadeFraction < 1f))
+        if ((BezelConstants.EdgeGradientEnd > BezelConstants.EdgeGradientStart) && (BezelConstants.EdgeGradientEnd < 1f))
         {
             // overall, the shape of the resulting gradient is 3 stages,
-            // transitioning at <fadePlateau>% and <fadeFraction>%:
+            // transitioning at <EdgeGradientStart>% and <EdgeGradientEnd>%:
             //
             //     * stage 1 - solid:    strongColor
             //     * stage 2 - gradient: strongColor -> fadeColor
@@ -113,7 +109,7 @@ public static class BezelGraphics
             //     |▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▒▒▒▒▒▒▒▒▒▒▒▒░░░░░░░░░░░░---------|
             //     0     ^                                 ^         1.0
             //           |                                 |
-            //           fadePlateau                       fadeFraction
+            //           EdgeGradientStart                 EdgeGradientEnd
             //
             //     * the first solid color is held flat at strongColor to avoid a
             //       visually jarring gradient starting straight away
@@ -125,7 +121,7 @@ public static class BezelGraphics
             brush.InterpolationColors = new ColorBlend(4)
             {
                 Colors = [strongColor, strongColor, fadeColor, fadeColor],
-                Positions = [0f, fadePlateau, fadeFraction, 1f],
+                Positions = [0f, BezelConstants.EdgeGradientStart, BezelConstants.EdgeGradientEnd, 1f],
             };
         }
 
@@ -147,7 +143,6 @@ public static class BezelGraphics
         int width,
         int height,
         BorderStyle borderStyle,
-        BezelConfig config,
         IBezelProfile profile)
     {
         var n = (int)borderStyle.Left;
@@ -181,7 +176,7 @@ public static class BezelGraphics
         var verticalEdgeY1 = y + n;           // top    end of left / right  vertical  segments
         var verticalEdgeY2 = y + height - n;  // bottom end of left / right  vertical  segments
 
-        Color Pix(double hl, double sh) => BezelPrimitives.ApplyEffect(hl, sh, bezelColor, config.HighlightMax, config.ShadowMax);
+        Color Pix(double hl, double sh) => BezelPrimitives.ApplyEffect(hl, sh, bezelColor, BezelConstants.HighlightMax, BezelConstants.ShadowMax);
         Color PixCS(double hl, double sh, double cs) => Pix(hl * cs, sh * cs);
 
         // ── Outer + inner ring edge effects ───────────────────────────────────────
@@ -210,9 +205,8 @@ public static class BezelGraphics
                 y1: outerTop,
                 x2: horizontalEdgeX2,
                 y2: outerTop,
-                fadeColor: PixCS(1.0, 0.0, cs),
-                strongColor: PixCS(1.5, 0.0, cs),
-                fadeFraction: config.EdgeFadeFraction);
+                fadeColor: PixCS(BezelConstants.EdgeForwardHighlightFade, 0.0, cs),
+                strongColor: PixCS(BezelConstants.EdgeForwardHighlightStrong, 0.0, cs));
 
             // Right outer:  SH base, secondary SH from BR corner (bottom→top)
             BezelGraphics.DrawBezelEdgeLine(
@@ -221,9 +215,8 @@ public static class BezelGraphics
                 y1: verticalEdgeY2,
                 x2: outerRight,
                 y2: verticalEdgeY1,
-                fadeColor: PixCS(0.0, 1.0, cs),
-                strongColor: PixCS(0.0, 1.5, cs),
-                fadeFraction: config.EdgeFadeFraction);
+                fadeColor: PixCS(0.0, BezelConstants.EdgeReverseShadowFade, cs),
+                strongColor: PixCS(0.0, BezelConstants.EdgeReverseShadowStrong, cs));
 
             // Bottom outer: SH base, secondary SH from BR corner (right→left)
             BezelGraphics.DrawBezelEdgeLine(
@@ -232,9 +225,8 @@ public static class BezelGraphics
                 y1: outerBottom,
                 x2: horizontalEdgeX1,
                 y2: outerBottom,
-                fadeColor: PixCS(0.0, 1.0, cs),
-                strongColor: PixCS(0.0, 1.5, cs),
-                fadeFraction: config.EdgeFadeFraction);
+                fadeColor: PixCS(0.0, BezelConstants.EdgeReverseShadowFade, cs),
+                strongColor: PixCS(0.0, BezelConstants.EdgeReverseShadowStrong, cs));
 
             // Left outer:   HL base, secondary HL from TL corner (top→bottom)
             BezelGraphics.DrawBezelEdgeLine(
@@ -243,9 +235,8 @@ public static class BezelGraphics
                 y1: verticalEdgeY1,
                 x2: outerLeft,
                 y2: verticalEdgeY2,
-                fadeColor: PixCS(1.0, 0.0, cs),
-                strongColor: PixCS(1.5, 0.0, cs),
-                fadeFraction: config.EdgeFadeFraction);
+                fadeColor: PixCS(BezelConstants.EdgeForwardHighlightFade, 0.0, cs),
+                strongColor: PixCS(BezelConstants.EdgeForwardHighlightStrong, 0.0, cs));
 
             // Top inner:    SH base (reversed), secondary SH from TL inner corner
             BezelGraphics.DrawBezelEdgeLine(
@@ -254,9 +245,8 @@ public static class BezelGraphics
                 y1: innerTop,
                 x2: horizontalEdgeX2,
                 y2: innerTop,
-                fadeColor: PixCS(0.0, 1.0, cs),
-                strongColor: PixCS(0.0, 1.5, cs),
-                fadeFraction: config.EdgeFadeFraction);
+                fadeColor: PixCS(0.0, BezelConstants.EdgeForwardShadowFade, cs),
+                strongColor: PixCS(0.0, BezelConstants.EdgeForwardShadowStrong, cs));
 
             // Right inner:  HL halved base (bottom→top)
             BezelGraphics.DrawBezelEdgeLine(
@@ -265,9 +255,8 @@ public static class BezelGraphics
                 y1: verticalEdgeY2,
                 x2: innerRight,
                 y2: verticalEdgeY1,
-                fadeColor: PixCS(0.5, 0.0, cs),
-                strongColor: PixCS(0.75, 0.0, cs),
-                fadeFraction: config.EdgeFadeFraction);
+                fadeColor: PixCS(BezelConstants.EdgeReverseHighlightFade, 0.0, cs),
+                strongColor: PixCS(BezelConstants.EdgeReverseHighlightStrong, 0.0, cs));
 
             // Bottom inner: HL halved base (reversed), secondary HL from BR inner corner
             BezelGraphics.DrawBezelEdgeLine(
@@ -276,9 +265,8 @@ public static class BezelGraphics
                 y1: innerBottom,
                 x2: horizontalEdgeX1,
                 y2: innerBottom,
-                fadeColor: PixCS(0.5, 0.0, cs),
-                strongColor: PixCS(0.75, 0.0, cs),
-                fadeFraction: config.EdgeFadeFraction);
+                fadeColor: PixCS(BezelConstants.EdgeReverseHighlightFade, 0.0, cs),
+                strongColor: PixCS(BezelConstants.EdgeReverseHighlightStrong, 0.0, cs));
 
             // Left inner:   SH base (top→bottom)
             BezelGraphics.DrawBezelEdgeLine(
@@ -287,9 +275,8 @@ public static class BezelGraphics
                 y1: verticalEdgeY1,
                 x2: innerLeft,
                 y2: verticalEdgeY2,
-                fadeColor: PixCS(0.0, 1.0, cs),
-                strongColor: PixCS(0.0, 1.5, cs),
-                fadeFraction: config.EdgeFadeFraction);
+                fadeColor: PixCS(0.0, BezelConstants.EdgeForwardShadowFade, cs),
+                strongColor: PixCS(0.0, BezelConstants.EdgeForwardShadowStrong, cs));
         }
     }
 

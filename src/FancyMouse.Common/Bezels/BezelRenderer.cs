@@ -16,7 +16,6 @@ namespace FancyMouse.Common.Bezels;
 public sealed class BezelRenderer : IDisposable
 {
     private readonly BorderStyle _borderStyle;
-    private readonly BezelConfig _config;
 
     // the bezel profile is scale-independent (a proportion, not a pixel count - see
     // IBezelProfile.GetProfileNormal), so one instance is valid at both the 1× scale
@@ -29,12 +28,11 @@ public sealed class BezelRenderer : IDisposable
     // Layout: TL=(0,0)  TR=(N,0)  BL=(0,N)  BR=(N,N)  where N=Thickness.
     private readonly Bitmap _cornerAtlas;
 
-    public BezelRenderer(BorderStyle borderStyle, BezelConfig config)
+    public BezelRenderer(BorderStyle borderStyle)
     {
         _borderStyle = borderStyle ?? throw new ArgumentNullException(nameof(borderStyle));
-        _config = config ?? throw new ArgumentNullException(nameof(config));
         _profile = new BezelProfileCurved((int)borderStyle.Left, (int)borderStyle.Depth);
-        _cornerAtlas = CornerTemplates.GetCornerTemplates(borderStyle, config, _profile);
+        _cornerAtlas = CornerTemplates.GetCornerTemplates(borderStyle, _profile);
     }
 
     // ── Render ───────────────────────────────────────────────────────────────
@@ -54,7 +52,7 @@ public sealed class BezelRenderer : IDisposable
         // ── Straight edge fills + 3-D effects ────────────────────────────────
         // Fills all four strips with flat BezelColor then overlays highlight /
         // shadow gradient effects on the outer and inner depth layers.
-        BezelGraphics.DrawBezelEdges(g, x, y, width, height, _borderStyle, _config, _profile);
+        BezelGraphics.DrawBezelEdges(g, x, y, width, height, _borderStyle, _profile);
 
         // ── Corners (flat fill + 3-D effects baked in) ────────────────────────
         // Drawn last so the antialiased outer-edge pixels composite correctly
