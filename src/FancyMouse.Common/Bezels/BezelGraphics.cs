@@ -203,7 +203,7 @@ public static class BezelGraphics
             var innerLeft = x + n - pos - 1;
             var innerRight = x + width - n + pos;
 
-            var cs = profile.GetEdgeIntensity(pos);
+            var cs = profile.GetEdgeIntensity(n, pos);
 
             // Top outer:    HL base, secondary HL from TL corner (left→right)
             BezelGraphics.DrawBezelEdgeLine(

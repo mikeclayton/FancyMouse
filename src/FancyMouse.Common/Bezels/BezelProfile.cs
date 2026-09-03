@@ -55,14 +55,10 @@ internal static class BezelProfile
 
     /// <summary>
     /// Returns the surface normal angle for a straight-edge pixel at depth
-    /// <paramref name="d"/> from the active edge of the effect ring.
-    ///
-    /// d = 0 is the active edge (outer arc boundary for the outer ring;
-    /// content boundary for the inner ring).  Both rings use the same formula
-    /// because d always measures distance from the active edge.
+    /// <paramref name="d"/> pixels into an effect ring <paramref name="n"/> pixels wide.
     /// </summary>
-    internal static double GetEdgeNormal(this IBezelProfile profile, int d)
-        => profile.GetProfileNormal(d);
+    internal static double GetEdgeNormal(this IBezelProfile profile, int n, int d)
+        => profile.GetProfileNormal(d / (double)n);
 
     /// <summary>
     /// Returns the surface normal angle for a corner pixel at
@@ -124,14 +120,20 @@ internal static class BezelProfile
             offsetDistance = Math.Min(offsetDistance, rowDistance);
         }
 
-        return profile.GetProfileNormal(offsetDistance);
+        // GetProfileNormal takes a proportion in [0, 1], not a pixel distance, so convert
+        // here. offsetDistance can land slightly outside [0, n] for antialiased boundary
+        // pixels whose partial coverage extends marginally past the arc's true radius -
+        // GetProfileNormal validates its input and throws outside [0, 1], so clamp
+        // explicitly before calling it.
+        var proportion = Math.Clamp(offsetDistance / cornerRadius, 0.0, 1.0);
+        return profile.GetProfileNormal(proportion);
     }
 
     // ── Convenience ──────────────────────────────────────────────────────────
 
-    /// <summary>Lighting intensity for a straight-edge pixel at depth <paramref name="d2"/>.</summary>
-    internal static double GetEdgeIntensity(this IBezelProfile profile, int d2)
-        => GetLightingEffectIntensity(profile.GetEdgeNormal(d2));
+    /// <summary>Lighting intensity for a straight-edge pixel at depth <paramref name="d2"/> into an effect ring <paramref name="n"/> pixels wide.</summary>
+    internal static double GetEdgeIntensity(this IBezelProfile profile, int n, int d2)
+        => GetLightingEffectIntensity(profile.GetEdgeNormal(n, d2));
 
     /// <summary>
     /// Signed lighting intensity for a corner pixel at <paramref name="originOffset"/>.
