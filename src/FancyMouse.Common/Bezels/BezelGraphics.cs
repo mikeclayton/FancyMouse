@@ -7,6 +7,16 @@ namespace FancyMouse.Common.Bezels;
 public static class BezelGraphics
 {
     /// <summary>
+    /// Enables antialiased drawing on <paramref name="g"/>, with pixel offsets
+    /// aligned to whole pixels rather than fractional (0.5, 0.5) coordinates.
+    /// </summary>
+    private static void EnableAntialias(Graphics g)
+    {
+        g.SmoothingMode = SmoothingMode.AntiAlias;
+        g.PixelOffsetMode = PixelOffsetMode.Half;
+    }
+
+    /// <summary>
     /// Creates a <see cref="GraphicsPath"/> for a rectangle with rounded corners.
     /// The caller owns the returned path and is responsible for disposing the return value.
     /// </summary>
@@ -269,67 +279,6 @@ public static class BezelGraphics
     }
 
     /// <summary>
-    /// Fills the content area inside a frame border with a 45° linear gradient,
-    /// clipped to the inner rectangle boundary.
-    /// </summary>
-    internal static void DrawFrameBackground(
-        Graphics g,
-        int bx,
-        int by,
-        int bw,
-        int bh,
-        int border,
-        Color gradientStart,
-        Color gradientEnd)
-    {
-        int cx = bx + border;
-        int cy = by + border;
-        int cw = bw - (2 * border);
-        int ch = bh - (2 * border);
-        if (cw <= 0 || ch <= 0)
-        {
-            return;
-        }
-
-        using var path = new GraphicsPath();
-        path.AddRectangle(new Rectangle(cx, cy, cw, ch));
-        using var brush = new LinearGradientBrush(
-            new Rectangle(cx, cy, cw, ch),
-            gradientStart,
-            gradientEnd,
-            LinearGradientMode.ForwardDiagonal);
-        g.FillPath(brush, path);
-    }
-
-    /// <summary>
-    /// Fills the content area inside a screen border with a solid colour,
-    /// clipped to the inner rectangle boundary.
-    /// </summary>
-    internal static void DrawScreenBackground(
-        Graphics g,
-        int bx,
-        int by,
-        int bw,
-        int bh,
-        int border,
-        Color contentColor)
-    {
-        int cx = bx + border;
-        int cy = by + border;
-        int cw = bw - (2 * border);
-        int ch = bh - (2 * border);
-        if (cw <= 0 || ch <= 0)
-        {
-            return;
-        }
-
-        using var path = new GraphicsPath();
-        path.AddRectangle(new Rectangle(cx, cy, cw, ch));
-        using var brush = new SolidBrush(contentColor);
-        g.FillPath(brush, path);
-    }
-
-    /// <summary>
     /// Draws a ring shape onto <paramref name="g"/> at position (x, y) with size
     /// (width × height), filled with <paramref name="color"/> and no 3-D effect.
     ///
@@ -348,7 +297,7 @@ public static class BezelGraphics
         int innerRadius,
         Color color)
     {
-        GraphicsHelpers.EnableAntialias(g);
+        BezelGraphics.EnableAntialias(g);
 
         var inset = outerRadius - innerRadius;
         var innerWidth = width - (2 * inset);

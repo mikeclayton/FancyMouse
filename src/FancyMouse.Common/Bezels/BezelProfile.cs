@@ -128,17 +128,4 @@ internal static class BezelProfile
         var proportion = Math.Clamp(offsetDistance / cornerRadius, 0.0, 1.0);
         return profile.GetProfileNormal(proportion);
     }
-
-    // ── Convenience ──────────────────────────────────────────────────────────
-
-    /// <summary>Lighting intensity for a straight-edge pixel at depth <paramref name="d2"/> into an effect ring <paramref name="n"/> pixels wide.</summary>
-    internal static double GetEdgeIntensity(this IBezelProfile profile, int n, int d2)
-        => GetLightingEffectIntensity(profile.GetEdgeNormal(n, d2));
-
-    /// <summary>
-    /// Signed lighting intensity for a corner pixel at <paramref name="originOffset"/>.
-    /// Positive = highlight (outer arc), negative = shadow (inner arc), ~0 = flat zone.
-    /// </summary>
-    internal static double GetCornerIntensity(this IBezelProfile profile, int n, Point originOffset)
-        => GetLightingEffectIntensity(profile.GetCornerNormal(n, originOffset));
 }

@@ -120,9 +120,8 @@ internal static class CornerTemplates
                             y: srcY - n,
                             x: srcX - n);
 
-                        // BezelProfile.GetCornerIntensity calculates the intensity of the
-                        // lighting effect at the specified location in a bezel corner. it
-                        // calculates the normal of the bezel's profile at the point and
+                        // BezelProfile.GetCornerNormal calculates the normal of the bezel's
+                        // profile at this location in a bezel corner, and GetLightingEffectIntensity
                         // converts that into the intensity of the highlight or shadow.
                         //
                         // it returns a signed intensity in the range [-1, +1]:
@@ -130,7 +129,8 @@ internal static class CornerTemplates
                         //   effectIntensity > 0  — outer arc, surface faces the light → apply as highlight
                         //   effectIntensity < 0  — inner arc, surface faces away      → apply as shadow
                         //   effectIntensity ≈ 0  — flat zone                          → no effect
-                        var effectIntensity = profile.GetCornerIntensity(n, originOffset);
+                        var cornerNormal = profile.GetCornerNormal(n, originOffset);
+                        var effectIntensity = BezelProfile.GetLightingEffectIntensity(cornerNormal);
 
                         // Math.Abs(effectIntensity) carries the unsigned scaling factor
                         // for the lighting effect on this pixel - multiply this by the
