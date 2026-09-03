@@ -147,7 +147,8 @@ public static class BezelGraphics
         int width,
         int height,
         BorderStyle borderStyle,
-        BezelConfig config)
+        BezelConfig config,
+        IBezelProfile profile)
     {
         var n = (int)borderStyle.Left;
         var d = (int)borderStyle.Depth;
@@ -182,9 +183,6 @@ public static class BezelGraphics
 
         Color Pix(double hl, double sh) => BezelPrimitives.ApplyEffect(hl, sh, bezelColor, config.HighlightMax, config.ShadowMax);
         Color PixCS(double hl, double sh, double cs) => Pix(hl * cs, sh * cs);
-
-        // var profile = new BezelProfileRamped(n, d, config.RampAngleDegrees);
-        var profile = new BezelProfileCurved(n, d);
 
         // ── Outer + inner ring edge effects ───────────────────────────────────────
         // pos=0 is the outermost pixel of the outer ring (arc boundary — full effect)

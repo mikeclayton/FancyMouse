@@ -18,6 +18,12 @@ public sealed class BezelRenderer : IDisposable
     private readonly BorderStyle _borderStyle;
     private readonly BezelConfig _config;
 
+    // the bezel profile is scale-independent (a proportion, not a pixel count - see
+    // IBezelProfile.GetProfileNormal), so one instance is valid at both the 1× scale
+    // the edges render at and the 2× supersampled scale the corner atlas renders at -
+    // constructed once here and threaded through both rendering paths.
+    private readonly IBezelProfile _profile;
+
     // ── Corner atlas (owned; built eagerly at construction) ──────────────────
     // 2N×2N sprite sheet with pre-rendered corners and baked-in 3-D effects.
     // Layout: TL=(0,0)  TR=(N,0)  BL=(0,N)  BR=(N,N)  where N=Thickness.
@@ -27,7 +33,8 @@ public sealed class BezelRenderer : IDisposable
     {
         _borderStyle = borderStyle ?? throw new ArgumentNullException(nameof(borderStyle));
         _config = config ?? throw new ArgumentNullException(nameof(config));
-        _cornerAtlas = CornerTemplates.GetCornerTemplates(borderStyle, config);
+        _profile = new BezelProfileCurved((int)borderStyle.Left, (int)borderStyle.Depth);
+        _cornerAtlas = CornerTemplates.GetCornerTemplates(borderStyle, config, _profile);
     }
 
     // ── Render ───────────────────────────────────────────────────────────────
@@ -47,7 +54,7 @@ public sealed class BezelRenderer : IDisposable
         // ── Straight edge fills + 3-D effects ────────────────────────────────
         // Fills all four strips with flat BezelColor then overlays highlight /
         // shadow gradient effects on the outer and inner depth layers.
-        BezelGraphics.DrawBezelEdges(g, x, y, width, height, _borderStyle, _config);
+        BezelGraphics.DrawBezelEdges(g, x, y, width, height, _borderStyle, _config, _profile);
 
         // ── Corners (flat fill + 3-D effects baked in) ────────────────────────
         // Drawn last so the antialiased outer-edge pixels composite correctly

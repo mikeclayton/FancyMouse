@@ -37,7 +37,7 @@ internal static class CornerTemplates
     /// The template image needs to be recreated if the color, thickness or 3d effect
     /// depth settings change.
     /// </returns>
-    internal static Bitmap GetCornerTemplates(BorderStyle borderStyle, BezelConfig config)
+    internal static Bitmap GetCornerTemplates(BorderStyle borderStyle, BezelConfig config, IBezelProfile profile)
     {
         // Render at 2× and scale down so GDI+ antialiases the highlight/shadow
         // zone-boundary edges in the corner tiles before they are baked into the atlas.
@@ -83,8 +83,6 @@ internal static class CornerTemplates
 
         // ── Step 2: apply highlight and shadow effects ─────────────────────────
         double CornerEffectWeight(double theta) => BezelPrimitives.CornerEffectWeight(theta, config.FadeStart, config.FadeEnd);
-
-        var profile = new BezelProfileRamped(n, depth, config.RampAngleDegrees);
 
         var cornerData = default(BitmapData);
 
