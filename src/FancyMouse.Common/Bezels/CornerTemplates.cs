@@ -69,7 +69,6 @@ internal static class CornerTemplates
         using var cornerTemplates = CornerTemplates.DrawCornerRegions(
             cornerSize: scaledWidth,
             outerRadius: scaledWidth,
-            innerRadius: 0,
             color: bezelColor);
 
         // ── Step 2: apply highlight and shadow effects ─────────────────────────
@@ -291,7 +290,7 @@ internal static class CornerTemplates
     /// <summary>
     /// Draws four N×N corner regions packed into a 2N×2N image.
     /// </summary>
-    private static Bitmap DrawCornerRegions(int cornerSize, int outerRadius, int innerRadius, Color color)
+    private static Bitmap DrawCornerRegions(int cornerSize, int outerRadius, Color color)
     {
         var n = cornerSize;
 
@@ -309,9 +308,8 @@ internal static class CornerTemplates
                 y: n - outerRadius,
                 width: n + (2 * outerRadius),
                 height: n + (2 * outerRadius),
-                outerRadius: outerRadius,
-                innerRadius: innerRadius,
-                color: color);
+                cornerRadius: outerRadius,
+                bezelColor: color);
         }
 
         // set up the copy regions to extract the corner images from the bezel ring
