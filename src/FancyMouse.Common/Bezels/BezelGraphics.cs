@@ -1,6 +1,5 @@
 using System.Drawing;
 using System.Drawing.Drawing2D;
-using FancyMouse.Models.Styles;
 
 namespace FancyMouse.Common.Bezels;
 
@@ -152,12 +151,11 @@ public static class BezelGraphics
         int y,
         int width,
         int height,
-        BorderStyle borderStyle,
+        int bezelWidth,
+        Color bezelColor,
         IBezelProfile bezelProfile)
     {
-        var n = (int)borderStyle.Left;
-        var d = (int)borderStyle.Depth;
-        var bezelColor = borderStyle.Color ?? Color.Transparent;
+        var n = bezelWidth;
 
         // draw the four straight edge strips with the flat border color first
         var savedMode = g.SmoothingMode;
@@ -174,11 +172,6 @@ public static class BezelGraphics
 
         g.SmoothingMode = savedMode;
         g.PixelOffsetMode = savedPixelOffset;
-
-        if (d == 0)
-        {
-            return;
-        }
 
         // pre-compute the vertical and horizontal endpoints for the edge lines
         var horizontalEdgeX1 = x + n;         // left   end of top  / bottom horizontal segments

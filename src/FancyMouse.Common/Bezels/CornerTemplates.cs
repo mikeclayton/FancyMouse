@@ -2,8 +2,6 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 
-using FancyMouse.Models.Styles;
-
 using static FancyMouse.Common.Bezels.BezelPrimitives;
 
 namespace FancyMouse.Common.Bezels;
@@ -29,21 +27,19 @@ internal static class CornerTemplates
     /// </remarks>
     /// <returns>
     /// Returns a bitmap containing a 2x2 sprite grid of the bezel corners.
-    /// Individual cells in the grid are the size of the "BezelThickness" parameter,
-    /// so the full image is "2 × BezelThickness" in width and height. The corners
+    /// Individual cells in the grid are the size of the "bezelWidth" parameter,
+    /// so the full image is "2 × bezelWidth" in width and height. The corners
     /// are arranged in the "obvious" order - the image for the top left corner is
     /// in the top left cell of the grid, etc.
     ///
     /// The template image needs to be recreated if the color, thickness or 3d effect
     /// depth settings change.
     /// </returns>
-    internal static Bitmap GetCornerTemplates(BorderStyle borderStyle, IBezelProfile profile)
+    internal static Bitmap GetCornerTemplates(int bezelWidth, Color bezelColor, IBezelProfile bezelProfile)
     {
         // Render at 2× and scale down so GDI+ antialiases the highlight/shadow
         // zone-boundary edges in the corner tiles before they are baked into the atlas.
-        var n = (int)borderStyle.Left * 2;
-        var depth = (int)borderStyle.Depth * 2;
-        var bezelColor = borderStyle.Color ?? Color.Transparent;
+        var scaledWidth = bezelWidth * 2;
 
         // ── Step 1: render temporary bezel "ring" images ───────────────────
 
@@ -71,15 +67,10 @@ internal static class CornerTemplates
         // +----------+
         // |<--- n -->|
         using var cornerTemplates = CornerTemplates.DrawCornerRegions(
-            cornerSize: n,
-            outerRadius: n,
+            cornerSize: scaledWidth,
+            outerRadius: scaledWidth,
             innerRadius: 0,
             color: bezelColor);
-
-        if (depth == 0)
-        {
-            return CornerTemplates.ScaleHalf(cornerTemplates);
-        }
 
         // ── Step 2: apply highlight and shadow effects ─────────────────────────
         double CornerEffectWeight(double theta) => BezelPrimitives.CornerEffectWeight(theta, BezelConstants.CornerGradientStart, BezelConstants.CornerGradientEnd);
@@ -117,8 +108,8 @@ internal static class CornerTemplates
                         // corner template - the sign on the x and y coordinate tell us
                         // which quadrant it's it in (i.e. TL, TR, BL, BR)
                         var originOffset = new Point(
-                            y: srcY - n,
-                            x: srcX - n);
+                            y: srcY - scaledWidth,
+                            x: srcX - scaledWidth);
 
                         // BezelProfile.GetCornerNormal calculates the normal of the bezel's
                         // profile at this location in a bezel corner, and GetLightingEffectIntensity
@@ -129,7 +120,7 @@ internal static class CornerTemplates
                         //   effectIntensity > 0  — outer arc, surface faces the light → apply as highlight
                         //   effectIntensity < 0  — inner arc, surface faces away      → apply as shadow
                         //   effectIntensity ≈ 0  — flat zone                          → no effect
-                        var cornerNormal = profile.GetCornerNormal(n, originOffset);
+                        var cornerNormal = bezelProfile.GetCornerNormal(scaledWidth, originOffset);
                         var effectIntensity = BezelProfile.GetLightingEffectIntensity(cornerNormal);
 
                         // Math.Abs(effectIntensity) carries the unsigned scaling factor

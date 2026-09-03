@@ -15,27 +15,50 @@ namespace FancyMouse.Common.Bezels;
 /// </summary>
 public sealed class BezelRenderer : IDisposable
 {
-    private readonly BorderStyle _borderStyle;
+    public BezelRenderer(BorderStyle bezelStyle)
+    {
+        this.BezelStyle = BezelRenderer.ClampDepth(bezelStyle ?? throw new ArgumentNullException(nameof(bezelStyle)));
+        this.Profile = new BezelProfileCurved((int)this.BezelStyle.Left, (int)this.BezelStyle.Depth);
+        _cornerAtlas = CornerTemplates.GetCornerTemplates(
+            (int)this.BezelStyle.Left,
+            this.BezelStyle.Color ?? Color.Transparent,
+            this.Profile);
+    }
+
+    private BorderStyle BezelStyle
+    {
+        get;
+    }
 
     // the bezel profile is scale-independent (a proportion, not a pixel count - see
     // IBezelProfile.GetProfileNormal), so one instance is valid at both the 1× scale
     // the edges render at and the 2× supersampled scale the corner atlas renders at -
     // constructed once here and threaded through both rendering paths.
-    private readonly IBezelProfile _profile;
+    private IBezelProfile Profile
+    {
+        get;
+    }
 
     // ── Corner atlas (owned; built eagerly at construction) ──────────────────
     // 2N×2N sprite sheet with pre-rendered corners and baked-in 3-D effects.
     // Layout: TL=(0,0)  TR=(N,0)  BL=(0,N)  BR=(N,N)  where N=Thickness.
     private readonly Bitmap _cornerAtlas;
 
-    public BezelRenderer(BorderStyle borderStyle)
+    /// <summary>
+    /// Returns a border style with the 3d effect depth limited to half the border thickness.
+    /// This prevents the "light" and "shadow" effects overlapping (or overwriting each other)
+    /// in the middle of the border.
+    /// </summary>
+    internal static BorderStyle ClampDepth(BorderStyle borderStyle)
     {
-        _borderStyle = borderStyle ?? throw new ArgumentNullException(nameof(borderStyle));
-        _profile = new BezelProfileCurved((int)borderStyle.Left, (int)borderStyle.Depth);
-        _cornerAtlas = CornerTemplates.GetCornerTemplates(borderStyle, _profile);
+        var minThickness = Math.Min(
+            Math.Min(borderStyle.Left, borderStyle.Top),
+            Math.Min(borderStyle.Right, borderStyle.Bottom));
+        var maxDepth = minThickness / 2;
+        return (borderStyle.Depth <= maxDepth)
+            ? borderStyle
+            : borderStyle.WithDepth(maxDepth);
     }
-
-    // ── Render ───────────────────────────────────────────────────────────────
 
     /// <summary>
     /// Draws a bezel ring with the full 3-D highlight/shadow corner effect.
@@ -49,10 +72,20 @@ public sealed class BezelRenderer : IDisposable
     /// </summary>
     public void DrawBezel(Graphics g, int x, int y, int width, int height)
     {
+        var bezelWidth = (int)this.BezelStyle.Left;
+
         // ── Straight edge fills + 3-D effects ────────────────────────────────
         // Fills all four strips with flat BezelColor then overlays highlight /
         // shadow gradient effects on the outer and inner depth layers.
-        BezelGraphics.DrawBezelEdges(g, x, y, width, height, _borderStyle, _profile);
+        BezelGraphics.DrawBezelEdges(
+            g,
+            x,
+            y,
+            width,
+            height,
+            bezelWidth,
+            this.BezelStyle.Color ?? Color.Transparent,
+            this.Profile);
 
         // ── Corners (flat fill + 3-D effects baked in) ────────────────────────
         // Drawn last so the antialiased outer-edge pixels composite correctly
@@ -63,7 +96,7 @@ public sealed class BezelRenderer : IDisposable
         // so NearestNeighbor snaps to the correct source pixel without bilinear
         // blurring. Default bilinear samples at i+0.5, shifting the arc edge ~0.5 px
         // inward and creating a visible gap between the corner arc and the edge strips.
-        var n = (int)_borderStyle.Left;
+        var n = bezelWidth;
         var corners = new[]
         {
             // (source region in atlas,      destination on target)
