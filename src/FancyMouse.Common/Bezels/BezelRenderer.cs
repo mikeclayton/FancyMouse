@@ -1,32 +1,18 @@
 using System.Drawing;
 using System.Drawing.Drawing2D;
+
 using FancyMouse.Models.Styles;
 
 namespace FancyMouse.Common.Bezels;
 
-// ═════════════════════════════════════════════════════════════════════════════
-// BezelRenderer
-//
-// Immutable configuration object for a single bezel style.  Constructed once
-// with all style parameters; renders a bezel ring onto a caller-supplied
-// Graphics context on demand.
-//
-// Geometry contract
-// ─────────────────
-// BezelThickness controls both the outer corner radius and the ring width, so
-// the inner content area is always a plain rectangle (inner corner radius = 0).
-// ThreeDEffectDepth pixels are consumed at each edge of the ring for the 3-D
-// effect, leaving (BezelThickness − 2 × ThreeDEffectDepth) pixels of flat fill
-// in the middle.  E.g. thickness=12, depth=3 → 3px highlight, 6px flat, 3px shadow.
-//
-// Methods
-// ───────
-//   DrawBezel  — draws the full bezel ring with 3-D corner highlight/shadow
-//
-// The corner atlas (a 2N×2N sprite sheet of the four pre-rendered corners with
-// 3-D effects baked in) is built eagerly at construction time and owned by
-// this instance.
-// ═════════════════════════════════════════════════════════════════════════════
+/// <summary>
+/// A drawing utility that can draw borders and bezels using a
+/// single fixed style that is provided at construction. This
+/// allows the instance to make optimisations by caching re-usable
+/// assets that are locked to the style settings. To draw borders
+/// with a different style, construct a separate BezelRenderer
+/// instance.
+/// </summary>
 public sealed class BezelRenderer : IDisposable
 {
     private readonly BorderStyle _borderStyle;
@@ -46,14 +32,16 @@ public sealed class BezelRenderer : IDisposable
 
     // ── Render ───────────────────────────────────────────────────────────────
 
-    // Draws the bezel ring with the full 3-D highlight/shadow corner effect.
-    //
-    // Light source is top-left:
-    //   TL — double highlight, peak at 45°
-    //   BR — double shadow,    peak at 45°
-    //   TR — highlight (top) meets shadow (right), both fade at 45°
-    //   BL — shadow (bottom) meets highlight (left), both fade at 45°
-    //   Inner arc effects are reversed; BR inner highlight is halved.
+    /// <summary>
+    /// Draws a bezel ring with the full 3-D highlight/shadow corner effect.
+    ///
+    /// Light source is top-left:
+    ///   TL — double highlight, peak at 45°
+    ///   BR — double shadow,    peak at 45°
+    ///   TR — highlight (top) meets shadow (right), both fade at 45°
+    ///   BL — shadow (bottom) meets highlight (left), both fade at 45°
+    ///   Inner arc effects are reversed; BR inner highlight is halved.
+    /// </summary>
     public void DrawBezel(Graphics g, int x, int y, int width, int height)
     {
         // ── Straight edge fills + 3-D effects ────────────────────────────────
@@ -94,8 +82,6 @@ public sealed class BezelRenderer : IDisposable
         g.InterpolationMode = savedInterpolation;
         g.PixelOffsetMode = savedPixelOffset;
     }
-
-    /* ── Disposal ──────────────────────────────────────────────────────────── */
 
     public void Dispose()
     {

@@ -1,32 +1,30 @@
 namespace FancyMouse.Common.Bezels;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// BezelProfileRamped
-//
-// Models the cross-sectional surface geometry of a bezel ring as a flat
-// inclined plane (chamfer / bevel), mapping pixel positions to a CONSTANT
-// surface normal angle across each effect ring.
-//
-// Cross-section layout (position 0 = outer arc edge, n = content boundary):
-//
-//   position:  0      d           n-d      n
-//              │      │            │       │
-//   θ (normal):α ──── α ──────── π-α ──── π-α
-//              │outer ring│  flat  │inner ring│
-//              │(highlight)│ (none) │(shadow) │
-//
-//   where α = π/2 − rampAngle  (rampAngle is the inclination from horizontal)
-//
-// Unlike BezelProfileCurved (which sweeps 0 → π/2 through a quadrant arc),
-// BezelProfileRamped holds a constant normal angle inside each ring, producing
-// a uniform-intensity chamfer rather than a smooth gradient.  At 45° the
-// intensity is cos(π/4) ≈ 0.707 throughout both effect rings.
-//
-// GetProfileNormal maps position to a normal angle; the shared helpers in
-// BezelProfile convert that angle to highlight / shadow intensities.
-//
-// Construct locally at the point of use and discard — no caching is needed.
-// ─────────────────────────────────────────────────────────────────────────────
+/// <summary>
+/// Models the cross-sectional surface geometry of a bezel ring as a flat
+/// inclined plane (chamfer / bevel), mapping pixel positions to a CONSTANT
+/// surface normal angle across each effect ring.
+///
+/// Cross-section layout (position 0 = outer arc edge, n = content boundary):
+///
+///   position:  0      d           n-d      n
+///              │      │            │       │
+///   θ (normal):α ──── α ──────── π-α ──── π-α
+///              │outer ring│  flat  │inner ring│
+///              │(highlight)│ (none) │(shadow) │
+///
+///   where α = π/2 − rampAngle  (rampAngle is the inclination from horizontal)
+///
+/// Unlike BezelProfileCurved (which sweeps 0 → π/2 through a quadrant arc),
+/// BezelProfileRamped holds a constant normal angle inside each ring, producing
+/// a uniform-intensity chamfer rather than a smooth gradient.  At 45° the
+/// intensity is cos(π/4) ≈ 0.707 throughout both effect rings.
+///
+/// GetProfileNormal maps position to a normal angle; the shared helpers in
+/// BezelProfile convert that angle to highlight / shadow intensities.
+///
+/// Construct locally at the point of use and discard — no caching is needed.
+/// </summary>
 internal sealed class BezelProfileRamped : IBezelProfile
 {
     private readonly int _n;            // bezel ring pixel width (outer arc → content boundary)

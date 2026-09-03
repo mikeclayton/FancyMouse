@@ -48,7 +48,7 @@ internal static class CornerTemplates
         // ── Step 1: render temporary bezel "ring" images ───────────────────
 
         // render a set of temporary bezels that we'll use to draw the
-        // corner images and apply highlight and shadow effects to
+        // corner images and apply highlight and shadow effects
         //
         // the images we'll generate are:
         //
@@ -69,7 +69,7 @@ internal static class CornerTemplates
         // |▒▓▓▓▓▓▓▓▓▓|
         // |▓▓▓▓▓▓▓▓▓▓|
         // +----------+
-        // |<-- N --->|
+        // |<--- n -->|
         using var cornerTemplates = CornerTemplates.DrawCornerRegions(
             cornerSize: n,
             outerRadius: n,
@@ -116,7 +116,7 @@ internal static class CornerTemplates
                         }
 
                         // calculate the offset of the pixel relative to the centre of the
-                        // corner  template - the sign on the x and y coordinate tell us
+                        // corner template - the sign on the x and y coordinate tell us
                         // which quadrant it's it in (i.e. TL, TR, BL, BR)
                         var originOffset = new Point(
                             y: srcY - n,

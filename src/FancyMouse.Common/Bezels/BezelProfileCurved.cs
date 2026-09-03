@@ -1,25 +1,24 @@
 namespace FancyMouse.Common.Bezels;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// BezelProfileCurved
-//
-// Models the cross-sectional surface geometry of a bezel ring, mapping pixel
-// positions to surface normal angles and then to lighting intensities.
-//
-// Cross-section layout (position 0 = outer arc edge, n = content boundary):
-//
-//   position:   0      d           n-d     n
-//               │      │            │      │
-//   θ (normal): 0 ──→ π/2 ──────── π/2 ──→  π
-//   cos(θ):    +1 ──→  0  ────────  0  ──→ -1
-//               │outer ring│  flat  │inner ring│
-//               │(highlight)│ (none) │(shadow) │
-//
-// GetProfileNormal maps position to a normal angle; the shared helpers in
-// BezelProfile convert that angle to highlight / shadow intensities.
-//
-// Construct locally at the point of use and discard — no caching is needed.
-// ─────────────────────────────────────────────────────────────────────────────
+/// <summary>
+/// Models the cross-sectional surface geometry of a bezel ring, mapping pixel
+/// positions to surface normal angles and then to lighting intensities.
+/// </summary>
+/// <remarks>
+/// Cross-section layout (position 0 = outer arc edge, n = content boundary):
+///
+///   position:   0      d           n-d     n
+///               │      │            │      │
+///   θ (normal): 0 ──→ π/2 ──────── π/2 ──→  π
+///   cos(θ):    +1 ──→  0  ────────  0  ──→ -1
+///               │outer ring │  flat  │inner ring│
+///               │(highlight)│ (none) │(shadow) │
+///
+/// GetProfileNormal maps position to a normal angle; the shared helpers in
+/// BezelProfile convert that angle to highlight / shadow intensities.
+///
+/// Construct locally at the point of use and discard — no caching is needed.
+/// </remarks>
 internal sealed class BezelProfileCurved : IBezelProfile
 {
     private readonly int _n; // bezel ring pixel width (outer arc → content boundary)
