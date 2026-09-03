@@ -106,7 +106,7 @@ internal static class BezelPrimitives
     /// Returns the GDI screen angle in degrees for a pixel offset (dx, dy) from an arc centre.
     /// 0° = rightward, increasing clockwise. Result is always in [0, 360).
     /// </summary>
-    internal static double GdiAngle(int dx, int dy)
+    internal static double GetGdiAngle(int dx, int dy)
     {
         // .    270
         //       |
@@ -209,11 +209,14 @@ internal static class BezelPrimitives
 
     /// <summary>
     /// Lightens <paramref name="baseColor"/> toward white by <paramref name="highlightLevel"/>,
-    /// capped at <paramref name="highlightMax"/> so the effect stays subtle.
+    /// capped at <paramref name="highlightMax"/> so the effect stays subtle. A negative
+    /// resulting alpha is clamped to zero (no effect) rather than darkening the colour -
+    /// every current caller's <paramref name="highlightLevel"/> is non-negative, but this
+    /// method doesn't rely on that being true.
     /// </summary>
     internal static Color ApplyHighlight(Color baseColor, double highlightLevel, double highlightMax)
     {
-        var highlightAlpha = Math.Min(1.0, highlightLevel * highlightMax);
+        var highlightAlpha = Math.Clamp(highlightLevel * highlightMax, 0.0, 1.0);
         var r = baseColor.R + (highlightAlpha * (255 - baseColor.R));
         var g = baseColor.G + (highlightAlpha * (255 - baseColor.G));
         var b = baseColor.B + (highlightAlpha * (255 - baseColor.B));
@@ -226,11 +229,14 @@ internal static class BezelPrimitives
 
     /// <summary>
     /// Darkens <paramref name="baseColor"/> toward black by <paramref name="shadowLevel"/>,
-    /// capped at <paramref name="shadowMax"/> so the effect stays subtle.
+    /// capped at <paramref name="shadowMax"/> so the effect stays subtle. A negative
+    /// resulting alpha is clamped to zero (no effect) rather than lightening the colour -
+    /// every current caller's <paramref name="shadowLevel"/> is non-negative, but this
+    /// method doesn't rely on that being true.
     /// </summary>
     internal static Color ApplyShadow(Color baseColor, double shadowLevel, double shadowMax)
     {
-        var shadowAlpha = Math.Min(1.0, shadowLevel * shadowMax);
+        var shadowAlpha = Math.Clamp(shadowLevel * shadowMax, 0.0, 1.0);
         var r = baseColor.R * (1 - shadowAlpha);
         var g = baseColor.G * (1 - shadowAlpha);
         var b = baseColor.B * (1 - shadowAlpha);

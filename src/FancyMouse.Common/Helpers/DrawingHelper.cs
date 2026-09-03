@@ -80,18 +80,9 @@ public static class DrawingHelper
             return image;
         }
 
-        // draw a contoured border (could be an outer border or a bezel) - values are
-        // compile-time constants; BezelConfig exists so DrawBezel is parameterised and ready
-        // to accept per-bezel variation later
+        // draw a contoured border (could be an outer border or a bezel)
         var borderBounds = hostBounds.BorderBounds.ToRectangle();
-        var bezelConfig = new BezelConfig(
-            fadeStart: 30.0,            // degrees from edge where corner rolloff begins
-            fadeEnd: 60.0,              // degrees where rolloff reaches zero
-            highlightMax: 0x44 / 255.0, // peak highlight opacity (~26.7 %)
-            shadowMax: 0x44 / 255.0,    // peak shadow   opacity (~26.7 %)
-            edgeFadeFraction: 0.75f,    // fraction of edge length with secondary effect
-            rampAngleDegrees: 45.0);    // chamfer inclination — cos(45°) ≈ 0.707 uniform intensity
-        using var renderer = new BezelRenderer(borderStyle, bezelConfig);
+        using var renderer = new BezelRenderer(borderStyle);
         renderer.DrawBezel(graphics, borderBounds.X, borderBounds.Y, borderBounds.Width, borderBounds.Height);
 
         return image;

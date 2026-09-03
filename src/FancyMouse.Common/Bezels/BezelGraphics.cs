@@ -1,11 +1,20 @@
 using System.Drawing;
 using System.Drawing.Drawing2D;
-using FancyMouse.Models.Styles;
 
 namespace FancyMouse.Common.Bezels;
 
 public static class BezelGraphics
 {
+    /// <summary>
+    /// Enables antialiased drawing on <paramref name="g"/>, with pixel offsets
+    /// aligned to whole pixels rather than fractional (0.5, 0.5) coordinates.
+    /// </summary>
+    private static void EnableAntialias(Graphics g)
+    {
+        g.SmoothingMode = SmoothingMode.AntiAlias;
+        g.PixelOffsetMode = PixelOffsetMode.Half;
+    }
+
     /// <summary>
     /// Creates a <see cref="GraphicsPath"/> for a rectangle with rounded corners.
     /// The caller owns the returned path and is responsible for disposing the return value.
@@ -34,19 +43,20 @@ public static class BezelGraphics
     /// Draws a 1-pixel thick, 3-stage gradient line as part of a bezel's edge.
     /// </summary>
     /// <remarks>
-    /// The line starts at (x1, y1) using cornerColour and fades to baseColour as it approaches (x2, y2).
+    /// The line starts at (x1, y1) using strongColour and fades to fadeColour as it approaches (x2, y2).
     /// The 3-stage gradient is asymmetrical - to reverse the direction swap (x1, y1) and (x2, y2)
     /// (don't just swap the colours).
     /// </remarks>
+    /// <param name="strongColor">The more intense colour, at the corner-adjacent end of the line.</param>
+    /// <param name="fadeColor">The colour the line fades to, away from the corner.</param>
     private static void DrawBezelEdgeLine(
         Graphics g,
         int x1,
         int y1,
         int x2,
         int y2,
-        Color baseColor,
-        Color cornerColor,
-        float fadeFraction)
+        Color strongColor,
+        Color fadeColor)
     {
         // make sure the coordinates represent a vertical or horizontal line,
         // not an arbitrary rectangle - each pixel row (or column) of the bezel
@@ -68,10 +78,12 @@ public static class BezelGraphics
         g.SmoothingMode = SmoothingMode.None;
         g.PixelOffsetMode = PixelOffsetMode.None;
 
-        // set a default gradient brush in case the fadeFraction parameter is invalid.
+        // set a default 2-stop gradient brush; this is overwritten with the full 4-stop
+        // gradient below if BezelConstants.EdgeGradientStart/EdgeGradientEnd are ever
+        // changed to invalid values, so rendering degrades instead of throwing.
         // (note the coordinates are directional to ensure the gradient blends the right way)
         using var brush = new LinearGradientBrush(
-            new Point(x1, y1), new Point(x2, y2), cornerColor, baseColor);
+            new Point(x1, y1), new Point(x2, y2), strongColor, fadeColor);
 
         // for gradient fills, the default WrapMode.Tile fills the gradient region as
         // a series of tiles and it antialiases the edge where they join - this means
@@ -100,36 +112,33 @@ public static class BezelGraphics
         //                     and there's no visible bleed effect between tiles
         brush.WrapMode = WrapMode.TileFlipXY;
 
-        // a fixed percentage along the line before the lighting effect begins to fade
-        const float fadePlateau = 0.05f;
-
         // only draw lighting effects fade for valid gradient stepping points
-        if ((fadeFraction > fadePlateau) && (fadeFraction < 1f))
+        if ((BezelConstants.EdgeGradientEnd > BezelConstants.EdgeGradientStart) && (BezelConstants.EdgeGradientEnd < 1f))
         {
             // overall, the shape of the resulting gradient is 3 stages,
-            // transitioning at <fadePlateau>% and <fadeFraction>%:
+            // transitioning at <EdgeGradientStart>% and <EdgeGradientEnd>%:
             //
-            //     * stage 1 - solid:    cornerColor
-            //     * stage 2 - gradient: cornerColor -> baseColor
-            //     * stage 3 - solid:    baseColor
+            //     * stage 1 - solid:    strongColor
+            //     * stage 2 - gradient: strongColor -> fadeColor
+            //     * stage 3 - solid:    fadeColor
             //
             //     |solid|            gradient             |  solid  |
             //     |▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▒▒▒▒▒▒▒▒▒▒▒▒░░░░░░░░░░░░---------|
             //     0     ^                                 ^         1.0
             //           |                                 |
-            //           fadePlateau                       fadeFraction
+            //           EdgeGradientStart                 EdgeGradientEnd
             //
-            //     * the first solid color is held flat at cornerColor to avoid a
+            //     * the first solid color is held flat at strongColor to avoid a
             //       visually jarring gradient starting straight away
             //
-            //     * the gradient fades from cornerColor to baseColor
+            //     * the gradient fades from strongColor to fadeColor
             //
-            //     * the final solid color is held flat at baseColor for the rest
+            //     * the final solid color is held flat at fadeColor for the rest
             //       of the edge
             brush.InterpolationColors = new ColorBlend(4)
             {
-                Colors = [cornerColor, cornerColor, baseColor, baseColor],
-                Positions = [0f, fadePlateau, fadeFraction, 1f],
+                Colors = [strongColor, strongColor, fadeColor, fadeColor],
+                Positions = [0f, BezelConstants.EdgeGradientStart, BezelConstants.EdgeGradientEnd, 1f],
             };
         }
 
@@ -150,12 +159,11 @@ public static class BezelGraphics
         int y,
         int width,
         int height,
-        BorderStyle borderStyle,
-        BezelConfig config)
+        int bezelWidth,
+        Color bezelColor,
+        IBezelProfile bezelProfile)
     {
-        var n = (int)borderStyle.Left;
-        var d = (int)borderStyle.Depth;
-        var bezelColor = borderStyle.Color ?? Color.Transparent;
+        var n = bezelWidth;
 
         // draw the four straight edge strips with the flat border color first
         var savedMode = g.SmoothingMode;
@@ -164,19 +172,14 @@ public static class BezelGraphics
         g.PixelOffsetMode = PixelOffsetMode.None;
         using (var flatBrush = new SolidBrush(bezelColor))
         {
-            g.FillRectangle(flatBrush, x + n,             y,              width - (2 * n),  n);                // top
-            g.FillRectangle(flatBrush, x + n,             y + height - n, width - (2 * n),  n);                // bottom
-            g.FillRectangle(flatBrush, x,                 y + n,          n,                height - (2 * n)); // left
-            g.FillRectangle(flatBrush, x + width - n,     y + n,          n,                height - (2 * n)); // right
+            g.FillRectangle(flatBrush, x + n,         y,              width - (2 * n), n);                // top
+            g.FillRectangle(flatBrush, x + n,         y + height - n, width - (2 * n), n);                // bottom
+            g.FillRectangle(flatBrush, x,             y + n,          n,               height - (2 * n)); // left
+            g.FillRectangle(flatBrush, x + width - n, y + n,          n,               height - (2 * n)); // right
         }
 
         g.SmoothingMode = savedMode;
         g.PixelOffsetMode = savedPixelOffset;
-
-        if (d == 0)
-        {
-            return;
-        }
 
         // pre-compute the vertical and horizontal endpoints for the edge lines
         var horizontalEdgeX1 = x + n;         // left   end of top  / bottom horizontal segments
@@ -184,11 +187,9 @@ public static class BezelGraphics
         var verticalEdgeY1 = y + n;           // top    end of left / right  vertical  segments
         var verticalEdgeY2 = y + height - n;  // bottom end of left / right  vertical  segments
 
-        Color GetHighlightColor(double strength, double magnitude) => BezelPrimitives.ApplyHighlight(bezelColor, strength * magnitude, config.HighlightMax);
+        Color GetHighlightColor(double strength, double magnitude) => BezelPrimitives.ApplyHighlight(bezelColor, strength * magnitude, BezelConstants.HighlightMax);
 
-        Color GetShadowColor(double strength, double magnitude) => BezelPrimitives.ApplyShadow(bezelColor, strength * magnitude, config.ShadowMax);
-
-        var profile = new BezelProfileCurved(n, d);
+        Color GetShadowColor(double strength, double magnitude) => BezelPrimitives.ApplyShadow(bezelColor, strength * magnitude, BezelConstants.ShadowMax);
 
         // positions with a magnitude below this are in the flat zone - already
         // covered by the flat fill above, so no line is drawn for them at all.
@@ -205,7 +206,7 @@ public static class BezelGraphics
         {
             // calculate the normal, intensity and magnitude for the Top and Left edges
             // (the edge of these borders at 0 on the profile function faces upward / leftward)
-            var forwardNormal = profile.GetEdgeNormal(pos);
+            var forwardNormal = bezelProfile.GetEdgeNormal(n, pos);
             var forwardIntensity = BezelProfile.GetLightingEffectIntensity(forwardNormal);
             var frontFacingLight = forwardIntensity > 0.0;
             var forwardMagnitude = Math.Abs(forwardIntensity);
@@ -234,9 +235,8 @@ public static class BezelGraphics
                     y1: topLineY,
                     x2: horizontalEdgeX2,
                     y2: topLineY,
-                    baseColor: frontFacingLight ? GetHighlightColor(1.0, forwardMagnitude) : GetShadowColor(1.0, forwardMagnitude),
-                    cornerColor: frontFacingLight ? GetHighlightColor(1.5, forwardMagnitude) : GetShadowColor(1.5, forwardMagnitude),
-                    fadeFraction: config.EdgeFadeFraction);
+                    strongColor: frontFacingLight ? GetHighlightColor(BezelConstants.EdgeForwardHighlightStrong, forwardMagnitude) : GetShadowColor(BezelConstants.EdgeForwardShadowStrong, forwardMagnitude),
+                    fadeColor: frontFacingLight ? GetHighlightColor(BezelConstants.EdgeForwardHighlightFade, forwardMagnitude) : GetShadowColor(BezelConstants.EdgeForwardShadowFade, forwardMagnitude));
             }
 
             // Right:  HL halved when facing light, SH when facing away - both peak at BR (bottom→top)
@@ -248,9 +248,8 @@ public static class BezelGraphics
                     y1: verticalEdgeY2,
                     x2: rightLineX,
                     y2: verticalEdgeY1,
-                    baseColor: backFacingLight ? GetHighlightColor(0.5, reverseMagnitude) : GetShadowColor(1.0, reverseMagnitude),
-                    cornerColor: backFacingLight ? GetHighlightColor(0.75, reverseMagnitude) : GetShadowColor(1.5, reverseMagnitude),
-                    fadeFraction: config.EdgeFadeFraction);
+                    strongColor: backFacingLight ? GetHighlightColor(BezelConstants.EdgeReverseHighlightStrong, reverseMagnitude) : GetShadowColor(BezelConstants.EdgeReverseShadowStrong, reverseMagnitude),
+                    fadeColor: backFacingLight ? GetHighlightColor(BezelConstants.EdgeReverseHighlightFade, reverseMagnitude) : GetShadowColor(BezelConstants.EdgeReverseShadowFade, reverseMagnitude));
             }
 
             // Bottom: HL halved when facing light, SH when facing away - both peak at BR (right→left)
@@ -262,9 +261,8 @@ public static class BezelGraphics
                     y1: bottomLineY,
                     x2: horizontalEdgeX1,
                     y2: bottomLineY,
-                    baseColor: backFacingLight ? GetHighlightColor(0.5, reverseMagnitude) : GetShadowColor(1.0, reverseMagnitude),
-                    cornerColor: backFacingLight ? GetHighlightColor(0.75, reverseMagnitude) : GetShadowColor(1.5, reverseMagnitude),
-                    fadeFraction: config.EdgeFadeFraction);
+                    strongColor: backFacingLight ? GetHighlightColor(BezelConstants.EdgeReverseHighlightStrong, reverseMagnitude) : GetShadowColor(BezelConstants.EdgeReverseShadowStrong, reverseMagnitude),
+                    fadeColor: backFacingLight ? GetHighlightColor(BezelConstants.EdgeReverseHighlightFade, reverseMagnitude) : GetShadowColor(BezelConstants.EdgeReverseShadowFade, reverseMagnitude));
             }
 
             // Left:   HL when facing light, SH when facing away - both peak at TL (top→bottom)
@@ -276,9 +274,8 @@ public static class BezelGraphics
                     y1: verticalEdgeY1,
                     x2: leftLineX,
                     y2: verticalEdgeY2,
-                    baseColor: frontFacingLight ? GetHighlightColor(1.0, forwardMagnitude) : GetShadowColor(1.0, forwardMagnitude),
-                    cornerColor: frontFacingLight ? GetHighlightColor(1.5, forwardMagnitude) : GetShadowColor(1.5, forwardMagnitude),
-                    fadeFraction: config.EdgeFadeFraction);
+                    strongColor: frontFacingLight ? GetHighlightColor(BezelConstants.EdgeForwardHighlightStrong, forwardMagnitude) : GetShadowColor(BezelConstants.EdgeForwardShadowStrong, forwardMagnitude),
+                    fadeColor: frontFacingLight ? GetHighlightColor(BezelConstants.EdgeForwardHighlightFade, forwardMagnitude) : GetShadowColor(BezelConstants.EdgeForwardShadowFade, forwardMagnitude));
             }
         }
     }
@@ -325,7 +322,7 @@ public static class BezelGraphics
         var innerWidth = width - (2 * cornerRadius);
         var innerHeight = height - (2 * cornerRadius);
 
-        GraphicsHelpers.EnableAntialias(g);
+        BezelGraphics.EnableAntialias(g);
 
         using var outerPath = BezelGraphics.GetRoundedRectanglePath(x, y, width, height, cornerRadius);
         using var fillBrush = new SolidBrush(color);

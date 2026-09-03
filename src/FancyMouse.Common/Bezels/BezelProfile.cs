@@ -55,10 +55,10 @@ internal static class BezelProfile
 
     /// <summary>
     /// Returns the surface normal angle for a straight-edge pixel at depth
-    /// <paramref name="d2"/> from the reference edge of the effect ring.
+    /// <paramref name="d"/> pixels into an effect ring <paramref name="n"/> pixels wide.
     /// </summary>
-    internal static double GetEdgeNormal(this IBezelProfile profile, int d)
-        => profile.GetProfileNormal(d);
+    internal static double GetEdgeNormal(this IBezelProfile profile, int n, int d)
+        => profile.GetProfileNormal(d / (double)n);
 
     /// <summary>
     /// Returns the surface normal angle for a corner pixel at
@@ -82,7 +82,7 @@ internal static class BezelProfile
     /// originOffset is relative to (0, 0).
     ///
     /// </remarks>
-    internal static double GetCornerNormal(this IBezelProfile profile, int n, Point originOffset)
+    internal static double GetCornerNormal(this IBezelProfile profile, int cornerRadius, Point originOffset)
     {
         // convert the point's cartesian offset from the centre of the corner
         // (e.g. (3, 4)) into a radial distance from the centre of the corner
@@ -93,7 +93,7 @@ internal static class BezelProfile
         // the distance across the border's profile is measured from the *outside*
         // of the curve, but we've got the radius from the centre of the corner's curve,
         // so we need to convert between the two measurements
-        var offsetDistance = (double)n - offsetRadius;
+        var offsetDistance = (double)cornerRadius - offsetRadius;
 
         // in the TR, BL and BR corners, the curve of the corner falls just outside
         // the bottom and / or right of the tile due to rasterization (the TR cell
@@ -106,7 +106,7 @@ internal static class BezelProfile
         // a noticeable lighting effect seam where the corner and edge join.
         if (originOffset.X > 0)
         {
-            var lastColumnIndex = n - 1;
+            var lastColumnIndex = cornerRadius - 1;
             var offsetColumnIndex = originOffset.X;
             var columnDistance = lastColumnIndex - offsetColumnIndex;
             offsetDistance = Math.Min(offsetDistance, columnDistance);
@@ -114,27 +114,18 @@ internal static class BezelProfile
 
         if (originOffset.Y > 0)
         {
-            var lastRowIndex = n - 1;
+            var lastRowIndex = cornerRadius - 1;
             var offsetRowIndex = originOffset.Y;
             var rowDistance = lastRowIndex - offsetRowIndex;
             offsetDistance = Math.Min(offsetDistance, rowDistance);
         }
 
-        return profile.GetProfileNormal(offsetDistance);
+        // GetProfileNormal takes a proportion in [0, 1], not a pixel distance, so convert
+        // here. offsetDistance can land slightly outside [0, n] for antialiased boundary
+        // pixels whose partial coverage extends marginally past the arc's true radius -
+        // GetProfileNormal validates its input and throws outside [0, 1], so clamp
+        // explicitly before calling it.
+        var proportion = Math.Clamp(offsetDistance / cornerRadius, 0.0, 1.0);
+        return profile.GetProfileNormal(proportion);
     }
-
-    // ── Convenience ──────────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Calculated the lighting intensity for a straight-edge pixel at depth <paramref name="d"/>
-    /// </summary>
-    internal static double GetEdgeIntensity(this IBezelProfile profile, int d)
-        => BezelProfile.GetLightingEffectIntensity(profile.GetEdgeNormal(d));
-
-    /// <summary>
-    /// Signed lighting intensity for a corner pixel at <paramref name="originOffset"/>.
-    /// Positive = highlight (outer arc), negative = shadow (inner arc), ~0 = flat zone.
-    /// </summary>
-    internal static double GetCornerIntensity(this IBezelProfile profile, int n, Point originOffset)
-        => BezelProfile.GetLightingEffectIntensity(profile.GetCornerNormal(n, originOffset));
 }

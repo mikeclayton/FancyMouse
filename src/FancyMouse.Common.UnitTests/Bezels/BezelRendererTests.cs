@@ -1,4 +1,5 @@
 using System.Drawing;
+using System.Drawing.Imaging;
 
 using FancyMouse.Common.Bezels;
 using FancyMouse.Models.Styles;
@@ -119,6 +120,80 @@ public static class BezelRendererTests
             {
                 Assert.AreNotSame(data.BorderStyle, actual);
             }
+        }
+    }
+
+    [TestClass]
+    public sealed class DrawBezelTests
+    {
+        // thickness=12, depth=4 -> outer highlight ring [0,4), flat zone [4,8),
+        // inner shadow ring [8,12) on each edge
+        private const int Thickness = 12;
+        private const int Depth = 4;
+        private const int ImageSize = 60;
+
+        [TestMethod]
+        public void DrawBezel_LeavesInteriorUntouched()
+        {
+            using var bitmap = DrawBezelTests.RenderBezel(out _);
+
+            // the content area inside the ring is never drawn to - DrawBezel draws a frame,
+            // not a filled rectangle - so it must still be the fully-transparent pixel the
+            // bitmap started with
+            var interior = bitmap.GetPixel(ImageSize / 2, ImageSize / 2);
+            Assert.AreEqual(Color.FromArgb(0, 0, 0, 0), interior);
+        }
+
+        [TestMethod]
+        public void DrawBezel_FlatZoneIsUnlitBorderColor()
+        {
+            using var bitmap = DrawBezelTests.RenderBezel(out var borderColor);
+
+            // position 6 sits inside [depth, thickness-depth) = [4, 8), the flat zone with no
+            // lighting effect - well clear of both corners (x is mid-edge), so this pixel
+            // should be exactly the plain, unlit border colour
+            var flatZonePixel = bitmap.GetPixel(ImageSize / 2, 6);
+            Assert.AreEqual(borderColor, flatZonePixel);
+        }
+
+        [TestMethod]
+        public void DrawBezel_OuterTopEdgeIsHighlighted()
+        {
+            using var bitmap = DrawBezelTests.RenderBezel(out var borderColor);
+
+            // the outermost row of the top edge, clear of both corners - light source is
+            // top-left (see DrawBezel's own doc), so this should be lightened, not darkened
+            var highlightPixel = bitmap.GetPixel(20, 0);
+            Assert.IsTrue(
+                highlightPixel.R > borderColor.R && highlightPixel.G > borderColor.G && highlightPixel.B > borderColor.B,
+                $"expected a pixel lighter than {borderColor}, got {highlightPixel}");
+        }
+
+        [TestMethod]
+        public void DrawBezel_OuterBottomEdgeNearCornerIsShadowed()
+        {
+            using var bitmap = DrawBezelTests.RenderBezel(out var borderColor);
+
+            // the outermost row of the bottom edge, close to the bottom-right corner (the
+            // strong/corner-adjacent end of that edge's gradient) - facing away from the
+            // top-left light source, so this should be darkened, not lightened
+            var shadowPixel = bitmap.GetPixel(40, ImageSize - 1);
+            Assert.IsTrue(
+                shadowPixel.R < borderColor.R && shadowPixel.G < borderColor.G && shadowPixel.B < borderColor.B,
+                $"expected a pixel darker than {borderColor}, got {shadowPixel}");
+        }
+
+        private static Bitmap RenderBezel(out Color borderColor)
+        {
+            borderColor = Color.FromArgb(255, 100, 100, 100); // mid-grey - room to lighten or darken either way
+            var borderStyle = new BorderStyle(borderColor, all: Thickness, depth: Depth);
+            using var renderer = new BezelRenderer(borderStyle);
+
+            var bitmap = new Bitmap(ImageSize, ImageSize, PixelFormat.Format32bppArgb);
+            using var g = Graphics.FromImage(bitmap);
+            g.Clear(Color.Transparent);
+            renderer.DrawBezel(g, 0, 0, ImageSize, ImageSize);
+            return bitmap;
         }
     }
 }
