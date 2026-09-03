@@ -250,7 +250,8 @@ internal static class CornerTemplates
                         // previous inOuterArc/inInnerArc flags that were sourced from overlay
                         // bitmaps. The flat bezel's pixel alpha (from GDI+ arc antialiasing) is
                         // left unchanged and handles outer-edge transparency automatically.
-                        var newColor = ApplyEffect(hl * effectMagnitude, sh * effectMagnitude, bezelColor, BezelConstants.HighlightMax, BezelConstants.ShadowMax);
+                        var highlighted = ApplyHighlight(bezelColor, hl * effectMagnitude, BezelConstants.HighlightMax);
+                        var newColor = ApplyShadow(highlighted, sh * effectMagnitude, BezelConstants.ShadowMax);
                         srcPixelArgb[0] = newColor.B;
                         srcPixelArgb[1] = newColor.G;
                         srcPixelArgb[2] = newColor.R;

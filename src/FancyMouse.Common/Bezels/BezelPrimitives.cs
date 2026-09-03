@@ -208,24 +208,40 @@ internal static class BezelPrimitives
     }
 
     /// <summary>
-    /// Blends highlight (<paramref name="hl"/>) and shadow (<paramref name="sh"/>) multipliers
-    /// onto <paramref name="baseColor"/>.  Actual intensity is capped at
-    /// <paramref name="hlMax"/> or <paramref name="shMax"/> so the effect stays subtle.
+    /// Lightens <paramref name="baseColor"/> toward white by <paramref name="highlightLevel"/>,
+    /// capped at <paramref name="highlightMax"/> so the effect stays subtle. A negative
+    /// resulting alpha is clamped to zero (no effect) rather than darkening the colour -
+    /// every current caller's <paramref name="highlightLevel"/> is non-negative, but this
+    /// method doesn't rely on that being true.
     /// </summary>
-    internal static Color ApplyEffect(
-        double highlightLevel,
-        double shadowLevel,
-        Color baseColor,
-        double hlMax,
-        double shMax)
+    internal static Color ApplyHighlight(Color baseColor, double highlightLevel, double highlightMax)
     {
-        var highlightAlpha = Math.Min(1.0, highlightLevel * hlMax);
-        var shadowAlpha = Math.Min(1.0, shadowLevel * shMax);
-        var r = (baseColor.R + (highlightAlpha * (255 - baseColor.R))) * (1 - shadowAlpha);
-        var g = (baseColor.G + (highlightAlpha * (255 - baseColor.G))) * (1 - shadowAlpha);
-        var b = (baseColor.B + (highlightAlpha * (255 - baseColor.B))) * (1 - shadowAlpha);
+        var highlightAlpha = Math.Clamp(highlightLevel * highlightMax, 0.0, 1.0);
+        var r = baseColor.R + (highlightAlpha * (255 - baseColor.R));
+        var g = baseColor.G + (highlightAlpha * (255 - baseColor.G));
+        var b = baseColor.B + (highlightAlpha * (255 - baseColor.B));
         return Color.FromArgb(
-            255, // we don't calculate alpha, just rgb
+            baseColor.A, // we don't blend alpha, just carry the original through
+            (int)Math.Clamp(r, 0, 255),
+            (int)Math.Clamp(g, 0, 255),
+            (int)Math.Clamp(b, 0, 255));
+    }
+
+    /// <summary>
+    /// Darkens <paramref name="baseColor"/> toward black by <paramref name="shadowLevel"/>,
+    /// capped at <paramref name="shadowMax"/> so the effect stays subtle. A negative
+    /// resulting alpha is clamped to zero (no effect) rather than lightening the colour -
+    /// every current caller's <paramref name="shadowLevel"/> is non-negative, but this
+    /// method doesn't rely on that being true.
+    /// </summary>
+    internal static Color ApplyShadow(Color baseColor, double shadowLevel, double shadowMax)
+    {
+        var shadowAlpha = Math.Clamp(shadowLevel * shadowMax, 0.0, 1.0);
+        var r = baseColor.R * (1 - shadowAlpha);
+        var g = baseColor.G * (1 - shadowAlpha);
+        var b = baseColor.B * (1 - shadowAlpha);
+        return Color.FromArgb(
+            baseColor.A, // we don't blend alpha, just carry the original through
             (int)Math.Clamp(r, 0, 255),
             (int)Math.Clamp(g, 0, 255),
             (int)Math.Clamp(b, 0, 255));

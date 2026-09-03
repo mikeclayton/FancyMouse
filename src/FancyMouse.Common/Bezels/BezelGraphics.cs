@@ -179,8 +179,9 @@ public static class BezelGraphics
         var verticalEdgeY1 = y + n;           // top    end of left / right  vertical  segments
         var verticalEdgeY2 = y + height - n;  // bottom end of left / right  vertical  segments
 
-        Color Pix(double hl, double sh) => BezelPrimitives.ApplyEffect(hl, sh, bezelColor, BezelConstants.HighlightMax, BezelConstants.ShadowMax);
-        Color PixCS(double hl, double sh, double cs) => Pix(hl * cs, sh * cs);
+        Color GetHighlightColor(double strength, double magnitude) => BezelPrimitives.ApplyHighlight(bezelColor, strength * magnitude, BezelConstants.HighlightMax);
+
+        Color GetShadowColor(double strength, double magnitude) => BezelPrimitives.ApplyShadow(bezelColor, strength * magnitude, BezelConstants.ShadowMax);
 
         // positions with a magnitude below this are in the flat zone - already
         // covered by the flat fill above, so no line is drawn for them at all.
@@ -226,8 +227,8 @@ public static class BezelGraphics
                     y1: topLineY,
                     x2: horizontalEdgeX2,
                     y2: topLineY,
-                    strongColor: frontFacingLight ? PixCS(BezelConstants.EdgeForwardHighlightStrong, 0.0, forwardMagnitude) : PixCS(0.0, BezelConstants.EdgeForwardShadowStrong, forwardMagnitude),
-                    fadeColor: frontFacingLight ? PixCS(BezelConstants.EdgeForwardHighlightFade, 0.0, forwardMagnitude) : PixCS(0.0, BezelConstants.EdgeForwardShadowFade, forwardMagnitude));
+                    strongColor: frontFacingLight ? GetHighlightColor(BezelConstants.EdgeForwardHighlightStrong, forwardMagnitude) : GetShadowColor(BezelConstants.EdgeForwardShadowStrong, forwardMagnitude),
+                    fadeColor: frontFacingLight ? GetHighlightColor(BezelConstants.EdgeForwardHighlightFade, forwardMagnitude) : GetShadowColor(BezelConstants.EdgeForwardShadowFade, forwardMagnitude));
             }
 
             // Right:  HL when facing light, SH when facing away (bottom→top)
@@ -239,8 +240,8 @@ public static class BezelGraphics
                     y1: verticalEdgeY2,
                     x2: rightLineX,
                     y2: verticalEdgeY1,
-                    strongColor: backFacingLight ? PixCS(BezelConstants.EdgeReverseHighlightStrong, 0.0, reverseMagnitude) : PixCS(0.0, BezelConstants.EdgeReverseShadowStrong, reverseMagnitude),
-                    fadeColor: backFacingLight ? PixCS(BezelConstants.EdgeReverseHighlightFade, 0.0, reverseMagnitude) : PixCS(0.0, BezelConstants.EdgeReverseShadowFade, reverseMagnitude));
+                    strongColor: backFacingLight ? GetHighlightColor(BezelConstants.EdgeReverseHighlightStrong, reverseMagnitude) : GetShadowColor(BezelConstants.EdgeReverseShadowStrong, reverseMagnitude),
+                    fadeColor: backFacingLight ? GetHighlightColor(BezelConstants.EdgeReverseHighlightFade, reverseMagnitude) : GetShadowColor(BezelConstants.EdgeReverseShadowFade, reverseMagnitude));
             }
 
             // Bottom: HL when facing light, SH when facing away (right→left)
@@ -252,8 +253,8 @@ public static class BezelGraphics
                     y1: bottomLineY,
                     x2: horizontalEdgeX1,
                     y2: bottomLineY,
-                    strongColor: backFacingLight ? PixCS(BezelConstants.EdgeReverseHighlightStrong, 0.0, reverseMagnitude) : PixCS(0.0, BezelConstants.EdgeReverseShadowStrong, reverseMagnitude),
-                    fadeColor: backFacingLight ? PixCS(BezelConstants.EdgeReverseHighlightFade, 0.0, reverseMagnitude) : PixCS(0.0, BezelConstants.EdgeReverseShadowFade, reverseMagnitude));
+                    strongColor: backFacingLight ? GetHighlightColor(BezelConstants.EdgeReverseHighlightStrong, reverseMagnitude) : GetShadowColor(BezelConstants.EdgeReverseShadowStrong, reverseMagnitude),
+                    fadeColor: backFacingLight ? GetHighlightColor(BezelConstants.EdgeReverseHighlightFade, reverseMagnitude) : GetShadowColor(BezelConstants.EdgeReverseShadowFade, reverseMagnitude));
             }
 
             // Left:   HL when facing light, SH when facing away (top→bottom)
@@ -265,8 +266,8 @@ public static class BezelGraphics
                     y1: verticalEdgeY1,
                     x2: leftLineX,
                     y2: verticalEdgeY2,
-                    strongColor: frontFacingLight ? PixCS(BezelConstants.EdgeForwardHighlightStrong, 0.0, forwardMagnitude) : PixCS(0.0, BezelConstants.EdgeForwardShadowStrong, forwardMagnitude),
-                    fadeColor: frontFacingLight ? PixCS(BezelConstants.EdgeForwardHighlightFade, 0.0, forwardMagnitude) : PixCS(0.0, BezelConstants.EdgeForwardShadowFade, forwardMagnitude));
+                    strongColor: frontFacingLight ? GetHighlightColor(BezelConstants.EdgeForwardHighlightStrong, forwardMagnitude) : GetShadowColor(BezelConstants.EdgeForwardShadowStrong, forwardMagnitude),
+                    fadeColor: frontFacingLight ? GetHighlightColor(BezelConstants.EdgeForwardHighlightFade, forwardMagnitude) : GetShadowColor(BezelConstants.EdgeForwardShadowFade, forwardMagnitude));
             }
         }
     }
