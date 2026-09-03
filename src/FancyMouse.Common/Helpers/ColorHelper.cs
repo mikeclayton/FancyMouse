@@ -75,10 +75,10 @@ public static class ColorHelper
         }
 
         // e.g. "SystemColors.Highlight"
-        const string systemColorPrefix = $"{nameof(SystemColors)}.";
-        if (value.StartsWith(systemColorPrefix, comparison))
+        const string systemColorsPrefix = $"{nameof(SystemColors)}.";
+        if (value.StartsWith(systemColorsPrefix, comparison))
         {
-            var colorName = value[systemColorPrefix.Length..];
+            var colorName = value[systemColorsPrefix.Length..];
             var property = typeof(SystemColors).GetProperties()
                 .SingleOrDefault(property => property.Name == colorName);
             if (property is not null)

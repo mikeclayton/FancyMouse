@@ -78,7 +78,7 @@ public partial class App : Application
             this.InitializeAppSettings(logger);
             this.InitializeTelemetry(timestamp);
             this.InitializeHotkey(logger, previewWindow);
-            this.InitializeTrayIcon();
+            this.InitializeTrayIcon(logger);
         }
         catch (Exception ex)
         {
@@ -242,9 +242,9 @@ public partial class App : Application
     }
 
     /// <summary>
-    /// Creates the system tray icon and wires its exit command to close the application.
+    /// Creates the system tray icon and wires its exit/settings commands.
     /// </summary>
-    private void InitializeTrayIcon()
+    private void InitializeTrayIcon(Logger logger)
     {
         var trayIcon = new TrayIcon();
         trayIcon.ExitCommandClicked += (sender, e) =>
@@ -255,6 +255,17 @@ public partial class App : Application
             // never reaches disk at all once the process exits.
             Telemetry.Current.Stop();
             App.Current.Exit();
+        };
+        trayIcon.SettingsCommandClicked += (sender, e) =>
+        {
+            try
+            {
+                SettingsLauncher.Launch();
+            }
+            catch (Exception ex)
+            {
+                logger.Error(ex, "failed to launch the settings app");
+            }
         };
         this.TrayIcon = trayIcon;
     }

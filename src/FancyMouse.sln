@@ -42,11 +42,17 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".build", ".build", "{EF72E2
 		Common.Dotnet.Analyzers.props = Common.Dotnet.Analyzers.props
 		Common.Dotnet.CsWin32.props = Common.Dotnet.CsWin32.props
 		Common.Dotnet.CsWinRT.props = Common.Dotnet.CsWinRT.props
+		Common.Dotnet.props = Common.Dotnet.props
 		Common.SelfContained.props = Common.SelfContained.props
 		..\Directory.Build.props = ..\Directory.Build.props
+		..\license.md = ..\license.md
+		..\readme.md = ..\readme.md
+		..\THIRD-PARTY-NOTICES.md = ..\THIRD-PARTY-NOTICES.md
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FancyMouse.Win32Gen.UnitTests", "FancyMouse.Win32Gen.UnitTests\FancyMouse.Win32Gen.UnitTests.csproj", "{05DCF262-69DF-4B26-AB15-6BC3EA5C2B84}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FancyMouse.SettingsUI", "FancyMouse.SettingsUI\FancyMouse.SettingsUI.csproj", "{846909F7-C7CB-E7EE-18CE-8726ABF1E60F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -234,6 +240,22 @@ Global
 		{05DCF262-69DF-4B26-AB15-6BC3EA5C2B84}.Release|x64.Build.0 = Release|x64
 		{05DCF262-69DF-4B26-AB15-6BC3EA5C2B84}.Release|x86.ActiveCfg = Release|x64
 		{05DCF262-69DF-4B26-AB15-6BC3EA5C2B84}.Release|x86.Build.0 = Release|x64
+		{846909F7-C7CB-E7EE-18CE-8726ABF1E60F}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{846909F7-C7CB-E7EE-18CE-8726ABF1E60F}.Debug|Any CPU.Build.0 = Debug|x64
+		{846909F7-C7CB-E7EE-18CE-8726ABF1E60F}.Debug|ARM64.ActiveCfg = Debug|x64
+		{846909F7-C7CB-E7EE-18CE-8726ABF1E60F}.Debug|ARM64.Build.0 = Debug|x64
+		{846909F7-C7CB-E7EE-18CE-8726ABF1E60F}.Debug|x64.ActiveCfg = Debug|x64
+		{846909F7-C7CB-E7EE-18CE-8726ABF1E60F}.Debug|x64.Build.0 = Debug|x64
+		{846909F7-C7CB-E7EE-18CE-8726ABF1E60F}.Debug|x86.ActiveCfg = Debug|x64
+		{846909F7-C7CB-E7EE-18CE-8726ABF1E60F}.Debug|x86.Build.0 = Debug|x64
+		{846909F7-C7CB-E7EE-18CE-8726ABF1E60F}.Release|Any CPU.ActiveCfg = Release|x64
+		{846909F7-C7CB-E7EE-18CE-8726ABF1E60F}.Release|Any CPU.Build.0 = Release|x64
+		{846909F7-C7CB-E7EE-18CE-8726ABF1E60F}.Release|ARM64.ActiveCfg = Release|x64
+		{846909F7-C7CB-E7EE-18CE-8726ABF1E60F}.Release|ARM64.Build.0 = Release|x64
+		{846909F7-C7CB-E7EE-18CE-8726ABF1E60F}.Release|x64.ActiveCfg = Release|x64
+		{846909F7-C7CB-E7EE-18CE-8726ABF1E60F}.Release|x64.Build.0 = Release|x64
+		{846909F7-C7CB-E7EE-18CE-8726ABF1E60F}.Release|x86.ActiveCfg = Release|x64
+		{846909F7-C7CB-E7EE-18CE-8726ABF1E60F}.Release|x86.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

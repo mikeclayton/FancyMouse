@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Derived from Microsoft PowerToys.
+  https://github.com/microsoft/PowerToys
+
+  Original notice:
+  =====
+  Copyright (c) Microsoft Corporation
+  The Microsoft Corporation licenses this file to you under the MIT license.
+  See the LICENSE file in the project root for more information.
+  =====
+
+  Substantially modified for FancyMouse.
+  See THIRD-PARTY-NOTICES.md for attribution details.
+-->
+<UserControl
+    x:Class="FancyMouse.SettingsUI.Panels.FancyMousePane"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:FancyMouse.Settings.UI.Controls"
+    xmlns:converters="using:FancyMouse.SettingsUI.Converters"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:tkcontrols="using:CommunityToolkit.WinUI.Controls"
+    xmlns:ui="using:CommunityToolkit.WinUI"
+    mc:Ignorable="d">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <converters:FancyMousePreviewTypeConverter x:Key="FancyMousePreviewTypeConverter" />
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="ms-appx:///CommunityToolkit.WinUI.Controls.Segmented/Segmented/Segmented.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <controls:SettingsGroup x:Uid="FancyMouse">
+
+        <tkcontrols:SettingsCard
+            x:Name="FancyMouse_ActivationShortcut"
+            x:Uid="FancyMouse_ActivationShortcut"
+            HeaderIcon="{ui:FontIcon Glyph=&#xEDA7;}"
+            IsEnabled="True">
+            <controls:ShortcutControl Keystroke="{x:Bind Path=ViewModel.FancyMouseActivationShortcut, Mode=TwoWay}" />
+        </tkcontrols:SettingsCard>
+
+        <tkcontrols:SettingsCard
+            x:Name="FancyMouse_ThumbnailSize"
+            x:Uid="FancyMouse_ThumbnailSize"
+            HeaderIcon="{ui:FontIcon Glyph=&#xE740;}"
+            IsEnabled="True">
+            <tkcontrols:SettingsCard.Description>
+                <TextBlock>
+                    <Run x:Uid="FancyMouse_ThumbnailSize_Description_Prefix" />
+                    <Run FontWeight="SemiBold" Text="{x:Bind ViewModel.FancyMouseThumbnailSize.Width, Mode=OneWay}" />
+                    <Run Text="x" />
+                    <Run FontWeight="SemiBold" Text="{x:Bind ViewModel.FancyMouseThumbnailSize.Height, Mode=OneWay}" />
+                    <Run x:Uid="FancyMouse_ThumbnailSize_Description_Suffix" />
+                </TextBlock>
+            </tkcontrols:SettingsCard.Description>
+            <StackPanel
+                Grid.Column="2"
+                HorizontalAlignment="Right"
+                Orientation="Horizontal"
+                Spacing="8">
+                <Button
+                    x:Uid="EditButton"
+                    Width="40"
+                    Height="36"
+                    Content="&#xE70F;"
+                    FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                    Style="{StaticResource SubtleButtonStyle}">
+                    <ToolTipService.ToolTip>
+                        <TextBlock x:Uid="EditTooltip" />
+                    </ToolTipService.ToolTip>
+                    <Button.Flyout>
+                        <Flyout x:Uid="FancyMouse_ThumbnailSize_Edit" ShouldConstrainToRootBounds="False">
+                            <StackPanel Spacing="16">
+                                <NumberBox
+                                    x:Uid="FancyMouse_ThumbnailSize_Edit_Width"
+                                    Width="140"
+                                    Minimum="160"
+                                    SpinButtonPlacementMode="Compact"
+                                    Value="{x:Bind ViewModel.FancyMouseThumbnailSize.Width, Mode=TwoWay}" />
+                                <NumberBox
+                                    x:Uid="FancyMouse_ThumbnailSize_Edit_Height"
+                                    Width="140"
+                                    Minimum="120"
+                                    SpinButtonPlacementMode="Compact"
+                                    Value="{x:Bind ViewModel.FancyMouseThumbnailSize.Height, Mode=TwoWay}" />
+                            </StackPanel>
+                        </Flyout>
+                    </Button.Flyout>
+                </Button>
+            </StackPanel>
+        </tkcontrols:SettingsCard>
+
+        <tkcontrols:SettingsExpander
+            x:Name="FancyMouse_Appearance"
+            x:Uid="FancyMouse_Appearance"
+            HeaderIcon="{ui:FontIcon Glyph=&#xEB3C;}"
+            IsEnabled="True"
+            IsExpanded="False">
+            <tkcontrols:SettingsExpander.Items>
+                <tkcontrols:SettingsCard
+                    x:Name="FancyMouse_PreviewImage"
+                    MinHeight="300"
+                    MaxHeight="300"
+                    Loaded="PreviewImage_Loaded">
+                    <Grid
+                        MinHeight="283"
+                        MaxHeight="283"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch">
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Image x:Name="PreviewImage" Stretch="None" Source="{x:Bind ViewModel.FancyMousePreviewImage, Mode=OneWay}" />
+                        </StackPanel>
+                    </Grid>
+                </tkcontrols:SettingsCard>
+                <tkcontrols:SettingsCard x:Name="FancyMouse_PreviewType" x:Uid="FancyMouse_PreviewType">
+                    <StackPanel Orientation="Horizontal">
+                        <tkcontrols:Segmented
+                            x:Name="PreviewTypeSetting"
+                            SelectedIndex="{x:Bind ViewModel.FancyMousePreviewType, Mode=TwoWay, Converter={StaticResource FancyMousePreviewTypeConverter}}"
+                            SelectionChanged="PreviewTypeSetting_SelectionChanged"
+                            SelectionMode="Single"
+                            Style="{StaticResource ButtonSegmentedStyle}">
+                            <tkcontrols:SegmentedItem>
+                                <TextBlock x:Uid="FancyMouse_PreviewType_Compact" />
+                            </tkcontrols:SegmentedItem>
+                            <tkcontrols:SegmentedItem>
+                                <TextBlock x:Uid="FancyMouse_PreviewType_Bezelled" />
+                            </tkcontrols:SegmentedItem>
+                            <tkcontrols:SegmentedItem>
+                                <TextBlock x:Uid="FancyMouse_PreviewType_Custom" />
+                            </tkcontrols:SegmentedItem>
+                        </tkcontrols:Segmented>
+                        <Button
+                            x:Name="CopyStyleToCustom"
+                            x:Uid="FancyMouse_CopyStyle"
+                            Margin="20,0,0,0"
+                            Click="CopyStyleToCustom_Click"
+                            IsEnabled="{Binding SelectedIndex, ElementName=PreviewTypeSetting}" />
+                    </StackPanel>
+                </tkcontrols:SettingsCard>
+                <tkcontrols:SettingsCard x:Name="FancyMouse_BackgroundColor1" x:Uid="FancyMouse_BackgroundColor1">
+                    <controls:ColorPickerButton SelectedColor="{x:Bind Path=ViewModel.FancyMouseBackgroundColor1, Mode=TwoWay}" />
+                </tkcontrols:SettingsCard>
+                <tkcontrols:SettingsCard x:Name="FancyMouse_BackgroundColor2" x:Uid="FancyMouse_BackgroundColor2">
+                    <controls:ColorPickerButton SelectedColor="{x:Bind Path=ViewModel.FancyMouseBackgroundColor2, Mode=TwoWay}" />
+                </tkcontrols:SettingsCard>
+                <tkcontrols:SettingsCard x:Name="FancyMouse_BorderThickness" x:Uid="FancyMouse_BorderThickness">
+                    <NumberBox
+                        MinWidth="{StaticResource SettingActionControlMinWidth}"
+                        LargeChange="1"
+                        Maximum="25"
+                        Minimum="0"
+                        SmallChange="1"
+                        SpinButtonPlacementMode="Compact"
+                        Value="{x:Bind ViewModel.FancyMouseBorderThickness, Mode=TwoWay}" />
+                </tkcontrols:SettingsCard>
+                <tkcontrols:SettingsCard x:Name="FancyMouse_BorderColor" x:Uid="FancyMouse_BorderColor">
+                    <controls:ColorPickerButton SelectedColor="{x:Bind Path=ViewModel.FancyMouseBorderColor, Mode=TwoWay}" />
+                </tkcontrols:SettingsCard>
+                <tkcontrols:SettingsCard x:Name="FancyMouse_Border3dDepth" x:Uid="FancyMouse_Border3dDepth">
+                    <NumberBox
+                        MinWidth="{StaticResource SettingActionControlMinWidth}"
+                        LargeChange="1"
+                        Maximum="25"
+                        Minimum="0"
+                        SmallChange="1"
+                        SpinButtonPlacementMode="Compact"
+                        Value="{x:Bind ViewModel.FancyMouseBorder3dDepth, Mode=TwoWay}" />
+                </tkcontrols:SettingsCard>
+                <tkcontrols:SettingsCard x:Name="FancyMouse_BorderPadding" x:Uid="FancyMouse_BorderPadding">
+                    <NumberBox
+                        MinWidth="{StaticResource SettingActionControlMinWidth}"
+                        LargeChange="1"
+                        Maximum="25"
+                        Minimum="0"
+                        SmallChange="1"
+                        SpinButtonPlacementMode="Compact"
+                        Value="{x:Bind ViewModel.FancyMouseBorderPadding, Mode=TwoWay}" />
+                </tkcontrols:SettingsCard>
+                <tkcontrols:SettingsCard x:Name="FancyMouse_BezelThickness" x:Uid="FancyMouse_BezelThickness">
+                    <NumberBox
+                        MinWidth="{StaticResource SettingActionControlMinWidth}"
+                        LargeChange="1"
+                        Maximum="25"
+                        Minimum="0"
+                        SmallChange="1"
+                        SpinButtonPlacementMode="Compact"
+                        Value="{x:Bind ViewModel.FancyMouseBezelThickness, Mode=TwoWay}" />
+                </tkcontrols:SettingsCard>
+                <tkcontrols:SettingsCard x:Name="FancyMouse_BezelColor" x:Uid="FancyMouse_BezelColor">
+                    <controls:ColorPickerButton SelectedColor="{x:Bind Path=ViewModel.FancyMouseBezelColor, Mode=TwoWay}" />
+                </tkcontrols:SettingsCard>
+                <tkcontrols:SettingsCard x:Name="FancyMouse_Bezel3dDepth" x:Uid="FancyMouse_Bezel3dDepth">
+                    <NumberBox
+                        MinWidth="{StaticResource SettingActionControlMinWidth}"
+                        LargeChange="1"
+                        Maximum="25"
+                        Minimum="0"
+                        SmallChange="1"
+                        SpinButtonPlacementMode="Compact"
+                        Value="{x:Bind ViewModel.FancyMouseBezel3dDepth, Mode=TwoWay}" />
+                </tkcontrols:SettingsCard>
+                <tkcontrols:SettingsCard x:Name="FancyMouse_ScreenMargin" x:Uid="FancyMouse_ScreenMargin">
+                    <NumberBox
+                        MinWidth="{StaticResource SettingActionControlMinWidth}"
+                        LargeChange="1"
+                        Maximum="25"
+                        Minimum="0"
+                        SmallChange="1"
+                        SpinButtonPlacementMode="Compact"
+                        Value="{x:Bind ViewModel.FancyMouseScreenMargin, Mode=TwoWay}" />
+                </tkcontrols:SettingsCard>
+                <tkcontrols:SettingsCard x:Name="FancyMouse_ScreenColor1" x:Uid="FancyMouse_ScreenColor1">
+                    <controls:ColorPickerButton SelectedColor="{x:Bind Path=ViewModel.FancyMouseScreenColor1, Mode=TwoWay}" />
+                </tkcontrols:SettingsCard>
+                <tkcontrols:SettingsCard x:Name="FancyMouse_ScreenColor2" x:Uid="FancyMouse_ScreenColor2">
+                    <controls:ColorPickerButton SelectedColor="{x:Bind Path=ViewModel.FancyMouseScreenColor2, Mode=TwoWay}" />
+                </tkcontrols:SettingsCard>
+            </tkcontrols:SettingsExpander.Items>
+        </tkcontrols:SettingsExpander>
+    </controls:SettingsGroup>
+</UserControl>

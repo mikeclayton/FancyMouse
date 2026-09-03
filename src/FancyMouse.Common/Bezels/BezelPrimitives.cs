@@ -17,6 +17,7 @@ internal static class BezelPrimitives
     ///        .    -._____  _ end value
     ///  +-----+-----+-----+
     ///        ^   ^
+    ///        |   |
     ///        |   easing interval end
     ///        easing interval start
     /// </code>
@@ -54,23 +55,64 @@ internal static class BezelPrimitives
     }
 
     /// <summary>
-    /// Calculates the intensity of a gradient fill at a given angle around
-    /// a bezel corner using the following rules:
-    ///
-    /// * full intensity from 0° to <paramref name="fadeStartDegrees"/>
-    /// * cosine rolloff from <paramref name="fadeStartDegrees"/> to <paramref name="fadeEndDegrees"/>
-    /// * zero intensity beyond <paramref name="fadeEndDegrees"/>
+    /// Calculates the intensity of a 3-stage gradient fill at a given angle around
+    /// a bezel corner, taking into account the transition points (start / end degrees)
+    /// of the stages.
     /// </summary>
     /// <param name="theta">Angle in degrees, measured from the nearest straight edge.</param>
     internal static double CornerEffectWeight(double theta, double fadeStartDegrees, double fadeEndDegrees)
-        => CosineEase(theta, fadeStartDegrees, fadeEndDegrees, 1.0, 0.0);
+    {
+        // overall, the shape of the resulting weight is 3 stages, transitioning
+        // at <fadeStartDegrees>° and <fadeEndDegrees>°:
+        //
+        //     * stage 1 - full intensity: 1.0
+        //     * stage 2 - cosine easing:  1.0 -> 0.0
+        //     * stage 3 - zero intensity: 0.0
+        //
+        //     |▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▒▒▒▒▒▒▒▒▒▒▒▒░░░░░░░░░░░░---------|
+        //     t=0° ^                                  ^        t=90°
+        //          |                                  |
+        //          fadeStartDegrees                   fadeEndDegrees
+        //
+        //     * the first stage is held flat at full intensity (1.0), for
+        //       angles close to the straight edge
+        //
+        //     * the effect then rolls off from 1.0 to 0.0 via a cosine ease,
+        //       for a smooth, continuous transition
+        //
+        //     * the final stage is held flat at zero intensity for the rest
+        //       of the corner, up to the diagonal at 90°
+        //
+        // this is used when drawing the lighting effects on a corner - the
+        // linear gradient is "wrapped" round the curve of a corner like this
+        // (diagram shows the rounded top right corner of a rectangle; "." marks
+        // a pixel inside the corner radius with zero effect, blank is outside
+        // the radius entirely - not part of the drawn shape):
+        //
+        //     t=0°  / fadeStartDegrees
+        //     +----/-------+
+        //     |▓▓▓/.       |/ fadeEndDegrees
+        //     |▓▓▓▓▓▒▒.    /
+        //     |▓▓▓▓▒▒▒▒▒. /|
+        //     |▓▓▓▒▒▒▒░░░/ |
+        //     |▓▒▒▒░░░░░░░.|
+        //     |▒░░░░░░░░░░░|
+        //     +------------+ t=90°
+        //   (0,0)
+        return CosineEase(theta, fadeStartDegrees, fadeEndDegrees, 1.0, 0.0);
+    }
 
     /// <summary>
     /// Returns the GDI screen angle in degrees for a pixel offset (dx, dy) from an arc centre.
     /// 0° = rightward, increasing clockwise. Result is always in [0, 360).
     /// </summary>
-    internal static double GdiAngle(int dx, int dy)
+    internal static double GetGdiAngle(int dx, int dy)
     {
+        // .    270
+        //       |
+        // 180 --+-- 0
+        //       |
+        //      90
         var angle = Math.Atan2(dy, dx) * (180.0 / Math.PI);
         return angle < 0
             ? angle + 360.0
@@ -78,17 +120,47 @@ internal static class BezelPrimitives
     }
 
     /// <summary>
-    /// Returns 0.0 at the straight-edge junctions (θ = 0° and θ = 90°), rising to
-    /// 1.0 at the 45° corner midpoint. Used on TL / BR corners to add a
-    /// secondary-effect peak halfway round the double-highlight / double-shadow arc.
-    ///
-    /// Uses a half-sine curve (sin(θ × π/90)) for a smooth, continuous transition
-    /// that is exactly 0 at both endpoints and avoids visible seams where the corner
-    /// arc meets the straight edges.
+    /// Calculates the intensity of a single-peak gradient at a given angle around a
+    /// bezel corner. Used on TL / BR corners as a multiplier to add a secondary-effect
+    /// peak halfway round the double-highlight / double-shadow arc.
     /// </summary>
     /// <param name="theta">Angle in degrees, measured from the nearest straight edge.</param>
     internal static double MidpointPeak(double theta)
-        => Math.Sin(theta * Math.PI / 90.0);
+    {
+        // overall, the shape of the resulting weight is a single peak, rising to
+        // full intensity at the 45° midpoint and back down again:
+        //
+        //     * stage 1 - rising:  0.0 -> 1.0
+        //     * stage 2 - falling: 1.0 -> 0.0
+        //
+        //     |░░░░░░░░░░░░▒▒▒▒▓▓▓▓▓▓▓▒▒▒▒░░░░░░░░░░░░|
+        //     t=0°                ^                  t=90°
+        //                         |
+        //                        45°
+        //
+        //     * the effect rises from zero at the straight edge, through a
+        //       half-sine ease (sin(θ × π/90)), up to full intensity at the
+        //       45° midpoint
+        //
+        //     * it then falls back to zero via the same half-sine curve,
+        //       reaching zero again at the other straight edge (90°)
+        //
+        // this is used when drawing the lighting effects on a corner - the
+        // linear gradient is "wrapped" round the curve of a corner like this
+        // (diagram shows the rounded top right corner of a rectangle):
+        //
+        //     t=0°
+        //     +------------+
+        //     |░░░▒▒       |
+        //     |░░▒▒▒▓▓▓    |
+        //     |░░▒▒▓▓▓▓▓▓  |
+        //     |░▒▒▓▓▓▓▓▓▒▒ |
+        //     |░▒▓▓▓▓▒▒▒▒▒░|
+        //     |▒▓▒▒░░░░░░░░|
+        //     +------------+ t=90°
+        //   (0,0)
+        return Math.Sin(theta * Math.PI / 90.0);
+    }
 
     /// <summary>
     /// Fades 1.0 → 0.0 from a straight edge (θ = 0°) to the 45° corner midpoint.
@@ -97,27 +169,79 @@ internal static class BezelPrimitives
     /// </summary>
     /// <param name="theta">Angle in degrees, measured from the nearest straight edge.</param>
     internal static double MidpointFade(double theta)
-        => CosineEase(theta, 0.0, 45.0, 1.0, 0.0);
+    {
+        // overall, the shape of the resulting weight is 2 stages, transitioning
+        // at 45°:
+        //
+        //     * stage 1 - cosine easing:  1.0 -> 0.0
+        //     * stage 2 - zero intensity: 0.0
+        //
+        //     |▓▓▓▓▓▓▓▓▒▒▒▒▒▒▒░░░░░░░------------------------|
+        //     t=0°                   ^                       t=90°
+        //                            |
+        //                           45°
+        //
+        //     * the effect starts at full intensity (1.0) right at the
+        //       straight edge (0°), and rolls off to zero via a cosine
+        //       ease by the 45° midpoint
+        //
+        //     * the final stage is held flat at zero intensity for the
+        //       rest of the corner, from 45° up to the diagonal at 90°
+        //
+        // this is used when drawing the lighting effects on a corner - the
+        // linear gradient is "wrapped" round the curve of a corner like this
+        // (diagram shows the rounded top right corner of a rectangle; "." marks
+        // a pixel inside the corner radius with zero effect, blank is outside
+        // the radius entirely - not part of the drawn shape):
+        //
+        //     t=0°          45°
+        //     +------------/
+        //     |▓▓▒▒▒     / |
+        //     |▓▓▒▒░░░░/   |
+        //     |▓▓▒░░░░...  |
+        //     |▓▒░░░...... |
+        //     |▓░░.........|
+        //     |░...........|
+        //     +------------+ t=90°
+        //   (0,0)
+        return CosineEase(theta, 0.0, 45.0, 1.0, 0.0);
+    }
 
     /// <summary>
-    /// Blends highlight (<paramref name="hl"/>) and shadow (<paramref name="sh"/>) multipliers
-    /// onto <paramref name="baseColor"/>.  Actual intensity is capped at
-    /// <paramref name="hlMax"/> or <paramref name="shMax"/> so the effect stays subtle.
+    /// Lightens <paramref name="baseColor"/> toward white by <paramref name="highlightLevel"/>,
+    /// capped at <paramref name="highlightMax"/> so the effect stays subtle. A negative
+    /// resulting alpha is clamped to zero (no effect) rather than darkening the colour -
+    /// every current caller's <paramref name="highlightLevel"/> is non-negative, but this
+    /// method doesn't rely on that being true.
     /// </summary>
-    internal static Color ApplyEffect(
-        double highlightLevel,
-        double shadowLevel,
-        Color baseColor,
-        double hlMax,
-        double shMax)
+    internal static Color ApplyHighlight(Color baseColor, double highlightLevel, double highlightMax)
     {
-        var highlightAlpha = Math.Min(1.0, highlightLevel * hlMax);
-        var shadowAlpha = Math.Min(1.0, shadowLevel * shMax);
-        var r = (baseColor.R + (highlightAlpha * (255 - baseColor.R))) * (1 - shadowAlpha);
-        var g = (baseColor.G + (highlightAlpha * (255 - baseColor.G))) * (1 - shadowAlpha);
-        var b = (baseColor.B + (highlightAlpha * (255 - baseColor.B))) * (1 - shadowAlpha);
+        var highlightAlpha = Math.Clamp(highlightLevel * highlightMax, 0.0, 1.0);
+        var r = baseColor.R + (highlightAlpha * (255 - baseColor.R));
+        var g = baseColor.G + (highlightAlpha * (255 - baseColor.G));
+        var b = baseColor.B + (highlightAlpha * (255 - baseColor.B));
         return Color.FromArgb(
-            255, // we don't calculate alpha, just rgb
+            baseColor.A, // we don't blend alpha, just carry the original through
+            (int)Math.Clamp(r, 0, 255),
+            (int)Math.Clamp(g, 0, 255),
+            (int)Math.Clamp(b, 0, 255));
+    }
+
+    /// <summary>
+    /// Darkens <paramref name="baseColor"/> toward black by <paramref name="shadowLevel"/>,
+    /// capped at <paramref name="shadowMax"/> so the effect stays subtle. A negative
+    /// resulting alpha is clamped to zero (no effect) rather than lightening the colour -
+    /// every current caller's <paramref name="shadowLevel"/> is non-negative, but this
+    /// method doesn't rely on that being true.
+    /// </summary>
+    internal static Color ApplyShadow(Color baseColor, double shadowLevel, double shadowMax)
+    {
+        var shadowAlpha = Math.Clamp(shadowLevel * shadowMax, 0.0, 1.0);
+        var r = baseColor.R * (1 - shadowAlpha);
+        var g = baseColor.G * (1 - shadowAlpha);
+        var b = baseColor.B * (1 - shadowAlpha);
+        return Color.FromArgb(
+            baseColor.A, // we don't blend alpha, just carry the original through
             (int)Math.Clamp(r, 0, 255),
             (int)Math.Clamp(g, 0, 255),
             (int)Math.Clamp(b, 0, 255));

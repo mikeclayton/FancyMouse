@@ -7,22 +7,27 @@ namespace FancyMouse.Common.Helpers;
 /// Helpers to apply a blur to an image and return the result as a new image.
 /// </summary>
 /// <remarks>
-/// Blur is used to soften a screen's last real screenshot for use as a stand-in placeholder while a
-/// fresh one is still loading. Runs a three-pass separable box blur (each pass a horizontal then
-/// a vertical sliding-window average) directly on the bitmap's own pixels - three passes closely
-/// approximates a true Gaussian blur, without the cost of a real Gaussian convolution kernel, and
-/// each pass is O(pixel count) regardless of blur radius. This is deliberately not the cheapest
-/// possible approximation: unlike the capture pipeline itself, generating this stand-in isn't on
-/// any latency-critical path (it happens once a real screenshot has already arrived, well after
-/// the window is showing - see <see cref="Capture.ScreenshotCapturePipeline"/>), so there's no
-/// reason to trade visual quality for speed here the way there is elsewhere.
+/// If a screenshot capture takes too long during an activation the preview
+/// window gets displayed using a blurred version of the previous screenshot
+/// for that screen. When the new capture is complete the blurred image is
+/// replaced with the actual screenshot - this creates the impression that
+/// the preview window actually loads faster than it does.
+///
+/// The blur algorithm runs a three-pass separable box blur (each pass a
+/// horizontal then a vertical sliding-window average) directly on the bitmap's
+/// pixels - three passes closely approximates a true Gaussian blur, without
+/// the cost of a real Gaussian convolution kernel, and each pass is O(pixel count)
+/// regardless of blur radius. This is not specifically the *cheapest* possible
+/// approximation: unlike the capture pipeline, blurred images are generated
+/// in the background once the previous activation has been closed so the
+/// blur process is not as performance-sensitive as the capture process.
 /// </remarks>
 public static class BlurHelper
 {
     /// <summary>
     /// Blur radius, in pixels, at the blurriest end of <see cref="CreateBlurredCopy"/>'s
-    /// <c>intensity</c> range (<c>intensity</c> approaching 0). The radius scales down to 1px as
-    /// <c>intensity</c> approaches 1.
+    /// <c>blurIntensity</c> range (<c>blurIntensity</c> approaching 0). The radius scales down to 1px as
+    /// <c>blurIntensity</c> approaches 1.
     /// </summary>
     private const int MaxBlurRadius = 40;
 
@@ -39,20 +44,15 @@ public static class BlurHelper
 
     /// <summary>
     /// Returns a new bitmap, the same size as <paramref name="source"/>, desaturated and
-    /// darkened, then blurred. <paramref name="intensity"/> is the knob to experiment with for
-    /// blurriness - closer to 1.0 is barely blurred, closer to 0.0 is heavily blurred.
-    /// <paramref name="saturation"/> and <paramref name="brightness"/> are knobs from 0 (fully
-    /// grey / black) to 1 (unchanged) - muting the stand-in this way, on top of the blur itself,
-    /// is what makes the real screenshot visually "pop" into place once it actually arrives,
-    /// rather than the swap reading as a same-ish image just sharpening.
+    /// darkened, then blurred.
     /// </summary>
-    public static Bitmap CreateBlurredCopy(Bitmap source, decimal intensity, double saturation = 1.0, double brightness = 1.0)
+    public static Bitmap CreateBlurredCopy(Bitmap source, decimal blurIntensity, double saturation = 1.0, double brightness = 1.0)
     {
         ArgumentNullException.ThrowIfNull(source);
-        if (intensity is <= 0 or > 1)
+        if (blurIntensity is <= 0 or > 1)
         {
             throw new ArgumentOutOfRangeException(
-                nameof(intensity), intensity, "Value must be greater than 0 and less than or equal to 1.");
+                nameof(blurIntensity), blurIntensity, "Value must be greater than 0 and less than or equal to 1.");
         }
 
         var mutedImage = new Bitmap(source.Width, source.Height, PixelFormat.Format32bppPArgb);
@@ -69,7 +69,7 @@ public static class BlurHelper
             GraphicsUnit.Pixel,
             imageAttributes);
 
-        var radius = Math.Max(1, (int)((1 - intensity) * BlurHelper.MaxBlurRadius));
+        var radius = Math.Max(1, (int)((1 - blurIntensity) * BlurHelper.MaxBlurRadius));
         BlurHelper.ApplyBoxBlur(mutedImage, radius);
 
         return mutedImage;

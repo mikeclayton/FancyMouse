@@ -8,11 +8,6 @@ using Windows.System;
 
 namespace FancyMouse.WinUI3.UI;
 
-/// <summary>
-/// The half of <see cref="PreviewPane"/> that turns raw mouse/keyboard input into navigation
-/// intent - see <see cref="NavigateTo"/>/<see cref="Cancel"/> - so the host doesn't need its own
-/// copy of "which screen is that" or "which screen is next" logic.
-/// </summary>
 public sealed partial class PreviewPane
 {
     private void PreviewPane_PointerPressed(object sender, PointerRoutedEventArgs e)

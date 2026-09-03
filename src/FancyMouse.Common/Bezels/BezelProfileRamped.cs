@@ -1,32 +1,23 @@
 namespace FancyMouse.Common.Bezels;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// BezelProfileRamped
-//
-// Models the cross-sectional surface geometry of a bezel ring as a flat
-// inclined plane (chamfer / bevel), mapping pixel positions to a CONSTANT
-// surface normal angle across each effect ring.
-//
-// Cross-section layout (position 0 = outer arc edge, n = content boundary):
-//
-//   position:  0      d           n-d      n
-//              │      │            │       │
-//   θ (normal):α ──── α ──────── π-α ──── π-α
-//              │outer ring│  flat  │inner ring│
-//              │(highlight)│ (none) │(shadow) │
-//
-//   where α = π/2 − rampAngle  (rampAngle is the inclination from horizontal)
-//
-// Unlike BezelProfileCurved (which sweeps 0 → π/2 through a quadrant arc),
-// BezelProfileRamped holds a constant normal angle inside each ring, producing
-// a uniform-intensity chamfer rather than a smooth gradient.  At 45° the
-// intensity is cos(π/4) ≈ 0.707 throughout both effect rings.
-//
-// GetProfileNormal maps position to a normal angle; the shared helpers in
-// BezelProfile convert that angle to highlight / shadow intensities.
-//
-// Construct locally at the point of use and discard — no caching is needed.
-// ─────────────────────────────────────────────────────────────────────────────
+/// <summary>
+/// Models the cross-sectional surface geometry of a bezel ring as a flat
+/// inclined plane (chamfer / bevel), mapping a position along the ring to a
+/// CONSTANT surface normal angle across each effect ring.
+///
+/// Cross-section layout (pixel 0 = outer arc edge, n = content boundary -
+/// pixel terms from the constructor's own n/d. GetProfileNormal itself takes
+/// the position row below, not the pixel row):
+///
+///   pixel:      0      d           n-d      n
+///   position:   0     d/n         1-d/n     1
+///               │      │            │       │
+///   θ (normal): α ──── α ──────── π-α ──── π-α
+///               │outer ring│  flat  │inner ring│
+///               │(highlight)│ (none) │(shadow) │
+///
+///   where α = π/2 − rampAngle  (rampAngle is the inclination from horizontal)
+/// </summary>
 internal sealed class BezelProfileRamped : IBezelProfile
 {
     private readonly int _n;            // bezel ring pixel width (outer arc → content boundary)
@@ -42,21 +33,34 @@ internal sealed class BezelProfileRamped : IBezelProfile
 
     /// <summary>
     /// Returns the surface normal angle in radians at <paramref name="position"/>
-    /// pixels from the outer arc boundary (0 = outer arc edge, <c>n</c> = content boundary).
+    /// of the way from the outer arc boundary to the content boundary
+    /// (0 = outer arc edge, 1 = content boundary).
     ///
     /// The normal is constant within each effect ring (a flat inclined surface):
     ///   π/2 − rampAngle — outer ring (faces partly toward the light source).
     ///   π/2             — flat zone  (faces sideways; no effect).
     ///   π/2 + rampAngle — inner ring (faces partly away from the light source).
     /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// <paramref name="position"/> is less than 0 or greater than 1.
+    /// </exception>
     public double GetProfileNormal(double position)
     {
-        if (position < _d)
+        if (position < 0.0 || position > 1.0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(position), position, "position must be between 0 and 1 inclusive.");
+        }
+
+        // depthProportion is the effect ring's own depth (_d) expressed as a
+        // proportion of the full profile width (_n).
+        var depthProportion = _d / (double)_n;
+
+        if (position < depthProportion)
         {
             return (Math.PI / 2.0) - _rampAngle; // outer ring: constant ramp angle (highlight)
         }
 
-        if (position < _n - _d)
+        if (position < 1.0 - depthProportion)
         {
             return Math.PI / 2.0; // flat zone — surface faces sideways
         }

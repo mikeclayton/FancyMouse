@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="FancyMouse.SettingsUI.Views.FancyMousePage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:panels="using:FancyMouse.SettingsUI.Panels"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+    <!--
+        The equivalent of PowerToys' MouseUtilsPage - now just a simple container for
+        FancyMousePane (see its own remarks), same as MouseUtilsPage just embeds MouseJumpPanel
+        rather than defining its settings controls directly. Everything MouseUtilsPage carries
+        beyond that - the other MouseUtils sub-modules' SettingsGroups, SettingsPageControl's
+        module-tree chrome, PrimaryLinks/SecondaryLinks - isn't ported; this app has exactly one
+        settings surface, so there's no navigation shell or sibling-module list for it to sit
+        inside.
+
+        In PowerToys, scrolling is owned by the shell that hosts a settings page (the navigation
+        frame/SettingsPageControl chrome this app doesn't have), not by MouseJumpPanel itself -
+        MouseJumpPanel's own root is its SettingsGroup, no ScrollViewer. FancyMousePane mirrors
+        that (its root is its SettingsGroup directly), so the ScrollViewer belongs here instead,
+        as the nearest equivalent to that hosting layer.
+
+        The Save button lives here too, not on FancyMousePane - MouseJumpPanel has no Save button
+        of its own (PowerToys auto-saves on every property change instead), so keeping the button
+        off FancyMousePane is what let its own root match MouseJumpPanel's exactly. This is the
+        other half of that: a fixed action row below the scrollable editor, same visual position
+        the button always had, just owned one level up now - see FancyMousePane.xaml.cs's remarks
+        for the code-behind side of the split.
+    -->
+    <Grid Padding="24" RowSpacing="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <ScrollViewer Grid.Row="0">
+            <StackPanel Spacing="16">
+                <Image
+                    HorizontalAlignment="Center"
+                    MaxWidth="600"
+                    Source="ms-appx:///Assets/fancymouse-banner.png"
+                    Stretch="Uniform" />
+                <panels:FancyMousePane x:Name="fancyMousePane" />
+            </StackPanel>
+        </ScrollViewer>
+
+        <StackPanel
+            Grid.Row="1"
+            HorizontalAlignment="Right"
+            Orientation="Horizontal"
+            Spacing="12">
+            <TextBlock
+                x:Name="StatusText"
+                VerticalAlignment="Center"
+                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            <Button x:Name="FancyMouse_Save" x:Uid="FancyMouse_Save" Click="SaveButton_Click" Style="{StaticResource AccentButtonStyle}" />
+        </StackPanel>
+    </Grid>
+</Page>
