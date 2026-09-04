@@ -2,8 +2,6 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 
-using FancyMouse.Models.Styles;
-
 using static FancyMouse.Common.Bezels.BezelPrimitives;
 
 namespace FancyMouse.Common.Bezels;
@@ -29,26 +27,33 @@ internal static class CornerTemplates
     /// </remarks>
     /// <returns>
     /// Returns a bitmap containing a 2x2 sprite grid of the bezel corners.
-    /// Individual cells in the grid are the size of the "BezelThickness" parameter,
-    /// so the full image is "2 × BezelThickness" in width and height. The corners
+    /// Individual cells in the grid are the size of the "bezelWidth" parameter,
+    /// so the full image is "2 × bezelWidth" in width and height. The corners
     /// are arranged in the "obvious" order - the image for the top left corner is
     /// in the top left cell of the grid, etc.
+    ///
+    ///         TL   TR
+    ///       0    n   2n
+    ///     0 +----+----+
+    ///       | // | \\ |
+    ///     n +----+----+
+    ///       | \\ | // |
+    ///    2n +----+----+
+    ///         BL   BR
     ///
     /// The template image needs to be recreated if the color, thickness or 3d effect
     /// depth settings change.
     /// </returns>
-    internal static Bitmap GetCornerTemplates(BorderStyle borderStyle, BezelConfig config)
+    internal static Bitmap GetCornerTemplates(int bezelWidth, Color bezelColor, IBezelProfile bezelProfile)
     {
         // Render at 2× and scale down so GDI+ antialiases the highlight/shadow
         // zone-boundary edges in the corner tiles before they are baked into the atlas.
-        var n = (int)borderStyle.Left * 2;
-        var depth = (int)borderStyle.Depth * 2;
-        var bezelColor = borderStyle.Color ?? Color.Transparent;
+        var scaledWidth = bezelWidth * 2;
 
         // ── Step 1: render temporary bezel "ring" images ───────────────────
 
         // render a set of temporary bezels that we'll use to draw the
-        // corner images and apply highlight and shadow effects to
+        // corner images and apply highlight and shadow effects
         //
         // the images we'll generate are:
         //
@@ -69,22 +74,13 @@ internal static class CornerTemplates
         // |▒▓▓▓▓▓▓▓▓▓|
         // |▓▓▓▓▓▓▓▓▓▓|
         // +----------+
-        // |<-- N --->|
+        // |<--- n -->|
         using var cornerTemplates = CornerTemplates.DrawCornerRegions(
-            cornerSize: n,
-            outerRadius: n,
-            innerRadius: 0,
-            color: bezelColor);
-
-        if (depth == 0)
-        {
-            return CornerTemplates.ScaleHalf(cornerTemplates);
-        }
+            cornerRadius: scaledWidth,
+            bezelColor: bezelColor);
 
         // ── Step 2: apply highlight and shadow effects ─────────────────────────
-        double CornerEffectWeight(double theta) => BezelPrimitives.CornerEffectWeight(theta, config.FadeStart, config.FadeEnd);
-
-        var profile = new BezelProfileRamped(n, depth, config.RampAngleDegrees);
+        double CornerEffectWeight(double theta) => BezelPrimitives.CornerEffectWeight(theta, BezelConstants.CornerGradientStart, BezelConstants.CornerGradientEnd);
 
         var cornerData = default(BitmapData);
 
@@ -116,15 +112,14 @@ internal static class CornerTemplates
                         }
 
                         // calculate the offset of the pixel relative to the centre of the
-                        // corner  template - the sign on the x and y coordinate tell us
+                        // corner template - the sign on the x and y coordinate tell us
                         // which quadrant it's it in (i.e. TL, TR, BL, BR)
                         var originOffset = new Point(
-                            y: srcY - n,
-                            x: srcX - n);
+                            y: srcY - scaledWidth,
+                            x: srcX - scaledWidth);
 
-                        // BezelProfile.GetCornerIntensity calculates the intensity of the
-                        // lighting effect at the specified location in a bezel corner. it
-                        // calculates the normal of the bezel's profile at the point and
+                        // BezelProfile.GetCornerNormal calculates the normal of the bezel's
+                        // profile at this location in a bezel corner, and GetLightingEffectIntensity
                         // converts that into the intensity of the highlight or shadow.
                         //
                         // it returns a signed intensity in the range [-1, +1]:
@@ -132,7 +127,8 @@ internal static class CornerTemplates
                         //   effectIntensity > 0  — outer arc, surface faces the light → apply as highlight
                         //   effectIntensity < 0  — inner arc, surface faces away      → apply as shadow
                         //   effectIntensity ≈ 0  — flat zone                          → no effect
-                        var effectIntensity = profile.GetCornerIntensity(n, originOffset);
+                        var cornerNormal = bezelProfile.GetCornerNormal(scaledWidth, originOffset);
+                        var effectIntensity = BezelProfile.GetLightingEffectIntensity(cornerNormal);
 
                         // Math.Abs(effectIntensity) carries the unsigned scaling factor
                         // for the lighting effect on this pixel - multiply this by the
@@ -161,8 +157,18 @@ internal static class CornerTemplates
                                 // TL — outer: highlight from the left edge meets highlight from the top edge,
                                 //      inner: shadow from the left edge meets shadow from the top edge,
                                 //      → outer double-highlight, inner double-shadow
-                                theta = 270.0 - GdiAngle(originOffset.X, originOffset.Y);
-                                var weight = CornerEffectWeight(theta) + CornerEffectWeight(90 - theta) + 0.5 + (0.75 * MidpointPeak(theta));
+                                //
+                                // top and left are both "forward" edges (BezelConstants.EdgeForward*), so
+                                // one strength value covers both boundary terms. CornerEffectWeight(theta) +
+                                // CornerEffectWeight(90 - theta) is identically 1 for every theta in [0, 90]
+                                // (the cosine ease is point-symmetric about its 45° midpoint), so the
+                                // boundary value (theta = 0 or 90, where only one edge is actually adjacent)
+                                // reduces to exactly edgeStrength - matching that edge's own corner-adjacent
+                                // pixel - with MidpointPeak adding the extra brightness where the two edges'
+                                // effects genuinely overlap, right at the 45° diagonal.
+                                theta = 270.0 - BezelPrimitives.GetGdiAngle(originOffset.X, originOffset.Y);
+                                var edgeStrength = isHighlightEffect ? BezelConstants.EdgeForwardHighlightStrong : BezelConstants.EdgeForwardShadowStrong;
+                                var weight = edgeStrength + (0.75 * MidpointPeak(theta));
                                 if (isHighlightEffect)
                                 {
                                     hl = weight;
@@ -177,16 +183,25 @@ internal static class CornerTemplates
                                 // TR — outer: highlight from the top edge meets shadow from the right edge,
                                 //      inner: shadow from the top edge meets highlight from the right edge,
                                 //      → both fade to flat at 45°
-                                theta = (GdiAngle(originOffset.X, originOffset.Y) - 270.0 + 360.0) % 360.0;
+                                //
+                                // unlike TL/BR, TR sits at the *fade* end of both its adjoining edges - the
+                                // top edge peaks near TL and fades rightward, the right edge peaks near BR
+                                // and fades upward (see DrawBezelEdges' own "peak at TL"/"peak at BR"
+                                // comments) - so each term uses that edge's Fade constant, not Strong: at
+                                // theta = 0 (top edge boundary) MidpointFade(0) = 1, so the top-associated
+                                // term reduces to exactly EdgeForward*Fade, matching the top edge's own
+                                // pixel at this corner; symmetrically at theta = 90 the right-associated term
+                                // reduces to EdgeReverse*Fade.
+                                theta = (BezelPrimitives.GetGdiAngle(originOffset.X, originOffset.Y) - 270.0 + 360.0) % 360.0;
                                 if (isHighlightEffect)
                                 {
-                                    hl = CornerEffectWeight(theta) * MidpointFade(theta);
-                                    sh = CornerEffectWeight(90 - theta) * MidpointFade(90 - theta);
+                                    hl = CornerEffectWeight(theta) * MidpointFade(theta) * BezelConstants.EdgeForwardHighlightFade;
+                                    sh = CornerEffectWeight(90 - theta) * MidpointFade(90 - theta) * BezelConstants.EdgeReverseShadowFade;
                                 }
                                 else
                                 {
-                                    hl = CornerEffectWeight(90 - theta) * MidpointFade(90 - theta);
-                                    sh = CornerEffectWeight(theta) * MidpointFade(theta);
+                                    hl = CornerEffectWeight(90 - theta) * MidpointFade(90 - theta) * BezelConstants.EdgeReverseHighlightFade;
+                                    sh = CornerEffectWeight(theta) * MidpointFade(theta) * BezelConstants.EdgeForwardShadowFade;
                                 }
                             }
                         }
@@ -197,16 +212,21 @@ internal static class CornerTemplates
                                 // BL — outer: highlight from the left edge meets shadow from the bottom edge,
                                 //      inner: shadow from the left edge meets highlight from the bottom edge,
                                 //      → both fade to flat at 45°
-                                theta = GdiAngle(originOffset.X, originOffset.Y) - 90.0;
+                                //
+                                // like TR, BL sits at the *fade* end of both its adjoining edges - the left
+                                // edge peaks near TL and fades downward, the bottom edge peaks near BR and
+                                // fades leftward - see the TR case above for why each boundary term reduces
+                                // to exactly that edge's own Fade value at theta = 0 / 90.
+                                theta = BezelPrimitives.GetGdiAngle(originOffset.X, originOffset.Y) - 90.0;
                                 if (isHighlightEffect)
                                 {
-                                    hl = CornerEffectWeight(90 - theta) * MidpointFade(90 - theta);
-                                    sh = CornerEffectWeight(theta) * MidpointFade(theta);
+                                    hl = CornerEffectWeight(90 - theta) * MidpointFade(90 - theta) * BezelConstants.EdgeForwardHighlightFade;
+                                    sh = CornerEffectWeight(theta) * MidpointFade(theta) * BezelConstants.EdgeReverseShadowFade;
                                 }
                                 else
                                 {
-                                    hl = CornerEffectWeight(theta) * MidpointFade(theta);
-                                    sh = CornerEffectWeight(90 - theta) * MidpointFade(90 - theta);
+                                    hl = CornerEffectWeight(theta) * MidpointFade(theta) * BezelConstants.EdgeReverseHighlightFade;
+                                    sh = CornerEffectWeight(90 - theta) * MidpointFade(90 - theta) * BezelConstants.EdgeForwardShadowFade;
                                 }
                             }
                             else
@@ -215,23 +235,36 @@ internal static class CornerTemplates
                                 //      inner: highlight from the right edge meets highlight from the bottom edge,
                                 //      → outer double-shadow, inner single-highlight
                                 //      (inner HL halved to avoid over-brightness against outer-BR shadow)
-                                theta = 90.0 - GdiAngle(originOffset.X, originOffset.Y);
+                                //
+                                // right and bottom are both "reverse" edges, so one strength value covers
+                                // both boundary terms (same CornerEffectWeight(theta) + CornerEffectWeight(90
+                                // - theta) ≡ 1 identity as the TL case above). EdgeReverseHighlightStrong is
+                                // itself already the "halved" value (0.75, half of EdgeReverseShadowStrong's
+                                // 1.5) that avoids over-brightness against the outer-BR shadow, so it's used
+                                // directly here rather than halved again.
+                                theta = 90.0 - BezelPrimitives.GetGdiAngle(originOffset.X, originOffset.Y);
                                 if (isHighlightEffect)
                                 {
-                                    sh = CornerEffectWeight(theta) + CornerEffectWeight(90 - theta) + 0.5 + (0.275 * MidpointPeak(theta));
+                                    sh = BezelConstants.EdgeReverseShadowStrong + (0.275 * MidpointPeak(theta));
                                 }
                                 else
                                 {
-                                    hl = (0.5 * CornerEffectWeight(theta)) + (0.5 * CornerEffectWeight(90 - theta)) + 0.25 + (0.375 * MidpointPeak(theta));
+                                    hl = BezelConstants.EdgeReverseHighlightStrong + (0.375 * MidpointPeak(theta));
                                 }
                             }
                         }
 
-                        // effectMagnitude carries the effect intensity due to the ; the sign replaces the
-                        // previous inOuterArc/inInnerArc flags that were sourced from overlay
-                        // bitmaps. The flat bezel's pixel alpha (from GDI+ arc antialiasing) is
-                        // left unchanged and handles outer-edge transparency automatically.
-                        var newColor = ApplyEffect(hl * effectMagnitude, sh * effectMagnitude, bezelColor, config.HighlightMax, config.ShadowMax);
+                        // effectMagnitude carries the effect intensity - the sign indicates
+                        // whether to apply a highlight or shadow. The flat bezel's pixel
+                        // alpha (from GDI+ arc antialiasing) is left unchanged and handles
+                        // outer-edge transparency automatically so the resulting pixel still
+                        // blends into the background image behind the bezel.
+                        var highlighted = ApplyHighlight(bezelColor, hl * effectMagnitude, BezelConstants.HighlightMax);
+                        var newColor = ApplyShadow(highlighted, sh * effectMagnitude, BezelConstants.ShadowMax);
+
+                        // note - this is *not* dead code! srcPixelArgb is a raw (unsafe) pointer
+                        // into the locked cornerTemplates bitmap not a normal managed array, so
+                        // the assignments below write directly into the image in-place.
                         srcPixelArgb[0] = newColor.B;
                         srcPixelArgb[1] = newColor.G;
                         srcPixelArgb[2] = newColor.R;
@@ -269,29 +302,39 @@ internal static class CornerTemplates
     }
 
     /// <summary>
-    /// Draws four N×N corner regions packed into a 2N×2N image.
+    /// Draws four n×n corner regions packed into a 2n×2n image, where n is
+    /// <paramref name="cornerRadius"/>.
     /// </summary>
-    private static Bitmap DrawCornerRegions(int cornerSize, int outerRadius, int innerRadius, Color color)
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// <paramref name="cornerRadius"/> is less than 1.
+    /// </exception>
+    private static Bitmap DrawCornerRegions(int cornerRadius, Color bezelColor)
     {
-        var n = cornerSize;
+        if (cornerRadius <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(cornerRadius), cornerRadius, $"{nameof(cornerRadius)} must be at least 1.");
+        }
+
+        var edgeLength = cornerRadius;
+        var imageWidth = edgeLength + (2 * cornerRadius);
+        var imageHeight = edgeLength + (2 * cornerRadius);
 
         // draw the flat bezel *with* straight edges first so that the
         // GDI antialiasing smooths the corners into straight edges rather
         // than into an immediately adjacent corner. it means we have to copy
         // the corners out into a smaller image to remove the straight edges
         // later, but we get a better quality result
-        using var sourceImage = new Bitmap(3 * n, 3 * n, PixelFormat.Format32bppArgb);
+        using var sourceImage = new Bitmap(imageWidth, imageHeight, PixelFormat.Format32bppArgb);
         using (var g = Graphics.FromImage(sourceImage))
         {
             BezelGraphics.DrawFlatBezelRing(
                 g,
-                x: n - outerRadius,
-                y: n - outerRadius,
-                width: n + (2 * outerRadius),
-                height: n + (2 * outerRadius),
-                outerRadius: outerRadius,
-                innerRadius: innerRadius,
-                color: color);
+                x: 0,
+                y: 0,
+                width: imageWidth,
+                height: imageHeight,
+                cornerRadius: cornerRadius,
+                bezelColor: bezelColor);
         }
 
         // set up the copy regions to extract the corner images from the bezel ring
@@ -303,17 +346,19 @@ internal static class CornerTemplates
         //   +----+----+----+      | \\ | // |
         //   | \\ | == | // |      +----+----+
         //   +----+----+----+
-        var w = sourceImage.Width;
-        var h = sourceImage.Height;
+        var w = imageWidth;
+        var h = imageHeight;
+        var z = edgeLength;
+        var c = cornerRadius;
         var copyRegions = new[]
         {
             (source: new Point(0,     0),     target: new Point(0, 0)), // TL
-            (source: new Point(w - n, 0),     target: new Point(n, 0)), // TR
-            (source: new Point(0,     h - n), target: new Point(0, n)), // BL
-            (source: new Point(w - n, h - n), target: new Point(n, n)), // BR
+            (source: new Point(w - z, 0),     target: new Point(c, 0)), // TR
+            (source: new Point(0,     h - z), target: new Point(0, c)), // BL
+            (source: new Point(w - z, h - z), target: new Point(c, c)), // BR
         };
 
-        var cornerImages = new Bitmap(2 * n, 2 * n, PixelFormat.Format32bppArgb);
+        var cornerImages = new Bitmap(2 * cornerRadius, 2 * cornerRadius, PixelFormat.Format32bppArgb);
         using var cornerGraphics = Graphics.FromImage(cornerImages);
 
         // Use NearestNeighbor + PixelOffsetMode.Half for an exact 1:1 pixel copy.
@@ -329,8 +374,8 @@ internal static class CornerTemplates
         {
             cornerGraphics.DrawImage(
                 sourceImage,
-                destRect: new Rectangle(target.X, target.Y, n, n),
-                srcRect: new Rectangle(source.X, source.Y, n, n),
+                destRect: new Rectangle(target.X, target.Y, cornerRadius, cornerRadius),
+                srcRect: new Rectangle(source.X, source.Y, cornerRadius, cornerRadius),
                 srcUnit: GraphicsUnit.Pixel);
         }
 

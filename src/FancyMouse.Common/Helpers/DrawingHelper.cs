@@ -58,17 +58,6 @@ public static class DrawingHelper
         return image;
     }
 
-    // Hardcoded 3-D lighting config shared by all bezels.
-    // Values are compile-time constants; BezelConfig exists so the rendering
-    // methods are parameterised and ready to accept per-bezel variation later.
-    private static readonly BezelConfig ContouredBezelConfig = new(
-        fadeStart: 30.0,            // degrees from edge where corner rolloff begins
-        fadeEnd: 60.0,              // degrees where rolloff reaches zero
-        highlightMax: 0x44 / 255.0, // peak highlight opacity (~26.7 %)
-        shadowMax: 0x44 / 255.0,    // peak shadow   opacity (~26.7 %)
-        edgeFadeFraction: 0.75f,    // fraction of edge length with secondary effect
-        rampAngleDegrees: 45.0);    // chamfer inclination — cos(45°) ≈ 0.707 uniform intensity
-
     /// <summary>
     /// Draws a border shape with a raised 3-D highlight and shadow effect.
     /// </summary>
@@ -88,9 +77,7 @@ public static class DrawingHelper
 
         // draw a contoured bezel
         var bounds = boxBounds.BorderBounds.ToRectangle();
-        using var renderer = new BezelRenderer(
-            borderStyle,
-            DrawingHelper.ContouredBezelConfig);
+        using var renderer = new BezelRenderer(borderStyle);
         renderer.DrawBezel(graphics, bounds.X, bounds.Y, bounds.Width, bounds.Height);
     }
 
