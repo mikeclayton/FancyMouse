@@ -65,16 +65,16 @@ public sealed partial class PreviewWindow
             previewLayout = LayoutHelper.GetPreviewLayout(
                 previewStyle,
                 displayInfo,
-                activatedScreen: activatedScreen);
+                maximumSize: activatedScreen.DisplayArea.Size);
         }
 
         // the outer border is this window's own responsibility, not the preview pane's -
-        // see LayoutHelper.GetHostBoxStyle. PreviewLayout itself has no desktop position
+        // see LayoutHelper.GetPreviewWindowStyle. PreviewLayout itself has no desktop position
         // (only a size - see PreviewLayout), so positioning the window on the desktop -
         // centered on the activated location, clamped to the activated screen - is entirely
         // this window's own job too.
-        var hostBoxStyle = LayoutHelper.GetHostBoxStyle(previewStyle.CanvasStyle);
-        var hostBounds = LayoutHelper.GetHostBounds(new RectangleInfo(previewLayout.PreviewSize), hostBoxStyle);
+        var previewWindowStyle = LayoutHelper.GetPreviewWindowStyle(previewStyle.CanvasStyle);
+        var hostBounds = LayoutHelper.GetPreviewWindowBounds(new RectangleInfo(previewLayout.PreviewSize), previewWindowStyle);
         var positionedHostOuterBounds = LayoutHelper.PositionOnScreen(hostBounds.OuterBounds, activatedScreen, activatedLocation);
 
         // a newer activation superseding this one is the common, expected case under rapid
@@ -91,7 +91,7 @@ public sealed partial class PreviewWindow
         (int Width, int Height, int CornerRadius) windowRegion;
         using (Telemetry.Current.BeginTimer(new { }, "RenderBorderAsync"))
         {
-            windowRegion = await this.RenderBorderAsync(previewLayout, hostBoxStyle)
+            windowRegion = await this.RenderBorderAsync(previewLayout, previewWindowStyle)
                 .ConfigureAwait(false);
         }
 

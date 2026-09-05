@@ -10,7 +10,7 @@ namespace FancyMouse.WinUI3.UI;
 /// <summary>
 /// Encapsulates the preview pane's own content - the background rectangle and the
 /// bezels/screenshots on top of it. Deliberately excludes the outer border, which is the
-/// hosting window's responsibility (see <see cref="Common.Helpers.LayoutHelper.GetHostBoxStyle"/>).
+/// hosting window's responsibility (see <see cref="Common.Helpers.LayoutHelper.GetPreviewWindowStyle"/>).
 /// The hosting window supplies the pre-computed <see cref="Layout"/> (this control doesn't
 /// calculate its own size); the background image and each screen's bezel are rendered
 /// internally from <see cref="Layout"/> as soon as it's set, and each screen starts out

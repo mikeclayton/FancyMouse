@@ -127,7 +127,7 @@ public sealed partial class PreviewWindow
         // pixel coordinates need to start at (0,0) regardless of where the (possibly
         // negative, once enlarged outward from a zero-based content box) host bounds would
         // otherwise place it.
-        var localHostBounds = LayoutHelper.GetHostBounds(previewLayout.CanvasLayout.CanvasBounds.OuterBounds, hostBoxStyle)
+        var localHostBounds = LayoutHelper.GetPreviewWindowBounds(previewLayout.CanvasLayout.CanvasBounds.OuterBounds, hostBoxStyle)
             .MoveTo(new PointInfo(0, 0));
 
         using var borderBitmap = DrawingHelper.RenderBorder(localHostBounds.BorderBounds.Size, hostBoxStyle.BorderStyle);
