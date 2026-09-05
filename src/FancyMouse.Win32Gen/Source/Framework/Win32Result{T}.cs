@@ -38,17 +38,22 @@ internal readonly struct Win32Result<T>
     {
         if (this.Failure)
         {
-            var lines = new List<string>
+            if (this.LastError is null)
             {
-                $"{this.MemberName} failed.",
-            };
-
-            if (this.LastError is not null)
-            {
-                lines.Add($"last error was '{this.LastError}'");
+                throw new Win32Exception(
+                    string.Join(Environment.NewLine,
+                        $"{this.MemberName} failed.",
+                        $"ReturnValue: {this.Value}"));
             }
 
-            throw new Win32Exception(string.Join(Environment.NewLine, lines));
+            var win32 = new Win32Exception(this.LastError.Value);
+            throw new Win32Exception(
+                this.LastError.Value,
+                string.Join(Environment.NewLine,
+                    $"{this.MemberName} failed.",
+                    $"ReturnValue: {this.Value}",
+                    $"LastError: {this.LastError.Value}",
+                    $"Message: {win32.Message}"));
         }
 
         return this;
