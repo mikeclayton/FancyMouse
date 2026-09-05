@@ -4,7 +4,6 @@ using System.Drawing.Imaging;
 
 using FancyMouse.Common.Bezels;
 using FancyMouse.Models.Drawing;
-using FancyMouse.Models.Layout;
 using FancyMouse.Models.Styles;
 
 namespace FancyMouse.Common.Helpers;
@@ -12,121 +11,74 @@ namespace FancyMouse.Common.Helpers;
 public static class DrawingHelper
 {
     /// <summary>
-    /// Renders the gradient-filled background for the specified canvas layout, as its own
-    /// transparent-elsewhere image sized to <paramref name="canvasLayout"/>'s own outer
-    /// bounds - a hosting window layers this beneath the per-screen bezels/screenshots (and,
-    /// separately, its own border image) rather than having it baked into a single flattened
-    /// bitmap.
+    /// Renders the gradient-filled background for a box of the given <paramref name="size"/>.
+    /// Can be used to render the main background for the preview pane, and the screen
+    /// background image for delayed screenshot capture scenarios.
     /// </summary>
-    public static Bitmap RenderBackground(CanvasLayout canvasLayout)
+    public static Bitmap RenderBackground(SizeInfo size, BackgroundStyle backgroundStyle)
     {
-        var bounds = canvasLayout.CanvasBounds.OuterBounds.ToRectangle();
-        var image = new Bitmap(bounds.Width, bounds.Height, PixelFormat.Format32bppPArgb);
+        // prepare the bitmap (with a transparent background) to draw the background fill onto
+        var backgroundBounds = new RectangleInfo(size).ToRectangle();
+        var image = new Bitmap(backgroundBounds.Width, backgroundBounds.Height, PixelFormat.Format32bppPArgb);
         using var graphics = Graphics.FromImage(image);
         graphics.Clear(Color.Transparent);
-        DrawingHelper.DrawBackgroundFill(
-            graphics,
-            canvasLayout.CanvasStyle,
-            canvasLayout.CanvasBounds,
-            []);
-        return image;
-    }
 
-    /// <summary>
-    /// Renders a raised border ring for the specified box, as its own transparent-elsewhere
-    /// image sized to <paramref name="hostBounds"/>'s outer bounds. Used both by a hosting
-    /// window to render its own outer border (see
-    /// <see cref="LayoutHelper.GetHostBoxStyle"/>/<see cref="LayoutHelper.GetHostBounds"/>)
-    /// and, per screen, to render each screen's bezel - the two uses share this method because
-    /// a bezel is just a border ring around a smaller box.
-    /// </summary>
-    /// <remarks>
-    /// <paramref name="hostBounds"/> must be zero-based (<c>OuterBounds.Location == (0,0)</c>)
-    /// - its rectangles are used directly as pixel coordinates into the bitmap this
-    /// allocates, which is sized to exactly fit it. Callers deriving a box by enlarging or
-    /// using a non-zero-based content box (e.g. <see cref="LayoutHelper.GetHostBounds"/>, or a
-    /// <see cref="ScreenLayout.ScreenBounds"/> which is relative to the canvas origin,
-    /// not its own) need to re-anchor it first - e.g. <c>bounds.MoveTo(new PointInfo(0, 0))</c>.
-    /// </remarks>
-    public static Bitmap RenderBorder(BoxBounds hostBounds, BoxStyle hostStyle)
-    {
-        var bounds = hostBounds.OuterBounds.ToRectangle();
-        var image = new Bitmap(bounds.Width, bounds.Height, PixelFormat.Format32bppPArgb);
-        using var graphics = Graphics.FromImage(image);
-        graphics.Clear(Color.Transparent);
-        DrawingHelper.DrawRaisedBorder(graphics, hostBounds, hostStyle);
-        return image;
-    }
-
-    /// <summary>
-    /// Draws a border shape with a raised 3-D highlight and shadow effect.
-    /// </summary>
-    private static void DrawRaisedBorder(
-        Graphics graphics, BoxBounds boxBounds, BoxStyle boxStyle)
-    {
-        var borderStyle = boxStyle.BorderStyle;
-        if ((borderStyle.Horizontal < 1) || (borderStyle.Vertical < 1))
-        {
-            return;
-        }
-
-        if (borderStyle.Color is null)
-        {
-            return;
-        }
-
-        // draw a contoured bezel
-        var bounds = boxBounds.BorderBounds.ToRectangle();
-        using var renderer = new BezelRenderer(borderStyle);
-        renderer.DrawBezel(graphics, bounds.X, bounds.Y, bounds.Width, bounds.Height);
-    }
-
-    /// <summary>
-    /// Draws a gradient-filled background shape.
-    /// </summary>
-    private static void DrawBackgroundFill(
-        Graphics graphics, BoxStyle boxStyle, BoxBounds boxBounds, IEnumerable<RectangleInfo> excludeBounds)
-    {
-        var backgroundBounds = boxBounds.PaddingBounds;
-
-        using var backgroundBrush = DrawingHelper.GetBackgroundStyleBrush(boxStyle.BackgroundStyle, backgroundBounds);
-        if (backgroundBrush == null)
-        {
-            return;
-        }
-
-        // it's faster to build a region with the screen areas excluded
-        // and fill that than it is to fill the entire bounding rectangle
-        var backgroundRegion = new Region(backgroundBounds.ToRectangle());
-        foreach (var exclude in excludeBounds)
-        {
-            backgroundRegion.Exclude(exclude.ToRectangle());
-        }
-
-        graphics.FillRegion(backgroundBrush, backgroundRegion);
-    }
-
-    private static Brush? GetBackgroundStyleBrush(BackgroundStyle backgroundStyle, RectangleInfo backgroundBounds)
-    {
-        var backgroundBrush = backgroundStyle switch
+        // pick a brush matching the configured background - a two-colour gradient, a solid fill
+        // (whichever single colour is set), or nothing at all if neither colour is configured
+        using var backgroundBrush = backgroundStyle switch
         {
             { Color1: not null, Color2: not null } =>
                 /* draw a gradient fill if both colors are specified */
                 new LinearGradientBrush(
-                    backgroundBounds.ToRectangle(),
+                    backgroundBounds,
                     backgroundStyle.Color1.Value,
                     backgroundStyle.Color2.Value,
                     LinearGradientMode.ForwardDiagonal),
             { Color1: not null } =>
                 /* draw a solid fill if only one color is specified */
-                new SolidBrush(
-                    backgroundStyle.Color1.Value),
+                new SolidBrush(backgroundStyle.Color1.Value),
             { Color2: not null } =>
                 /* draw a solid fill if only one color is specified */
-                new SolidBrush(
-                    backgroundStyle.Color2.Value),
+                new SolidBrush(backgroundStyle.Color2.Value),
             _ => (Brush?)null,
         };
-        return backgroundBrush;
+
+        // fill the background, if a colour was actually configured
+        if (backgroundBrush is not null)
+        {
+            graphics.FillRectangle(backgroundBrush, backgroundBounds);
+        }
+
+        return image;
+    }
+
+    /// <summary>
+    /// Renders a raised border ring for a box of the given <paramref name="size"/>.
+    /// Can be used to render the main preview window border, and the individual
+    /// screen bezels.
+    /// </summary>
+    public static Bitmap RenderBorder(SizeInfo size, BorderStyle borderStyle)
+    {
+        // prepare the bitmap (with a transparent background) to draw the border / bezel onto
+        var borderBounds = new RectangleInfo(size).ToRectangle();
+        var image = new Bitmap(borderBounds.Width, borderBounds.Height, PixelFormat.Format32bppPArgb);
+        using var graphics = Graphics.FromImage(image);
+        graphics.Clear(Color.Transparent);
+
+        if ((borderStyle.Horizontal < 1) || (borderStyle.Vertical < 1))
+        {
+            return image;
+        }
+
+        if (borderStyle.Color is null)
+        {
+            return image;
+        }
+
+        // draw a contoured border (could be an outer border or a bezel)
+        using var renderer = new BezelRenderer(borderStyle);
+        renderer.DrawBezel(graphics, borderBounds.X, borderBounds.Y, borderBounds.Width, borderBounds.Height);
+
+        return image;
     }
 }

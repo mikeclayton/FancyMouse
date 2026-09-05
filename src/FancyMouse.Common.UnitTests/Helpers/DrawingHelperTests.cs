@@ -200,14 +200,18 @@ public static class DrawingHelperTests
             var offsetX = (int)hostBounds.ContentBounds.X;
             var offsetY = (int)hostBounds.ContentBounds.Y;
 
-            using var borderImage = DrawingHelper.RenderBorder(hostBounds, hostBoxStyle);
-            using var backgroundImage = DrawingHelper.RenderBackground(canvasLayout);
+            // RenderBorder/RenderBackground are no longer box-aware - they just draw as large as
+            // the size they're given, so it's on this caller to position the result at the right
+            // box-model rectangle (BorderBounds/PaddingBounds/etc.) itself.
+            var hostBorderBounds = hostBounds.BorderBounds;
+            using var borderImage = DrawingHelper.RenderBorder(hostBorderBounds.Size, hostBoxStyle.BorderStyle);
+            using var backgroundImage = DrawingHelper.RenderBackground(canvasLayout.CanvasBounds.OuterBounds.Size, canvasLayout.CanvasStyle.BackgroundStyle);
 
             var combinedBounds = hostBounds.OuterBounds.ToRectangle();
             var combinedImage = new Bitmap(combinedBounds.Width, combinedBounds.Height, PixelFormat.Format32bppPArgb);
             using var combinedGraphics = Graphics.FromImage(combinedImage);
             combinedGraphics.Clear(Color.Transparent);
-            combinedGraphics.DrawImageUnscaled(borderImage, 0, 0);
+            combinedGraphics.DrawImageUnscaled(borderImage, (int)hostBorderBounds.X, (int)hostBorderBounds.Y);
             combinedGraphics.DrawImageUnscaled(backgroundImage, offsetX, offsetY);
 
             var captureProvider = new StaticScreenshotCaptureProvider(desktopImage);
@@ -217,18 +221,13 @@ public static class DrawingHelperTests
                 {
                     // screens sit at a fractional (scaled) position within the canvas, unlike
                     // the canvas/host boxes above which are already zero-based - anchor at the
-                    // *truncated* outer position and re-anchor the screen's own bounds to the
-                    // leftover fractional remainder (not exactly zero), so the single pixel
-                    // truncation this produces lines up with the one truncation DrawRaisedBorder
-                    // would have applied had it drawn straight onto the combined image at this
-                    // screen's absolute (fractional) bounds, the way production code once did.
-                    var screenOuterBounds = screenLayout.ScreenBounds.OuterBounds;
-                    var anchorX = (int)screenOuterBounds.X;
-                    var anchorY = (int)screenOuterBounds.Y;
-                    var localScreenBounds = screenLayout.ScreenBounds.MoveTo(
-                        new PointInfo(screenOuterBounds.X - anchorX, screenOuterBounds.Y - anchorY));
+                    // *truncated* border position, matching how production now positions the
+                    // bezel bitmap (see PreviewPane.CreateScreenSlot/PositionElement).
+                    var screenBorderBounds = screenLayout.ScreenBounds.BorderBounds;
+                    var anchorX = (int)screenBorderBounds.X;
+                    var anchorY = (int)screenBorderBounds.Y;
 
-                    using var bezelImage = DrawingHelper.RenderBorder(localScreenBounds, screenLayout.ScreenStyle);
+                    using var bezelImage = DrawingHelper.RenderBorder(screenBorderBounds.Size, screenLayout.ScreenStyle.BorderStyle);
                     combinedGraphics.DrawImageUnscaled(
                         bezelImage,
                         offsetX + anchorX,

@@ -130,7 +130,7 @@ public sealed partial class PreviewWindow
         var localHostBounds = LayoutHelper.GetHostBounds(previewLayout.CanvasLayout.CanvasBounds.OuterBounds, hostBoxStyle)
             .MoveTo(new PointInfo(0, 0));
 
-        using var borderBitmap = DrawingHelper.RenderBorder(localHostBounds, hostBoxStyle);
+        using var borderBitmap = DrawingHelper.RenderBorder(localHostBounds.BorderBounds.Size, hostBoxStyle.BorderStyle);
 
         await this.InvokeOnUiThreadAsync(
             () =>
@@ -142,9 +142,9 @@ public sealed partial class PreviewWindow
 
                 // position PreviewPane so it lines up exactly with the transparent hole in
                 // the middle of the border image - the offset is always the host box's own
-                // margin+border thickness, regardless of where localHostBounds itself sits.
-                var offsetX = (localHostBounds.ContentBounds.X - localHostBounds.OuterBounds.X) * (decimal)highDpiScalingRatio;
-                var offsetY = (localHostBounds.ContentBounds.Y - localHostBounds.OuterBounds.Y) * (decimal)highDpiScalingRatio;
+                // border thickness, regardless of where localHostBounds itself sits.
+                var offsetX = (localHostBounds.ContentBounds.X - localHostBounds.BorderBounds.X) * (decimal)highDpiScalingRatio;
+                var offsetY = (localHostBounds.ContentBounds.Y - localHostBounds.BorderBounds.Y) * (decimal)highDpiScalingRatio;
                 this.PreviewPane.Margin = new Thickness((double)offsetX, (double)offsetY, 0, 0);
             }).ConfigureAwait(false);
 
