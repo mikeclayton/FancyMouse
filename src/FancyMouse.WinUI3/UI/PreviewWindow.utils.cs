@@ -121,16 +121,16 @@ public sealed partial class PreviewWindow
     /// through rendering it. The caller passes these straight back into
     /// <see cref="ShowWindowAsync"/>.
     /// </returns>
-    private async Task<(int Width, int Height, int CornerRadius)> RenderBorderAsync(PreviewLayout previewLayout, BoxStyle hostBoxStyle)
+    private async Task<(int Width, int Height, int CornerRadius)> RenderBorderAsync(PreviewLayout previewLayout, BoxStyle previewWindowStyle)
     {
         // render against a zero-based host box - a border image is its own bitmap, so its
         // pixel coordinates need to start at (0,0) regardless of where the (possibly
         // negative, once enlarged outward from a zero-based content box) host bounds would
         // otherwise place it.
-        var localHostBounds = LayoutHelper.GetPreviewWindowBounds(previewLayout.CanvasLayout.CanvasBounds.OuterBounds, hostBoxStyle)
+        var localHostBounds = LayoutHelper.GetPreviewWindowBounds(previewLayout.CanvasLayout.CanvasBounds.OuterBounds, previewWindowStyle)
             .MoveTo(new PointInfo(0, 0));
 
-        using var borderBitmap = DrawingHelper.RenderBorder(localHostBounds.BorderBounds.Size, hostBoxStyle.BorderStyle);
+        using var borderBitmap = DrawingHelper.RenderBorder(localHostBounds.BorderBounds.Size, previewWindowStyle.BorderStyle);
 
         await this.InvokeOnUiThreadAsync(
             () =>
@@ -142,13 +142,15 @@ public sealed partial class PreviewWindow
 
                 // position PreviewPane so it lines up exactly with the transparent hole in
                 // the middle of the border image - the offset is always the host box's own
-                // border thickness, regardless of where localHostBounds itself sits.
+                // border+padding thickness (margin is excluded - RenderBorder's bitmap starts
+                // at the border's own outer edge, not the margin's), regardless of where
+                // localHostBounds itself sits.
                 var offsetX = (localHostBounds.ContentBounds.X - localHostBounds.BorderBounds.X) * (decimal)highDpiScalingRatio;
                 var offsetY = (localHostBounds.ContentBounds.Y - localHostBounds.BorderBounds.Y) * (decimal)highDpiScalingRatio;
                 this.PreviewPane.Margin = new Thickness((double)offsetX, (double)offsetY, 0, 0);
             }).ConfigureAwait(false);
 
-        return (borderBitmap.Width, borderBitmap.Height, (int)hostBoxStyle.BorderStyle.Left);
+        return (borderBitmap.Width, borderBitmap.Height, (int)previewWindowStyle.BorderStyle.Left);
     }
 
     private async Task SetPreviewPaneLayoutAsync(PreviewLayout previewLayout, ScreenInfo activatedScreen)
