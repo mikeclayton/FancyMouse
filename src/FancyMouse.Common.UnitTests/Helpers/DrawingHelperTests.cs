@@ -147,7 +147,7 @@ public static class DrawingHelperTests
             var previewLayout = LayoutHelper.GetPreviewLayout(
                 previewStyle: data.PreviewStyle,
                 displayInfo: data.DisplayInfo,
-                activatedScreen: data.ActivatedScreen);
+                maximumSize: data.ActivatedScreen.DisplayArea.Size);
 
             // draw the preview image - the combined (border+background+bezels/screenshots)
             // render, since the expected golden images were captured against that. Production
@@ -156,8 +156,8 @@ public static class DrawingHelperTests
             // test composes them the same way for comparison purposes only, using the same
             // production rendering primitives (DrawingHelper.RenderBorder/RenderBackground,
             // and StaticScreenshotCaptureProvider for the screenshot content).
-            var hostBoxStyle = LayoutHelper.GetHostBoxStyle(data.PreviewStyle.CanvasStyle);
-            using var actual = await GetPreviewLayoutTests.ComposePreviewImageAsync(previewLayout, hostBoxStyle, desktopImage);
+            var previewWindowStyle = LayoutHelper.GetPreviewWindowStyle(data.PreviewStyle.CanvasStyle);
+            using var actual = await GetPreviewLayoutTests.ComposePreviewImageAsync(previewLayout, previewWindowStyle, desktopImage);
 
             var currentDirectory = Environment.CurrentDirectory;
 
@@ -191,7 +191,7 @@ public static class DrawingHelperTests
             PreviewLayout previewLayout, BoxStyle hostBoxStyle, Bitmap desktopImage)
         {
             var canvasLayout = previewLayout.CanvasLayout;
-            var hostBounds = LayoutHelper.GetHostBounds(canvasLayout.CanvasBounds.OuterBounds, hostBoxStyle)
+            var hostBounds = LayoutHelper.GetPreviewWindowBounds(canvasLayout.CanvasBounds.OuterBounds, hostBoxStyle)
                 .MoveTo(new PointInfo(0, 0));
 
             // hostBounds.OuterBounds is now (0,0)-based, so hostBounds.ContentBounds.Location
@@ -293,22 +293,12 @@ public static class DrawingHelperTests
                     var expectedPixel = expected.GetPixel(x, y);
                     var actualPixel = actual.GetPixel(x, y);
 
-                    // allow a small tolerance for rounding differences in gdi - capturing each
-                    // screen's content into its own independent bitmap (see
-                    // StaticScreenshotCaptureProvider) rather than drawing it directly at its
-                    // final absolute position on one shared canvas (the old, pre-capture-pipeline
-                    // behavior) can shift GDI+'s interpolation sampling by a fraction of a
-                    // source pixel at a scaled screenshot's edges, since the same NearestNeighbor
-                    // scaling now runs against a local (0,0)-based destination rect instead of
-                    // one positioned at the final canvas offset. This only ever affects a
-                    // handful of edge pixels by a couple of levels at most - a tolerance of 1
-                    // was too tight for that, verified by counting affected pixels directly
-                    // rather than just loosening the check blindly.
+                    // allow a 1-level-per-channel tolerance for residual GDI+ rasterization rounding.
                     Assert.IsTrue(
-                        (Math.Abs(expectedPixel.A - actualPixel.A) <= 3) &&
-                        (Math.Abs(expectedPixel.R - actualPixel.R) <= 3) &&
-                        (Math.Abs(expectedPixel.G - actualPixel.G) <= 3) &&
-                        (Math.Abs(expectedPixel.B - actualPixel.B) <= 3),
+                        (Math.Abs(expectedPixel.A - actualPixel.A) <= 1) &&
+                        (Math.Abs(expectedPixel.R - actualPixel.R) <= 1) &&
+                        (Math.Abs(expectedPixel.G - actualPixel.G) <= 1) &&
+                        (Math.Abs(expectedPixel.B - actualPixel.B) <= 1),
                         $"images differ at pixel ({x}, {y}) - expected: {expectedPixel}, actual: {actualPixel}");
                 }
             }
