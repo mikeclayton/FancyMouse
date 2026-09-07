@@ -1,47 +1,52 @@
-﻿using FancyMouse.HotKeys;
+using System.Text.Json;
+
+using FancyMouse.HotKeys;
 using FancyMouse.Settings;
 
 namespace FancyMouse.WinUI3.Internal.Helpers;
 
-internal static class ConfigHelper
+internal sealed class ConfigHelper : IDisposable
 {
-    private static readonly HotKeyManager _hotKeyManager;
+    private readonly NLog.ILogger _logger;
 
-    private static FileSystemWatcher? _appSettingsWatcher;
+    private readonly HotKeyManager _hotKeyManager;
 
-    private static AppSettings? _appSettings;
-    private static EventHandler<HotKeyEventArgs>? _hotKeyPressed;
+    private FileSystemWatcher? _appSettingsWatcher;
 
-    static ConfigHelper()
+    private AppSettings? _appSettings;
+    private EventHandler<HotKeyEventArgs>? _hotKeyPressed;
+
+    public ConfigHelper(NLog.ILogger logger)
     {
-        ConfigHelper._hotKeyManager = new HotKeyManager();
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _hotKeyManager = new HotKeyManager();
     }
 
-    public static string? AppSettingsPath
+    public string? AppSettingsPath
     {
         get;
         private set;
     }
 
-    public static AppSettings? AppSettings
+    public AppSettings? AppSettings
     {
         get
         {
             if (_appSettings is null)
             {
-                ConfigHelper.LoadAppSettings();
+                this.LoadAppSettings();
             }
 
             return _appSettings;
         }
     }
 
-    public static void SetAppSettingsPath(string appSettingsPath)
+    public void SetAppSettingsPath(string appSettingsPath)
     {
-        ConfigHelper.AppSettingsPath = appSettingsPath;
+        this.AppSettingsPath = appSettingsPath;
     }
 
-    public static void SetHotKeyEventHandler(EventHandler<HotKeyEventArgs> eventHandler)
+    public void SetHotKeyEventHandler(EventHandler<HotKeyEventArgs> eventHandler)
     {
         var evt = _hotKeyPressed;
         if (evt is not null)
@@ -53,50 +58,65 @@ internal static class ConfigHelper
         _hotKeyManager.HotKeyPressed += eventHandler;
     }
 
-    public static void LoadAppSettings()
+    public void LoadAppSettings()
     {
-        _hotKeyManager.SetHoKey(null);
-        _appSettings = AppSettingsReader.ReadFile(ConfigHelper.AppSettingsPath
+        _hotKeyManager.SetHotKey(null);
+        _appSettings = AppSettingsReader.ReadFile(this.AppSettingsPath
             ?? throw new InvalidOperationException("AppSettings cannot be null"));
-        _hotKeyManager.SetHoKey(_appSettings.Hotkey
+        _hotKeyManager.SetHotKey(_appSettings.Hotkey
             ?? throw new InvalidOperationException($"{nameof(_appSettings.Hotkey)} cannot be null"));
     }
 
-    public static void StartAppSettingsWatcher()
+    public void StartAppSettingsWatcher()
     {
         // set up the filesystem watcher
-        var path = Path.GetDirectoryName(ConfigHelper.AppSettingsPath) ?? throw new InvalidOperationException();
-        var filter = Path.GetFileName(ConfigHelper.AppSettingsPath) ?? throw new InvalidOperationException();
+        var path = Path.GetDirectoryName(this.AppSettingsPath) ?? throw new InvalidOperationException();
+        var filter = Path.GetFileName(this.AppSettingsPath) ?? throw new InvalidOperationException();
         _appSettingsWatcher = new FileSystemWatcher(path, filter)
         {
             NotifyFilter = NotifyFilters.LastWrite,
             EnableRaisingEvents = true,
         };
-        _appSettingsWatcher.Changed += ConfigHelper.OnAppSettingsChanged;
+        _appSettingsWatcher.Changed += this.OnAppSettingsChanged;
     }
 
-    private static void OnAppSettingsChanged(object sender, FileSystemEventArgs e)
+    private void OnAppSettingsChanged(object sender, FileSystemEventArgs e)
     {
         if (e.ChangeType != WatcherChangeTypes.Changed)
         {
             return;
         }
 
-        // the file might not have been released yet by the application that saved it
-        // and caused the file system event (e.g. notepad) so we need to do a couple
-        // of retries to give it a chance to release the lock so we can load the file contents.
-        for (var i = 0; i < 3; i++)
+        try
         {
-            try
+            // the file might not have been released yet by the application that saved it
+            // and caused the file system event (e.g. notepad) so we need to do a couple
+            // of retries to give it a chance to release the lock so we can load the file contents.
+            for (var i = 0; i < 3; i++)
             {
-                ConfigHelper.LoadAppSettings();
-                break;
-            }
-            catch (IOException ex)
-            {
-                Console.WriteLine(ex.ToString());
-                Thread.Sleep(250);
+                try
+                {
+                    this.LoadAppSettings();
+                    break;
+                }
+                catch (IOException ex)
+                {
+                    _logger.Error(ex, "failed to reload app settings, retrying");
+                    Thread.Sleep(250);
+                }
             }
         }
+        catch (JsonException ex)
+        {
+            // the saved file isn't valid config - retrying won't fix malformed JSON, so just
+            // log it and keep whatever settings were already loaded, rather than let the
+            // exception vanish silently into FileSystemWatcher's own event dispatch.
+            _logger.Error(ex, "failed to reload app settings - config file contains invalid JSON");
+        }
+    }
+
+    public void Dispose()
+    {
+        _appSettingsWatcher?.Dispose();
     }
 }

@@ -48,7 +48,7 @@ public sealed partial class PreviewWindow
         // (in case the user moves it a few pixels while the form is rendered)
         var activatedLocation = MouseHelper.GetCursorPosition();
 
-        var appSettings = ConfigHelper.AppSettings ?? throw new InvalidOperationException();
+        var appSettings = this.ConfigHelper.AppSettings ?? throw new InvalidOperationException();
 
         DisplayInfo displayInfo;
         using (Telemetry.Current.BeginTimer(new { }, "GetDisplayInfo"))

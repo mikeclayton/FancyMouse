@@ -4,8 +4,8 @@ using FancyMouse.Models.Drawing;
 namespace FancyMouse.WinUI3.UI;
 
 /// <summary>
-/// Implements the NavigateTo event that is used by the PreviewWinow to signal
-/// to the hosting application that to user wants to move the cursor to a specific
+/// Implements the NavigateTo event that is used by the PreviewWindow to signal
+/// to the hosting application that the user wants to move the cursor to a specific
 /// location. Can be raised as the result of a mouse click on the preview window,
 /// or a keyboard shortcut that means the same thing (e.g. 1-9, arrow keys, P, Home, End)
 /// </summary>
