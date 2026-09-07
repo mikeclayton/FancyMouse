@@ -14,10 +14,6 @@ using Image = Microsoft.UI.Xaml.Controls.Image;
 
 namespace FancyMouse.WinUI3.UI;
 
-/// <summary>
-/// The half of <see cref="PreviewPane"/> concerned with building/positioning the bezel and
-/// placeholder visuals called for by a new <see cref="Layout"/>.
-/// </summary>
 public sealed partial class PreviewPane
 {
     private static void OnLayoutChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
@@ -40,7 +36,7 @@ public sealed partial class PreviewPane
         this.Width = (double)bounds.Width / scale;
         this.Height = (double)bounds.Height / scale;
 
-        using var backgroundBitmap = DrawingHelper.RenderBackground(layout.CanvasLayout);
+        using var backgroundBitmap = DrawingHelper.RenderBackground(bounds.Size, layout.CanvasLayout.CanvasStyle.BackgroundStyle);
         this.BackgroundImage.Source = MediaHelper.ToBitmapImage(backgroundBitmap);
 
         var newScreenLayouts = layout.CanvasLayout.DeviceLayouts
@@ -81,7 +77,7 @@ public sealed partial class PreviewPane
                 // property writes, no re-render) and keeps that in sync even though the
                 // visuals themselves are being reused as-is.
                 var screenBounds = screenLayout.ScreenBounds;
-                PreviewPane.PositionElement(previousSlot.BezelImage, screenBounds.OuterBounds, scale);
+                PreviewPane.PositionElement(previousSlot.BezelImage, screenBounds.BorderBounds, scale);
                 if (previousSlot.PlaceholderRectangle is not null)
                 {
                     PreviewPane.PositionElement(previousSlot.PlaceholderRectangle, screenBounds.PaddingBounds, scale);
@@ -125,7 +121,7 @@ public sealed partial class PreviewPane
         && previous.ScreenStyle.BackgroundStyle.Color1 == current.ScreenStyle.BackgroundStyle.Color1;
 
     private static bool CanReuse(BoxBounds previous, BoxBounds current)
-        => PreviewPane.CanReuse(previous.OuterBounds, current.OuterBounds)
+        => PreviewPane.CanReuse(previous.BorderBounds, current.BorderBounds)
         && PreviewPane.CanReuse(previous.PaddingBounds, current.PaddingBounds)
         && PreviewPane.CanReuse(previous.ContentBounds, current.ContentBounds);
 
@@ -175,14 +171,14 @@ public sealed partial class PreviewPane
 
         Image bezelImage;
         using (var bezelBitmap = DrawingHelper.RenderBorder(
-            screenBounds.MoveTo(new PointInfo(0, 0)), screenLayout.ScreenStyle))
+            screenBounds.BorderBounds.Size, screenLayout.ScreenStyle.BorderStyle))
         {
             bezelImage = new Image
             {
                 Source = MediaHelper.ToBitmapImage(bezelBitmap),
                 Stretch = Stretch.Fill,
             };
-            PreviewPane.PositionElement(bezelImage, screenBounds.OuterBounds, scale);
+            PreviewPane.PositionElement(bezelImage, screenBounds.BorderBounds, scale);
             this.ScreensCanvas.Children.Add(bezelImage);
         }
 

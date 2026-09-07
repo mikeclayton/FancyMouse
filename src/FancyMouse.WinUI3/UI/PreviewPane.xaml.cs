@@ -7,19 +7,6 @@ using Microsoft.UI.Xaml.Controls;
 
 namespace FancyMouse.WinUI3.UI;
 
-/// <summary>
-/// Encapsulates the preview pane's own content - the background rectangle and the
-/// bezels/screenshots on top of it. Deliberately excludes the outer border, which is the
-/// hosting window's responsibility (see <see cref="Common.Helpers.LayoutHelper.GetHostBoxStyle"/>).
-/// The hosting window supplies the pre-computed <see cref="Layout"/> (this control doesn't
-/// calculate its own size); the background image and each screen's bezel are rendered
-/// internally from <see cref="Layout"/> as soon as it's set, and each screen starts out
-/// showing a placeholder fill until the hosting window backfills its real screenshot via
-/// <see cref="SetScreenshot"/> (screenshot capture needs the host's own capture pipeline,
-/// which this control has no access to). This control also owns turning raw mouse/keyboard
-/// input into navigation intent - see <see cref="NavigateTo"/>/<see cref="Cancel"/> - so the
-/// host doesn't need its own copy of "which screen is that" or "which screen is next" logic.
-/// </summary>
 public sealed partial class PreviewPane : UserControl
 {
     public static readonly DependencyProperty LayoutProperty = DependencyProperty.Register(
@@ -35,14 +22,13 @@ public sealed partial class PreviewPane : UserControl
         new PropertyMetadata(null));
 
     /// <summary>
-    /// Generates and retains each screen's blurred stand-in placeholder, keyed by physical
-    /// screen rather than layout position - see <see cref="ScreenshotBlurPipeline"/>. One long-lived
-    /// instance for this control's whole lifetime; <see cref="ApplyLayout"/> tells it which
-    /// screens currently exist (<see cref="ScreenshotBlurPipeline.SetActiveScreens"/>) once per activation.
+    /// A pipeline for generating the blurred screenshots that are shown
+    /// while the latest screenshot is being captured if a screen capture
+    /// takes more than the budget allowed to show the form.
     /// </summary>
     private readonly ScreenshotBlurPipeline blurPipeline = new();
 
-    private List<ScreenSlot> screenSlots = new();
+    private List<ScreenSlot> screenSlots = [];
 
     /// <summary>
     /// How long <see cref="CrossfadeContent"/> takes to fade a screen's content in. Short enough

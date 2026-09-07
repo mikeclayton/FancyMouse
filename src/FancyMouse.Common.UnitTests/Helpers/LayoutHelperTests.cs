@@ -132,7 +132,7 @@ public static class LayoutHelperTests
             /// <summary>
             /// Gets the window bounds a host would end up with after wrapping <see cref="ExpectedResult"/>'s
             /// <see cref="PreviewLayout.PreviewSize"/> in its own host box (see
-            /// <see cref="LayoutHelper.GetHostBoxStyle"/>) and positioning it via
+            /// <see cref="LayoutHelper.GetPreviewWindowStyle"/>) and positioning it via
             /// <see cref="LayoutHelper.PositionOnScreen"/> - preserved from before PreviewLayout's
             /// own position was removed, so this coverage doesn't get lost.
             /// </summary>
@@ -199,8 +199,8 @@ public static class LayoutHelperTests
                 canvasLayout: new(
                     canvasBounds: BoxBounds.CreateFromOuterBounds(
                         outerBounds: new(0, 0, 514, 386),
-                        boxStyle: LayoutHelper.GetPreviewBoxStyle(previewStyle.CanvasStyle)),
-                    canvasStyle: LayoutHelper.GetPreviewBoxStyle(previewStyle.CanvasStyle),
+                        boxStyle: LayoutHelper.GetPreviewPaneStyle(previewStyle.CanvasStyle)),
+                    canvasStyle: LayoutHelper.GetPreviewPaneStyle(previewStyle.CanvasStyle),
                     deviceLayouts: new List<DeviceLayout>()
                     {
                         new(
@@ -277,8 +277,8 @@ public static class LayoutHelperTests
                 canvasLayout: new(
                     canvasBounds: BoxBounds.CreateFromOuterBounds(
                         outerBounds: new(0, 0, 512, 384),
-                        boxStyle: LayoutHelper.GetPreviewBoxStyle(previewStyle.CanvasStyle)),
-                    canvasStyle: LayoutHelper.GetPreviewBoxStyle(previewStyle.CanvasStyle),
+                        boxStyle: LayoutHelper.GetPreviewPaneStyle(previewStyle.CanvasStyle)),
+                    canvasStyle: LayoutHelper.GetPreviewPaneStyle(previewStyle.CanvasStyle),
                     deviceLayouts: new List<DeviceLayout>()
                     {
                         new(
@@ -348,8 +348,8 @@ public static class LayoutHelperTests
                 canvasLayout: new(
                     canvasBounds: BoxBounds.CreateFromOuterBounds(
                         outerBounds: new(0, 0, 300, 67),
-                        boxStyle: LayoutHelper.GetPreviewBoxStyle(previewStyle.CanvasStyle)),
-                    canvasStyle: LayoutHelper.GetPreviewBoxStyle(previewStyle.CanvasStyle),
+                        boxStyle: LayoutHelper.GetPreviewPaneStyle(previewStyle.CanvasStyle)),
+                    canvasStyle: LayoutHelper.GetPreviewPaneStyle(previewStyle.CanvasStyle),
                     deviceLayouts: new List<DeviceLayout>()
                     {
                         new(
@@ -448,8 +448,8 @@ public static class LayoutHelperTests
                 canvasLayout: new(
                     canvasBounds: BoxBounds.CreateFromOuterBounds(
                         outerBounds: new(0, 0, 706, 194),
-                        boxStyle: LayoutHelper.GetPreviewBoxStyle(previewStyle.CanvasStyle)),
-                    canvasStyle: LayoutHelper.GetPreviewBoxStyle(previewStyle.CanvasStyle),
+                        boxStyle: LayoutHelper.GetPreviewPaneStyle(previewStyle.CanvasStyle)),
+                    canvasStyle: LayoutHelper.GetPreviewPaneStyle(previewStyle.CanvasStyle),
                     deviceLayouts: new List<DeviceLayout>()
                     {
                         new(
@@ -530,8 +530,8 @@ public static class LayoutHelperTests
                 canvasLayout: new(
                     canvasBounds: BoxBounds.CreateFromOuterBounds(
                         outerBounds: new(0, 0, 1600, 225),
-                        boxStyle: LayoutHelper.GetPreviewBoxStyle(previewStyle.CanvasStyle)),
-                    canvasStyle: LayoutHelper.GetPreviewBoxStyle(previewStyle.CanvasStyle),
+                        boxStyle: LayoutHelper.GetPreviewPaneStyle(previewStyle.CanvasStyle)),
+                    canvasStyle: LayoutHelper.GetPreviewPaneStyle(previewStyle.CanvasStyle),
                     deviceLayouts: new List<DeviceLayout>()
                     {
                         new(
@@ -585,7 +585,7 @@ public static class LayoutHelperTests
             // (int)1280.000000000000 -> 1280
             // so we'll compare the raw values, *and* convert to an int-based
             // Rectangle to compare rounded values
-            var actual = LayoutHelper.GetPreviewLayout(data.PreviewStyle, data.DisplayInfo, data.ActivatedScreen);
+            var actual = LayoutHelper.GetPreviewLayout(data.PreviewStyle, data.DisplayInfo, data.ActivatedScreen.DisplayArea.Size);
             var expected = data.ExpectedResult;
             var options = new JsonSerializerOptions
             {
@@ -599,8 +599,8 @@ public static class LayoutHelperTests
             // wrapping it in its own box and positioning the result still ends up in the same
             // place a pre-split FormBounds/PreviewBounds would have (this is coverage that
             // used to live inside GetPreviewLayout itself, before the position/size split).
-            var hostBoxStyle = LayoutHelper.GetHostBoxStyle(data.PreviewStyle.CanvasStyle);
-            var hostBounds = LayoutHelper.GetHostBounds(new RectangleInfo(actual.PreviewSize), hostBoxStyle);
+            var previewWindowStyle = LayoutHelper.GetPreviewWindowStyle(data.PreviewStyle.CanvasStyle);
+            var hostBounds = LayoutHelper.GetPreviewWindowBounds(new RectangleInfo(actual.PreviewSize), previewWindowStyle);
             var actualWindowBounds = LayoutHelper.PositionOnScreen(hostBounds.OuterBounds, data.ActivatedScreen, data.ActivatedLocation);
             var expectedWindowBounds = data.ExpectedWindowBounds;
             Assert.AreEqual(expectedWindowBounds.X, actualWindowBounds.X);
@@ -685,7 +685,7 @@ public static class LayoutHelperTests
             var timer = Stopwatch.StartNew();
             for (var i = 0; i < 10_000; i++)
             {
-                var previewLayout = LayoutHelper.GetPreviewLayout(previewStyle, displayInfo, activatedScreen);
+                var previewLayout = LayoutHelper.GetPreviewLayout(previewStyle, displayInfo, activatedScreen.DisplayArea.Size);
             }
 
             timer.Stop();

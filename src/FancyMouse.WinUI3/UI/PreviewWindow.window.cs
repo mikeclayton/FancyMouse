@@ -48,7 +48,7 @@ public sealed partial class PreviewWindow
         // (in case the user moves it a few pixels while the form is rendered)
         var activatedLocation = MouseHelper.GetCursorPosition();
 
-        var appSettings = ConfigHelper.AppSettings ?? throw new InvalidOperationException();
+        var appSettings = this.ConfigHelper.AppSettings ?? throw new InvalidOperationException();
 
         DisplayInfo displayInfo;
         using (Telemetry.Current.BeginTimer(new { }, "GetDisplayInfo"))
@@ -65,16 +65,16 @@ public sealed partial class PreviewWindow
             previewLayout = LayoutHelper.GetPreviewLayout(
                 previewStyle,
                 displayInfo,
-                activatedScreen: activatedScreen);
+                maximumSize: activatedScreen.DisplayArea.Size);
         }
 
         // the outer border is this window's own responsibility, not the preview pane's -
-        // see LayoutHelper.GetHostBoxStyle. PreviewLayout itself has no desktop position
+        // see LayoutHelper.GetPreviewWindowStyle. PreviewLayout itself has no desktop position
         // (only a size - see PreviewLayout), so positioning the window on the desktop -
         // centered on the activated location, clamped to the activated screen - is entirely
         // this window's own job too.
-        var hostBoxStyle = LayoutHelper.GetHostBoxStyle(previewStyle.CanvasStyle);
-        var hostBounds = LayoutHelper.GetHostBounds(new RectangleInfo(previewLayout.PreviewSize), hostBoxStyle);
+        var previewWindowStyle = LayoutHelper.GetPreviewWindowStyle(previewStyle.CanvasStyle);
+        var hostBounds = LayoutHelper.GetPreviewWindowBounds(new RectangleInfo(previewLayout.PreviewSize), previewWindowStyle);
         var positionedHostOuterBounds = LayoutHelper.PositionOnScreen(hostBounds.OuterBounds, activatedScreen, activatedLocation);
 
         // a newer activation superseding this one is the common, expected case under rapid
@@ -91,7 +91,7 @@ public sealed partial class PreviewWindow
         (int Width, int Height, int CornerRadius) windowRegion;
         using (Telemetry.Current.BeginTimer(new { }, "RenderBorderAsync"))
         {
-            windowRegion = await this.RenderBorderAsync(previewLayout, hostBoxStyle)
+            windowRegion = await this.RenderBorderAsync(previewLayout, previewWindowStyle)
                 .ConfigureAwait(false);
         }
 
@@ -117,7 +117,7 @@ public sealed partial class PreviewWindow
 
         var pipeline = new ScreenshotCapturePipeline(new PreviewPaneScreenshotSink(this), cancellation.Token);
 
-        // one capture provider per device - see IScreenshotCaptureProvider/
+        // create one capture provider per device - see IScreenshotCaptureProvider/
         // DesktopScreenshotCaptureProvider remarks for why a single instance is safe (and
         // necessary) to share across all of that device's screens. Ownership of each provider
         // transfers to the pipeline - see ScreenshotCapturePipeline.DisposeAsync.
@@ -131,11 +131,10 @@ public sealed partial class PreviewWindow
             }
         }
 
-        // the activated screen's own capture must complete before the window is shown,
+        // the activated screen's capture must complete before the window is shown,
         // otherwise a *later* capture of that screen would risk capturing the preview window
         // itself, since it's positioned on top of the activated screen. We only need the
-        // capture itself to be done here, not for it to have reached the PreviewPane yet - the
-        // pipeline pushes every result to the pane independently, in the background.
+        // capture itself to be done here, not the full initialisation of that screen's controls.
         var activatedCaptureTask = captureTasks
             .Single(entry => object.ReferenceEquals(entry.ScreenLayout.ScreenInfo, activatedScreen))
             .CaptureTask;
@@ -144,12 +143,10 @@ public sealed partial class PreviewWindow
         {
             // give every screen up to ScreenshotGracePeriod to finish capturing before
             // showing the window - a typical (fast, local) activation finishes well within
-            // that and shows fully populated, with none of the placeholder-then-backfill
-            // repainting a reader would otherwise see. A screen that's still slow after that
-            // (e.g. a future remote capture provider) doesn't hold the window hostage though
-            // - it just backfills afterwards, same as it would have anyway. The activated
-            // screen's own capture is still awaited separately below regardless of which way
-            // the race went, since that one's non-negotiable (see above).
+            // that and shows fully populated, and a screen whose capture is still executing
+            // will have either a blank background image or a blurred version of the previous
+            // screenshot shown instead until the capture is ready, at which point the screen's
+            // image is automatically updated.
             var allCaptureTasks = captureTasks.Select(entry => entry.CaptureTask).ToArray();
             using (Telemetry.Current.BeginTimer(new { }, "gracePeriodRace"))
             {
@@ -226,12 +223,8 @@ public sealed partial class PreviewWindow
     }
 
     /// <summary>
-    /// Reveals the window by swapping its clip region from empty (see <see cref="HideWindow"/>) to
-    /// <paramref name="width"/> x <paramref name="height"/> with corner radius
-    /// <paramref name="cornerRadius"/> - the same values <see cref="RenderBorderAsync"/> rendered
-    /// against, passed back in here rather than reapplied as part of that method, so the region
-    /// only ever shows real, fully-built content instead of becoming visible partway through
-    /// rendering it.
+    /// Shows the window by swapping its clip region from empty (see <see cref="HideWindow"/>) to
+    /// <paramref name="width"/> x <paramref name="height"/> with a curved corner mask.
     /// </summary>
     private async Task ShowWindowAsync(int width, int height, int cornerRadius, CancellationToken cancellationToken)
     {

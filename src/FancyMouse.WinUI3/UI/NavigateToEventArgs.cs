@@ -4,10 +4,10 @@ using FancyMouse.Models.Drawing;
 namespace FancyMouse.WinUI3.UI;
 
 /// <summary>
-/// Carries the intent behind a screen click, or a keyboard shortcut that means the same thing
-/// (1-9, arrow keys, P, Home, End) - "move the pointer to this location on this device". Mouse
-/// and keyboard both resolve to the exact same event so the host only needs one handler for
-/// either.
+/// Implements the NavigateTo event that is used by the PreviewWindow to signal
+/// to the hosting application that the user wants to move the cursor to a specific
+/// location. Can be raised as the result of a mouse click on the preview window,
+/// or a keyboard shortcut that means the same thing (e.g. 1-9, arrow keys, P, Home, End)
 /// </summary>
 public sealed class NavigateToEventArgs : EventArgs
 {

@@ -10,67 +10,112 @@ namespace FancyMouse.Common.Helpers;
 
 public static class LayoutHelper
 {
+    /*
+
+        we use a poor-man's version of the w3c "box model" (see FancyMouse.Models.Styles.BoxStyle)
+        to calculate sizes and positions of individual ui components. the diagram below shows the
+        logical organisation of components:
+
+        * the overall PreviewWindow - a container for all of the ui components. this directly
+          hosts the outer preview border control, a child PreviewPane and a status bar control
+
+          +--------[preview window]--------+
+          |▒▒▒▒▒▒▒▒▒[outer border]▒▒▒▒▒▒▒▒▒|
+          |▒▒+------[preview pane]------+▒▒|
+          |▒▒|                          |▒▒|
+          |▒▒|                          |▒▒|
+          |▒▒|                          |▒▒|
+          |▒▒+--------------------------+▒▒|
+          |▒▒+-------[status bar]-------+▒▒|
+          |▒▒|░░░░░░░░░░░░░░░░░░░░░░░░░░|▒▒|
+          |▒▒+--------------------------+▒▒|
+          |▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒|
+          +--------------------------------+
+
+        * the child PreviewPane - this contains the preview background, the padding from the
+          outer border, the screen bezels and screenshot images. the "device grid" in the diagram
+          is a logical grid - it doesn't exist in the layout or control hierarchy, and only
+          exists as a set of temporary bounds during the actual layout calculation.
+
+          +---------------------------[preview pane]----------------------------+
+          |+---------------------------[background]----------------------------+|
+          ||░░░░░░░░░░░░░░░░░░░░░░░░░░░░░[padding]░░░░░░░░░░░░░░░░░░░░░░░░░░░░░||
+          ||▒▒+------------------------[device grid]-+----------------------+▒▒||
+          ||▒▒|                                      |▓▓▓▓▓▓[device 2]▓▓▓▓▓▓|▒▒||
+          ||▒▒|                                      |▓▓░░░░[screen 1]░░░░▓▓|▒▒||
+          ||▒▒|▓▓▓▓▓▓▓▓▓▓▓▓▓▓[device 1]▓▓▓▓▓▓▓▓▓▓▓▓▓▓|▓▓░░              ░░▓▓|▒▒||
+          ||▒▒|▓▓░░░░[screen 1]░░░░░░[screen 2]░░░░▓▓|▓▓░░              ░░▓▓|▒▒||
+          ||▒▒|▓▓░░              ░░              ░░▓▓|▓▓░░              ░░▓▓|▒▒||
+          ||▒▒|▓▓░░              ░░              ░░▓▓|▓▓░░░░░░░░░░░░░░░░░░▓▓|▒▒||
+          ||▒▒|▓▓░░              ░░              ░░▓▓|▓▓░░░░[screen 2]░░░░▓▓|▒▒||
+          ||▒▒|▓▓░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░▓▓|▓▓░░              ░░▓▓|▒▒||
+          ||▒▒|▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓|▓▓░░              ░░▓▓|▒▒||
+          ||▒▒|                                      |▓▓░░              ░░▓▓|▒▒||
+          ||▒▒|                                      |▓▓░░░░░░░░░░░░░░░░░░▓▓|▒▒||
+          ||▒▒|                                      |▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓|▒▒||
+          ||▒▒+--------------------------------------+----------------------+▒▒||
+          ||▒▒|        ▓▓▓▓▓▓[device 3]▓▓▓▓▓▓        |                      |▒▒||
+          ||▒▒|        ▓▓░░░░[screen 1]░░░░▓▓        |                      |▒▒||
+          ||▒▒|        ▓▓░░              ░░▓▓        |                      |▒▒||
+          ||▒▒|        ▓▓░░              ░░▓▓        |   ▓▓▓[device 4]▓▓▓   |▒▒||
+          ||▒▒|        ▓▓░░              ░░▓▓        |   ▓▓░[screen 1]░▓▓   |▒▒||
+          ||▒▒|        ▓▓░░░░░░░░░░░░░░░░░░▓▓        |   ▓▓░░        ░░▓▓   |▒▒||
+          ||▒▒|        ▓▓░░░░[screen 2]░░░░▓▓        |   ▓▓░░        ░░▓▓   |▒▒||
+          ||▒▒|        ▓▓░░              ░░▓▓        |   ▓▓░░░░░░░░░░░░▓▓   |▒▒||
+          ||▒▒|        ▓▓░░              ░░▓▓        |   ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓   |▒▒||
+          ||▒▒|        ▓▓░░              ░░▓▓        |                      |▒▒||
+          ||▒▒|        ▓▓░░░░░░░░░░░░░░░░░░▓▓        |                      |▒▒||
+          ||▒▒|        ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓        |                      |▒▒||
+          ||▒▒+-------------------------------------------------------------+▒▒||
+          ||▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒||
+          |+-------------------------------------------------------------------+|
+          +---------------------------------------------------------------------+
+
+        note that the style settings in the config file get chopped up into two
+        different layouts - the outer border's *margin* and *thickness* belong
+        in the PreviewWindow but the outer *padding* is converted into an inner
+        padding inside the PreviewPane so the background can belong inside the
+        PreviewPane and be the correct size, rather than owned by the outer
+        PreviewWindow.
+
+    */
+
+    /// <summary>
+    /// Returns the smallest rectangle that contains all of the specified screen bounds.
+    /// </summary>
     public static RectangleInfo GetCombinedScreenBounds(List<RectangleInfo> screenBounds)
     {
+        // we can't simply start with (0,0,0,0) and expand to encompass all screen bounds because
+        // (0,0,0,0) might not actually exist in the combined region - for example if
+        // "screenBounds = [(100, 100, 100, 100)]" we'd end up (incorrectly) with (0, 0, 200, 200).
+        // our actual approach is:
+        // * if the input is a single bounds we'll just return that
+        // * otherwise we use the *first* bounds as the seed for combining the remaining bounds
         return screenBounds.Skip(1).Aggregate(
             seed: screenBounds.First(),
             (combined, screenBounds) => combined.Union(screenBounds));
     }
 
+    /// <param name="maximumSize">
+    /// An optional upper bound on the layout's size.
+    /// If specified, device and screen dimensions will be scaled down as required in order for the final layout to fit inside the bounds.
+    /// If <see langword="null"/>, the layout size will be calculated to allow full-size device and screen visualisations.
+    /// </param>
+    /// <param name="statusBarHeight">
+    /// The height of the area to reserve at the bottom of the layout area (inside the outer border) to accomodate a status/tip bar strip.
+    /// </param>
     public static PreviewLayout GetPreviewLayout(
-        PreviewStyle previewStyle, DisplayInfo displayInfo, ScreenInfo activatedScreen)
+        PreviewStyle previewStyle, DisplayInfo displayInfo, SizeInfo? maximumSize = null)
     {
         ArgumentNullException.ThrowIfNull(previewStyle);
         ArgumentNullException.ThrowIfNull(displayInfo);
-        ArgumentNullException.ThrowIfNull(activatedScreen);
 
-        /*
-
-           example layout:
-
-           +-------------------------------[host]-------------------------------+
-           |▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒[preview]▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒|
-           |▒▒+----------------------------[grid]----+----------------------+▒▒|
-           |▒▒|                                      |▓▓▓▓▓▓[device 2]▓▓▓▓▓▓|▒▒|
-           |▒▒|                                      |▓▓░░░░[screen 1]░░░░▓▓|▒▒|
-           |▒▒|▓▓▓▓▓▓▓▓▓▓▓▓▓▓[device 1]▓▓▓▓▓▓▓▓▓▓▓▓▓▓|▓▓░░              ░░▓▓|▒▒|
-           |▒▒|▓▓░░░░[screen 1]░░░░░░[screen 2]░░░░▓▓|▓▓░░              ░░▓▓|▒▒|
-           |▒▒|▓▓░░              ░░              ░░▓▓|▓▓░░              ░░▓▓|▒▒|
-           |▒▒|▓▓░░              ░░              ░░▓▓|▓▓░░░░░░░░░░░░░░░░░░▓▓|▒▒|
-           |▒▒|▓▓░░              ░░              ░░▓▓|▓▓░░░░[screen 2]░░░░▓▓|▒▒|
-           |▒▒|▓▓░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░▓▓|▓▓░░              ░░▓▓|▒▒|
-           |▒▒|▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓|▓▓░░              ░░▓▓|▒▒|
-           |▒▒|                                      |▓▓░░              ░░▓▓|▒▒|
-           |▒▒|                                      |▓▓░░░░░░░░░░░░░░░░░░▓▓|▒▒|
-           |▒▒|                                      |▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓|▒▒|
-           |▒▒+--------------------------------------+----------------------+▒▒|
-           |▒▒|        ▓▓▓▓▓▓[device 3]▓▓▓▓▓▓        |                      |▒▒|
-           |▒▒|        ▓▓░░░░[screen 1]░░░░▓▓        |                      |▒▒|
-           |▒▒|        ▓▓░░              ░░▓▓        |                      |▒▒|
-           |▒▒|        ▓▓░░              ░░▓▓        |   ▓▓▓[device 4]▓▓▓   |▒▒|
-           |▒▒|        ▓▓░░              ░░▓▓        |   ▓▓░[screen 1]░▓▓   |▒▒|
-           |▒▒|        ▓▓░░░░░░░░░░░░░░░░░░▓▓        |   ▓▓░░        ░░▓▓   |▒▒|
-           |▒▒|        ▓▓░░░░[screen 2]░░░░▓▓        |   ▓▓░░        ░░▓▓   |▒▒|
-           |▒▒|        ▓▓░░              ░░▓▓        |   ▓▓░░░░░░░░░░░░▓▓   |▒▒|
-           |▒▒|        ▓▓░░              ░░▓▓        |   ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓   |▒▒|
-           |▒▒|        ▓▓░░              ░░▓▓        |                      |▒▒|
-           |▒▒|        ▓▓░░░░░░░░░░░░░░░░░░▓▓        |                      |▒▒|
-           |▒▒|        ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓        |                      |▒▒|
-           |▒▒+--------------------------------------+----------------------+▒▒|
-           |▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒|
-           +-------------------------------------------------------------------+
-
-           the "host" box (margin/border only) is a hosting window's own
-           concern - see GetHostBoxStyle/GetHostBounds - everything from
-           "preview" inward is what this method actually returns.
-
-        */
-
-        var hostBoxStyle = LayoutHelper.GetHostBoxStyle(previewStyle.CanvasStyle);
-        var previewBoxStyle = LayoutHelper.GetPreviewBoxStyle(previewStyle.CanvasStyle);
+        var previewWindowStyle = LayoutHelper.GetPreviewWindowStyle(previewStyle.CanvasStyle);
+        var previewPaneStyle = LayoutHelper.GetPreviewPaneStyle(previewStyle.CanvasStyle);
 
         // arrange the preview, canvas, devices and screens
-        var previewLayout = LayoutHelper.CreateInitialPreviewLayout(previewStyle, previewBoxStyle, hostBoxStyle, displayInfo, activatedScreen);
+        var previewLayout = LayoutHelper.CreateInitialPreviewLayout(previewStyle, previewWindowStyle, previewPaneStyle, maximumSize);
+        LayoutHelper.AddDeviceAndScreenStyles(previewLayout, previewStyle, displayInfo);
         LayoutHelper.ArrangeAndScaleDeviceLayouts(previewLayout);
         LayoutHelper.ArrangeAndScaleScreenLayouts(previewLayout);
         LayoutHelper.ArrangeAndResizeCanvasLayout(previewLayout);
@@ -81,17 +126,18 @@ public static class LayoutHelper
     }
 
     /// <summary>
-    /// Positions an arbitrary rectangle (typically a hosting window's own outer bounds, from
-    /// wrapping a <see cref="PreviewLayout.PreviewSize"/> in <see cref="GetHostBoxStyle"/>) on
-    /// the desktop - centered on the activated location, clamped to stay fully within the
-    /// activated screen. <see cref="PreviewLayout"/> itself deliberately knows nothing about
-    /// desktop position - this is entirely a hosting window's own concern.
+    /// Positions an arbitrary rectangle (typically a PreviewWindow's own outer bounds) on
+    /// the desktop - centered on the activated location.
     /// </summary>
     public static RectangleInfo PositionOnScreen(RectangleInfo bounds, ScreenInfo activatedScreen, PointInfo activatedLocation)
     {
         ArgumentNullException.ThrowIfNull(bounds);
         ArgumentNullException.ThrowIfNull(activatedScreen);
         ArgumentNullException.ThrowIfNull(activatedLocation);
+
+        // center the bounds on the activated location, *but* if the activated location is
+        // near the edge of the screen that *could* cause the bounding box to fall partially
+        // outside the screen bounds so we'll nudge it back inside the screen bounds as well
         return bounds
             .Center(activatedLocation)
             .MoveInside(activatedScreen.DisplayArea);
@@ -103,7 +149,7 @@ public static class LayoutHelper
     /// zero padding since there's no gap between the border's inner edge and the preview
     /// pane's own content - the preview pane's background fills right up to its own edge.
     /// </summary>
-    public static BoxStyle GetHostBoxStyle(BoxStyle canvasStyle)
+    public static BoxStyle GetPreviewWindowStyle(BoxStyle canvasStyle)
     {
         ArgumentNullException.ThrowIfNull(canvasStyle);
         return new BoxStyle(
@@ -116,10 +162,10 @@ public static class LayoutHelper
     /// <summary>
     /// Derives the box style a <see cref="PreviewLayout"/> uses for its own content - zero
     /// margin and border (both are now the hosting window's job, see
-    /// <see cref="GetHostBoxStyle"/>) and the padding/background the preview pane renders
+    /// <see cref="GetPreviewWindowStyle"/>) and the padding/background the preview pane renders
     /// itself, inset from its own bounds.
     /// </summary>
-    public static BoxStyle GetPreviewBoxStyle(BoxStyle canvasStyle)
+    public static BoxStyle GetPreviewPaneStyle(BoxStyle canvasStyle)
     {
         ArgumentNullException.ThrowIfNull(canvasStyle);
         return new BoxStyle(
@@ -130,28 +176,85 @@ public static class LayoutHelper
     }
 
     /// <summary>
-    /// Computes a hosting window's own wrapping box - margin, border, and a content box that
-    /// exactly matches <paramref name="previewBounds"/> - both zero-based, since
-    /// <see cref="PreviewLayout"/> (and everything nested under it) has no notion of desktop
-    /// position, only size (see <see cref="PreviewLayout.PreviewSize"/>). A hosting window
-    /// uses this both to work out its own on-screen footprint size (typically passing
-    /// <c>new RectangleInfo(previewLayout.PreviewSize)</c>, then positioning the result with
-    /// <see cref="PositionOnScreen"/>) and to work out where to render the border image
-    /// (passing <see cref="CanvasLayout.CanvasBounds"/>'s <c>OuterBounds</c> instead, since
-    /// that's also zero-based and rendering happens into a bitmap of its own).
+    /// Takes the size of a PreviewPane's layout and uses it as the baseline for calculating the
+    /// containing PreviewWindow's size. Effectively adds the outer border and margin onto the
+    /// PreviewPane size.
     /// </summary>
-    public static BoxBounds GetHostBounds(RectangleInfo previewBounds, BoxStyle hostBoxStyle)
+    public static BoxBounds GetPreviewWindowBounds(SizeInfo previewSize, BoxStyle previewWindowStyle)
     {
-        ArgumentNullException.ThrowIfNull(previewBounds);
-        ArgumentNullException.ThrowIfNull(hostBoxStyle);
-        return BoxBounds.CreateFromContentBounds(
-            contentBounds: previewBounds,
-            boxStyle: hostBoxStyle);
+        ArgumentNullException.ThrowIfNull(previewSize);
+        ArgumentNullException.ThrowIfNull(previewWindowStyle);
+        var contentBounds = new RectangleInfo(0, 0, previewSize.Width, previewSize.Height);
+        return LayoutHelper.GetPreviewWindowBounds(contentBounds, previewWindowStyle);
     }
 
-    internal static PreviewLayout.Builder CreateInitialPreviewLayout(
-        PreviewStyle previewStyle, BoxStyle previewBoxStyle, BoxStyle hostBoxStyle, DisplayInfo displayInfo, ScreenInfo activatedScreen)
+    /// <summary>
+    /// Takes the bounds of a PreviewPane's layout and uses it as the baseline
+    /// for calculating the containing PreviewWindow's size. Effectively adds
+    /// the outer border and margin onto the PreviewPane size and includes room
+    /// for a status bar of given height.
+    /// </summary>
+    public static BoxBounds GetPreviewWindowBounds(RectangleInfo previewBounds, BoxStyle previewWindowStyle)
     {
+        ArgumentNullException.ThrowIfNull(previewBounds);
+        ArgumentNullException.ThrowIfNull(previewWindowStyle);
+        return BoxBounds.CreateFromContentBounds(
+            contentBounds: previewBounds,
+            boxStyle: previewWindowStyle);
+    }
+
+    /// <summary>
+    /// Works out the maximum window and pane sizes for the given constraints, and returns a
+    /// <see cref="PreviewLayout.Builder"/> seeded with just <see cref="PreviewLayout.Builder.PreviewSize"/>
+    /// and the canvas's own bounds/style - no devices yet, see <see cref="AddDeviceAndScreenStyles"/>.
+    /// </summary>
+    internal static PreviewLayout.Builder CreateInitialPreviewLayout(
+        PreviewStyle previewStyle, BoxStyle previewWindowStyle, BoxStyle previewPaneStyle, SizeInfo? maximumSize = null)
+    {
+        ArgumentNullException.ThrowIfNull(previewStyle);
+
+        // work out the maximum allowed size of the *window's* outer footprint:
+        // * can't be bigger than maximumSize, if the caller gave one (e.g. the activated screen,
+        //   for a caller rendering a real on-screen window)
+        // * can't be bigger than the configured canvas size
+        var windowMaxSize = (maximumSize is not null)
+            ? previewStyle.CanvasSize.Clamp(maximumSize)
+            : previewStyle.CanvasSize;
+
+        // the preview pane's own maximum size is whatever's left of that footprint once the
+        // window's margin/border allowance has been subtracted from it - pure size arithmetic,
+        // since PreviewLayout deliberately has no position, only a size (see PreviewLayout).
+        var paneMaxSize = windowMaxSize
+            .Shrink(previewWindowStyle.MarginStyle)
+            .Shrink(previewWindowStyle.BorderStyle);
+        var paneMaxBounds = new RectangleInfo(paneMaxSize);
+
+        // this is the root of a nested structure of mutable "builder" objects that can be used
+        // to build the final immutable layout objects once all the bounds have been calculated
+        return new PreviewLayout.Builder
+        {
+            PreviewSize = SizeInfo.Empty,
+            CanvasLayout = new()
+            {
+                CanvasBounds = BoxBounds.CreateFromOuterBounds(
+                    outerBounds: paneMaxBounds,
+                    boxStyle: previewPaneStyle),
+                CanvasStyle = previewPaneStyle,
+            },
+        };
+    }
+
+    /// <summary>
+    /// Populates <paramref name="previewLayout"/>'s device/screen layouts - one
+    /// <see cref="DeviceLayout.Builder"/> per <paramref name="displayInfo"/> device, each with
+    /// its screens' styles already resolved (see its own local <c>GetDeviceScreenColor</c>) but their
+    /// bounds still <see cref="BoxBounds.Empty"/> placeholders, ready for
+    /// <see cref="ArrangeAndScaleDeviceLayouts"/>/<see cref="ArrangeAndScaleScreenLayouts"/> to
+    /// arrange for real.
+    /// </summary>
+    internal static void AddDeviceAndScreenStyles(PreviewLayout.Builder previewLayout, PreviewStyle previewStyle, DisplayInfo displayInfo)
+    {
+        ArgumentNullException.ThrowIfNull(previewLayout);
         ArgumentNullException.ThrowIfNull(previewStyle);
         ArgumentNullException.ThrowIfNull(displayInfo);
 
@@ -161,88 +264,51 @@ public static class LayoutHelper
             throw new ArgumentException("Value must contain at least one device.", nameof(displayInfo));
         }
 
-        // work out the maximum allowed size of the *host's* outer footprint:
-        // * can't be bigger than the activated screen
-        // * can't be bigger than the configured canvas size
-        var hostMaxSize = previewStyle.CanvasSize
-            .Clamp(activatedScreen.DisplayArea.Size);
+        var canvasLayout = previewLayout.CanvasLayout
+            ?? throw new InvalidOperationException();
 
-        // the preview pane's own maximum size is whatever's left of that footprint once the
-        // host's margin/border allowance has been subtracted from it - pure size arithmetic,
-        // since PreviewLayout deliberately has no position, only a size (see PreviewLayout).
-        var previewMaxSize = hostMaxSize
-            .Shrink(hostBoxStyle.MarginStyle)
-            .Shrink(hostBoxStyle.BorderStyle);
-        var previewMaxBounds = new RectangleInfo(previewMaxSize);
-
-        var screenStyles = LayoutHelper.GetDeviceScreenStyles(previewStyle, displayInfo.Devices.Count).ToList();
-
-        // create an initial preview layout.
-        // this is a nested structure of mutable "builder" objects that can be used to
-        // build the final immutable layout objects once all the bounds have been calculated
-        var previewLayout = new PreviewLayout.Builder
-        {
-            PreviewSize = SizeInfo.Empty,
-            CanvasLayout = new()
+        canvasLayout.DeviceLayouts = displayInfo.Devices.Select(
+            (deviceInfo, deviceIndex) =>
             {
-                CanvasBounds = BoxBounds.CreateFromOuterBounds(
-                    outerBounds: previewMaxBounds,
-                    boxStyle: previewBoxStyle),
-                CanvasStyle = previewBoxStyle,
-                DeviceLayouts = displayInfo.Devices.Select(
-                    (deviceInfo, deviceIndex) => new DeviceLayout.Builder
-                    {
-                        DeviceInfo = deviceInfo,
-                        DeviceBounds = BoxBounds.Empty,
-                        DeviceStyle = BoxStyle.Empty,
-                        ScreenLayouts = deviceInfo.Screens.Select(
-                            screenInfo => new ScreenLayout.Builder
-                            {
-                                ScreenInfo = screenInfo,
-                                ScreenBounds = BoxBounds.Empty,
-                                ScreenStyle = screenStyles[deviceIndex],
-                            }).ToList(),
-                    }).ToList(),
-            },
-        };
+                // the first device (index 0, assumed to be "localhost") gets the configured screen
+                // border colour; every other device cycles through ExtraColors (repeating from
+                // the start once exhausted), falling back to the configured colour if none are
+                // configured.
+                var borderColor = (deviceIndex == 0 || previewStyle.ExtraColors.Count == 0)
+                    ? previewStyle.ScreenStyle.BorderStyle.Color
+                    : previewStyle.ExtraColors[(deviceIndex - 1) % previewStyle.ExtraColors.Count];
 
-        return previewLayout;
-    }
-
-    internal static IEnumerable<BoxStyle> GetDeviceScreenStyles(PreviewStyle previewStyle, int screenCount)
-    {
-        // work out the colors to use for the screen borders for each device
-        // (add the default localhost color first and then loop over the extra colors until we've got enough)
-        var screenBorderColors = new List<Color?> { previewStyle.ScreenStyle.BorderStyle.Color };
-        while (screenBorderColors.Count < screenCount)
-        {
-            if (previewStyle.ExtraColors?.Count > 0)
-            {
-                screenBorderColors.AddRange(previewStyle.ExtraColors.Cast<Color?>());
-                continue;
-            }
-
-            screenBorderColors.Add(previewStyle.ScreenStyle.BorderStyle.Color);
-        }
-
-        // convert the colors into screen styles
-        // note - only create a new ScreenStyle if the border color is different.
-        // (this is to preserve a reference to ScreenStyle.Empty - and
-        // "ScreenStyle.IsEmpty == true" - if the new border color is Transparent)
-        return screenBorderColors
-            .Take(screenCount)
-            .Select(
-                color => previewStyle.ScreenStyle.BorderStyle.Color == color
+                // only create a new ScreenStyle if the border color is different from the
+                // configured one - this preserves a reference to the configured ScreenStyle
+                // (and its own "ScreenStyle.IsEmpty == true" if the color is Transparent)
+                // rather than always allocating a fresh, effectively-identical copy.
+                var screenStyle = previewStyle.ScreenStyle.BorderStyle.Color == borderColor
                     ? previewStyle.ScreenStyle
                     : new BoxStyle(
                         previewStyle.ScreenStyle.MarginStyle,
-                        previewStyle.ScreenStyle.BorderStyle.WithColor(color),
+                        previewStyle.ScreenStyle.BorderStyle.WithColor(borderColor),
                         previewStyle.ScreenStyle.PaddingStyle,
-                        previewStyle.ScreenStyle.BackgroundStyle));
+                        previewStyle.ScreenStyle.BackgroundStyle);
+
+                return new DeviceLayout.Builder
+                {
+                    DeviceInfo = deviceInfo,
+                    DeviceBounds = BoxBounds.Empty,
+                    DeviceStyle = BoxStyle.Empty,
+                    ScreenLayouts = deviceInfo.Screens.Select(
+                        screenInfo => new ScreenLayout.Builder
+                        {
+                            ScreenInfo = screenInfo,
+                            ScreenBounds = BoxBounds.Empty,
+                            ScreenStyle = screenStyle,
+                        }).ToList(),
+                };
+            }).ToList();
     }
 
     /// <summary>
-    /// Arranges the device layouts into a non-overlapping grid and scales them to fit inside the specified content bounds.
+    /// Arranges the device layouts into a non-overlapping grid and scales them
+    /// so the grid fits inside the specified content bounds.
     /// </summary>
     internal static void ArrangeAndScaleDeviceLayouts(PreviewLayout.Builder previewLayout)
     {
@@ -434,6 +500,10 @@ public static class LayoutHelper
         }
     }
 
+    /// <summary>
+    /// Crops the layout's canvas bounds to tightly wrap the contained device layouts
+    /// and moves it back to the same origin it started at.
+    /// </summary>
     internal static void ArrangeAndResizeCanvasLayout(PreviewLayout.Builder previewLayout)
     {
         var canvasLayout = previewLayout.CanvasLayout ?? throw new InvalidOperationException();

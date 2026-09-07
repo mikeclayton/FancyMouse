@@ -72,12 +72,13 @@ public partial class App : Application
 
         try
         {
-            var previewWindow = new PreviewWindow(logger: logger);
+            var configHelper = new ConfigHelper(logger);
+            var previewWindow = new PreviewWindow(logger: logger, configHelper: configHelper);
 
             this.VerifyHighDpiMode(logger);
-            this.InitializeAppSettings(logger);
-            this.InitializeTelemetry(timestamp);
-            this.InitializeHotkey(logger, previewWindow);
+            this.InitializeAppSettings(logger, configHelper);
+            this.InitializeTelemetry(timestamp, configHelper);
+            this.InitializeHotkey(logger, previewWindow, configHelper);
             this.InitializeTrayIcon();
         }
         catch (Exception ex)
@@ -127,17 +128,17 @@ public partial class App : Application
     /// Must run before <see cref="InitializeTelemetry"/>, which depends on
     /// <see cref="ConfigHelper.AppSettings"/> being populated already.
     /// </summary>
-    private void InitializeAppSettings(Logger logger)
+    private void InitializeAppSettings(Logger logger, ConfigHelper configHelper)
     {
         var appSettingsPath = ".\\appSettings.json";
         logger.Info(CultureInfo.InvariantCulture, "settings path = {appSettingsPath}", appSettingsPath);
-        ConfigHelper.SetAppSettingsPath(appSettingsPath);
+        configHelper.SetAppSettingsPath(appSettingsPath);
 
         // load the application settings and start the filesystem watcher
         // so we can automatically reload settings if they change on disk
         logger.Info("loading app settings");
-        ConfigHelper.LoadAppSettings();
-        ConfigHelper.StartAppSettingsWatcher();
+        configHelper.LoadAppSettings();
+        configHelper.StartAppSettingsWatcher();
         logger.Info("loaded app settings");
     }
 
@@ -149,11 +150,11 @@ public partial class App : Application
     /// Must run after <see cref="ConfigHelper.LoadAppSettings"/>, since it depends on
     /// <see cref="ConfigHelper.AppSettings"/> being populated already.
     /// </summary>
-    private void InitializeTelemetry(DateTime timestamp)
+    private void InitializeTelemetry(DateTime timestamp, ConfigHelper configHelper)
     {
         Telemetry.SetCurrent(TelemetryContext.Create(nameof(FancyMouse)));
 
-        if (ConfigHelper.AppSettings?.TelemetryEnabled == true)
+        if (configHelper.AppSettings?.TelemetryEnabled == true)
         {
             var telemetryPath = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -175,11 +176,11 @@ public partial class App : Application
     /// window's UI state at the same time, which is visible as a brief white flash before the
     /// correct content redraws.
     /// </summary>
-    private void InitializeHotkey(Logger logger, PreviewWindow previewWindow)
+    private void InitializeHotkey(Logger logger, PreviewWindow previewWindow, ConfigHelper configHelper)
     {
         logger.Info("starting hotkey handler");
 
-        ConfigHelper.SetHotKeyEventHandler(
+        configHelper.SetHotKeyEventHandler(
             (_, _) =>
             {
                 // invoke on the thread the form was created on. this avoids

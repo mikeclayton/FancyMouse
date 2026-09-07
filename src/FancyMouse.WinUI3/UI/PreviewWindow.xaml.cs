@@ -1,4 +1,5 @@
 using FancyMouse.Common.Capture;
+using FancyMouse.WinUI3.Internal.Helpers;
 
 using Microsoft.UI.Xaml;
 
@@ -11,14 +12,20 @@ namespace FancyMouse.WinUI3.UI;
 /// </summary>
 public sealed partial class PreviewWindow : Window
 {
-    public PreviewWindow(NLog.ILogger logger)
+    internal PreviewWindow(NLog.ILogger logger, ConfigHelper configHelper)
     {
         this.Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        this.ConfigHelper = configHelper ?? throw new ArgumentNullException(nameof(configHelper));
         this.InitializeComponent();
         this.InitializeWindow();
     }
 
     private NLog.ILogger Logger
+    {
+        get;
+    }
+
+    private ConfigHelper ConfigHelper
     {
         get;
     }

@@ -58,7 +58,7 @@ public sealed class HotKeyManager
         return (HWND)(this.Window?.Hwnd ?? throw new InvalidOperationException());
     }
 
-    public void SetHoKey(Keystroke? hotKey)
+    public void SetHotKey(Keystroke? hotKey)
     {
         var hwnd = new Lazy<HWND>(() => this.GetHwndOrThrow());
 

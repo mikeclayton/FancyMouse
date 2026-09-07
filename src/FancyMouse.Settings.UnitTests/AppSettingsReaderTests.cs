@@ -22,19 +22,34 @@ public sealed class AppSettingsReaderTests
         }
 
         [TestMethod]
-        public void EmptyJsonShouldReturnDefaultSettings()
+        public void EmptyJsonShouldThrow()
         {
-            var actual = AppSettingsReader.ParseJson(string.Empty);
-            var expected = AppSettings.DefaultSettings;
-            Assert.AreSame(expected, actual);
+            // the concrete exception System.Text.Json throws for malformed JSON
+            // (JsonReaderException) is an internal type, so we can only assert
+            // against its public JsonException base.
+            try
+            {
+                AppSettingsReader.ParseJson(string.Empty);
+                Assert.Fail("Expected a JsonException to be thrown.");
+            }
+            catch (JsonException)
+            {
+                // expected
+            }
         }
 
         [TestMethod]
-        public void InvalidJsonShouldReturnDefaultSettings()
+        public void InvalidJsonShouldThrow()
         {
-            var actual = AppSettingsReader.ParseJson("xxx");
-            var expected = AppSettings.DefaultSettings;
-            Assert.AreSame(expected, actual);
+            try
+            {
+                AppSettingsReader.ParseJson("xxx");
+                Assert.Fail("Expected a JsonException to be thrown.");
+            }
+            catch (JsonException)
+            {
+                // expected
+            }
         }
 
         [TestMethod]

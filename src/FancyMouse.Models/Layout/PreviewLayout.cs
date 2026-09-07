@@ -7,7 +7,7 @@ namespace FancyMouse.Models.Layout;
 /// the outer border and not a position on the desktop. Deliberately excludes the border:
 /// that's a hosting-window concern (drawn by whatever hosts the preview pane, wrapping around
 /// <see cref="PreviewSize"/> with its own margin/border box - see
-/// <c>LayoutHelper.GetHostBoxStyle</c>), not something the preview pane's own layout needs to
+/// <c>LayoutHelper.GetPreviewWindowStyle</c>), not something the preview pane's own layout needs to
 /// know about. Deliberately excludes desktop position too - every bounds in
 /// <see cref="CanvasLayout"/> (and everything nested under it) is relative to this content's
 /// own top-left corner as the origin; deciding where that origin actually lands on the

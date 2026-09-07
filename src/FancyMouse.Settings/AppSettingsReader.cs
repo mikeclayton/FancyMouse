@@ -22,18 +22,10 @@ public static class AppSettingsReader
         }
 
         // determine the version of the config file so we know which converter to use
-        int configVersion;
-        try
-        {
-            var configNode = JsonNode.Parse(configJson);
+        var configNode = JsonNode.Parse(configJson);
 
-            // if the version isn't specified we'll default to v1
-            configVersion = configNode?["version"]?.GetValue<int>() ?? 1;
-        }
-        catch
-        {
-            return AppSettings.DefaultSettings;
-        }
+        // if the version isn't specified we'll default to v1
+        var configVersion = configNode?["version"]?.GetValue<int>() ?? 1;
 
         var appSettings = configVersion switch
         {
