@@ -18,16 +18,13 @@ public static class DrawingHelper
     public static Bitmap RenderBackground(SizeInfo size, BackgroundStyle backgroundStyle)
     {
         // prepare the bitmap (with a transparent background) to draw the background fill onto
-        var boxStyle = new BoxStyle(MarginStyle.Empty, BorderStyle.Empty, PaddingStyle.Empty, backgroundStyle);
-        var canvasBounds = BoxBounds.CreateFromOuterBounds(new RectangleInfo(size), boxStyle);
-        var bounds = canvasBounds.OuterBounds.ToRectangle();
-        var image = new Bitmap(bounds.Width, bounds.Height, PixelFormat.Format32bppPArgb);
+        var backgroundBounds = new RectangleInfo(size).ToRectangle();
+        var image = new Bitmap(backgroundBounds.Width, backgroundBounds.Height, PixelFormat.Format32bppPArgb);
         using var graphics = Graphics.FromImage(image);
         graphics.Clear(Color.Transparent);
 
         // pick a brush matching the configured background - a two-colour gradient, a solid fill
         // (whichever single colour is set), or nothing at all if neither colour is configured
-        var backgroundBounds = canvasBounds.PaddingBounds.ToRectangle();
         using var backgroundBrush = backgroundStyle switch
         {
             { Color1: not null, Color2: not null } =>
@@ -63,10 +60,8 @@ public static class DrawingHelper
     public static Bitmap RenderBorder(SizeInfo size, BorderStyle borderStyle)
     {
         // prepare the bitmap (with a transparent background) to draw the border / bezel onto
-        var boxStyle = new BoxStyle(MarginStyle.Empty, borderStyle, PaddingStyle.Empty, BackgroundStyle.Empty);
-        var hostBounds = BoxBounds.CreateFromOuterBounds(new RectangleInfo(size), boxStyle);
-        var bounds = hostBounds.OuterBounds.ToRectangle();
-        var image = new Bitmap(bounds.Width, bounds.Height, PixelFormat.Format32bppPArgb);
+        var borderBounds = new RectangleInfo(size).ToRectangle();
+        var image = new Bitmap(borderBounds.Width, borderBounds.Height, PixelFormat.Format32bppPArgb);
         using var graphics = Graphics.FromImage(image);
         graphics.Clear(Color.Transparent);
 
@@ -81,7 +76,6 @@ public static class DrawingHelper
         }
 
         // draw a contoured border (could be an outer border or a bezel)
-        var borderBounds = hostBounds.BorderBounds.ToRectangle();
         using var renderer = new BezelRenderer(borderStyle);
         renderer.DrawBezel(graphics, borderBounds.X, borderBounds.Y, borderBounds.Width, borderBounds.Height);
 

@@ -79,8 +79,9 @@ public sealed partial class PreviewWindow
         var hostBounds = LayoutHelper.GetPreviewWindowBounds(previewLayout.PreviewSize, previewWindowStyle, PreviewWindow.TipBarHeight);
         var positionedHostOuterBounds = LayoutHelper.PositionOnScreen(hostBounds.OuterBounds, activatedScreen, activatedLocation);
 
-        // a newer activation might have arrived while we were initialising,
-        // so cancel this activation early if needed
+        // a newer activation superseding this one is the common, expected case under rapid
+        // repeat activation - check here, before paying for the border render below, rather
+        // than only ever noticing via a later awaited call
         cancellationToken.ThrowIfCancellationRequested();
 
         using (Telemetry.Current.BeginTimer(new { }, "PositionWindowAsync"))
@@ -229,7 +230,7 @@ public sealed partial class PreviewWindow
     }
 
     /// <summary>
-    /// SHows the window by swapping its clip region from empty (see <see cref="HideWindow"/>) to
+    /// Shows the window by swapping its clip region from empty (see <see cref="HideWindow"/>) to
     /// <paramref name="width"/> x <paramref name="height"/> with a curved corner mask.
     /// </summary>
     private async Task ShowWindowAsync(int width, int height, int cornerRadius, CancellationToken cancellationToken)

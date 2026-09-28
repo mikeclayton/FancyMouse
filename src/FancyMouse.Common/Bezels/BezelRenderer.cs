@@ -15,15 +15,28 @@ namespace FancyMouse.Common.Bezels;
 /// </summary>
 public sealed class BezelRenderer : IDisposable
 {
-    public BezelRenderer(BorderStyle borderStyle)
+    public BezelRenderer(BorderStyle bezelStyle)
     {
-        ArgumentNullException.ThrowIfNull(borderStyle);
-
-        this.BorderStyle = BezelRenderer.ClampDepth(borderStyle);
+        this.BezelStyle = BezelRenderer.ClampDepth(bezelStyle ?? throw new ArgumentNullException(nameof(bezelStyle)));
+        this.BezelProfile = new BezelProfileCurved((int)this.BezelStyle.Left, (int)this.BezelStyle.Depth);
         this.CornerAtlas = this.DrawCornerTemplates();
     }
 
-    private BorderStyle BorderStyle
+    private BorderStyle BezelStyle
+    {
+        get;
+    }
+
+    /// <summary>
+    /// Gets the lighting profile shared by edge and corner rendering.
+    /// </summary>
+    /// <remarks>
+    /// Scale-independent (a proportion, not a pixel count - see
+    /// <see cref="IBezelProfile.GetProfileNormal"/>), so one instance is valid at both the
+    /// 1× scale the edges render at and the 2× supersampled scale the corner atlas renders
+    /// at - constructed once here and threaded through both rendering paths.
+    /// </remarks>
+    private IBezelProfile BezelProfile
     {
         get;
     }
@@ -42,19 +55,15 @@ public sealed class BezelRenderer : IDisposable
     /// </summary>
     private Bitmap DrawCornerTemplates()
     {
-        var bezelWidth = (int)this.BorderStyle.Left;
+        var bezelWidth = (int)this.BezelStyle.Left;
 
-        // 2x supersampled to match GetCornerTemplates' own corner-atlas resolution - this
-        // duplicates GetCornerTemplates' n/depth calculation for now; a later iteration will
-        // push profile construction further up so it isn't computed in two places.
-        var n = bezelWidth * 2;
-        var depth = (int)this.BorderStyle.Depth * 2;
-        var bezelProfile = new BezelProfileCurved(n, depth);
-
+        // this.BezelProfile is scale-independent, so the same instance used for the
+        // 1× edge rendering is valid here too, even though GetCornerTemplates
+        // renders its atlas at 2× supersampling internally.
         return CornerTemplates.GetCornerTemplates(
             bezelWidth,
-            this.BorderStyle.Color ?? Color.Transparent,
-            bezelProfile);
+            this.BezelStyle.Color ?? Color.Transparent,
+            this.BezelProfile);
     }
 
     /// <summary>
@@ -85,16 +94,11 @@ public sealed class BezelRenderer : IDisposable
     /// </summary>
     public void DrawBezel(Graphics g, int x, int y, int width, int height)
     {
-        var bezelWidth = (int)this.BorderStyle.Left;
+        var bezelWidth = (int)this.BezelStyle.Left;
 
         // ── Straight edge fills + 3-D effects ────────────────────────────────
         // Fills all four strips with flat BezelColor then overlays highlight /
         // shadow gradient effects on the outer and inner depth layers.
-        //
-        // Rendered at 1x (unlike the corner atlas's 2x supersampling in the
-        // constructor), since edges draw directly onto the target image rather
-        // than into an intermediate atlas that gets scaled down.
-        var edgeProfile = new BezelProfileCurved(bezelWidth, (int)this.BorderStyle.Depth);
         BezelGraphics.DrawBezelEdges(
             g,
             x,
@@ -102,8 +106,8 @@ public sealed class BezelRenderer : IDisposable
             width,
             height,
             bezelWidth,
-            this.BorderStyle.Color ?? Color.Transparent,
-            edgeProfile);
+            this.BezelStyle.Color ?? Color.Transparent,
+            this.BezelProfile);
 
         // ── Corners (flat fill + 3-D effects baked in) ────────────────────────
         // Drawn last so the antialiased outer-edge pixels composite correctly

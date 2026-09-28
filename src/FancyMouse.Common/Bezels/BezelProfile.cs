@@ -97,11 +97,11 @@ internal static class BezelProfile
 
         // in the TR, BL and BR corners, the curve of the corner falls just outside
         // the bottom and / or right of the tile due to rasterization (the TR cell
-        // ranges from *pixels* x=0 to x=n-1, but the edge of the curve runs from
-        // x=0 to x=n on the continuous geometric number line).
+        // ranges from *pixels* x=0 to x=cornerRadius-1, but the edge of the curve runs from
+        // x=0 to x=cornerRadius on the continuous geometric number line).
         //
-        // for a border of thickness n the right-most TR offset point is (n-1, 0),
-        // and the offsetDistance is calculated as n - (n-1) = 1. This differs from
+        // for a border of thickness cornerRadius the right-most TR offset point is (cornerRadius-1, 0),
+        // and the offsetDistance is calculated as cornerRadius - (cornerRadius-1) = 1. This differs from
         // the calculation applied to the straight edges which gives 0, and renders
         // a noticeable lighting effect seam where the corner and edge join.
         if (originOffset.X > 0)

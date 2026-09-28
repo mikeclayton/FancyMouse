@@ -226,7 +226,7 @@ public static class BezelGraphics
             var leftLineX = x + pos;
             var rightLineX = x + width - pos - 1;
 
-            // Top:    HL when facing light, SH when facing away - both peak at TL (left→right)
+            // Top:    HL when facing light, SH when facing away (left→right)
             if (forwardMagnitude >= flatEdgeThreshold)
             {
                 BezelGraphics.DrawBezelEdgeLine(
@@ -239,7 +239,7 @@ public static class BezelGraphics
                     fadeColor: frontFacingLight ? GetHighlightColor(BezelConstants.EdgeForwardHighlightFade, forwardMagnitude) : GetShadowColor(BezelConstants.EdgeForwardShadowFade, forwardMagnitude));
             }
 
-            // Right:  HL halved when facing light, SH when facing away - both peak at BR (bottom→top)
+            // Right:  HL when facing light, SH when facing away (bottom→top)
             if (reverseMagnitude >= flatEdgeThreshold)
             {
                 BezelGraphics.DrawBezelEdgeLine(
@@ -252,7 +252,7 @@ public static class BezelGraphics
                     fadeColor: backFacingLight ? GetHighlightColor(BezelConstants.EdgeReverseHighlightFade, reverseMagnitude) : GetShadowColor(BezelConstants.EdgeReverseShadowFade, reverseMagnitude));
             }
 
-            // Bottom: HL halved when facing light, SH when facing away - both peak at BR (right→left)
+            // Bottom: HL when facing light, SH when facing away (right→left)
             if (reverseMagnitude >= flatEdgeThreshold)
             {
                 BezelGraphics.DrawBezelEdgeLine(
@@ -265,7 +265,7 @@ public static class BezelGraphics
                     fadeColor: backFacingLight ? GetHighlightColor(BezelConstants.EdgeReverseHighlightFade, reverseMagnitude) : GetShadowColor(BezelConstants.EdgeReverseShadowFade, reverseMagnitude));
             }
 
-            // Left:   HL when facing light, SH when facing away - both peak at TL (top→bottom)
+            // Left:   HL when facing light, SH when facing away (top→bottom)
             if (forwardMagnitude >= flatEdgeThreshold)
             {
                 BezelGraphics.DrawBezelEdgeLine(
@@ -282,7 +282,7 @@ public static class BezelGraphics
 
     /// <summary>
     /// Draws a solid colored bezel "ring" onto <paramref name="g"/> at position (x, y)
-    /// with size (width × height), filled with <paramref name="color"/> and no 3-D effect.
+    /// with size (width × height), filled with <paramref name="bezelColor"/> and no 3-D effect.
     ///
     /// The outer boundary is a rounded rectangle with radius <paramref name="cornerRadius"/>.
     /// The inner boundary is a plain square-cornered rectangle, inset by
@@ -295,7 +295,7 @@ public static class BezelGraphics
         int width,
         int height,
         int cornerRadius,
-        Color color)
+        Color bezelColor)
     {
         // fail hard on invalid geometry rather than silently drawing nothing
         if (width < 0)
@@ -325,7 +325,7 @@ public static class BezelGraphics
         BezelGraphics.EnableAntialias(g);
 
         using var outerPath = BezelGraphics.GetRoundedRectanglePath(x, y, width, height, cornerRadius);
-        using var fillBrush = new SolidBrush(color);
+        using var fillBrush = new SolidBrush(bezelColor);
 
         // Two-step rendering:
         //

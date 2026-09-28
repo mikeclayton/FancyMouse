@@ -51,7 +51,7 @@ public sealed partial class PreviewPane
 
         // check screen slots from the previous activation and reuse any that are
         // still valid so we can avoid needing to redraw the bezel. where the monitor
-        // is at an index is now different (e.g. due to a monitor being connected or
+        // at an index is now different (e.g. due to a monitor being connected or
         // disconnected) invalidate the existing slot and force a redraw.
         var newSlots = new List<ScreenSlot>(newScreenLayouts.Count);
         for (var i = 0; i < newScreenLayouts.Count; i++)
@@ -95,7 +95,9 @@ public sealed partial class PreviewPane
             }
         }
 
-        // any remaining unmatched slots are no longer required
+        // trim any surplus slots left over from a layout that had more screens than
+        // this one does (e.g. a monitor was unplugged) - everything up to
+        // newScreenLayouts.Count has already been handled (reused or replaced)
         for (var i = newScreenLayouts.Count; i < this.screenSlots.Count; i++)
         {
             this.RemoveScreenSlot(this.screenSlots[i]);
