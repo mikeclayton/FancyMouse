@@ -73,7 +73,7 @@ public static class MouseHelper
                 .ThrowIfFailed();
             _ = User32.GetCursorPos(out var currentPosition)
                 .ThrowIfFailed();
-            if ((currentPosition.X == position.X) || (currentPosition.Y == position.Y))
+            if ((currentPosition.X == position.X) && (currentPosition.Y == position.Y))
             {
                 break;
             }
