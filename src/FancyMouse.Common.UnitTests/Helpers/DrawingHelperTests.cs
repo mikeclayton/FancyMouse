@@ -5,7 +5,6 @@ using FancyMouse.Common.Capture;
 using FancyMouse.Common.Helpers;
 using FancyMouse.Models.Display;
 using FancyMouse.Models.Drawing;
-using FancyMouse.Models.Layout;
 using FancyMouse.Models.Styles;
 
 namespace FancyMouse.Common.UnitTests.Helpers;
@@ -152,11 +151,15 @@ public static class DrawingHelperTests
             // render, since the expected golden images were captured against that. Production
             // code no longer flattens these into a single bitmap itself (screenshots/bezels
             // are laid out as native XAML elements by PreviewPane - see its remarks), so this
-            // test composes them the same way for comparison purposes only, using the same
-            // production rendering primitives (DrawingHelper.RenderBorder/RenderBackground,
-            // and StaticScreenshotCaptureProvider for the screenshot content).
-            var previewWindowStyle = LayoutHelper.GetPreviewWindowStyle(data.PreviewStyle.CanvasStyle);
-            using var actual = await GetPreviewLayoutTests.ComposePreviewImageAsync(previewLayout, previewWindowStyle, desktopImage);
+            // test uses the same shared PreviewHelper.ComposePreviewAsync the SettingsUI style
+            // preview does, for comparison purposes only - clamped to the activated screen,
+            // matching the physical bound a real on-screen preview would be shown under.
+            using var actual = await PreviewHelper.ComposePreviewAsync(
+                data.PreviewStyle,
+                new StaticScreenshotCaptureProvider(desktopImage),
+                data.DisplayInfo,
+                maximumSize: data.ActivatedScreen.DisplayArea.Size,
+                TestContext.CancellationToken);
 
             var currentDirectory = Environment.CurrentDirectory;
 
@@ -177,72 +180,6 @@ public static class DrawingHelperTests
 
             // compare the images
             AssertImagesEqual(expected, actual);
-        }
-
-        /// <summary>
-        /// Composes the border, background, and per-screen bezels/screenshots for a
-        /// <see cref="PreviewLayout"/> into a single flattened image, purely so this test can
-        /// keep comparing against the existing golden images - production code renders these
-        /// as separate layers/elements instead (see <see cref="PreviewLayout"/> and
-        /// <c>FancyMouse.WinUI3.UI.PreviewPane</c>).
-        /// </summary>
-        private static async Task<Bitmap> ComposePreviewImageAsync(
-            PreviewLayout previewLayout, BoxStyle hostBoxStyle, Bitmap desktopImage)
-        {
-            var canvasLayout = previewLayout.CanvasLayout;
-            var hostBounds = LayoutHelper.GetPreviewWindowBounds(canvasLayout.CanvasBounds.OuterBounds, hostBoxStyle)
-                .MoveTo(new PointInfo(0, 0));
-
-            // hostBounds.OuterBounds is now (0,0)-based, so hostBounds.ContentBounds.Location
-            // is exactly the margin+border offset to draw the (also zero-based)
-            // canvas-relative background/bezels/screenshots at, within the combined bitmap.
-            var offsetX = (int)hostBounds.ContentBounds.X;
-            var offsetY = (int)hostBounds.ContentBounds.Y;
-
-            // RenderBorder/RenderBackground are no longer box-aware - they just draw as large as
-            // the size they're given, so it's on this caller to position the result at the right
-            // box-model rectangle (BorderBounds/PaddingBounds/etc.) itself.
-            var hostBorderBounds = hostBounds.BorderBounds;
-            using var borderImage = DrawingHelper.RenderBorder(hostBorderBounds.Size, hostBoxStyle.BorderStyle);
-            using var backgroundImage = DrawingHelper.RenderBackground(canvasLayout.CanvasBounds.OuterBounds.Size, canvasLayout.CanvasStyle.BackgroundStyle);
-
-            var combinedBounds = hostBounds.OuterBounds.ToRectangle();
-            var combinedImage = new Bitmap(combinedBounds.Width, combinedBounds.Height, PixelFormat.Format32bppPArgb);
-            using var combinedGraphics = Graphics.FromImage(combinedImage);
-            combinedGraphics.Clear(Color.Transparent);
-            combinedGraphics.DrawImageUnscaled(borderImage, (int)hostBorderBounds.X, (int)hostBorderBounds.Y);
-            combinedGraphics.DrawImageUnscaled(backgroundImage, offsetX, offsetY);
-
-            var captureProvider = new StaticScreenshotCaptureProvider(desktopImage);
-            foreach (var deviceLayout in canvasLayout.DeviceLayouts)
-            {
-                foreach (var screenLayout in deviceLayout.ScreenLayouts)
-                {
-                    // screens sit at a fractional (scaled) position within the canvas, unlike
-                    // the canvas/host boxes above which are already zero-based - anchor at the
-                    // *truncated* border position, matching how production now positions the
-                    // bezel bitmap (see PreviewPane.CreateScreenSlot/PositionElement).
-                    var screenBorderBounds = screenLayout.ScreenBounds.BorderBounds;
-                    var anchorX = (int)screenBorderBounds.X;
-                    var anchorY = (int)screenBorderBounds.Y;
-
-                    using var bezelImage = DrawingHelper.RenderBorder(screenBorderBounds.Size, screenLayout.ScreenStyle.BorderStyle);
-                    combinedGraphics.DrawImageUnscaled(
-                        bezelImage,
-                        offsetX + anchorX,
-                        offsetY + anchorY);
-
-                    using var screenshotImage = await captureProvider.CaptureAsync(
-                        screenLayout.ScreenInfo.DisplayArea,
-                        screenLayout.ScreenBounds.ContentBounds.Size);
-                    combinedGraphics.DrawImageUnscaled(
-                        screenshotImage,
-                        offsetX + (int)screenLayout.ScreenBounds.ContentBounds.X,
-                        offsetY + (int)screenLayout.ScreenBounds.ContentBounds.Y);
-                }
-            }
-
-            return combinedImage;
         }
 
         private static Bitmap LoadImageResource(string filename)
@@ -302,5 +239,7 @@ public static class DrawingHelperTests
                 }
             }
         }
+
+        public TestContext TestContext { get; set; }
     }
 }
