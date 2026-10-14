@@ -23,9 +23,23 @@ internal static class SettingsConverterV2
             ?? throw new InvalidOperationException();
         var hotkey = SettingsConverterV1.ConvertToKeystroke(appConfig.Hotkey);
         var previewStyle = SettingsConverterV2.MergePreviewStyles(appConfig.Preview, AppSettings.DefaultSettings.PreviewStyle);
+        var previewType = SettingsConverterV2.ParsePreviewType(appConfig.Preview?.Type);
+
         var telemetryEnabled = appConfig.Telemetry?.Enabled ?? false;
-        var appSettings = new AppSettings(hotkey, previewStyle, telemetryEnabled);
+        var appSettings = new AppSettings(hotkey, previewStyle, previewType, telemetryEnabled);
         return appSettings;
+    }
+
+    /// <summary>
+    /// Parses the persisted "type" string into a <see cref="PreviewType"/>, defaulting to
+    /// <see cref="PreviewType.Bezelled"/> for a missing or unrecognised value, matching
+    /// MouseJump's own default.
+    /// </summary>
+    public static PreviewType ParsePreviewType(string? typeName)
+    {
+        return Enum.TryParse<PreviewType>(typeName, ignoreCase: true, out var parsed)
+            ? parsed
+            : PreviewType.Bezelled;
     }
 
     public static PreviewStyle MergePreviewStyles(PreviewStyleSettings? previewStyle, PreviewStyle defaultStyle)

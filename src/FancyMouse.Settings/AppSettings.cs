@@ -2,6 +2,7 @@
 
 using FancyMouse.HotKeys;
 using FancyMouse.Models.Styles;
+using FancyMouse.Settings.V2;
 
 using Keys = FancyMouse.HotKeys.Keys;
 
@@ -19,6 +20,7 @@ public sealed class AppSettings
             key: Keys.F,
             modifiers: KeyModifiers.Control | KeyModifiers.Alt | KeyModifiers.Shift
         ),
+        previewType: PreviewType.Bezelled,
         previewStyle: new(
             canvasSize: new(
                 width: 1600,
@@ -67,10 +69,12 @@ public sealed class AppSettings
     public AppSettings(
         Keystroke hotkey,
         PreviewStyle previewStyle,
+        PreviewType previewType,
         bool telemetryEnabled)
     {
         this.Hotkey = hotkey ?? throw new ArgumentNullException(nameof(hotkey));
         this.PreviewStyle = previewStyle ?? throw new ArgumentNullException(nameof(previewStyle));
+        this.PreviewType = previewType;
         this.TelemetryEnabled = telemetryEnabled;
     }
 
@@ -80,6 +84,16 @@ public sealed class AppSettings
     }
 
     public PreviewStyle PreviewStyle
+    {
+        get;
+    }
+
+    /// <summary>
+    /// Gets which style should actually be rendered - one of the built-in presets, or
+    /// <see cref="PreviewStyle"/> itself for <see cref="V2.PreviewType.Custom"/>. See
+    /// <see cref="V2.SettingsConverterV2.GetActivePreviewStyle"/> for deriving the one to render.
+    /// </summary>
+    public PreviewType PreviewType
     {
         get;
     }
