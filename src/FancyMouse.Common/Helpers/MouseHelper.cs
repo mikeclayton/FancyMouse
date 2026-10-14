@@ -1,4 +1,6 @@
-﻿using FancyMouse.Common.Win32Gen;
+﻿using System.Runtime.InteropServices;
+
+using FancyMouse.Common.Win32Gen;
 using FancyMouse.Models.Drawing;
 
 using Windows.Win32.UI.Input.KeyboardAndMouse;
