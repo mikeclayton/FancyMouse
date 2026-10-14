@@ -8,7 +8,7 @@ using Windows.Win32.UI.WindowsAndMessaging;
 
 namespace FancyMouse.WinUI3.UI;
 
-public sealed partial class PreviewWindow
+internal sealed partial class PreviewWindow
 {
     /// <summary>
     /// This window's own handle - captured once in <see cref="InitializeWindow"/> and reused

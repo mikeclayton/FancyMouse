@@ -16,19 +16,19 @@ internal static class BezelPrimitives
     ///        .   \ .
     ///        .    -._____  _ end value
     ///  +-----+-----+-----+
-    ///        ^   ^
-    ///        |   |
-    ///        |   easing interval end
+    ///        ^     ^
+    ///        |     |
+    ///        |     easing interval end
     ///        easing interval start
     /// </code>
     ///
     /// </summary>
     /// <returns>
-    /// if x <= easingIntervalStart, returns startValue.
-    /// if x >= easingIntervalEnd, returns endValue.
+    /// if x &lt;= intervalStart, returns startValue.
+    /// if x &gt;= intervalEnd, returns endValue.
     /// otherwise returns an eased value between startValue and endValue
     /// </returns>
-    internal static double CosineEase(
+    private static double CosineEase(
         double x,
         double intervalStart,
         double intervalEnd,

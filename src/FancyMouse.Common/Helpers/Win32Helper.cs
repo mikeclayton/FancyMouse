@@ -37,8 +37,15 @@ public static class Win32Helper
         ArgumentNullException.ThrowIfNullOrEmpty(className);
         ArgumentNullException.ThrowIfNull(windowProcDelegate);
 
+        // the window class is registered against the exe's module handle (a null
+        // module name means "the file used to create the calling process").
+        // the reference doesn't need releasing because GetModuleHandle doesn't
+        // increment the module's reference count.
         // see https://learn.microsoft.com/en-us/windows/win32/winmsg/using-messages-and-message-queues
-        var hInstance = (HINSTANCE)Process.GetCurrentProcess().Handle;
+        //     https://learn.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-getmodulehandlew
+        var hInstance = Kernel32.GetModuleHandle(default)
+            .ThrowIfFailed()
+            .GetValue();
 
         // register the window class
         // see https://stackoverflow.com/a/30992796/3156906
@@ -69,7 +76,7 @@ public static class Win32Helper
             }
         }
 
-        var windowClass = new Win32WindowClass(classAtom, className, windowProc);
+        var windowClass = new Win32WindowClass(hInstance, classAtom, className, windowProc);
         return windowClass;
     }
 
@@ -83,18 +90,18 @@ public static class Win32Helper
         unsafe
         {
             hWnd = User32.CreateWindowEx(
-                dwExStyle: 0,
-                lpClassName: windowClass.ClassName,
-                lpWindowName: windowName,
-                dwStyle: 0,
-                X: 0,
-                Y: 0,
-                nWidth: 300,
-                nHeight: 400,
-                hWndParent: HWND.HWND_MESSAGE, // message-only window
-                hMenu: null,
-                hInstance: null,
-                lpParam: null)
+                    dwExStyle: 0,
+                    lpClassName: windowClass.ClassName,
+                    lpWindowName: windowName,
+                    dwStyle: 0,
+                    X: 0,
+                    Y: 0,
+                    nWidth: 300,
+                    nHeight: 400,
+                    hWndParent: HWND.HWND_MESSAGE, // message-only window
+                    hMenu: HMENU.Null,
+                    hInstance: windowClass.HInstance, // must match the instance the class was registered with
+                    lpParam: null)
                 .ThrowIfFailed()
                 .GetValue();
         }

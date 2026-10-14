@@ -1,5 +1,6 @@
-﻿using System.Drawing;
+using System.Drawing;
 using System.Text.Json.Serialization;
+
 using FancyMouse.Models.Styles;
 
 using BorderStyle = FancyMouse.Models.Styles.BorderStyle;

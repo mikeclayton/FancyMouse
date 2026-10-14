@@ -39,7 +39,7 @@ internal sealed class ColorConverter : JsonConverter<Color?>
         }
     }
 
-    internal static string? Serialize(Color? value)
+    private static string? Serialize(Color? value)
     {
         if (!value.HasValue)
         {

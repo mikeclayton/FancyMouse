@@ -34,10 +34,10 @@ internal sealed class MessageLoop
         get;
     }
 
-    public Win32Window? Window
+    private Win32Window? Window
     {
         get;
-        private set;
+        set;
     }
 
     /// <summary>

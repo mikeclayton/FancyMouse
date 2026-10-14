@@ -685,13 +685,15 @@ public static class LayoutHelperTests
             var timer = Stopwatch.StartNew();
             for (var i = 0; i < 10_000; i++)
             {
-                var previewLayout = LayoutHelper.GetPreviewLayout(previewStyle, displayInfo, activatedScreen.DisplayArea.Size);
+                _ = LayoutHelper.GetPreviewLayout(previewStyle, displayInfo, activatedScreen.DisplayArea.Size);
             }
 
             timer.Stop();
 
             // runs on my machine in about 180-200ms, so leave a bit of headroom
-            Assert.IsLessThan(225, timer.ElapsedMilliseconds);
+            Assert.IsTrue(
+                timer.ElapsedMilliseconds < 225,
+                $"expected < 225ms, actual {timer.ElapsedMilliseconds}ms");
         }
     }
 }

@@ -6,7 +6,7 @@ namespace FancyMouse.Common.Telemetry;
 /// <see cref="Telemetry.Current"/> is always safe even before (or without) any real writer being
 /// wired up.
 /// </summary>
-public sealed class NullTelemetryWriter : ITelemetryWriter
+internal sealed class NullTelemetryWriter : ITelemetryWriter
 {
     public static readonly NullTelemetryWriter Instance = new();
 

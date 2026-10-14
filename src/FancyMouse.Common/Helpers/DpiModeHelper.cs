@@ -42,7 +42,9 @@ public static class DpiModeHelper
         // there's a weird problem where AreDpiAwarenessContextsEqual was returning TRUE in debug mode
         // but FALSE in release mode and i couldn't work out why, so we can't do it the *right* way.
         // we'll just use GetAwarenessFromDpiAwarenessContext instead as a near-enough workaround.
-        var dpiAwarenessContext = User32.GetThreadDpiAwarenessContext().IgnoreFailure().GetValue();
+        var dpiAwarenessContext = User32.GetThreadDpiAwarenessContext()
+            .IgnoreFailure()
+            .GetValue();
         var dpiAwareness = User32.GetAwarenessFromDpiAwarenessContext(dpiAwarenessContext)
             .ThrowIfFailed()
             .GetValue();

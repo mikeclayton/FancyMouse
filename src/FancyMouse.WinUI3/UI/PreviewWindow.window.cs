@@ -15,7 +15,7 @@ using Windows.Graphics;
 
 namespace FancyMouse.WinUI3.UI;
 
-public sealed partial class PreviewWindow
+internal sealed partial class PreviewWindow
 {
     public async Task ShowPreviewAsync(CancellationToken cancellationToken)
     {
@@ -27,7 +27,7 @@ public sealed partial class PreviewWindow
             nameof(PreviewWindow.ShowPreviewAsync),
             "-----------"));
 
-        // claim the foreground window as early as possible - see ClaimForegroundWindow
+        // claim the foreground window as early as possible - see SetAsForegroundWindow
         // remarks for why this needs to happen now, before any of the capture/layout work
         // below, rather than later when we actually show the window
         this.SetAsForegroundWindow();
@@ -245,11 +245,13 @@ public sealed partial class PreviewWindow
 
                 var presenter = this.AppWindow.Presenter as OverlappedPresenter
                     ?? throw new InvalidOperationException();
-
-                // we seem to need to turn off topmost and then re-enable it again
-                // when we show the form - otherwise it doesn't always get shown topmost...
-                presenter.IsAlwaysOnTop = false;
-                presenter.IsAlwaysOnTop = true;
+                if (!this.Visible)
+                {
+                    // we seem to need to turn off topmost and then re-enable it again
+                    // when we show the form - otherwise it doesn't always get shown topmost...
+                    presenter.IsAlwaysOnTop = false;
+                    presenter.IsAlwaysOnTop = true;
+                }
 
                 this.ApplyRoundRectRegion(width, height, cornerRadius);
 

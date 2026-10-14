@@ -1,20 +1,32 @@
-﻿namespace FancyMouse.Common.Interop;
+﻿using Windows.Win32.Foundation;
+
+namespace FancyMouse.Common.Interop;
 
 /// <summary>
 /// Wrapper around a Windows window class that can be passed to
 /// external assemblies to manage WNDPROC delegate lifetime without
 /// exposing internals.
 /// </summary>
-public sealed class Win32WindowClass
+internal sealed class Win32WindowClass
 {
-    internal Win32WindowClass(ushort classAtom, string className, Win32WindowProc windowProc)
+    internal Win32WindowClass(HINSTANCE hInstance, ushort classAtom, string className, Win32WindowProc windowProc)
     {
+        this.HInstance = hInstance;
         this.ClassAtom = classAtom;
         this.ClassName = className ?? throw new ArgumentNullException(nameof(className));
         this.WindowProc = windowProc ?? throw new ArgumentNullException(nameof(windowProc));
     }
 
-    internal ushort ClassAtom
+    /// <summary>
+    /// Gets the module instance the class was registered with - windows created
+    /// from this class need to pass the same value to CreateWindowEx.
+    /// </summary>
+    internal HINSTANCE HInstance
+    {
+        get;
+    }
+
+    private ushort ClassAtom
     {
         get;
     }
@@ -24,7 +36,7 @@ public sealed class Win32WindowClass
         get;
     }
 
-    internal Win32WindowProc WindowProc
+    private Win32WindowProc WindowProc
     {
         get;
     }

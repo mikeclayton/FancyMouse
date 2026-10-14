@@ -22,7 +22,7 @@ namespace FancyMouse.Common.Helpers;
 /// in the background once the previous activation has been closed so the
 /// blur process is not as performance-sensitive as the capture process.
 /// </remarks>
-public static class BlurHelper
+internal static class BlurHelper
 {
     /// <summary>
     /// Blur radius, in pixels, at the blurriest end of <see cref="CreateBlurredCopy"/>'s
@@ -56,23 +56,32 @@ public static class BlurHelper
         }
 
         var mutedImage = new Bitmap(source.Width, source.Height, PixelFormat.Format32bppPArgb);
-        using var graphics = Graphics.FromImage(mutedImage);
-        using var imageAttributes = new ImageAttributes();
-        imageAttributes.SetColorMatrix(BlurHelper.GetMuteColorMatrix(saturation, brightness));
-        graphics.DrawImage(
-            source,
-            new Rectangle(0, 0, source.Width, source.Height),
-            0,
-            0,
-            source.Width,
-            source.Height,
-            GraphicsUnit.Pixel,
-            imageAttributes);
+        try
+        {
+            using var graphics = Graphics.FromImage(mutedImage);
+            using var imageAttributes = new ImageAttributes();
+            imageAttributes.SetColorMatrix(BlurHelper.GetMuteColorMatrix(saturation, brightness));
+            graphics.DrawImage(
+                source,
+                new Rectangle(0, 0, source.Width, source.Height),
+                0,
+                0,
+                source.Width,
+                source.Height,
+                GraphicsUnit.Pixel,
+                imageAttributes);
 
-        var radius = Math.Max(1, (int)((1 - blurIntensity) * BlurHelper.MaxBlurRadius));
-        BlurHelper.ApplyBoxBlur(mutedImage, radius);
+            var radius = Math.Max(1, (int)((1 - blurIntensity) * BlurHelper.MaxBlurRadius));
+            BlurHelper.ApplyBoxBlur(mutedImage, radius);
 
-        return mutedImage;
+            return mutedImage;
+        }
+        catch
+        {
+            // the caller never receives mutedImage if we throw, so it can't dispose it
+            mutedImage.Dispose();
+            throw;
+        }
     }
 
     /// <summary>

@@ -3,7 +3,7 @@ using System.Drawing.Drawing2D;
 
 namespace FancyMouse.Common.Bezels;
 
-public static class BezelGraphics
+internal static class BezelGraphics
 {
     /// <summary>
     /// Enables antialiased drawing on <paramref name="g"/>, with pixel offsets

@@ -35,7 +35,7 @@ internal static class SettingsConverterV1
             : Keystroke.Parse(hotkey);
     }
 
-    public static PreviewStyle ConvertToPreviewStyle(string? previewSize)
+    private static PreviewStyle ConvertToPreviewStyle(string? previewSize)
     {
         if (previewSize is null)
         {

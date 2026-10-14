@@ -79,7 +79,7 @@ internal sealed class CsWin32Method
     /// <see cref="System.Runtime.InteropServices.DllImportAttribute.SetLastError"/>'s
     /// own default.
     /// </returns>
-    public bool TryGetSetLastError(out bool setLastError)
+    private bool TryGetSetLastError(out bool setLastError)
     {
         static bool IsDllOrLibraryImportAttribute(AttributeSyntax attribute)
         {

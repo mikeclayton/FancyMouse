@@ -30,6 +30,7 @@ WM_COMMAND
 
 CreateWindowEx
 DefWindowProc
+GetModuleHandle
 GetWindowLong
 RegisterClassEx
 SetForegroundWindow

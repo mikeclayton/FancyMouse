@@ -8,7 +8,7 @@ using Windows.System;
 
 namespace FancyMouse.WinUI3.UI;
 
-public sealed partial class PreviewPane
+internal sealed partial class PreviewPane
 {
     private void PreviewPane_PointerPressed(object sender, PointerRoutedEventArgs e)
     {

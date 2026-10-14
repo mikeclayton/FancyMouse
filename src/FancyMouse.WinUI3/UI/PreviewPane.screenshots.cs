@@ -22,7 +22,7 @@ namespace FancyMouse.WinUI3.UI;
 /// <c>PreviewPane.layout.cs</c>'s concern of building/positioning the bezel and placeholder
 /// shapes those images sit inside.
 /// </summary>
-public sealed partial class PreviewPane
+internal sealed partial class PreviewPane
 {
     /// <summary>
     /// Applies the real screenshot for a single screen, replacing any placeholder fill

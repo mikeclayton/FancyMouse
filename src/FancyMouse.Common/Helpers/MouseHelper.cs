@@ -17,7 +17,7 @@ public static class MouseHelper
     /// or even negative if the primary monitor is not the at the top-left of the
     /// entire desktop rectangle, so results may contain negative coordinates.
     /// </remarks>
-    public static PointInfo GetJumpLocation(PointInfo previewLocation, SizeInfo previewSize, RectangleInfo desktopBounds)
+    internal static PointInfo GetJumpLocation(PointInfo previewLocation, SizeInfo previewSize, RectangleInfo desktopBounds)
     {
         return previewLocation
             .Scale(previewSize.ScaleToFitRatio(desktopBounds.Size))
@@ -73,7 +73,7 @@ public static class MouseHelper
                 .ThrowIfFailed();
             _ = User32.GetCursorPos(out var currentPosition)
                 .ThrowIfFailed();
-            if ((currentPosition.X == position.X) || (currentPosition.Y == position.Y))
+            if ((currentPosition.X == position.X) && (currentPosition.Y == position.Y))
             {
                 break;
             }

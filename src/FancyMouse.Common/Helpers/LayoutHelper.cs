@@ -101,9 +101,6 @@ public static class LayoutHelper
     /// If specified, device and screen dimensions will be scaled down as required in order for the final layout to fit inside the bounds.
     /// If <see langword="null"/>, the layout size will be calculated to allow full-size device and screen visualisations.
     /// </param>
-    /// <param name="statusBarHeight">
-    /// The height of the area to reserve at the bottom of the layout area (inside the outer border) to accomodate a status/tip bar strip.
-    /// </param>
     public static PreviewLayout GetPreviewLayout(
         PreviewStyle previewStyle, DisplayInfo displayInfo, SizeInfo? maximumSize = null)
     {
@@ -165,7 +162,7 @@ public static class LayoutHelper
     /// <see cref="GetPreviewWindowStyle"/>) and the padding/background the preview pane renders
     /// itself, inset from its own bounds.
     /// </summary>
-    public static BoxStyle GetPreviewPaneStyle(BoxStyle canvasStyle)
+    internal static BoxStyle GetPreviewPaneStyle(BoxStyle canvasStyle)
     {
         ArgumentNullException.ThrowIfNull(canvasStyle);
         return new BoxStyle(
@@ -208,7 +205,7 @@ public static class LayoutHelper
     /// <see cref="PreviewLayout.Builder"/> seeded with just <see cref="PreviewLayout.Builder.PreviewSize"/>
     /// and the canvas's own bounds/style - no devices yet, see <see cref="AddDeviceAndScreenStyles"/>.
     /// </summary>
-    internal static PreviewLayout.Builder CreateInitialPreviewLayout(
+    private static PreviewLayout.Builder CreateInitialPreviewLayout(
         PreviewStyle previewStyle, BoxStyle previewWindowStyle, BoxStyle previewPaneStyle, SizeInfo? maximumSize = null)
     {
         ArgumentNullException.ThrowIfNull(previewStyle);
@@ -252,7 +249,7 @@ public static class LayoutHelper
     /// <see cref="ArrangeAndScaleDeviceLayouts"/>/<see cref="ArrangeAndScaleScreenLayouts"/> to
     /// arrange for real.
     /// </summary>
-    internal static void AddDeviceAndScreenStyles(PreviewLayout.Builder previewLayout, PreviewStyle previewStyle, DisplayInfo displayInfo)
+    private static void AddDeviceAndScreenStyles(PreviewLayout.Builder previewLayout, PreviewStyle previewStyle, DisplayInfo displayInfo)
     {
         ArgumentNullException.ThrowIfNull(previewLayout);
         ArgumentNullException.ThrowIfNull(previewStyle);
@@ -310,7 +307,7 @@ public static class LayoutHelper
     /// Arranges the device layouts into a non-overlapping grid and scales them
     /// so the grid fits inside the specified content bounds.
     /// </summary>
-    internal static void ArrangeAndScaleDeviceLayouts(PreviewLayout.Builder previewLayout)
+    private static void ArrangeAndScaleDeviceLayouts(PreviewLayout.Builder previewLayout)
     {
         var deviceLayouts = previewLayout.CanvasLayout?.DeviceLayouts
             ?? throw new InvalidOperationException();
@@ -452,7 +449,7 @@ public static class LayoutHelper
     /// Arranges the screen layouts inside their respective device cells and
     /// scales them to fit inside their parent device layouts.
     /// </summary>
-    internal static void ArrangeAndScaleScreenLayouts(PreviewLayout.Builder previewLayout)
+    private static void ArrangeAndScaleScreenLayouts(PreviewLayout.Builder previewLayout)
     {
         var deviceLayouts = previewLayout.CanvasLayout?.DeviceLayouts
             ?? throw new InvalidOperationException();
@@ -504,7 +501,7 @@ public static class LayoutHelper
     /// Crops the layout's canvas bounds to tightly wrap the contained device layouts
     /// and moves it back to the same origin it started at.
     /// </summary>
-    internal static void ArrangeAndResizeCanvasLayout(PreviewLayout.Builder previewLayout)
+    private static void ArrangeAndResizeCanvasLayout(PreviewLayout.Builder previewLayout)
     {
         var canvasLayout = previewLayout.CanvasLayout ?? throw new InvalidOperationException();
 

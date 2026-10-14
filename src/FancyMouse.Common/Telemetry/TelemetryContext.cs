@@ -61,7 +61,7 @@ public sealed class TelemetryContext
     /// want the guarantee without also stopping collection, e.g. before inspecting an
     /// <see cref="InMemoryTelemetryWriter"/>'s <see cref="InMemoryTelemetryWriter.Records"/> mid-test.
     /// </summary>
-    public void Flush()
+    internal void Flush()
         => this.adapter?.Flush();
 
     /// <summary>
@@ -72,13 +72,13 @@ public sealed class TelemetryContext
     /// called. For ruling out the writer's own work (e.g. disk I/O) as a source of latency around
     /// a hot path, without losing what happened during it - see <see cref="TelemetryAdapter.PauseWriting"/>.
     /// </summary>
-    public void PauseWriting()
+    private void PauseWriting()
         => this.adapter?.PauseWriting();
 
     /// <summary>
     /// Undoes <see cref="PauseWriting"/>.
     /// </summary>
-    public void ResumeWriting()
+    private void ResumeWriting()
         => this.adapter?.ResumeWriting();
 
     /// <summary>
@@ -99,7 +99,7 @@ public sealed class TelemetryContext
     /// <c>BeginScope(new { activation = id })</c> so every timer/event inside it automatically
     /// carries that, without threading it through every method signature.
     /// </summary>
-    public TelemetryScope BeginScope(object properties, [CallerMemberName] string caller = "")
+    internal TelemetryScope BeginScope(object properties, [CallerMemberName] string caller = "")
     {
         var activity = this.activitySource.StartActivity(caller);
         TelemetryContext.ApplyProperties(activity, properties);
@@ -126,7 +126,7 @@ public sealed class TelemetryContext
     /// Records a single point-in-time fact - no duration, no scope opened - but still carries
     /// whatever's currently ambient from any enclosing <see cref="BeginScope"/>/<see cref="BeginTimer"/>.
     /// </summary>
-    public void WriteEvent(object properties, [CallerMemberName] string caller = "")
+    internal void WriteEvent(object properties, [CallerMemberName] string caller = "")
     {
         using var activity = this.activitySource.StartActivity(caller);
         TelemetryContext.ApplyProperties(activity, properties);
