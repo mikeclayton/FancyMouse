@@ -110,7 +110,7 @@ public static class MouseHelper
         };
 
         // don't check return value - we aren't going to do anything if it fails
-        _ = User32.SendInput(inputs, inputs.Length)
+        _ = User32.SendInput(inputs, Marshal.SizeOf<INPUT>())
             .IgnoreFailure();
     }
 
