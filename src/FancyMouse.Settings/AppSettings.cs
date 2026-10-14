@@ -13,6 +13,15 @@ namespace FancyMouse.Settings;
 /// This is different to the AppConfig class that is used to
 /// serialize / deserialize settings into the application config file.
 /// </summary>
+/// <remarks>
+/// This is a *settings* representation, not a *visual* one - <see cref="PreviewStyle"/> here
+/// always carries the user's own custom style, in full, regardless of <see cref="PreviewType"/> -
+/// it's what a settings UI would write back to config. Deriving what to actually render (copying
+/// this and overlaying a built-in preset when <see cref="PreviewType"/> selects one) is a separate
+/// step - see <see cref="V2.SettingsConverterV2.GetActivePreviewStyle"/> - performed at the point
+/// of rendering, not baked in here, so this representation is never itself overwritten by a
+/// preset's values.
+/// </remarks>
 public sealed class AppSettings
 {
     public static readonly AppSettings DefaultSettings = new(
@@ -83,6 +92,10 @@ public sealed class AppSettings
         get;
     }
 
+    /// <summary>
+    /// Gets the user's own custom style, in full - see this class's own remarks for why this must
+    /// never be a preset-overlaid value, regardless of <see cref="PreviewType"/>.
+    /// </summary>
     public PreviewStyle PreviewStyle
     {
         get;
