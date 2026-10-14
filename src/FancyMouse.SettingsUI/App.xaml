@@ -22,6 +22,8 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
+                <ResourceDictionary Source="/SettingsXAML/Styles/Button.xaml" />
+                <ResourceDictionary Source="/SettingsXAML/Controls/SettingsGroup/SettingsGroup.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
             <x:Double x:Key="SettingsCardSpacing">2</x:Double>
