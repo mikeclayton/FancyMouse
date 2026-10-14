@@ -45,6 +45,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".build", ".build", "{EF72E2
 		Common.Dotnet.props = Common.Dotnet.props
 		Common.SelfContained.props = Common.SelfContained.props
 		..\Directory.Build.props = ..\Directory.Build.props
+		..\license.md = ..\license.md
+		..\readme.md = ..\readme.md
+		..\THIRD-PARTY-NOTICES.md = ..\THIRD-PARTY-NOTICES.md
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FancyMouse.Win32Gen.UnitTests", "FancyMouse.Win32Gen.UnitTests\FancyMouse.Win32Gen.UnitTests.csproj", "{05DCF262-69DF-4B26-AB15-6BC3EA5C2B84}"
