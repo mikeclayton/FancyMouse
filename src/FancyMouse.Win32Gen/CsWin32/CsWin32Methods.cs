@@ -24,7 +24,7 @@ internal sealed class CsWin32Methods
 {
     private readonly IReadOnlyList<CsWin32Method> methods;
 
-    internal CsWin32Methods(IReadOnlyList<CsWin32Method> methods)
+    private CsWin32Methods(IReadOnlyList<CsWin32Method> methods)
     {
         this.methods = methods;
     }
@@ -57,7 +57,7 @@ internal sealed class CsWin32Methods
     /// overloads together (see <see cref="CsWin32Method.IsNativeMethod"/>/
     /// <see cref="CsWin32Method.IsFriendlyMethod"/>).
     /// </summary>
-    public IEnumerable<CsWin32Method> GetMethodsByName(string methodName)
+    private IEnumerable<CsWin32Method> GetMethodsByName(string methodName)
         => this.methods.Where(method => method.Name == methodName);
 
     /// <summary>

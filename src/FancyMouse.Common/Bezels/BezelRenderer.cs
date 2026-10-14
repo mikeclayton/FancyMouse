@@ -13,9 +13,9 @@ namespace FancyMouse.Common.Bezels;
 /// with a different style, construct a separate BezelRenderer
 /// instance.
 /// </summary>
-public sealed class BezelRenderer : IDisposable
+internal sealed class BezelRenderer : IDisposable
 {
-    public BezelRenderer(BorderStyle bezelStyle)
+    internal BezelRenderer(BorderStyle bezelStyle)
     {
         this.BezelStyle = BezelRenderer.ClampDepth(bezelStyle ?? throw new ArgumentNullException(nameof(bezelStyle)));
         this.BezelProfile = new BezelProfileCurved((int)this.BezelStyle.Left, (int)this.BezelStyle.Depth);
@@ -92,7 +92,7 @@ public sealed class BezelRenderer : IDisposable
     ///   BL — shadow (bottom) meets highlight (left), both fade at 45°
     ///   Inner arc effects are reversed; BR inner highlight is halved.
     /// </summary>
-    public void DrawBezel(Graphics g, int x, int y, int width, int height)
+    internal void DrawBezel(Graphics g, int x, int y, int width, int height)
     {
         var bezelWidth = (int)this.BezelStyle.Left;
 

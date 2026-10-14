@@ -9,7 +9,7 @@ namespace FancyMouse.Common.Telemetry;
 /// <see cref="TelemetryContext.Flush"/> or <see cref="TelemetryContext.Stop"/> first so every
 /// queued record has been drained before reading <see cref="Records"/>.
 /// </summary>
-public sealed class InMemoryTelemetryWriter : ITelemetryWriter
+internal sealed class InMemoryTelemetryWriter : ITelemetryWriter
 {
     private readonly List<TelemetryRecord> records = [];
 

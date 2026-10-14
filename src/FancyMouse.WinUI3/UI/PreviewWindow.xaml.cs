@@ -10,7 +10,7 @@ namespace FancyMouse.WinUI3.UI;
 /// <summary>
 /// An empty window that can be used on its own or navigated to within a Frame.
 /// </summary>
-public sealed partial class PreviewWindow : Window
+internal sealed partial class PreviewWindow : Window
 {
     internal PreviewWindow(NLog.ILogger logger, ConfigHelper configHelper)
     {

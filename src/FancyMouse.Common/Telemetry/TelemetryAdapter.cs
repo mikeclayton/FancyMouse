@@ -42,6 +42,13 @@ internal sealed class TelemetryAdapter : IDisposable
             Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
             ActivityStopped = activity =>
             {
+                // scopes don't generate actual telemetry output - they just contain
+                // tags to attach to timers and events that are raised within their lifetime
+                if (activity.GetTagItem(TelemetryContext.KindTag) is "scope")
+                {
+                    return;
+                }
+
                 var record = TelemetryAdapter.Flatten(activity);
                 _ = this.channel.Writer.TryWrite(() => writer.Write(record));
             },
@@ -57,12 +64,24 @@ internal sealed class TelemetryAdapter : IDisposable
                 // writer's own work does
                 await this.writeGate.WaitAsync().ConfigureAwait(false);
                 this.writeGate.Release();
-                action();
+
+                try
+                {
+                    action();
+                }
+                catch (Exception ex)
+                {
+                    // telemetry is diagnostic, so a failing writer only loses the record it
+                    // failed on - letting this escape would end the loop for good, after which
+                    // nothing else is written, Flush blocks forever waiting for a signal that
+                    // never runs, and Dispose rethrows the writer's exception into the app
+                    Debug.WriteLine($"Telemetry writer failed: {ex}");
+                }
             }
         });
     }
 
-    public static TelemetryAdapter Start(ActivitySource activitySource, ITelemetryWriter writer)
+    internal static TelemetryAdapter Start(ActivitySource activitySource, ITelemetryWriter writer)
         => new(activitySource, writer);
 
     /// <summary>
@@ -71,7 +90,7 @@ internal sealed class TelemetryAdapter : IDisposable
     /// <see cref="TelemetryScope"/>/<see cref="TelemetryContext.WriteEvent"/> still fires and
     /// queues normally, just backing up in the channel instead of reaching the writer. Idempotent.
     /// </summary>
-    public void PauseWriting()
+    internal void PauseWriting()
     {
         lock (this.pauseLock)
         {
@@ -87,7 +106,7 @@ internal sealed class TelemetryAdapter : IDisposable
     /// Undoes <see cref="PauseWriting"/> - the consumer resumes draining whatever backed up while
     /// paused. Idempotent.
     /// </summary>
-    public void ResumeWriting()
+    internal void ResumeWriting()
     {
         lock (this.pauseLock)
         {
@@ -105,7 +124,7 @@ internal sealed class TelemetryAdapter : IDisposable
     /// afterwards. If writing is currently paused, this blocks until <see cref="ResumeWriting"/>
     /// is called - flushing "nothing has been written yet" isn't a coherent thing to wait for.
     /// </summary>
-    public void Flush()
+    internal void Flush()
     {
         var signal = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         _ = this.channel.Writer.TryWrite(() => signal.SetResult());

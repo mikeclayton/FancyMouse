@@ -42,10 +42,10 @@ public sealed class HotKeyManager
         get;
     }
 
-    public Keystroke? HotKey
+    private Keystroke? HotKey
     {
         get;
-        private set;
+        set;
     }
 
     private SemaphoreSlim MessageSemaphore

@@ -17,7 +17,7 @@ namespace FancyMouse.Win32Gen.Generators;
 internal static class Win32GeneratorHelpers
 {
     private const string DefaultRootNamespace = "GeneratedWin32Interop";
-    public const string NamespaceSuffix = "Win32Gen";
+    private const string NamespaceSuffix = "Win32Gen";
 
     public static IncrementalValueProvider<string> GetRootNamespace(IncrementalGeneratorInitializationContext context)
         => context.AnalyzerConfigOptionsProvider

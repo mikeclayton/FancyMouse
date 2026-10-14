@@ -11,12 +11,12 @@ public sealed class Win32Window
         this.Hwnd = hwnd;
     }
 
-    public Win32WindowClass WindowClass
+    private Win32WindowClass WindowClass
     {
         get;
     }
 
-    public string WindowName
+    private string WindowName
     {
         get;
     }

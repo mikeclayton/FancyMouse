@@ -11,7 +11,7 @@ using Windows.Win32.UI.WindowsAndMessaging;
 
 namespace FancyMouse.Common.Helpers;
 
-public static class ScreenHelper
+internal static class ScreenHelper
 {
     /// <summary>
     /// Duplicates functionality available in System.Windows.Forms.SystemInformation
@@ -81,8 +81,8 @@ public static class ScreenHelper
     {
         // get the monitor handle from the point
         var hMonitor = User32.MonitorFromPoint(
-            new((int)pt.X, (int)pt.Y),
-            MONITOR_FROM_FLAGS.MONITOR_DEFAULTTONEAREST)
+                new((int)pt.X, (int)pt.Y),
+                MONITOR_FROM_FLAGS.MONITOR_DEFAULTTONEAREST)
             .ThrowIfFailed()
             .GetValue();
 

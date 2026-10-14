@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <Import Project="..\Common.Dotnet.Analyzers.props" />
     <Import Project="..\Common.Dotnet.CsWin32.props" />
-    <Import Project="..\Common.Dotnet.props" />
     <Import Project="..\Common.Dotnet.CsWinRT.props" />
+    <Import Project="..\Common.Dotnet.props" />
 
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
@@ -44,26 +44,22 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Update="UI\PreviewWindow.events.cs">
-            <DependentUpon>PreviewWindow.xaml</DependentUpon>
-        </Compile>
-        <Compile Update="UI\PreviewWindow.utils.cs">
-            <DependentUpon>PreviewWindow.xaml</DependentUpon>
-        </Compile>
-        <Compile Update="UI\PreviewWindow.window.cs">
-            <DependentUpon>PreviewWindow.xaml</DependentUpon>
-        </Compile>
-        <Compile Update="UI\PreviewWindow.win32.cs">
-            <DependentUpon>PreviewWindow.xaml</DependentUpon>
-        </Compile>
-        <Compile Update="UI\PreviewPane.layout.cs">
+        <!-- the WinUI SDK only auto-registers App.xaml as the ApplicationDefinition
+             when it's in the project root - anywhere else its default **/*.xaml
+             glob picks it up as a plain Page instead, so register it explicitly -->
+        <Page Remove="App\App.xaml" />
+        <ApplicationDefinition Include="App\App.xaml">
+            <Generator>MSBuild:Compile</Generator>
+            <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+        </ApplicationDefinition>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Update="UI\PreviewPane.*.cs">
             <DependentUpon>PreviewPane.xaml</DependentUpon>
         </Compile>
-        <Compile Update="UI\PreviewPane.screenshots.cs">
-            <DependentUpon>PreviewPane.xaml</DependentUpon>
-        </Compile>
-        <Compile Update="UI\PreviewPane.input.cs">
-            <DependentUpon>PreviewPane.xaml</DependentUpon>
+        <Compile Update="UI\PreviewWindow.*.cs">
+            <DependentUpon>PreviewWindow.xaml</DependentUpon>
         </Compile>
     </ItemGroup>
 

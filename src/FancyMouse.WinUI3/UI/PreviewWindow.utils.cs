@@ -14,7 +14,7 @@ using Windows.Win32.Foundation;
 
 namespace FancyMouse.WinUI3.UI;
 
-public sealed partial class PreviewWindow
+internal sealed partial class PreviewWindow
 {
     /// <summary>
     /// Waits for the screenshot capture pipeline to complete all of the requested
@@ -51,11 +51,21 @@ public sealed partial class PreviewWindow
 
     internal async Task InvokeOnUiThreadAsync(Action action)
     {
+        ArgumentNullException.ThrowIfNull(action);
+
+        // already on the ui thread - just run it
+        if (this.DispatcherQueue.HasThreadAccess)
+        {
+            action();
+            return;
+        }
+
         // the action might be called from a task that we're awaiting
         // so we need to make sure we use the UI thread
-        var tcs = new TaskCompletionSource<bool>();
+        var tcs = new TaskCompletionSource<bool>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
 
-        this.DispatcherQueue.TryEnqueue(
+        if (!this.DispatcherQueue.TryEnqueue(
             () =>
             {
                 try
@@ -67,7 +77,11 @@ public sealed partial class PreviewWindow
                 {
                     tcs.SetException(ex);
                 }
-            });
+            }))
+        {
+            tcs.SetException(
+                new InvalidOperationException("DispatcherQueue is not accepting work items."));
+        }
 
         // wait for the task to complete
         await tcs.Task.ConfigureAwait(false);

@@ -2,7 +2,7 @@
 
 namespace FancyMouse.Common.Interop;
 
-public sealed class Win32SafeHandle : SafeHandle
+internal sealed class Win32SafeHandle : SafeHandle
 {
     public Win32SafeHandle(nint handle)
         : base(IntPtr.Zero, false)

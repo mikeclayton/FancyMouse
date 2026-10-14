@@ -4,7 +4,7 @@ using Microsoft.UI.Xaml;
 
 namespace FancyMouse.WinUI3.UI;
 
-public sealed partial class PreviewWindow
+internal sealed partial class PreviewWindow
 {
     /// <summary>
     /// Wires up every event handler this window subscribes to.

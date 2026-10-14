@@ -1,11 +1,58 @@
 namespace FancyMouse.Common.Bezels;
 
 /// <summary>
-/// Defines the cross-sectional surface geometry of a bezel ring.
-/// Implementations map a position along the profile to a surface normal angle
+/// Defines the cross-sectional surface geometry of a screen bezel.
+/// Implementations map a position across the profile to a surface normal angle
 /// that the shared lighting helpers in <see cref="BezelProfile"/> convert
 /// to highlight / shadow intensities.
 /// </summary>
+/// <remarks>
+/// The profile function allows different physical bezel shapes to be rendered
+/// just by implementing a function that returns the normals across the
+/// cross-section. The rendering pipeline uses this function to calculate the
+/// lighting and shading effects at each rasterized pixel in the output image.
+///
+/// For example a profile function might describe the normals on a semi-circular
+/// cross-section (where 0 represents the outer edge, and 1 represents the
+/// inner edge):
+///
+///       _.-""""""-._
+///     .'            '.
+///    /                \
+///   |                  |
+///   +------------------+
+///   0                  1
+///
+/// or a raised flat profile with ramped edges (<see cref="BezelProfileRamped"/>):
+///
+///      ______________
+///     /              \
+///    /                \
+///   /                  \
+///   +------------------+
+///   0                  1
+///
+/// or a raised flat profile with curved edges (<see cref="BezelProfileCurved"/>):
+///
+///      _------------_
+///    /                \
+///   |                  |
+///   +------------------+
+///   0                  1
+///
+/// or an arbitrarily complex cross section:
+///
+///    .--.   .--.   .--.
+///   /    \_/    \_/    \
+///   |                  |
+///   +------------------+
+///   0                  1
+///
+/// The angle of the normal at each position is used to calculate the
+/// intensity of the highlight or shading effect at that position (but
+/// note that it only affects the highlight and the shading on the point
+/// itself - no shadows are cast by peaks in the profile onto other points)
+/// </remarks>
 internal interface IBezelProfile
 {
     /// <summary>

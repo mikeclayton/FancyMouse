@@ -2,7 +2,7 @@
 
 public sealed class HotKeyEventArgs : EventArgs
 {
-    public HotKeyEventArgs(Keys key, KeyModifiers modifiers)
+    internal HotKeyEventArgs(Keys key, KeyModifiers modifiers)
     {
         this.Key = key;
         this.Modifiers = modifiers;

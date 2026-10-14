@@ -117,19 +117,27 @@ public static class BezelProfileTests
 
         public static IEnumerable<object[]> GetNormalTestCases()
         {
-            // n=20, d=5, rampAngle=30 deg (pi/6) - outer ring [0,5), flat zone [5,15), inner ring [15,20)
+            // n=20, d=5, rampAngle=30 deg (pi/6) - outer ramp [0,5), flat section [5,15], inner ramp (15,20]
             var rampAngle = Math.PI / 6.0;
-            yield return new object[] { new NormalTestCase("outer ring - constant ramp angle throughout", 20, 5, 30.0, 0.0, (Math.PI / 2.0) - rampAngle) };
-            yield return new object[] { new NormalTestCase("outer ring midpoint - same constant angle", 20, 5, 30.0, 2.5, (Math.PI / 2.0) - rampAngle) };
-            yield return new object[] { new NormalTestCase("flat zone start - no effect", 20, 5, 30.0, 5.0, Math.PI / 2.0) };
-            yield return new object[] { new NormalTestCase("flat zone midpoint - no effect", 20, 5, 30.0, 10.0, Math.PI / 2.0) };
-            yield return new object[] { new NormalTestCase("inner ring start - constant ramp angle throughout", 20, 5, 30.0, 15.0, (Math.PI / 2.0) + rampAngle) };
-            yield return new object[] { new NormalTestCase("inner ring midpoint - same constant angle", 20, 5, 30.0, 17.5, (Math.PI / 2.0) + rampAngle) };
+            yield return new object[] { new NormalTestCase("outer ramp - constant ramp angle throughout", 20, 5, 30.0, 0.0, (Math.PI / 2.0) - rampAngle) };
+            yield return new object[] { new NormalTestCase("outer ramp midpoint - same constant angle", 20, 5, 30.0, 2.5, (Math.PI / 2.0) - rampAngle) };
+            yield return new object[] { new NormalTestCase("flat section start - no effect", 20, 5, 30.0, 5.0, Math.PI / 2.0) };
+            yield return new object[] { new NormalTestCase("flat section midpoint - no effect", 20, 5, 30.0, 10.0, Math.PI / 2.0) };
+            yield return new object[] { new NormalTestCase("flat section end - no effect (mirrors flat section start)", 20, 5, 30.0, 15.0, Math.PI / 2.0) };
+            yield return new object[] { new NormalTestCase("inner ramp midpoint - constant ramp angle throughout", 20, 5, 30.0, 17.5, (Math.PI / 2.0) + rampAngle) };
+            yield return new object[] { new NormalTestCase("inner bezel edge - same constant angle", 20, 5, 30.0, 20.0, (Math.PI / 2.0) + rampAngle) };
 
-            // n=10, d=5 - depth is half the width, so the flat zone has zero width and the
-            // profile steps directly from the outer ring's constant angle to the inner ring's
-            // (unlike BezelProfileCurved, there's no continuous handoff at this boundary)
-            yield return new object[] { new NormalTestCase("zero-width flat zone - steps straight to inner ring", 10, 5, 30.0, 5.0, (Math.PI / 2.0) + rampAngle) };
+            // n=10, d=5 - depth is half the width, so the flat section shrinks to a single
+            // point between the two ramps (unlike BezelProfileCurved, there's no continuous
+            // handoff at this boundary - the profile steps from one ramp angle to the other)
+            yield return new object[] { new NormalTestCase("zero-width flat section - boundary point is flat", 10, 5, 30.0, 5.0, Math.PI / 2.0) };
+
+            // d=0 - no ramps at all, so the whole profile is flat, including both edges
+            // (pins the flat section's "<=" - with "<", the inner bezel edge would get
+            // the inner ramp's shadow angle even though there's no ramp there)
+            yield return new object[] { new NormalTestCase("zero-depth ramps - outer bezel edge is flat, not highlighted", 20, 0, 30.0, 0.0, Math.PI / 2.0) };
+            yield return new object[] { new NormalTestCase("zero-depth ramps - interior is flat", 20, 0, 30.0, 10.0, Math.PI / 2.0) };
+            yield return new object[] { new NormalTestCase("zero-depth ramps - inner bezel edge is flat, not shadowed", 20, 0, 30.0, 20.0, Math.PI / 2.0) };
         }
 
         [TestMethod]
