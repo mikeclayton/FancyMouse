@@ -31,22 +31,16 @@ internal sealed partial class PreviewWindow : Window
     }
 
     /// <summary>
-    /// Governs every screenshot capture started by the current activation's
-    /// <see cref="ScreenshotCapturePipeline"/> - linked to the <see cref="CancellationToken"/>
-    /// <see cref="ShowPreviewAsync"/> was called with (see its remarks for what that guards
-    /// against), and *also* cancelled whenever the preview is cleared for any other reason (see
-    /// <see cref="ClearPreview"/> - e.g. the user dismissed the window while backfill captures
-    /// were still running), so outstanding captures for a no-longer-relevant activation don't
-    /// keep doing GDI work in the background either way.
+    /// Used for cancelling an activation of the preview window, and all associated background tasks.
     /// </summary>
     private CancellationTokenSource? activationCancellation;
 
     /// <summary>
-    /// Maximum time to wait for every screen's capture to finish before showing the window
+    /// Maximum time to wait for screen capture to complete before showing the window
     /// anyway - long enough that a typical (fast, local) activation shows fully populated with
     /// no visible placeholder-then-backfill repainting, short enough that one slow screen (e.g.
-    /// a future remote capture provider) can't make the window feel unresponsive. Matches the
-    /// grace period the legacy WinForms version used.
+    /// a large screen or a future remote capture provider) can't make the window feel
+    /// unresponsive.
     /// </summary>
     private static readonly TimeSpan ScreenshotGracePeriod = TimeSpan.FromMilliseconds(250);
 }

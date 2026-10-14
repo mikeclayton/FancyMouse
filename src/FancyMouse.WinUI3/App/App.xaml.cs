@@ -73,13 +73,15 @@ public partial class App : Application
         try
         {
             var configHelper = new ConfigHelper(logger);
+            configHelper.SetAppSettingsPath(App.GetAppSettingsPath(logger));
+
             var previewWindow = new PreviewWindow(logger: logger, configHelper: configHelper);
 
             this.VerifyHighDpiMode(logger);
             this.InitializeAppSettings(logger, configHelper);
             this.InitializeTelemetry(timestamp, configHelper);
             this.InitializeHotkey(logger, previewWindow, configHelper);
-            this.InitializeTrayIcon();
+            this.InitializeTrayIcon(logger);
         }
         catch (Exception ex)
         {
@@ -122,6 +124,13 @@ public partial class App : Application
         logger.Info("high dpi mode is ok");
     }
 
+    public static string GetAppSettingsPath(Logger logger)
+    {
+        var appSettingsPath = ".\\appSettings.json";
+        logger.Info(CultureInfo.InvariantCulture, "settings path = {appSettingsPath}", appSettingsPath);
+        return appSettingsPath;
+    }
+
     /// <summary>
     /// Points <see cref="ConfigHelper"/> at the config file, loads it,
     /// and starts the filesystem watcher that reloads it whenever it changes.
@@ -130,12 +139,9 @@ public partial class App : Application
     /// </summary>
     private void InitializeAppSettings(Logger logger, ConfigHelper configHelper)
     {
-        var appSettingsPath = ".\\appSettings.json";
-        logger.Info(CultureInfo.InvariantCulture, "settings path = {appSettingsPath}", appSettingsPath);
-        configHelper.SetAppSettingsPath(appSettingsPath);
-
         // load the application settings and start the filesystem watcher
         // so we can automatically reload settings if they change on disk
+        var appSettingsPath = App.GetAppSettingsPath(logger);
         logger.Info("loading app settings");
         configHelper.LoadAppSettings();
         configHelper.StartAppSettingsWatcher();
@@ -243,9 +249,9 @@ public partial class App : Application
     }
 
     /// <summary>
-    /// Creates the system tray icon and wires its exit command to close the application.
+    /// Creates the system tray icon and wires its exit/settings commands.
     /// </summary>
-    private void InitializeTrayIcon()
+    private void InitializeTrayIcon(Logger logger)
     {
         var trayIcon = new TrayIcon();
         trayIcon.ExitCommandClicked += (sender, e) =>
@@ -256,6 +262,17 @@ public partial class App : Application
             // never reaches disk at all once the process exits.
             Telemetry.Current.Stop();
             App.Current.Exit();
+        };
+        trayIcon.SettingsCommandClicked += (sender, e) =>
+        {
+            try
+            {
+                SettingsLauncher.Launch(logger);
+            }
+            catch (Exception ex)
+            {
+                logger.Error(ex, "failed to launch the settings app");
+            }
         };
         this.TrayIcon = trayIcon;
     }

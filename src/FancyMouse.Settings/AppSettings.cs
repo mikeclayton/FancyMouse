@@ -2,6 +2,7 @@
 
 using FancyMouse.HotKeys;
 using FancyMouse.Models.Styles;
+using FancyMouse.Settings.V2;
 
 using Keys = FancyMouse.HotKeys.Keys;
 
@@ -12,6 +13,15 @@ namespace FancyMouse.Settings;
 /// This is different to the AppConfig class that is used to
 /// serialize / deserialize settings into the application config file.
 /// </summary>
+/// <remarks>
+/// This is a *settings* representation, not a *visual* one - <see cref="PreviewStyle"/> here
+/// always carries the user's own custom style, in full, regardless of <see cref="PreviewType"/> -
+/// it's what a settings UI would write back to config. Deriving what to actually render (copying
+/// this and overlaying a built-in preset when <see cref="PreviewType"/> selects one) is a separate
+/// step - see <see cref="V2.SettingsConverterV2.GetActivePreviewStyle"/> - performed at the point
+/// of rendering, not baked in here, so this representation is never itself overwritten by a
+/// preset's values.
+/// </remarks>
 public sealed class AppSettings
 {
     public static readonly AppSettings DefaultSettings = new(
@@ -19,6 +29,7 @@ public sealed class AppSettings
             key: Keys.F,
             modifiers: KeyModifiers.Control | KeyModifiers.Alt | KeyModifiers.Shift
         ),
+        previewType: PreviewType.Bezelled,
         previewStyle: new(
             canvasSize: new(
                 width: 1600,
@@ -67,10 +78,12 @@ public sealed class AppSettings
     public AppSettings(
         Keystroke hotkey,
         PreviewStyle previewStyle,
+        PreviewType previewType,
         bool telemetryEnabled)
     {
         this.Hotkey = hotkey ?? throw new ArgumentNullException(nameof(hotkey));
         this.PreviewStyle = previewStyle ?? throw new ArgumentNullException(nameof(previewStyle));
+        this.PreviewType = previewType;
         this.TelemetryEnabled = telemetryEnabled;
     }
 
@@ -79,16 +92,27 @@ public sealed class AppSettings
         get;
     }
 
+    /// <summary>
+    /// Gets the user's own custom style, in full - see this class's own remarks for why this must
+    /// never be a preset-overlaid value, regardless of <see cref="PreviewType"/>.
+    /// </summary>
     public PreviewStyle PreviewStyle
     {
         get;
     }
 
+    /// <summary>
+    /// Gets which style should actually be rendered - one of the built-in presets, or
+    /// <see cref="PreviewStyle"/> itself for <see cref="V2.PreviewType.Custom"/>. See
+    /// <see cref="V2.SettingsConverterV2.GetActivePreviewStyle"/> for deriving the one to render.
+    /// </summary>
+    public PreviewType PreviewType
+    {
+        get;
+    }
+
     /// <remarks>
-    /// Opt-in, off by default - an install with no "telemetry" section at all (or an explicit
-    /// "enabled": false) never starts <see cref="Common.Telemetry.Telemetry.Current"/>, so no
-    /// telemetry file is ever created. Set "telemetry": { "enabled": true } in the config file
-    /// to turn it on (e.g. when asking a user experiencing a problem to help diagnose it).
+    /// Gets a telemetry opt-in value, off by default.
     /// </remarks>
     public bool TelemetryEnabled
     {

@@ -19,6 +19,7 @@ public sealed class TrayIcon
 #pragma warning disable SA1310 // Field names should not contain underscore
     private const uint WM_TRAYICON_SHOWCONTEXTMENU = PInvoke.WM_USER + 100;
     private const uint WM_TRAYICON_EXITCOMMAND = PInvoke.WM_USER + 101;
+    private const uint WM_TRAYICON_SETTINGSCOMMAND = PInvoke.WM_USER + 102;
 
     private const uint WM_UAHINITMENU = 0x0093;
     private const uint WM_UAHMEASUREMENUITEM = 0x0094;
@@ -27,6 +28,8 @@ public sealed class TrayIcon
     // initialise with an empty delegate so we don't get complaints about
     // it being null when the constructor exits.
     public event EventHandler<EventArgs> ExitCommandClicked = (sender, e) => { };
+
+    public event EventHandler<EventArgs> SettingsCommandClicked = (sender, e) => { };
 
     public TrayIcon()
     {
@@ -54,6 +57,11 @@ public sealed class TrayIcon
     private void OnExitCommandClicked(EventArgs e)
     {
         this.ExitCommandClicked.Invoke(this, e);
+    }
+
+    private void OnSettingsCommandClicked(EventArgs e)
+    {
+        this.SettingsCommandClicked.Invoke(this, e);
     }
 
     private HWND GetHwndOrThrow()
@@ -114,6 +122,10 @@ public sealed class TrayIcon
             .GetValue();
 
         using var safeMenuHandle = new Win32SafeHandle(hMenu);
+        _ = User32.AppendMenu(safeMenuHandle, MENU_ITEM_FLAGS.MF_STRING, TrayIcon.WM_TRAYICON_SETTINGSCOMMAND, "Settings...")
+            .ThrowIfFailed();
+        _ = User32.AppendMenu(safeMenuHandle, MENU_ITEM_FLAGS.MF_SEPARATOR, default, default(string))
+            .ThrowIfFailed();
         _ = User32.AppendMenu(safeMenuHandle, MENU_ITEM_FLAGS.MF_STRING, TrayIcon.WM_TRAYICON_EXITCOMMAND, "Exit")
             .ThrowIfFailed();
 
@@ -183,6 +195,9 @@ public sealed class TrayIcon
                 {
                     case TrayIcon.WM_TRAYICON_EXITCOMMAND:
                         this.OnExitCommandClicked(EventArgs.Empty);
+                        break;
+                    case TrayIcon.WM_TRAYICON_SETTINGSCOMMAND:
+                        this.OnSettingsCommandClicked(EventArgs.Empty);
                         break;
                     default:
                         throw new InvalidOperationException();

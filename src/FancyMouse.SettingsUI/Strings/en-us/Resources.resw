@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!--
+    Microsoft ResX Schema
+
+    Version 2.0
+
+    The primary goals of this format is to allow a simple XML format
+    that is mostly human readable. The generation and parsing of the
+    various data types are done through the TypeConverter classes
+    associated with the data types.
+
+    Example:
+
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+
+    There are any number of "resheader" rows that contain simple
+    name/value pairs.
+
+    Each data row contains a name, and value. The row also contains a
+    type or mimetype. Type corresponds to a .NET class that support
+    text/value conversion through the TypeConverter architecture.
+    Classes that don't support this are serialized and stored with the
+    mimetype set.
+  -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <!--
+    Ported from PowerToys' Strings/en-us/Resources.resw - keys mirror MouseUtils_MouseJump_*
+    (prefixed FancyMouse_ instead - see FancyMousePane.xaml's own remarks). Values reuse
+    MouseJump's own wording verbatim wherever it's accurate for FancyMouse too (British "colour"
+    spelling throughout, matching this project's own established convention - MouseJump uses
+    American "color"), including Description text MouseJump has that this file didn't carry
+    before. Two deliberate exceptions, where copying MouseJump's literal wording would misdescribe
+    FancyMouse: FancyMouse.Header/FancyMouse_ActivationShortcut.Description - see their own
+    comments below for why.
+  -->
+  <!-- Not "Mouse Jump" -> "FancyMouse": this labels the settings group, and the window's own
+       title bar already reads "FancyMouse Settings" directly above it, so repeating the utility
+       name here would be redundant in a way it isn't for MouseJump (one of several sibling
+       module groups on a shared page, where the name is what tells them apart) - kept as this
+       project's own descriptive text instead. No Description either, for the same reason
+       MouseUtils_MouseJump.Description ("Quickly move the mouse pointer long distances.") isn't
+       reused - that describes MouseJump's own cursor-jumping behaviour, not FancyMouse's. -->
+  <data name="FancyMouse.Header" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="FancyMouse_ActivationShortcut.Header" xml:space="preserve">
+    <value>Activation shortcut</value>
+  </data>
+  <!-- Not MouseUtils_MouseJump_ActivationShortcut.Description's wording ("...used to turn this
+       mode on or off") - FancyMouse's hotkey doesn't toggle a mode, it shows the preview window
+       (a momentary action), so that phrasing would be inaccurate here. -->
+  <data name="FancyMouse_ActivationShortcut.Description" xml:space="preserve">
+    <value>Customize the shortcut used to show the preview window</value>
+  </data>
+  <data name="FancyMouse_ThumbnailSize.Header" xml:space="preserve">
+    <value>Thumbnail size</value>
+  </data>
+  <data name="FancyMouse_ThumbnailSize_Description_Prefix.Text" xml:space="preserve">
+    <value>Constrain thumbnail image size to a maximum of</value>
+  </data>
+  <data name="FancyMouse_ThumbnailSize_Description_Suffix.Text" xml:space="preserve">
+    <value>pixels</value>
+  </data>
+  <data name="FancyMouse_ThumbnailSize_Edit_Width.Header" xml:space="preserve">
+    <value>Maximum width (px)</value>
+    <comment>px = pixels</comment>
+  </data>
+  <data name="FancyMouse_ThumbnailSize_Edit_Height.Header" xml:space="preserve">
+    <value>Maximum height (px)</value>
+    <comment>px = pixels</comment>
+  </data>
+  <data name="EditTooltip.Text" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="FancyMouse_Appearance.Header" xml:space="preserve">
+    <value>Appearance</value>
+  </data>
+  <data name="FancyMouse_PreviewType.Header" xml:space="preserve">
+    <value>Preview style</value>
+  </data>
+  <data name="FancyMouse_PreviewType.Description" xml:space="preserve">
+    <value>Select a predefined style, or apply a custom one</value>
+  </data>
+  <data name="FancyMouse_PreviewType_Compact.Text" xml:space="preserve">
+    <value>Compact</value>
+  </data>
+  <data name="FancyMouse_PreviewType_Bezelled.Text" xml:space="preserve">
+    <value>Bezelled</value>
+  </data>
+  <data name="FancyMouse_PreviewType_Custom.Text" xml:space="preserve">
+    <value>Custom</value>
+  </data>
+  <data name="FancyMouse_CopyStyle.Content" xml:space="preserve">
+    <value>Copy to Custom preview style</value>
+  </data>
+  <data name="FancyMouse_BackgroundColor1.Header" xml:space="preserve">
+    <value>Background colour 1</value>
+  </data>
+  <data name="FancyMouse_BackgroundColor1.Description" xml:space="preserve">
+    <value>The start colour for the background gradient fill on the preview image</value>
+  </data>
+  <data name="FancyMouse_BackgroundColor2.Header" xml:space="preserve">
+    <value>Background colour 2</value>
+  </data>
+  <data name="FancyMouse_BackgroundColor2.Description" xml:space="preserve">
+    <value>The end colour for the background gradient fill on the preview image</value>
+  </data>
+  <data name="FancyMouse_BorderThickness.Header" xml:space="preserve">
+    <value>Border thickness</value>
+  </data>
+  <data name="FancyMouse_BorderThickness.Description" xml:space="preserve">
+    <value>The thickness (in pixels) of the border that surrounds the preview image</value>
+  </data>
+  <data name="FancyMouse_BorderColor.Header" xml:space="preserve">
+    <value>Border colour</value>
+  </data>
+  <data name="FancyMouse_BorderColor.Description" xml:space="preserve">
+    <value>The colour of the border that surrounds the preview image</value>
+  </data>
+  <data name="FancyMouse_Border3dDepth.Header" xml:space="preserve">
+    <value>Border 3D depth</value>
+  </data>
+  <data name="FancyMouse_Border3dDepth.Description" xml:space="preserve">
+    <value>The width (in pixels) of the 3d effect on the border that surrounds the preview image</value>
+  </data>
+  <data name="FancyMouse_BorderPadding.Header" xml:space="preserve">
+    <value>Border padding</value>
+  </data>
+  <data name="FancyMouse_BorderPadding.Description" xml:space="preserve">
+    <value>The amount of padding to draw between the border that surrounds the main preview image and the screen images</value>
+  </data>
+  <data name="FancyMouse_BezelThickness.Header" xml:space="preserve">
+    <value>Bezel thickness</value>
+  </data>
+  <data name="FancyMouse_BezelThickness.Description" xml:space="preserve">
+    <value>The thickness (in pixels) of the border that surrounds the individual screen images</value>
+  </data>
+  <data name="FancyMouse_BezelColor.Header" xml:space="preserve">
+    <value>Bezel colour</value>
+  </data>
+  <data name="FancyMouse_BezelColor.Description" xml:space="preserve">
+    <value>The colour of the border that surrounds the individual screen images</value>
+  </data>
+  <data name="FancyMouse_Bezel3dDepth.Header" xml:space="preserve">
+    <value>Bezel 3D depth</value>
+  </data>
+  <data name="FancyMouse_Bezel3dDepth.Description" xml:space="preserve">
+    <value>The width (in pixels) of the 3d effect on the border that surrounds individual screen images</value>
+  </data>
+  <!-- Header text is "Screen spacing", not "Screen margin" - matches
+       MouseUtils_MouseJump_ScreenMargin.Header's own wording exactly; the property itself keeps
+       its established name (FancyMouseScreenMargin) since renaming it would be an unrelated,
+       unrequested change - only the display text changes here. -->
+  <data name="FancyMouse_ScreenMargin.Header" xml:space="preserve">
+    <value>Screen spacing</value>
+  </data>
+  <data name="FancyMouse_ScreenMargin.Description" xml:space="preserve">
+    <value>The width (in pixels) of the margin drawn between individual screen images</value>
+  </data>
+  <data name="FancyMouse_ScreenColor1.Header" xml:space="preserve">
+    <value>Screen colour 1</value>
+  </data>
+  <data name="FancyMouse_ScreenColor1.Description" xml:space="preserve">
+    <value>The start colour for the background gradient fill on individual screen images</value>
+  </data>
+  <data name="FancyMouse_ScreenColor2.Header" xml:space="preserve">
+    <value>Screen colour 2</value>
+  </data>
+  <data name="FancyMouse_ScreenColor2.Description" xml:space="preserve">
+    <value>The end colour for the background gradient fill on individual screen images</value>
+  </data>
+  <data name="FancyMouse_Save.Content" xml:space="preserve">
+    <value>Save</value>
+  </data>
+
+  <!-- ShortcutControl / ShortcutDialogContentControl - ported from PowerToys' own equivalent
+       control (see ShortcutControl.xaml.cs's remarks); string keys/wording adapted rather than
+       copied verbatim, and anything conflict-detection-specific is dropped since this control has
+       no conflict detection to report on. -->
+  <data name="ShortcutDialog_Title" xml:space="preserve">
+    <value>Activation shortcut</value>
+  </data>
+  <data name="ShortcutDialog_Save" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="ShortcutDialog_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="ConfigureShortcutText.Text" xml:space="preserve">
+    <value>Type a shortcut</value>
+  </data>
+  <data name="ConfigureShortcut" xml:space="preserve">
+    <value>Configure a shortcut</value>
+  </data>
+  <data name="InvalidShortcutWarningLabel.Text" xml:space="preserve">
+    <value>Press the desired key combination, including at least one modifier key (Ctrl, Alt, Shift or Windows).</value>
+  </data>
+  <data name="NoShortcutSetLabel.Text" xml:space="preserve">
+    <value>No shortcut set</value>
+  </data>
+  <data name="Shortcut_Reset.Text" xml:space="preserve">
+    <value>Reset</value>
+  </data>
+  <data name="Shortcut_ResetToolTip.Text" xml:space="preserve">
+    <value>Reset to the default shortcut</value>
+  </data>
+  <data name="Shortcut_Clear.Text" xml:space="preserve">
+    <value>Clear</value>
+  </data>
+  <data name="Shortcut_ClearToolTip.Text" xml:space="preserve">
+    <value>Remove the shortcut</value>
+  </data>
+  <data name="InvalidShortcut.Title" xml:space="preserve">
+    <value>Invalid shortcut</value>
+  </data>
+  <data name="InvalidShortcut.Message" xml:space="preserve">
+    <value>This shortcut must include at least one modifier key (Ctrl, Alt, Shift or Windows) plus another key.</value>
+  </data>
+  <data name="WarningShortcutAltGr.Title" xml:space="preserve">
+    <value>Possible AltGr conflict</value>
+  </data>
+  <data name="WarningShortcutAltGr.Message" xml:space="preserve">
+    <value>Shortcuts using Ctrl+Alt may be triggered unintentionally by AltGr on some keyboard layouts.</value>
+  </data>
+</root>

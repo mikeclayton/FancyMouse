@@ -1,0 +1,66 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <Import Project="..\Common.Dotnet.Analyzers.props" />
+    <Import Project="..\Common.Dotnet.props" />
+    <Import Project="..\Common.Dotnet.CsWinRT.props" />
+
+    <PropertyGroup>
+        <OutputType>WinExe</OutputType>
+        <RootNamespace>FancyMouse.SettingsUI</RootNamespace>
+        <ApplicationManifest>app.manifest</ApplicationManifest>
+        <Platforms>x64</Platforms>
+        <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+        <PublishProfile>win-$(Platform).pubxml</PublishProfile>
+        <UseWinUI>true</UseWinUI>
+        <EnablePreviewMsixTooling>true</EnablePreviewMsixTooling>
+        <WindowsPackageType>None</WindowsPackageType>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <DefineConstants>DISABLE_XAML_GENERATED_MAIN</DefineConstants>
+        <DefaultLanguage>en-US</DefaultLanguage>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Manifest Include="$(ApplicationManifest)" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.260317003" />
+        <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.7705" />
+        <PackageReference Include="CommunityToolkit.WinUI.Controls.SettingsControls" Version="8.2.251219" />
+        <PackageReference Include="CommunityToolkit.WinUI.Controls.Segmented" Version="8.2.251219" />
+        <PackageReference Include="CommunityToolkit.WinUI.Extensions" Version="8.2.251219" />
+        <PackageReference Include="WinUIEx" Version="2.8.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\FancyMouse.Common\FancyMouse.Common.csproj" />
+        <ProjectReference Include="..\FancyMouse.HotKeys\FancyMouse.HotKeys.csproj" />
+        <ProjectReference Include="..\FancyMouse.Models\FancyMouse.Models.csproj" />
+        <ProjectReference Include="..\FancyMouse.Settings\FancyMouse.Settings.csproj" />
+    </ItemGroup>
+
+    <!-- Publish Properties -->
+    <PropertyGroup>
+        <PublishReadyToRun Condition="'$(Configuration)' == 'Debug'">False</PublishReadyToRun>
+        <PublishReadyToRun Condition="'$(Configuration)' != 'Debug'">True</PublishReadyToRun>
+        <PublishTrimmed Condition="'$(Configuration)' == 'Debug'">False</PublishTrimmed>
+        <PublishTrimmed Condition="'$(Configuration)' != 'Debug'">True</PublishTrimmed>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- embedded, not Content/CopyToOutputDirectory - loaded via
+             FancyMouseViewModel.LoadImageResource, matching MouseUtilsViewModel's own
+             LoadImageResource("UI/Images/MouseJump-Desktop.png") pattern for its equivalent
+             fake-desktop asset. -->
+        <EmbeddedResource Include="Assets\PreviewDesktop.png" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- Content/CopyToOutputDirectory, not embedded - just a static ms-appx:/// image shown
+             directly by an <Image> in XAML, no code-behind loading needed. -->
+        <Content Include="Assets\fancymouse-banner.png">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
+
+</Project>
