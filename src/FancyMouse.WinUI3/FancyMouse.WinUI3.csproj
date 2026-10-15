@@ -3,6 +3,7 @@
     <Import Project="..\Common.Dotnet.CsWin32.props" />
     <Import Project="..\Common.Dotnet.CsWinRT.props" />
     <Import Project="..\Common.Dotnet.props" />
+    <Import Project="..\Common.AppOutput.props" />
 
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
