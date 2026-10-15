@@ -232,9 +232,6 @@
   <data name="FancyMouse_ScreenColor2.Description" xml:space="preserve">
     <value>The end colour for the background gradient fill on individual screen images</value>
   </data>
-  <data name="FancyMouse_Save.Content" xml:space="preserve">
-    <value>Save</value>
-  </data>
 
   <!-- ShortcutControl / ShortcutDialogContentControl - ported from PowerToys' own equivalent
        control (see ShortcutControl.xaml.cs's remarks); string keys/wording adapted rather than

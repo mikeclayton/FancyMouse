@@ -11,6 +11,7 @@
 // Substantially modified for FancyMouse.
 // See THIRD-PARTY-NOTICES.md for attribution details.
 
+using FancyMouse.SettingsUI.Helpers;
 using FancyMouse.SettingsUI.Models;
 
 namespace FancyMouse.SettingsUI.ViewModels;
@@ -19,13 +20,20 @@ namespace FancyMouse.SettingsUI.ViewModels;
 /// Local equivalent of PowerToys' <c>MouseUtilsViewModel</c>.
 public sealed partial class FancyMouseViewModel : PageViewModelBase
 {
-    public FancyMouseViewModel(FancyMouseSettingsConfig fancyMouseSettingsConfig)
+    public FancyMouseViewModel(SettingsUtils settingsUtils, FancyMouseSettingsConfig fancyMouseSettingsConfig)
     {
+        this.SettingsUtils = settingsUtils ?? throw new ArgumentNullException(nameof(settingsUtils));
         this.FancyMouseSettingsConfig = fancyMouseSettingsConfig ?? throw new ArgumentNullException(nameof(fancyMouseSettingsConfig));
 
         // relay FancyMouseThumbnailSize's own PropertyChanged (Width/Height edits) up to this
         // ViewModel's PropertyChanged, same as MouseUtilsViewModel's InitializeMouseJumpSettings
         // does for MouseJumpThumbnailSize.
         this.FancyMouseSettingsConfig.Properties.ThumbnailSize.PropertyChanged += this.FancyMouseThumbnailSizePropertyChanged;
+    }
+
+    private SettingsUtils SettingsUtils
+    {
+        get;
+        set;
     }
 }

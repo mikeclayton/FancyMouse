@@ -16,6 +16,7 @@ using CommunityToolkit.WinUI.Controls;
 
 using FancyMouse.Common.Helpers;
 using FancyMouse.Settings.V2;
+using FancyMouse.SettingsUI.Helpers;
 using FancyMouse.SettingsUI.Models;
 using FancyMouse.SettingsUI.ViewModels;
 
@@ -33,9 +34,9 @@ namespace FancyMouse.SettingsUI.Panels
             InitializeComponent();
         }
 
-        internal void SetConfig(FancyMouseSettingsConfig config)
+        internal void SetConfig(SettingsUtils settingsUtils, FancyMouseSettingsConfig config)
         {
-            this.ViewModel = new FancyMouseViewModel(config);
+            this.ViewModel = new FancyMouseViewModel(settingsUtils, config);
             this.Bindings.Update();
         }
 
