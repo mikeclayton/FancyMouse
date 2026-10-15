@@ -25,7 +25,7 @@ jobs:
     env:
 
       BUILD_PATH:       ${{ github.workspace }}/src
-      PUBLISH_PATH:     ${{ github.workspace }}/.build/app/net9.0-windows
+      PUBLISH_PATH:     ${{ github.workspace }}/.build/app/net 10.0-windows
 
       TARGET_FRAMEWORK: net10.0-windows10.0.26100.0
       CONFIG_NAME:      Release
@@ -111,6 +111,20 @@ jobs:
                 --p:Platform="${{ env.PLATFORM_NAME }}" `
                 --no-build `
                 --filter "TestCategory!=Performance"
+
+      - name: dotnet publish (winui3)
+        working-directory: ${{ env.BUILD_PATH }}
+        run: |
+            dotnet publish "./FancyMouse.WinUI3/FancyMouse.SettingsUI.csproj" `
+                --p:Configuration="${{ env.CONFIG_NAME }}" `
+                --p:Platform="${{ env.PLATFORM_NAME }}" `
+                --p:RuntimeIdentifier="${{ env.RUNTIME_NAME }}" `
+                --p:WindowsAppSDKSelfContained=false `
+                --p:PublishSingleFile=false `
+                --p:PublishReadyToRun=false `
+                --p:PublishTrimmed=false `
+                --self-contained false `
+                --output "${{ env.PUBLISH_PATH }}/FancyMouse.WinUI3"
 
       - name: dotnet publish (winui3)
         working-directory: ${{ env.BUILD_PATH }}
