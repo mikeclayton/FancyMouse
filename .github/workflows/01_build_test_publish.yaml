@@ -115,7 +115,7 @@ jobs:
       - name: dotnet publish (winui3)
         working-directory: ${{ env.BUILD_PATH }}
         run: |
-            dotnet publish "./FancyMouse.WinUI3/FancyMouse.SettingsUI.csproj" `
+            dotnet publish "./FancyMouse.SettingsUI/FancyMouse.SettingsUI.csproj" `
                 --p:Configuration="${{ env.CONFIG_NAME }}" `
                 --p:Platform="${{ env.PLATFORM_NAME }}" `
                 --p:RuntimeIdentifier="${{ env.RUNTIME_NAME }}" `
