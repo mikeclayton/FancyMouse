@@ -124,7 +124,7 @@ jobs:
                 --p:PublishReadyToRun=false `
                 --p:PublishTrimmed=false `
                 --self-contained false `
-                --output "${{ env.PUBLISH_PATH }}/FancyMouse.WinUI3"
+                --output "${{ env.PUBLISH_PATH }}/FancyMouse"
 
       - name: dotnet publish (winui3)
         working-directory: ${{ env.BUILD_PATH }}
@@ -138,7 +138,7 @@ jobs:
                 --p:PublishReadyToRun=false `
                 --p:PublishTrimmed=false `
                 --self-contained false `
-                --output "${{ env.PUBLISH_PATH }}/FancyMouse.WinUI3"
+                --output "${{ env.PUBLISH_PATH }}/FancyMouse"
 
       - name: upload release (winui3)
         uses: actions/upload-artifact@v7
