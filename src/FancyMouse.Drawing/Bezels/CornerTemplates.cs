@@ -327,7 +327,7 @@ internal static class CornerTemplates
         using var sourceImage = new Bitmap(imageWidth, imageHeight, PixelFormat.Format32bppArgb);
         using (var g = Graphics.FromImage(sourceImage))
         {
-            BezelGraphics.DrawFlatBezelRing(
+            BezelRenderer.DrawFlatBezelRing(
                 g,
                 x: 0,
                 y: 0,

@@ -13,7 +13,7 @@ namespace FancyMouse.Drawing.Bezels;
 /// with a different style, construct a separate BezelRenderer
 /// instance.
 /// </summary>
-public sealed class BezelRenderer : IDisposable
+public sealed partial class BezelRenderer : IDisposable
 {
     public BezelRenderer(BorderStyle bezelStyle)
     {
@@ -51,22 +51,6 @@ public sealed class BezelRenderer : IDisposable
     }
 
     /// <summary>
-    /// Builds the corner atlas from <see cref="BorderStyle"/>, for use at construction.
-    /// </summary>
-    private Bitmap DrawCornerTemplates()
-    {
-        var bezelWidth = (int)this.BezelStyle.Left;
-
-        // this.BezelProfile is scale-independent, so the same instance used for the
-        // 1× edge rendering is valid here too, even though GetCornerTemplates
-        // renders its atlas at 2× supersampling internally.
-        return CornerTemplates.GetCornerTemplates(
-            bezelWidth,
-            this.BezelStyle.Color ?? Color.Transparent,
-            this.BezelProfile);
-    }
-
-    /// <summary>
     /// Returns a border style with the 3d effect depth limited to half the border thickness.
     /// This prevents the "light" and "shadow" effects overlapping (or overwriting each other)
     /// in the middle of the border.
@@ -99,7 +83,7 @@ public sealed class BezelRenderer : IDisposable
         // ── Straight edge fills + 3-D effects ────────────────────────────────
         // Fills all four strips with flat BezelColor then overlays highlight /
         // shadow gradient effects on the outer and inner depth layers.
-        BezelGraphics.DrawBezelEdges(
+        BezelRenderer.DrawBezelEdges(
             g,
             x,
             y,

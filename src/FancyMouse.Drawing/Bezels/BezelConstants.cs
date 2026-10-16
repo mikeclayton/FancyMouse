@@ -42,14 +42,14 @@ internal static class BezelConstants
     /// Fraction along an edge line, from the corner-adjacent end, before its
     /// highlight/shadow effect begins to fade from <c>strongColor</c>.
     /// </summary>
-    /// <seealso cref="BezelGraphics.DrawBezelEdgeLine"/>
+    /// <seealso cref="BezelRenderer.DrawBezelEdgeLine"/>
     internal const float EdgeGradientStart = 0.05f;
 
     /// <summary>
     /// Fraction along an edge line, from the corner-adjacent end, at which its
     /// highlight/shadow effect finishes fading to <c>fadeColor</c>.
     /// </summary>
-    /// <seealso cref="BezelGraphics.DrawBezelEdgeLine"/>
+    /// <seealso cref="BezelRenderer.DrawBezelEdgeLine"/>
     internal const float EdgeGradientEnd = 0.75f;
 
     // ── Common corner / edge seam effect multipliers ──────────────────────────
