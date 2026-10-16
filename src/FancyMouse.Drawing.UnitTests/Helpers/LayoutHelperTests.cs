@@ -2,13 +2,13 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Text.Json;
 
-using FancyMouse.Common.Helpers;
+using FancyMouse.Drawing.Helpers;
 using FancyMouse.Models.Display;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Layout;
 using FancyMouse.Models.Styles;
 
-namespace FancyMouse.Common.UnitTests.Helpers;
+namespace FancyMouse.Drawing.UnitTests.Helpers;
 
 public static class LayoutHelperTests
 {

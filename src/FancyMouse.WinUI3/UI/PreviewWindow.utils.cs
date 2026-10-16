@@ -1,5 +1,5 @@
-using FancyMouse.Common.Helpers;
 using FancyMouse.Drawing.Capture;
+using FancyMouse.Drawing.Helpers;
 using FancyMouse.Models.Display;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Layout;

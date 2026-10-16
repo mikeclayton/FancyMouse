@@ -6,7 +6,7 @@ using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Layout;
 using FancyMouse.Models.Styles;
 
-namespace FancyMouse.Common.Helpers;
+namespace FancyMouse.Drawing.Helpers;
 
 public static class LayoutHelper
 {

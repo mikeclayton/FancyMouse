@@ -1,6 +1,6 @@
 using System.Drawing;
 
-using FancyMouse.Common.Helpers;
+using FancyMouse.Drawing.Helpers;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Layout;
 using FancyMouse.Models.Styles;

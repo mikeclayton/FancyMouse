@@ -6,7 +6,7 @@ using FancyMouse.Models.Display;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Styles;
 
-namespace FancyMouse.Common.Helpers;
+namespace FancyMouse.Drawing.Helpers;
 
 /// <summary>
 /// Composes a <see cref="PreviewStyle"/> into a single flattened bitmap - border, background,

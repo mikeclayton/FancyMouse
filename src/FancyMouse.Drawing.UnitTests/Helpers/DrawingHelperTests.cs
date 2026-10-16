@@ -3,11 +3,12 @@ using System.Drawing.Imaging;
 
 using FancyMouse.Common.Helpers;
 using FancyMouse.Drawing.Capture;
+using FancyMouse.Drawing.Helpers;
 using FancyMouse.Models.Display;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Styles;
 
-namespace FancyMouse.Common.UnitTests.Helpers;
+namespace FancyMouse.Drawing.UnitTests.Helpers;
 
 public static class DrawingHelperTests
 {
