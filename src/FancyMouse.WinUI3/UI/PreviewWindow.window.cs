@@ -59,7 +59,14 @@ internal sealed partial class PreviewWindow
             displayInfo = DeviceHelper.GetDisplayInfo();
         }
 
-        var activatedScreen = DeviceHelper.GetActivatedScreen(displayInfo.Devices[0], activatedLocation);
+        var activatedScreen = displayInfo.Devices[0].GetScreenFromPoint(activatedLocation);
+        if (activatedScreen is null)
+        {
+            // e.g. the monitor layout changed between reading the cursor and the screens -
+            // there's nowhere to show the preview, so leave the window hidden
+            logger.Warn($"no screen contains the activated location {activatedLocation}");
+            return;
+        }
 
         // appSettings.PreviewStyle is a raw settings file representation - it contains the custom
         // style settings regardless of PreviewType ("compact", "bezzelled", "custom") so

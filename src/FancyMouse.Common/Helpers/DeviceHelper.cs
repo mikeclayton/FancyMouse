@@ -1,5 +1,4 @@
 ﻿using FancyMouse.Models.Display;
-using FancyMouse.Models.Drawing;
 
 namespace FancyMouse.Common.Helpers;
 
@@ -18,16 +17,5 @@ public static class DeviceHelper
 
         return new DisplayInfo(
             devices: devices);
-    }
-
-    public static ScreenInfo GetActivatedScreen(DeviceInfo deviceInfo, PointInfo activatedLocation)
-    {
-        ArgumentNullException.ThrowIfNull(deviceInfo);
-        ArgumentNullException.ThrowIfNull(activatedLocation);
-
-        var activatedScreen = deviceInfo.Screens
-            .Single(screen => screen.DisplayArea.Contains(activatedLocation));
-
-        return activatedScreen;
     }
 }

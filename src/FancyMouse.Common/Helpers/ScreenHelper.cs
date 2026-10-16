@@ -74,21 +74,4 @@ internal static class ScreenHelper
                     monitorInfo.rcWork.bottom - monitorInfo.rcWork.top));
         }
     }
-
-    public static ScreenInfo GetScreenFromPoint(
-        List<ScreenInfo> screens,
-        PointInfo pt)
-    {
-        // get the monitor handle from the point
-        var hMonitor = User32.MonitorFromPoint(
-                new((int)pt.X, (int)pt.Y),
-                MONITOR_FROM_FLAGS.MONITOR_DEFAULTTONEAREST)
-            .ThrowIfFailed()
-            .GetValue();
-
-        // find the screen with the given monitor handle
-        var screen = screens
-            .Single(item => item.Handle == hMonitor);
-        return screen;
-    }
 }
