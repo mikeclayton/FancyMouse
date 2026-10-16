@@ -151,10 +151,10 @@ public static class DrawingHelperTests
             // render, since the expected golden images were captured against that. Production
             // code no longer flattens these into a single bitmap itself (screenshots/bezels
             // are laid out as native XAML elements by PreviewPane - see its remarks), so this
-            // test uses the same shared PreviewHelper.ComposePreviewAsync the SettingsUI style
+            // test uses the same shared PreviewHelper.DrawPreviewAsync the SettingsUI style
             // preview does, for comparison purposes only - clamped to the activated screen,
             // matching the physical bound a real on-screen preview would be shown under.
-            using var actual = await PreviewHelper.ComposePreviewAsync(
+            using var actual = await PreviewHelper.DrawPreviewAsync(
                 data.PreviewStyle,
                 new StaticScreenshotCaptureProvider(desktopImage),
                 data.DisplayInfo,

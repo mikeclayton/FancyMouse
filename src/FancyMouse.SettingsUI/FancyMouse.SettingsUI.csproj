@@ -33,7 +33,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\FancyMouse.Common\FancyMouse.Common.csproj" />
         <ProjectReference Include="..\FancyMouse.Drawing\FancyMouse.Drawing.csproj" />
         <ProjectReference Include="..\FancyMouse.HotKeys\FancyMouse.HotKeys.csproj" />
         <ProjectReference Include="..\FancyMouse.Models\FancyMouse.Models.csproj" />

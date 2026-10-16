@@ -18,13 +18,13 @@ using System.Drawing.Imaging;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
-using FancyMouse.Common.Helpers;
 using FancyMouse.Drawing.Capture;
 using FancyMouse.Drawing.Helpers;
 using FancyMouse.Models.Display;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Keyboard;
 using FancyMouse.Models.Styles;
+using FancyMouse.Settings.Helpers;
 using FancyMouse.Settings.V2;
 using FancyMouse.SettingsUI.Helpers;
 using FancyMouse.SettingsUI.Models;
@@ -180,7 +180,7 @@ namespace FancyMouse.SettingsUI.ViewModels
                 // an in-memory Bitmap), so blocking on it here is safe - this getter is a
                 // synchronous XAML binding and has no natural async path of its own.
                 var captureProvider = new StaticScreenshotCaptureProvider(FancyMouseViewModel.FancyMouseDesktopImage.Value);
-                using var previewBitmap = PreviewHelper.ComposePreviewAsync(previewStyle, captureProvider, displayInfo).GetAwaiter().GetResult();
+                using var previewBitmap = PreviewHelper.DrawPreviewAsync(previewStyle, captureProvider, displayInfo).GetAwaiter().GetResult();
 
                 // save the image to a memory stream
                 using var stream = new MemoryStream();
@@ -211,23 +211,23 @@ namespace FancyMouse.SettingsUI.ViewModels
                 canvasStyle: new BoxStyle(
                     marginStyle: MarginStyle.Empty,
                     borderStyle: new BorderStyle(
-                        color: ColorHelper.DeserializeFromConfigColorString(this.FancyMouseBorderColor),
+                        color: ColorHelper.FromColorString(this.FancyMouseBorderColor),
                         all: (decimal)this.FancyMouseBorderThickness,
                         depth: (decimal)this.FancyMouseBorder3dDepth),
                     paddingStyle: new PaddingStyle(all: (decimal)this.FancyMouseBorderPadding),
                     backgroundStyle: new BackgroundStyle(
-                        color1: ColorHelper.DeserializeFromConfigColorString(this.FancyMouseBackgroundColor1),
-                        color2: ColorHelper.DeserializeFromConfigColorString(this.FancyMouseBackgroundColor2))),
+                        color1: ColorHelper.FromColorString(this.FancyMouseBackgroundColor1),
+                        color2: ColorHelper.FromColorString(this.FancyMouseBackgroundColor2))),
                 screenStyle: new BoxStyle(
                     marginStyle: new MarginStyle(all: (decimal)this.FancyMouseScreenMargin),
                     borderStyle: new BorderStyle(
-                        color: ColorHelper.DeserializeFromConfigColorString(this.FancyMouseBezelColor),
+                        color: ColorHelper.FromColorString(this.FancyMouseBezelColor),
                         all: (decimal)this.FancyMouseBezelThickness,
                         depth: (decimal)this.FancyMouseBezel3dDepth),
                     paddingStyle: PaddingStyle.Empty,
                     backgroundStyle: new BackgroundStyle(
-                        color1: ColorHelper.DeserializeFromConfigColorString(this.FancyMouseScreenColor1),
-                        color2: ColorHelper.DeserializeFromConfigColorString(this.FancyMouseScreenColor2))),
+                        color1: ColorHelper.FromColorString(this.FancyMouseScreenColor1),
+                        color2: ColorHelper.FromColorString(this.FancyMouseScreenColor2))),
                 extraColors: extraColors);
         }
 

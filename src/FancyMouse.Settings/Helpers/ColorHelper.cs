@@ -1,7 +1,7 @@
 using System.Drawing;
 using System.Globalization;
 
-namespace FancyMouse.Common.Helpers;
+namespace FancyMouse.Settings.Helpers;
 
 public static class ColorHelper
 {
@@ -20,7 +20,7 @@ public static class ColorHelper
         return Color.FromArgb(color.A, color.R, color.G, color.B);
     }
 
-    public static string? SerializeToConfigColorString(Color? value)
+    public static string? ToColorString(Color? value)
     {
         if (!value.HasValue)
         {
@@ -39,7 +39,7 @@ public static class ColorHelper
         };
     }
 
-    public static Color? DeserializeFromConfigColorString(string? value)
+    public static Color? FromColorString(string? value)
     {
         if (string.IsNullOrEmpty(value))
         {

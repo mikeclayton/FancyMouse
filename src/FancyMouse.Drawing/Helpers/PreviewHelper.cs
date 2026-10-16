@@ -11,7 +11,7 @@ namespace FancyMouse.Drawing.Helpers;
 /// <summary>
 /// Composes a <see cref="PreviewStyle"/> into a single flattened bitmap - border, background,
 /// and per-screen bezels/screenshots all baked into one image, with each screen's content
-/// supplied by <paramref name="captureProvider"/> (see <see cref="ComposePreviewAsync"/>). This is a
+/// supplied by <paramref name="captureProvider"/> (see <see cref="DrawPreviewAsync"/>). This is a
 /// fallback for contexts that can't render the layout as native, separately-composited UI
 /// elements the way <c>FancyMouse.WinUI3</c>'s <c>PreviewWindow</c>/<c>PreviewPane</c> do -
 /// currently used by <c>FancyMouse.SettingsUI</c>'s live style preview (against a bundled
@@ -27,7 +27,7 @@ public static class PreviewHelper
     /// PreviewWindow form's controls, and can be used as the "live preview" in the SettingsUI
     /// and in tests to confirm the visual components all draw correctly compared to a reference image.
     /// </summary>
-    public static async Task<Bitmap> ComposePreviewAsync(
+    public static async Task<Bitmap> DrawPreviewAsync(
         PreviewStyle previewStyle,
         IScreenshotCaptureProvider captureProvider,
         DisplayInfo displayInfo,
