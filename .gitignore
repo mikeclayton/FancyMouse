@@ -19,11 +19,12 @@ usbmmidd_v2/**
 # (some projects have EmitCompilerGeneratedFiles set to true to
 # cache the CsWin32 generated files for committing to source control,
 # but even then we don't want to check in WinRT.SourceGenerator files)
-**/Generated/WinRT.SourceGenerator
+**/Generated/WinRT.SourceGenerator/
 
-# FancyMouse.Common.csproj/FancyMouse.HotKeys.csproj/FancyMouse.WinUI3.csproj
-# write every source generator's output here (CsWin32 + FancyMouse.Win32Gen)
-# purely so it can be reviewed locally
-src/FancyMouse.Common/Generated
-src/FancyMouse.HotKeys/Generated
-src/FancyMouse.WinUI3/Generated
+# CsWin32 writes its generated output here so it can be reviewed locally
+# but we don't need to commit them
+**/Generated/Microsoft.Windows.CsWin32/
+
+# Win32Gen writes its generated output here so it can be reviewed locally
+# but we don't need to commit them
+**/Generated/FancyMouse.Win32Gen/

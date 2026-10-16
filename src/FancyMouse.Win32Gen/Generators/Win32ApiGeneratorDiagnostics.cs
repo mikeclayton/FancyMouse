@@ -48,4 +48,20 @@ internal static class Win32ApiGeneratorDiagnostics
         category: "FancyMouse.Win32Gen",
         DiagnosticSeverity.Error,
         isEnabledByDefault: true);
+
+    /// <summary>
+    /// Each wrapper file aliases the CsWin32 types its api's signatures use by their simple
+    /// name (e.g. <c>using HWND = global::Windows.Win32.Foundation.HWND;</c>) so templates can
+    /// use the short name. That only works if no two of those types share a simple name -
+    /// unexpected given how win32metadata names its types, but if it ever happens it's better
+    /// to say so plainly than to silently pick one, so neither gets an alias and the build
+    /// fails here, naming both.
+    /// </summary>
+    public static readonly DiagnosticDescriptor TypeAliasCollision = new(
+        id: "WIN32GEN003",
+        title: "Wrapper type alias collision",
+        messageFormat: "Can't alias '{1}' for the '{0}' wrapper - more than one type in its signatures has that name ({2}); qualify the type in the template instead",
+        category: "FancyMouse.Win32Gen",
+        DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
 }

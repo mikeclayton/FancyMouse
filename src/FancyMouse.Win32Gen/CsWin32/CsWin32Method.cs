@@ -24,6 +24,12 @@ namespace FancyMouse.Win32Gen.CsWin32;
 /// </remarks>
 internal sealed class CsWin32Method
 {
+    // the alias CsWin32 declares at the top of each generated file
+    // ("using winmdroot = global::Windows.Win32;") and qualifies all its own types with
+    private const string WinmdRootAlias = "winmdroot";
+    private const string WinmdRootPrefix = CsWin32Method.WinmdRootAlias + ".";
+    private const string Win32RootNamespace = "Windows.Win32";
+
     private readonly MethodDeclarationSyntax syntax;
 
     internal CsWin32Method(MethodDeclarationSyntax syntax)
@@ -44,6 +50,33 @@ internal sealed class CsWin32Method
     /// alongside the native one for many functions - not every function has one.
     /// </summary>
     public bool IsFriendlyMethod => !this.IsNativeMethod;
+
+    /// <summary>
+    /// Returns the fully qualified name (e.g. <c>Windows.Win32.Foundation.HWND</c>) of every
+    /// CsWin32-generated type in this overload's return type and parameters, including type
+    /// arguments (e.g. the <c>RECT</c> in <c>Span&lt;RECT&gt;</c>). Types outside
+    /// <c>Windows.Win32</c> (<c>SafeHandle</c>, <c>string</c>, primitives) aren't included.
+    /// </summary>
+    /// <remarks>
+    /// CsWin32 writes every one of its own types as <c>winmdroot.&lt;Namespace&gt;.&lt;Type&gt;</c>
+    /// (where <c>winmdroot</c> aliases <c>global::Windows.Win32</c>), so the outermost
+    /// qualified names rooted at <c>winmdroot</c> are exactly the generated types this
+    /// overload uses - no metadata lookup needed.
+    /// </remarks>
+    public IEnumerable<string> GetWin32TypeNames()
+    {
+        var types = new[] { this.syntax.ReturnType }
+            .Concat(this.syntax.ParameterList.Parameters.Select(parameter => parameter.Type))
+            .OfType<TypeSyntax>();
+
+        return types
+            .SelectMany(type => type.DescendantNodesAndSelf().OfType<QualifiedNameSyntax>())
+            .Where(name => name.Parent is not QualifiedNameSyntax)
+            .Select(name => name.ToString().Replace(" ", string.Empty))
+            .Where(name => name.StartsWith(CsWin32Method.WinmdRootPrefix, StringComparison.Ordinal))
+            .Select(name => CsWin32Method.Win32RootNamespace + name.Substring(CsWin32Method.WinmdRootAlias.Length))
+            .Distinct(StringComparer.Ordinal);
+    }
 
     public string? TryExtractXmlDocs()
     {
