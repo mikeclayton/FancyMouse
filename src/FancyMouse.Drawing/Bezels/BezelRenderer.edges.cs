@@ -9,20 +9,35 @@ public sealed partial class BezelRenderer
     /// Draws a 1-pixel thick, 3-stage gradient line as part of a bezel's edge.
     /// </summary>
     /// <remarks>
-    /// The line starts at (x1, y1) using strongColour and fades to fadeColour as it approaches (x2, y2).
-    /// The 3-stage gradient is asymmetrical - to reverse the direction swap (x1, y1) and (x2, y2)
-    /// (don't just swap the colours).
+    /// The line starts at (x1, y1) and is drawn using <paramref name="startColor"/> up to
+    /// <paramref name="transitionStart"/>, then fades to <paramref name="endColor"/> by
+    /// <paramref name="transitionEnd"/>, and stays at <paramref name="endColor"/> up to (x2, y2).
     /// </remarks>
-    /// <param name="strongColor">The more intense colour, at the corner-adjacent end of the line.</param>
-    /// <param name="fadeColor">The colour the line fades to, away from the corner.</param>
+    /// <param name="startColor">The colour at the (x1, y1) end of the line.</param>
+    /// <param name="transitionStart">
+    /// Fraction of the line's length (0-1) from (x1, y1) at which the fade from
+    /// <paramref name="startColor"/> begins.
+    /// </param>
+    /// <param name="transitionEnd">
+    /// Fraction of the line's length (0-1) from (x1, y1) at which the fade to
+    /// <paramref name="endColor"/> is complete.
+    /// </param>
+    /// <param name="endColor">The colour at the (x2, y2) end of the line.</param>
+    /// <exception cref="ArgumentException">The coordinates aren't a horizontal or vertical line.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// The transition points aren't in order within 0 to 1
+    /// (i.e. 0 ≤ <paramref name="transitionStart"/> ≤ <paramref name="transitionEnd"/> ≤ 1).
+    /// </exception>
     private static void DrawBezelEdgeLine(
         Graphics g,
         int x1,
         int y1,
         int x2,
         int y2,
-        Color strongColor,
-        Color fadeColor)
+        Color startColor,
+        float transitionStart,
+        float transitionEnd,
+        Color endColor)
     {
         // make sure the coordinates represent a vertical or horizontal line,
         // not an arbitrary rectangle - each pixel row (or column) of the bezel
@@ -32,8 +47,18 @@ public sealed partial class BezelRenderer
             throw new ArgumentException("Coordinates must represent a single-pixel line, not a rectangle - i.e. x1 == x2 or y1 == y2.");
         }
 
-        // the gradient is asymmetrical, but the direction is controlled by the
-        // brush not the drawing bounds, so we'll normalise the coordinates here
+        // the transition points must be in order within 0-1 (equal values are fine - e.g.
+        // start == end gives a hard step instead of a fade) - checked here, before g is
+        // modified below, so an invalid call can't leave g half-reconfigured
+        if (!((transitionStart >= 0f) && (transitionStart <= transitionEnd) && (transitionEnd <= 1f)))
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(transitionStart),
+                $"Transition points must satisfy 0 <= {nameof(transitionStart)} ({transitionStart}) <= {nameof(transitionEnd)} ({transitionEnd}) <= 1.");
+        }
+
+        // the gradient's direction is controlled by the brush, not the drawing
+        // bounds, so we'll normalise the coordinates here
         var edgeBounds = (y1 == y2)
             ? new RectangleF(Math.Min(x1, x2), y1, Math.Abs(x2 - x1), 1f)
             : new RectangleF(x1, Math.Min(y1, y2), 1f, Math.Abs(y2 - y1));
@@ -44,12 +69,11 @@ public sealed partial class BezelRenderer
         g.SmoothingMode = SmoothingMode.None;
         g.PixelOffsetMode = PixelOffsetMode.None;
 
-        // set a default 2-stop gradient brush; this is overwritten with the full 4-stop
-        // gradient below if BezelConstants.EdgeGradientStart/EdgeGradientEnd are ever
-        // changed to invalid values, so rendering degrades instead of throwing.
-        // (note the coordinates are directional to ensure the gradient blends the right way)
+        // the constructor needs a 2-stop gradient, which is replaced with the full 4-stop
+        // gradient below (note the coordinates are directional to ensure the gradient
+        // blends the right way)
         using var brush = new LinearGradientBrush(
-            new Point(x1, y1), new Point(x2, y2), strongColor, fadeColor);
+            new Point(x1, y1), new Point(x2, y2), startColor, endColor);
 
         // for gradient fills, the default WrapMode.Tile fills the gradient region as
         // a series of tiles and it antialiases the edge where they join - this means
@@ -78,35 +102,31 @@ public sealed partial class BezelRenderer
         //                     and there's no visible bleed effect between tiles
         brush.WrapMode = WrapMode.TileFlipXY;
 
-        // only draw lighting effects fade for valid gradient stepping points
-        if ((BezelConstants.EdgeGradientEnd > BezelConstants.EdgeGradientStart) && (BezelConstants.EdgeGradientEnd < 1f))
+        // overall, the shape of the resulting gradient is 3 stages,
+        // transitioning at transitionStart and transitionEnd:
+        //
+        //     * stage 1 - solid:    startColor
+        //     * stage 2 - gradient: startColor -> endColor
+        //     * stage 3 - solid:    endColor
+        //
+        //     |solid|            gradient             |  solid  |
+        //     |▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▒▒▒▒▒▒▒▒▒▒▒▒░░░░░░░░░░░░---------|
+        //     0     ^                                 ^         1.0
+        //           |                                 |
+        //           transitionStart                   transitionEnd
+        //
+        //     * the first solid color is held flat at startColor to avoid a
+        //       visually jarring gradient starting straight away
+        //
+        //     * the gradient fades from startColor to endColor
+        //
+        //     * the final solid color is held flat at endColor for the rest
+        //       of the edge
+        brush.InterpolationColors = new ColorBlend(4)
         {
-            // overall, the shape of the resulting gradient is 3 stages,
-            // transitioning at <EdgeGradientStart>% and <EdgeGradientEnd>%:
-            //
-            //     * stage 1 - solid:    strongColor
-            //     * stage 2 - gradient: strongColor -> fadeColor
-            //     * stage 3 - solid:    fadeColor
-            //
-            //     |solid|            gradient             |  solid  |
-            //     |▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▒▒▒▒▒▒▒▒▒▒▒▒░░░░░░░░░░░░---------|
-            //     0     ^                                 ^         1.0
-            //           |                                 |
-            //           EdgeGradientStart                 EdgeGradientEnd
-            //
-            //     * the first solid color is held flat at strongColor to avoid a
-            //       visually jarring gradient starting straight away
-            //
-            //     * the gradient fades from strongColor to fadeColor
-            //
-            //     * the final solid color is held flat at fadeColor for the rest
-            //       of the edge
-            brush.InterpolationColors = new ColorBlend(4)
-            {
-                Colors = [strongColor, strongColor, fadeColor, fadeColor],
-                Positions = [0f, BezelConstants.EdgeGradientStart, BezelConstants.EdgeGradientEnd, 1f],
-            };
-        }
+            Colors = [startColor, startColor, endColor, endColor],
+            Positions = [0f, transitionStart, transitionEnd, 1f],
+        };
 
         g.FillRectangle(brush, edgeBounds);
 
@@ -201,8 +221,10 @@ public sealed partial class BezelRenderer
                     y1: topLineY,
                     x2: horizontalEdgeX2,
                     y2: topLineY,
-                    strongColor: frontFacingLight ? GetHighlightColor(BezelConstants.EdgeForwardHighlightStrong, forwardMagnitude) : GetShadowColor(BezelConstants.EdgeForwardShadowStrong, forwardMagnitude),
-                    fadeColor: frontFacingLight ? GetHighlightColor(BezelConstants.EdgeForwardHighlightFade, forwardMagnitude) : GetShadowColor(BezelConstants.EdgeForwardShadowFade, forwardMagnitude));
+                    startColor: frontFacingLight ? GetHighlightColor(BezelConstants.EdgeForwardHighlightStrong, forwardMagnitude) : GetShadowColor(BezelConstants.EdgeForwardShadowStrong, forwardMagnitude),
+                    transitionStart: BezelConstants.EdgeGradientStart,
+                    transitionEnd: BezelConstants.EdgeGradientEnd,
+                    endColor: frontFacingLight ? GetHighlightColor(BezelConstants.EdgeForwardHighlightFade, forwardMagnitude) : GetShadowColor(BezelConstants.EdgeForwardShadowFade, forwardMagnitude));
             }
 
             // Right:  HL when facing light, SH when facing away (bottom→top)
@@ -214,8 +236,10 @@ public sealed partial class BezelRenderer
                     y1: verticalEdgeY2,
                     x2: rightLineX,
                     y2: verticalEdgeY1,
-                    strongColor: backFacingLight ? GetHighlightColor(BezelConstants.EdgeReverseHighlightStrong, reverseMagnitude) : GetShadowColor(BezelConstants.EdgeReverseShadowStrong, reverseMagnitude),
-                    fadeColor: backFacingLight ? GetHighlightColor(BezelConstants.EdgeReverseHighlightFade, reverseMagnitude) : GetShadowColor(BezelConstants.EdgeReverseShadowFade, reverseMagnitude));
+                    startColor: backFacingLight ? GetHighlightColor(BezelConstants.EdgeReverseHighlightStrong, reverseMagnitude) : GetShadowColor(BezelConstants.EdgeReverseShadowStrong, reverseMagnitude),
+                    transitionStart: BezelConstants.EdgeGradientStart,
+                    transitionEnd: BezelConstants.EdgeGradientEnd,
+                    endColor: backFacingLight ? GetHighlightColor(BezelConstants.EdgeReverseHighlightFade, reverseMagnitude) : GetShadowColor(BezelConstants.EdgeReverseShadowFade, reverseMagnitude));
             }
 
             // Bottom: HL when facing light, SH when facing away (right→left)
@@ -227,8 +251,10 @@ public sealed partial class BezelRenderer
                     y1: bottomLineY,
                     x2: horizontalEdgeX1,
                     y2: bottomLineY,
-                    strongColor: backFacingLight ? GetHighlightColor(BezelConstants.EdgeReverseHighlightStrong, reverseMagnitude) : GetShadowColor(BezelConstants.EdgeReverseShadowStrong, reverseMagnitude),
-                    fadeColor: backFacingLight ? GetHighlightColor(BezelConstants.EdgeReverseHighlightFade, reverseMagnitude) : GetShadowColor(BezelConstants.EdgeReverseShadowFade, reverseMagnitude));
+                    startColor: backFacingLight ? GetHighlightColor(BezelConstants.EdgeReverseHighlightStrong, reverseMagnitude) : GetShadowColor(BezelConstants.EdgeReverseShadowStrong, reverseMagnitude),
+                    transitionStart: BezelConstants.EdgeGradientStart,
+                    transitionEnd: BezelConstants.EdgeGradientEnd,
+                    endColor: backFacingLight ? GetHighlightColor(BezelConstants.EdgeReverseHighlightFade, reverseMagnitude) : GetShadowColor(BezelConstants.EdgeReverseShadowFade, reverseMagnitude));
             }
 
             // Left:   HL when facing light, SH when facing away (top→bottom)
@@ -240,8 +266,10 @@ public sealed partial class BezelRenderer
                     y1: verticalEdgeY1,
                     x2: leftLineX,
                     y2: verticalEdgeY2,
-                    strongColor: frontFacingLight ? GetHighlightColor(BezelConstants.EdgeForwardHighlightStrong, forwardMagnitude) : GetShadowColor(BezelConstants.EdgeForwardShadowStrong, forwardMagnitude),
-                    fadeColor: frontFacingLight ? GetHighlightColor(BezelConstants.EdgeForwardHighlightFade, forwardMagnitude) : GetShadowColor(BezelConstants.EdgeForwardShadowFade, forwardMagnitude));
+                    startColor: frontFacingLight ? GetHighlightColor(BezelConstants.EdgeForwardHighlightStrong, forwardMagnitude) : GetShadowColor(BezelConstants.EdgeForwardShadowStrong, forwardMagnitude),
+                    transitionStart: BezelConstants.EdgeGradientStart,
+                    transitionEnd: BezelConstants.EdgeGradientEnd,
+                    endColor: frontFacingLight ? GetHighlightColor(BezelConstants.EdgeForwardHighlightFade, forwardMagnitude) : GetShadowColor(BezelConstants.EdgeForwardShadowFade, forwardMagnitude));
             }
         }
     }

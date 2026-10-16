@@ -25,7 +25,7 @@ internal static class BezelConstants
     /// Degrees from the nearest straight edge at which a corner's highlight/shadow
     /// effect begins to fade. Full intensity between 0° and this value.
     /// </summary>
-    /// <seealso cref="CornerTemplates.GetCornerTemplates"/>
+    /// <seealso cref="BezelRenderer.GetCornerTemplates"/>
     internal const double CornerGradientStart = 30.0;
 
     /// <summary>
@@ -33,21 +33,21 @@ internal static class BezelConstants
     /// effect reaches zero intensity, fading via a cosine curve from
     /// <see cref="CornerGradientStart"/> to this value.
     /// </summary>
-    /// <seealso cref="CornerTemplates.GetCornerTemplates"/>
+    /// <seealso cref="BezelRenderer.GetCornerTemplates"/>
     internal const double CornerGradientEnd = 90.0 - BezelConstants.CornerGradientStart; // 60.0
 
     // ── edge shading parameters ──────────────────────────
 
     /// <summary>
     /// Fraction along an edge line, from the corner-adjacent end, before its
-    /// highlight/shadow effect begins to fade from <c>strongColor</c>.
+    /// highlight/shadow effect begins to fade from <c>startColor</c>.
     /// </summary>
     /// <seealso cref="BezelRenderer.DrawBezelEdgeLine"/>
     internal const float EdgeGradientStart = 0.05f;
 
     /// <summary>
     /// Fraction along an edge line, from the corner-adjacent end, at which its
-    /// highlight/shadow effect finishes fading to <c>fadeColor</c>.
+    /// highlight/shadow effect finishes fading to <c>endColor</c>.
     /// </summary>
     /// <seealso cref="BezelRenderer.DrawBezelEdgeLine"/>
     internal const float EdgeGradientEnd = 0.75f;
