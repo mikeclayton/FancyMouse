@@ -2,7 +2,7 @@ using System.Drawing;
 
 using FancyMouse.Models.Drawing;
 
-namespace FancyMouse.Common.Capture;
+namespace FancyMouse.Drawing.Capture;
 
 /// <summary>
 /// Represents a screenshot capture implementation for a specific device. A caller may issue

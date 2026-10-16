@@ -18,8 +18,8 @@ using System.Drawing.Imaging;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
-using FancyMouse.Common.Capture;
 using FancyMouse.Common.Helpers;
+using FancyMouse.Drawing.Capture;
 using FancyMouse.Models.Display;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Keyboard;

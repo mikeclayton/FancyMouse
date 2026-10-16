@@ -1,4 +1,3 @@
-using FancyMouse.Common.Capture;
 using FancyMouse.Telemetry;
 using FancyMouse.WinUI3.Internal.Helpers;
 

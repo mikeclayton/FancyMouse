@@ -1,0 +1,6 @@
+SetStretchBltMode
+StretchBlt
+
+GetDesktopWindow
+GetWindowDC
+ReleaseDC

@@ -1,6 +1,6 @@
 using System.Drawing;
 
-using FancyMouse.Common.Capture;
+using FancyMouse.Drawing.Capture;
 using FancyMouse.Models.Layout;
 
 namespace FancyMouse.WinUI3.UI;

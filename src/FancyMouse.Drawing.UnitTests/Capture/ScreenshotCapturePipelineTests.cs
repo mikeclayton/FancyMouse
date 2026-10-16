@@ -1,12 +1,12 @@
 using System.Drawing;
 
-using FancyMouse.Common.Capture;
+using FancyMouse.Drawing.Capture;
 using FancyMouse.Models.Display;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Layout;
 using FancyMouse.Models.Styles;
 
-namespace FancyMouse.Common.UnitTests.Capture;
+namespace FancyMouse.Drawing.UnitTests.Capture;
 
 [TestClass]
 public sealed class ScreenshotCapturePipelineTests

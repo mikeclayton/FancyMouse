@@ -1,13 +1,14 @@
 using System.Drawing;
 using System.Drawing.Imaging;
 
-using FancyMouse.Common.Win32Gen;
+using FancyMouse.Drawing.Capture;
+using FancyMouse.Drawing.Windows.Win32Gen;
 using FancyMouse.Models.Drawing;
 
 using Windows.Win32.Foundation;
 using Windows.Win32.Graphics.Gdi;
 
-namespace FancyMouse.Common.Capture;
+namespace FancyMouse.Drawing.Windows.Capture;
 
 /// <summary>
 /// Implements an <see cref="IScreenshotCaptureProvider"/> that captures from the current

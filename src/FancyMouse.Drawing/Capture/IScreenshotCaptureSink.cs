@@ -2,7 +2,7 @@ using System.Drawing;
 
 using FancyMouse.Models.Layout;
 
-namespace FancyMouse.Common.Capture;
+namespace FancyMouse.Drawing.Capture;
 
 /// <summary>
 /// Receives screenshots as <see cref="ScreenshotCapturePipeline"/> captures them, one screen at
