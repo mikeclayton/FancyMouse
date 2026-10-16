@@ -103,7 +103,7 @@ internal sealed partial class PreviewPane
     /// Returns this screen's last real screenshot, blurred, if <see cref="BlurPipeline"/> still
     /// has one available - or <see langword="null"/> (falling back to the plain placeholder
     /// fill) if not - for a screen whose current activation hasn't captured yet. See
-    /// <see cref="ScreenshotBlurPipeline.TryGet"/> for the freshness rules.
+    /// <see cref="BlurPipeline.TryGet"/> for the freshness rules.
     /// </summary>
     private WriteableBitmap? GetBlurredPlaceholder(ScreenInfo screenInfo)
     {

@@ -1,10 +1,9 @@
 using System.Drawing;
 
-using FancyMouse.Common.Helpers;
 using FancyMouse.Models.Display;
 using FancyMouse.Telemetry;
 
-namespace FancyMouse.Common.Blurring;
+namespace FancyMouse.Drawing.Blurring;
 
 /// <summary>
 /// Generates and caches a blurred stand-in screenshot per physical screen, for use as the
@@ -30,7 +29,7 @@ namespace FancyMouse.Common.Blurring;
 /// than constantly cancelling in-flight "doing" screenshots to start a more recent "todo"
 /// but never actually finishing any.
 /// </remarks>
-public sealed class ScreenshotBlurPipeline
+public sealed class BlurPipeline
 {
     /// <summary>
     /// How strongly a stand-in screenshot is blurred, desaturated and darkened - see
@@ -61,25 +60,25 @@ public sealed class ScreenshotBlurPipeline
     /// confirmed via telemetry showing 100% cache misses despite the same handles being reused
     /// throughout.
     /// </summary>
-    private readonly Dictionary<nint, ScreenshotBlurState> screens = new();
+    private readonly Dictionary<nint, BlurState> screens = new();
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ScreenshotBlurPipeline"/> class.
+    /// Initializes a new instance of the <see cref="BlurPipeline"/> class.
     /// </summary>
-    public ScreenshotBlurPipeline(TelemetryContext telemetry, TimeProvider? timeProvider = null)
-        : this(telemetry, timeProvider, ScreenshotBlurPipeline.CreateBlurredCopy)
+    public BlurPipeline(TelemetryContext telemetry, TimeProvider? timeProvider = null)
+        : this(telemetry, timeProvider, BlurPipeline.CreateBlurredCopy)
     {
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ScreenshotBlurPipeline"/> class.
+    /// Initializes a new instance of the <see cref="BlurPipeline"/> class.
     /// </summary>
     /// <remarks>
     /// Test-only - lets a test substitute <paramref name="blur"/> (e.g. one that blocks until
     /// released) so it can deterministically hold a blur "in progress" while it submits more
     /// screenshots or changes the active screens.
     /// </remarks>
-    internal ScreenshotBlurPipeline(TelemetryContext telemetry, TimeProvider? timeProvider, Func<Bitmap, Bitmap> blur)
+    internal BlurPipeline(TelemetryContext telemetry, TimeProvider? timeProvider, Func<Bitmap, Bitmap> blur)
     {
         this.Telemetry = telemetry ?? throw new ArgumentNullException(nameof(telemetry));
         this.TimeProvider = timeProvider ?? TimeProvider.System;
@@ -151,7 +150,7 @@ public sealed class ScreenshotBlurPipeline
             {
                 if (!this.screens.ContainsKey(handle))
                 {
-                    this.screens[handle] = new ScreenshotBlurState();
+                    this.screens[handle] = new BlurState();
                 }
             }
         }
@@ -226,7 +225,7 @@ public sealed class ScreenshotBlurPipeline
 
             if (state.Done is not null)
             {
-                if (this.TimeProvider.GetUtcNow() - state.DoneAt <= ScreenshotBlurPipeline.ClaimWindow)
+                if (this.TimeProvider.GetUtcNow() - state.DoneAt <= BlurPipeline.ClaimWindow)
                 {
                     this.Telemetry.WriteEvent(new { handle = screenInfo.Handle }, "blurRequestedFound");
                     use(state.Done);
@@ -314,5 +313,5 @@ public sealed class ScreenshotBlurPipeline
 
     private static Bitmap CreateBlurredCopy(Bitmap image)
         => BlurHelper.CreateBlurredCopy(
-            image, ScreenshotBlurPipeline.BlurIntensity, ScreenshotBlurPipeline.BlurSaturation, ScreenshotBlurPipeline.BlurBrightness);
+            image, BlurPipeline.BlurIntensity, BlurPipeline.BlurSaturation, BlurPipeline.BlurBrightness);
 }

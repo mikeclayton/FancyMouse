@@ -1,4 +1,4 @@
-using FancyMouse.Common.Blurring;
+using FancyMouse.Drawing.Blurring;
 using FancyMouse.Models.Display;
 using FancyMouse.Models.Layout;
 using FancyMouse.Telemetry;
@@ -31,7 +31,7 @@ internal sealed partial class PreviewPane : UserControl
     /// Backing field for <see cref="BlurPipeline"/> - creation is deferred to allow
     /// <see cref="Telemetry"/> to be initialised first and passed to the blur pipeline.
     /// </summary>
-    private ScreenshotBlurPipeline? blurPipeline;
+    private BlurPipeline? blurPipeline;
 
     private List<ScreenSlot> screenSlots = [];
 
@@ -112,8 +112,8 @@ internal sealed partial class PreviewPane : UserControl
     /// screenshot is being captured, if a screen capture takes longer than the budget allowed
     /// for showing the form.
     /// </summary>
-    private ScreenshotBlurPipeline BlurPipeline
-        => this.blurPipeline ??= new ScreenshotBlurPipeline(this.Telemetry);
+    private BlurPipeline BlurPipeline
+        => this.blurPipeline ??= new BlurPipeline(this.Telemetry);
 
     /// <summary>
     /// Raised when the pointer clicks a screen, or a keyboard shortcut that means the same

@@ -6,10 +6,12 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <Platforms>x64</Platforms>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\FancyMouse.Models\FancyMouse.Models.csproj" />
+      <ProjectReference Include="..\FancyMouse.Telemetry\FancyMouse.Telemetry.csproj" />
     </ItemGroup>
 
     <ItemGroup>

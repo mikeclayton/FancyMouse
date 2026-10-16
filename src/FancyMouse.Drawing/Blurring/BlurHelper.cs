@@ -1,7 +1,7 @@
 using System.Drawing;
 using System.Drawing.Imaging;
 
-namespace FancyMouse.Common.Helpers;
+namespace FancyMouse.Drawing.Blurring;
 
 /// <summary>
 /// Helpers to apply a blur to an image and return the result as a new image.

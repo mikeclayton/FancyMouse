@@ -1,13 +1,13 @@
 using System.Drawing;
 
-namespace FancyMouse.Common.Blurring;
+namespace FancyMouse.Drawing.Blurring;
 
 /// <summary>
 /// Represents the state of the blurred screenshot images for one physical screen
-/// within a <see cref="ScreenshotBlurPipeline"/> - see its remarks for what
+/// within a <see cref="BlurPipeline"/> - see its remarks for what
 /// "todo" / "doing" (<see cref="BlurInProgress"/>) / "done" mean.
 /// </summary>
-internal sealed class ScreenshotBlurState
+internal sealed class BlurState
 {
     public bool BlurInProgress
     {
