@@ -14,7 +14,7 @@
 
 using System.Diagnostics.CodeAnalysis;
 
-namespace FancyMouse.HotKeys;
+namespace FancyMouse.Models.Keyboard;
 
 /// <summary>
 ///  Specifies key codes and modifiers.

@@ -2,7 +2,7 @@
 using System.Drawing;
 using System.Text.Json;
 
-using FancyMouse.HotKeys;
+using FancyMouse.Models.Keyboard;
 using FancyMouse.Models.Styles;
 using FancyMouse.Settings.UnitTests.TestUtils;
 using FancyMouse.Settings.V2;

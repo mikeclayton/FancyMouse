@@ -1,4 +1,5 @@
 using FancyMouse.HotKeys.Win32Gen;
+using FancyMouse.Models.Keyboard;
 
 using Windows.Win32.UI.Input.KeyboardAndMouse;
 

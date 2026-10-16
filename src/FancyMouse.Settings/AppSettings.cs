@@ -1,10 +1,10 @@
 ﻿using System.Drawing;
 
-using FancyMouse.HotKeys;
+using FancyMouse.Models.Keyboard;
 using FancyMouse.Models.Styles;
 using FancyMouse.Settings.V2;
 
-using Keys = FancyMouse.HotKeys.Keys;
+using Keys = FancyMouse.Models.Keyboard.Keys;
 
 namespace FancyMouse.Settings;
 

@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 
-namespace FancyMouse.HotKeys;
+namespace FancyMouse.Models.Keyboard;
 
 public sealed class Keystroke
 {

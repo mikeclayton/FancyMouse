@@ -1,4 +1,6 @@
-﻿namespace FancyMouse.HotKeys;
+﻿using FancyMouse.Models.Keyboard;
+
+namespace FancyMouse.HotKeys;
 
 public sealed class HotKeyEventArgs : EventArgs
 {

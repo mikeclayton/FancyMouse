@@ -12,6 +12,7 @@
 // See THIRD-PARTY-NOTICES.md for attribution details.
 
 using FancyMouse.HotKeys;
+using FancyMouse.Models.Keyboard;
 
 namespace FancyMouse.Settings.UI.Controls;
 

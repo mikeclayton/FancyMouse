@@ -1,4 +1,6 @@
-﻿namespace FancyMouse.HotKeys.UnitTests;
+﻿using FancyMouse.Models.Keyboard;
+
+namespace FancyMouse.HotKeys.UnitTests;
 
 public static class KeystrokeTests
 {

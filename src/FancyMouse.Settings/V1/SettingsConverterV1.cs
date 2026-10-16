@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-using FancyMouse.HotKeys;
+using FancyMouse.Models.Keyboard;
 using FancyMouse.Models.Styles;
 using FancyMouse.Settings.V2;
 

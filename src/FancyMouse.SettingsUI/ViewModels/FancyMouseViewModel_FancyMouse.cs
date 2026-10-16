@@ -20,9 +20,9 @@ using System.Runtime.CompilerServices;
 
 using FancyMouse.Common.Capture;
 using FancyMouse.Common.Helpers;
-using FancyMouse.HotKeys;
 using FancyMouse.Models.Display;
 using FancyMouse.Models.Drawing;
+using FancyMouse.Models.Keyboard;
 using FancyMouse.Models.Styles;
 using FancyMouse.Settings.V2;
 using FancyMouse.SettingsUI.Helpers;

@@ -1,6 +1,7 @@
 ﻿using FancyMouse.Common.Helpers;
 using FancyMouse.Common.Interop;
 using FancyMouse.HotKeys.Win32Gen;
+using FancyMouse.Models.Keyboard;
 
 using Windows.Win32;
 using Windows.Win32.Foundation;
