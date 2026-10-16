@@ -1,7 +1,7 @@
 ﻿using System.Globalization;
 
 using FancyMouse.Common.Helpers;
-using FancyMouse.Common.Telemetry;
+using FancyMouse.Telemetry;
 using FancyMouse.WinUI3.Internal.Helpers;
 using FancyMouse.WinUI3.UI;
 
@@ -25,10 +25,17 @@ public partial class App : Application
     /// Initializes the singleton application object.  This is the first line of authored code
     /// executed, and as such is the logical equivalent of main() or WinMain().
     /// </summary>
-    public App()
+    public App(TelemetryContext telemetry)
     {
+        this.Telemetry = telemetry ?? throw new ArgumentNullException(nameof(telemetry));
+
         this.InitializeComponent();
         this.ActivationTask = Task.CompletedTask;
+    }
+
+    private TelemetryContext Telemetry
+    {
+        get;
     }
 
     private TrayIcon? TrayIcon
@@ -75,7 +82,7 @@ public partial class App : Application
             var configHelper = new ConfigHelper(logger);
             configHelper.SetAppSettingsPath(App.GetAppSettingsPath(logger));
 
-            var previewWindow = new PreviewWindow(logger: logger, configHelper: configHelper);
+            var previewWindow = new PreviewWindow(logger: logger, telemetry: this.Telemetry, configHelper: configHelper);
 
             this.VerifyHighDpiMode(logger);
             this.InitializeAppSettings(logger, configHelper);
@@ -149,8 +156,7 @@ public partial class App : Application
     }
 
     /// <summary>
-    /// Sets the process-wide ambient <see cref="Telemetry.Current"/> and, if
-    /// <see cref="Settings.AppSettings.TelemetryEnabled"/> says so, starts it
+    /// If <see cref="Settings.AppSettings.TelemetryEnabled"/> says so, starts <see cref="Telemetry"/>
     /// writing to a file stamped with <paramref name="timestamp"/> - see
     /// <see cref="InitializeLogger"/> for why the same timestamp is shared with the log file.
     /// Must run after <see cref="ConfigHelper.LoadAppSettings"/>, since it depends on
@@ -158,8 +164,6 @@ public partial class App : Application
     /// </summary>
     private void InitializeTelemetry(DateTime timestamp, ConfigHelper configHelper)
     {
-        Telemetry.SetCurrent(TelemetryContext.Create(nameof(FancyMouse)));
-
         if (configHelper.AppSettings?.TelemetryEnabled == true)
         {
             var telemetryPath = Path.Combine(
@@ -167,7 +171,7 @@ public partial class App : Application
                 "FancyMouse",
                 "Telemetry",
                 $"telemetry_{timestamp:yyyy-MM-dd_HH_mm_ss}.jsonl");
-            Telemetry.Current.Start(new FileTelemetryWriter(telemetryPath));
+            this.Telemetry.Start(new FileTelemetryWriter(telemetryPath));
         }
     }
 
@@ -260,7 +264,7 @@ public partial class App : Application
             // deliberate trade-off against flushing on every single record) - nothing else in
             // the app's lifetime calls that, so without this, telemetry from the whole session
             // never reaches disk at all once the process exits.
-            Telemetry.Current.Stop();
+            this.Telemetry.Stop();
             App.Current.Exit();
         };
         trayIcon.SettingsCommandClicked += (sender, e) =>

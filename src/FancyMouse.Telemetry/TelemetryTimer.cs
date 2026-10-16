@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-namespace FancyMouse.Common.Telemetry;
+namespace FancyMouse.Telemetry;
 
 /// <summary>
 /// A measured span opened via <see cref="TelemetryContext.BeginTimer"/> - on Dispose, the

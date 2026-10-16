@@ -1,4 +1,4 @@
-namespace FancyMouse.Common.Telemetry;
+namespace FancyMouse.Telemetry;
 
 /// <summary>
 /// Persists one already-flattened <see cref="TelemetryRecord"/>. Deliberately synchronous and

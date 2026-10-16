@@ -3,15 +3,14 @@ using System.Runtime.InteropServices.WindowsRuntime;
 
 using FancyMouse.Common.Capture;
 using FancyMouse.Common.Helpers;
-using FancyMouse.Common.Telemetry;
 using FancyMouse.Models.Display;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Layout;
 using FancyMouse.Settings.V2;
+using FancyMouse.Telemetry;
 using FancyMouse.WinUI3.Internal.Helpers;
 
 using Microsoft.UI.Windowing;
-
 using Windows.Graphics;
 
 namespace FancyMouse.WinUI3.UI;
@@ -33,13 +32,13 @@ internal sealed partial class PreviewWindow
         // below, rather than later when we actually show the window
         this.SetAsForegroundWindow();
 
-        using var activationTimer = Telemetry.Current.BeginTimer(new { }, nameof(PreviewWindow.ShowPreviewAsync));
+        using var activationTimer = this.Telemetry.BeginTimer(new { }, nameof(PreviewWindow.ShowPreviewAsync));
 
         // hide the form while we redraw it... (also cancels whatever the *previous* activation's
         // own activationCancellation was, via ClearPreview - harmless if the caller already
         // cancelled and awaited it before calling this method, since cancelling an
         // already-cancelled source is a no-op)
-        using (Telemetry.Current.BeginTimer(new { }, "HideWindowAsync"))
+        using (this.Telemetry.BeginTimer(new { }, "HideWindowAsync"))
         {
             await this.HideWindowAsync()
                 .ConfigureAwait(false);
@@ -52,7 +51,7 @@ internal sealed partial class PreviewWindow
         var appSettings = this.ConfigHelper.AppSettings ?? throw new InvalidOperationException();
 
         DisplayInfo displayInfo;
-        using (Telemetry.Current.BeginTimer(new { }, "GetDisplayInfo"))
+        using (this.Telemetry.BeginTimer(new { }, "GetDisplayInfo"))
         {
             displayInfo = DeviceHelper.GetDisplayInfo();
         }
@@ -65,7 +64,7 @@ internal sealed partial class PreviewWindow
         // the "compact" or "bezelled" style, or clone the "custom" style settings.
         var previewStyle = SettingsConverterV2.GetActivePreviewStyle(appSettings.PreviewStyle, appSettings.PreviewType);
         PreviewLayout previewLayout;
-        using (Telemetry.Current.BeginTimer(new { }, "GetPreviewLayout"))
+        using (this.Telemetry.BeginTimer(new { }, "GetPreviewLayout"))
         {
             previewLayout = LayoutHelper.GetPreviewLayout(
                 previewStyle,
@@ -87,14 +86,14 @@ internal sealed partial class PreviewWindow
         // than only ever noticing via a later awaited call
         cancellationToken.ThrowIfCancellationRequested();
 
-        using (Telemetry.Current.BeginTimer(new { }, "PositionWindowAsync"))
+        using (this.Telemetry.BeginTimer(new { }, "PositionWindowAsync"))
         {
             await this.PositionWindowAsync(positionedHostOuterBounds)
                 .ConfigureAwait(false);
         }
 
         (int Width, int Height, int CornerRadius) windowRegion;
-        using (Telemetry.Current.BeginTimer(new { }, "RenderBorderAsync"))
+        using (this.Telemetry.BeginTimer(new { }, "RenderBorderAsync"))
         {
             windowRegion = await this.RenderBorderAsync(previewLayout, previewWindowStyle)
                 .ConfigureAwait(false);
@@ -104,7 +103,7 @@ internal sealed partial class PreviewWindow
 
         // builds every screen's bezel + placeholder fill immediately, so there's something to
         // show as soon as the window becomes visible - screenshots backfill afterwards
-        using (Telemetry.Current.BeginTimer(new { }, "SetPreviewPaneLayoutAsync"))
+        using (this.Telemetry.BeginTimer(new { }, "SetPreviewPaneLayoutAsync"))
         {
             await this.SetPreviewPaneLayoutAsync(previewLayout, activatedScreen)
                 .ConfigureAwait(false);
@@ -127,7 +126,7 @@ internal sealed partial class PreviewWindow
         // necessary) to share across all of that device's screens. Ownership of each provider
         // transfers to the pipeline - see ScreenshotCapturePipeline.DisposeAsync.
         var captureTasks = new List<(ScreenLayout ScreenLayout, Task<Bitmap> CaptureTask)>();
-        using (Telemetry.Current.BeginTimer(new { }, "kickOffCaptureRequests"))
+        using (this.Telemetry.BeginTimer(new { }, "kickOffCaptureRequests"))
         {
             foreach (var deviceLayout in previewLayout.CanvasLayout.DeviceLayouts)
             {
@@ -153,19 +152,19 @@ internal sealed partial class PreviewWindow
             // screenshot shown instead until the capture is ready, at which point the screen's
             // image is automatically updated.
             var allCaptureTasks = captureTasks.Select(entry => entry.CaptureTask).ToArray();
-            using (Telemetry.Current.BeginTimer(new { }, "gracePeriodRace"))
+            using (this.Telemetry.BeginTimer(new { }, "gracePeriodRace"))
             {
                 await Task.WhenAny(Task.WhenAll(allCaptureTasks), Task.Delay(PreviewWindow.ScreenshotGracePeriod, cancellation.Token))
                     .ConfigureAwait(false);
             }
 
-            using (Telemetry.Current.BeginTimer(new { }, "activatedScreenCapture"))
+            using (this.Telemetry.BeginTimer(new { }, "activatedScreenCapture"))
             {
                 await activatedCaptureTask
                     .ConfigureAwait(false);
             }
 
-            using (Telemetry.Current.BeginTimer(new { }, "ShowWindowAsync"))
+            using (this.Telemetry.BeginTimer(new { }, "ShowWindowAsync"))
             {
                 await this.ShowWindowAsync(windowRegion.Width, windowRegion.Height, windowRegion.CornerRadius, cancellation.Token)
                     .ConfigureAwait(false);

@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
-namespace FancyMouse.Common.Telemetry;
+namespace FancyMouse.Telemetry;
 
 /// <summary>
 /// Records lightweight, opt-in diagnostic telemetry (as opposed to <c>NLog.ILogger</c>-style
@@ -12,11 +12,16 @@ namespace FancyMouse.Common.Telemetry;
 /// no-op path when nothing is listening: without calling <see cref="Start"/>, every method here
 /// still runs (so callers don't need to guard call sites), but
 /// <see cref="ActivitySource.StartActivity(string)"/> returns <see langword="null"/> immediately
-/// and nothing further happens. A plain instance class - no ambient/global state of its own, so
-/// it's easy to construct more than one (e.g. in tests) - see <see cref="Telemetry"/> for the
-/// process-wide ambient instance most call sites actually use.
+/// and nothing further happens. A plain instance class with no ambient/global state - the app
+/// creates one at startup and passes it to whatever needs it (the same way as its logger), so
+/// it's also easy to construct more than one (e.g. in tests).
 /// </summary>
-public sealed class TelemetryContext
+/// <remarks>
+/// Passing the context around explicitly doesn't lose any nesting - parent/child relationships
+/// between timers come from <see cref="Activity.Current"/>, which flows across async calls on
+/// its own regardless of how the context itself reaches each call site.
+/// </remarks>
+public sealed class TelemetryContext : IDisposable
 {
     /// <summary>
     /// Tag name distinguishing <see cref="BeginScope"/>/<see cref="BeginTimer"/>/<see cref="WriteEvent"/>
@@ -29,18 +34,16 @@ public sealed class TelemetryContext
 
     private TelemetryAdapter? adapter;
 
-    private TelemetryContext(ActivitySource activitySource)
-    {
-        this.activitySource = activitySource;
-    }
-
     /// <summary>
-    /// Creates a new <see cref="TelemetryContext"/> backed by its own <see cref="ActivitySource"/>
-    /// named <paramref name="sourceName"/> - call <see cref="Start"/> to actually route anything
-    /// it records anywhere.
+    /// Initializes a new instance of the <see cref="TelemetryContext"/> class, backed by its own
+    /// <see cref="ActivitySource"/> named <paramref name="sourceName"/> - call <see cref="Start"/>
+    /// to actually route anything it records anywhere.
     /// </summary>
-    public static TelemetryContext Create(string sourceName)
-        => new(new ActivitySource(sourceName));
+    public TelemetryContext(string sourceName)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(sourceName);
+        this.activitySource = new ActivitySource(sourceName);
+    }
 
     /// <summary>
     /// Starts routing everything this context records to <paramref name="writer"/>. Safe to call
@@ -93,6 +96,17 @@ public sealed class TelemetryContext
     }
 
     /// <summary>
+    /// Stops routing anywhere (see <see cref="Stop"/>, so queued records are flushed first) and
+    /// releases the underlying <see cref="ActivitySource"/>. Whoever created the context owns it
+    /// and disposes it - code it's merely passed to just uses it.
+    /// </summary>
+    public void Dispose()
+    {
+        this.Stop();
+        this.activitySource.Dispose();
+    }
+
+    /// <summary>
     /// Adds ambient key-value context for anything recorded (by this context, on this async
     /// flow) while the returned scope is open. Records no duration and writes nothing for the
     /// scope itself - e.g. wrap a whole activation in
@@ -126,7 +140,7 @@ public sealed class TelemetryContext
     /// Records a single point-in-time fact - no duration, no scope opened - but still carries
     /// whatever's currently ambient from any enclosing <see cref="BeginScope"/>/<see cref="BeginTimer"/>.
     /// </summary>
-    internal void WriteEvent(object properties, [CallerMemberName] string caller = "")
+    public void WriteEvent(object properties, [CallerMemberName] string caller = "")
     {
         using var activity = this.activitySource.StartActivity(caller);
         TelemetryContext.ApplyProperties(activity, properties);

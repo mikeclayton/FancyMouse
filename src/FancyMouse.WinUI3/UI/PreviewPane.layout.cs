@@ -43,10 +43,10 @@ internal sealed partial class PreviewPane
             .SelectMany(deviceLayout => deviceLayout.ScreenLayouts)
             .ToList();
 
-        // a new activation - tell blurPipeline which physical screens currently exist, before
+        // a new activation - tell BlurPipeline which physical screens currently exist, before
         // consulting it for placeholders below, so it only ever hands back blurred images for
         // screens that are still connected
-        this.blurPipeline.SetActiveScreens(
+        this.BlurPipeline.SetActiveScreens(
             newScreenLayouts.Select(screenLayout => screenLayout.ScreenInfo).ToList());
 
         // check screen slots from the previous activation and reuse any that are

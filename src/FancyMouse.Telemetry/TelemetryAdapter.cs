@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Threading.Channels;
 
-namespace FancyMouse.Common.Telemetry;
+namespace FancyMouse.Telemetry;
 
 /// <summary>
 /// Bridges a <see cref="TelemetryContext"/>'s recorded <see cref="Activity"/> instances to an

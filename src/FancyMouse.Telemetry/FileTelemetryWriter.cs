@@ -1,8 +1,6 @@
 using System.Text.Json;
 
-using FancyMouse.Models;
-
-namespace FancyMouse.Common.Telemetry;
+namespace FancyMouse.Telemetry;
 
 /// <summary>
 /// Writes each <see cref="TelemetryRecord"/> as one JSON Lines record to a file. No buffering,

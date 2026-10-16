@@ -2,6 +2,7 @@ using System.Drawing;
 
 using FancyMouse.Common.Helpers;
 using FancyMouse.Models.Display;
+using FancyMouse.Telemetry;
 
 namespace FancyMouse.Common.Blurring;
 
@@ -65,8 +66,8 @@ public sealed class ScreenshotBlurPipeline
     /// <summary>
     /// Initializes a new instance of the <see cref="ScreenshotBlurPipeline"/> class.
     /// </summary>
-    public ScreenshotBlurPipeline(TimeProvider? timeProvider = null)
-        : this(timeProvider, ScreenshotBlurPipeline.CreateBlurredCopy)
+    public ScreenshotBlurPipeline(TelemetryContext telemetry, TimeProvider? timeProvider = null)
+        : this(telemetry, timeProvider, ScreenshotBlurPipeline.CreateBlurredCopy)
     {
     }
 
@@ -78,8 +79,9 @@ public sealed class ScreenshotBlurPipeline
     /// released) so it can deterministically hold a blur "in progress" while it submits more
     /// screenshots or changes the active screens.
     /// </remarks>
-    internal ScreenshotBlurPipeline(TimeProvider? timeProvider, Func<Bitmap, Bitmap> blur)
+    internal ScreenshotBlurPipeline(TelemetryContext telemetry, TimeProvider? timeProvider, Func<Bitmap, Bitmap> blur)
     {
+        this.Telemetry = telemetry ?? throw new ArgumentNullException(nameof(telemetry));
         this.TimeProvider = timeProvider ?? TimeProvider.System;
         this.Blur = blur ?? throw new ArgumentNullException(nameof(blur));
     }
@@ -115,15 +117,14 @@ public sealed class ScreenshotBlurPipeline
     /// </summary>
     internal event Action<ScreenInfo>? BlurCompleted;
 
-    /// <remarks>
-    /// <see cref="global::FancyMouse.Common.Telemetry.Telemetry.Current"/>, renamed here because
-    /// "Telemetry" (the class) collides with the sibling <c>FancyMouse.Common.Telemetry</c>
-    /// namespace - a plain <c>using</c> can't fix this (enclosing-namespace lookup wins over
-    /// using-aliases for a name reachable that way), so this avoids needing every call site
-    /// below to fully-qualify it instead.
-    /// </remarks>
-    private static global::FancyMouse.Common.Telemetry.TelemetryContext CurrentTelemetry
-        => global::FancyMouse.Common.Telemetry.Telemetry.Current;
+    /// <summary>
+    /// Gets the context this pipeline records its telemetry (blur timings, cache hits and
+    /// misses, failures) to.
+    /// </summary>
+    private TelemetryContext Telemetry
+    {
+        get;
+    }
 
     /// <summary>
     /// Updates the collection of screens we're currently tracking screenshots for.
@@ -180,7 +181,7 @@ public sealed class ScreenshotBlurPipeline
                 return;
             }
 
-            ScreenshotBlurPipeline.CurrentTelemetry.WriteEvent(new { handle = screenInfo.Handle }, "screenshotBlurQueued");
+            this.Telemetry.WriteEvent(new { handle = screenInfo.Handle }, "screenshotBlurQueued");
 
             if (state.BlurInProgress)
             {
@@ -219,7 +220,7 @@ public sealed class ScreenshotBlurPipeline
         {
             if (!this.screens.TryGetValue(screenInfo.Handle, out var state))
             {
-                ScreenshotBlurPipeline.CurrentTelemetry.WriteEvent(new { handle = screenInfo.Handle }, "blurRequestedNotFound");
+                this.Telemetry.WriteEvent(new { handle = screenInfo.Handle }, "blurRequestedNotFound");
                 return false;
             }
 
@@ -227,7 +228,7 @@ public sealed class ScreenshotBlurPipeline
             {
                 if (this.TimeProvider.GetUtcNow() - state.DoneAt <= ScreenshotBlurPipeline.ClaimWindow)
                 {
-                    ScreenshotBlurPipeline.CurrentTelemetry.WriteEvent(new { handle = screenInfo.Handle }, "blurRequestedFound");
+                    this.Telemetry.WriteEvent(new { handle = screenInfo.Handle }, "blurRequestedFound");
                     use(state.Done);
                     return true;
                 }
@@ -239,7 +240,7 @@ public sealed class ScreenshotBlurPipeline
             var operation = (state.BlurInProgress || state.Todo is not null)
                 ? "blurRequestedNotComplete"
                 : "blurRequestedNotFound";
-            ScreenshotBlurPipeline.CurrentTelemetry.WriteEvent(new { handle = screenInfo.Handle }, operation);
+            this.Telemetry.WriteEvent(new { handle = screenInfo.Handle }, operation);
             return false;
         }
     }
@@ -260,7 +261,7 @@ public sealed class ScreenshotBlurPipeline
         Bitmap? blurredImage = null;
         try
         {
-            using (ScreenshotBlurPipeline.CurrentTelemetry.BeginTimer(new { }, "CreateBlurredCopy"))
+            using (this.Telemetry.BeginTimer(new { }, "CreateBlurredCopy"))
             using (image)
             {
                 blurredImage = this.Blur(image);
@@ -272,7 +273,7 @@ public sealed class ScreenshotBlurPipeline
             // silently swallowed *and* leave BlurInProgress stuck on - every later screenshot
             // for this screen would then sit in "todo" forever. instead, treat a failed blur as
             // "no result": keep whatever "done" already holds, and carry on to the next "todo"
-            ScreenshotBlurPipeline.CurrentTelemetry.WriteEvent(new { handle = screenInfo.Handle, error = ex.Message }, "screenshotBlurFailed");
+            this.Telemetry.WriteEvent(new { handle = screenInfo.Handle, error = ex.Message }, "screenshotBlurFailed");
         }
 
         try

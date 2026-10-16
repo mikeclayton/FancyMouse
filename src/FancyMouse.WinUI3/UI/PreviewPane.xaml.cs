@@ -1,6 +1,7 @@
 using FancyMouse.Common.Blurring;
 using FancyMouse.Models.Display;
 using FancyMouse.Models.Layout;
+using FancyMouse.Telemetry;
 
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -22,11 +23,15 @@ internal sealed partial class PreviewPane : UserControl
         new PropertyMetadata(null));
 
     /// <summary>
-    /// A pipeline for generating the blurred screenshots that are shown
-    /// while the latest screenshot is being captured if a screen capture
-    /// takes more than the budget allowed to show the form.
+    /// Backing field for <see cref="Telemetry"/> - null until the host sets it.
     /// </summary>
-    private readonly ScreenshotBlurPipeline blurPipeline = new();
+    private TelemetryContext? telemetry;
+
+    /// <summary>
+    /// Backing field for <see cref="BlurPipeline"/> - creation is deferred to allow
+    /// <see cref="Telemetry"/> to be initialised first and passed to the blur pipeline.
+    /// </summary>
+    private ScreenshotBlurPipeline? blurPipeline;
 
     private List<ScreenSlot> screenSlots = [];
 
@@ -70,6 +75,45 @@ internal sealed partial class PreviewPane : UserControl
         get => (ScreenInfo?)this.GetValue(PreviewPane.ActiveScreenProperty);
         set => this.SetValue(PreviewPane.ActiveScreenProperty, value);
     }
+
+    /// <summary>
+    /// Gets or sets the context this pane records its telemetry to - set by the hosting window,
+    /// the same way it passes its logger to everything else. Required: a host that doesn't want
+    /// telemetry passes a context it never starts, which records nothing and costs nothing.
+    /// </summary>
+    /// <remarks>
+    /// A plain property rather than a constructor parameter because XAML creates this control,
+    /// and rather than a dependency property because it's a service, not something to bind or
+    /// animate. Must be set before the pane is first used - <see cref="BlurPipeline"/> captures
+    /// it when it's created, so a later change would otherwise be silently ignored. The host
+    /// owns the context, so the pane never disposes it.
+    /// </remarks>
+    /// <exception cref="InvalidOperationException">
+    /// Getting it before it's been set, or setting it after the pane has already been used.
+    /// </exception>
+    public TelemetryContext Telemetry
+    {
+        get => this.telemetry
+            ?? throw new InvalidOperationException($"{nameof(this.Telemetry)} must be set before the {nameof(PreviewPane)} is used.");
+        set
+        {
+            ArgumentNullException.ThrowIfNull(value);
+            if (this.blurPipeline is not null)
+            {
+                throw new InvalidOperationException($"{nameof(this.Telemetry)} must be set before the {nameof(PreviewPane)} is first used.");
+            }
+
+            this.telemetry = value;
+        }
+    }
+
+    /// <summary>
+    /// Gets the pipeline that generates the blurred screenshots shown while the latest
+    /// screenshot is being captured, if a screen capture takes longer than the budget allowed
+    /// for showing the form.
+    /// </summary>
+    private ScreenshotBlurPipeline BlurPipeline
+        => this.blurPipeline ??= new ScreenshotBlurPipeline(this.Telemetry);
 
     /// <summary>
     /// Raised when the pointer clicks a screen, or a keyboard shortcut that means the same

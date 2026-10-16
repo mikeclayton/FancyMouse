@@ -1,4 +1,4 @@
-namespace FancyMouse.Common.Telemetry;
+namespace FancyMouse.Telemetry;
 
 /// <summary>
 /// One flattened telemetry record - the result of walking a finished

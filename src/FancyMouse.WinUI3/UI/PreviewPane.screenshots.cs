@@ -35,7 +35,7 @@ internal sealed partial class PreviewPane
     /// superseded capture result has nowhere left to go.
     /// </summary>
     /// <remarks>
-    /// Also hands the <paramref name="image"/> to the <see cref="blurPipeline"/>, which
+    /// Also hands the <paramref name="image"/> to the <see cref="BlurPipeline"/>, which
     /// generates a blurred placeholder that can be used during the next activation if the
     /// capture isn't complete by the time the form is displayed.
     /// </remarks>
@@ -53,7 +53,7 @@ internal sealed partial class PreviewPane
         }
 
         this.CrossfadeContent(this.screenSlots[index], MediaHelper.ToBitmapImage(image));
-        this.blurPipeline.SetScreenshot(screenLayout.ScreenInfo, image);
+        this.BlurPipeline.SetScreenshot(screenLayout.ScreenInfo, image);
     }
 
     /// <summary>
@@ -100,7 +100,7 @@ internal sealed partial class PreviewPane
     }
 
     /// <summary>
-    /// Returns this screen's last real screenshot, blurred, if <see cref="blurPipeline"/> still
+    /// Returns this screen's last real screenshot, blurred, if <see cref="BlurPipeline"/> still
     /// has one available - or <see langword="null"/> (falling back to the plain placeholder
     /// fill) if not - for a screen whose current activation hasn't captured yet. See
     /// <see cref="ScreenshotBlurPipeline.TryGet"/> for the freshness rules.
@@ -108,7 +108,7 @@ internal sealed partial class PreviewPane
     private WriteableBitmap? GetBlurredPlaceholder(ScreenInfo screenInfo)
     {
         WriteableBitmap? result = null;
-        this.blurPipeline.TryGet(screenInfo, blurredImage => result = MediaHelper.ToBitmapImage(blurredImage));
+        this.BlurPipeline.TryGet(screenInfo, blurredImage => result = MediaHelper.ToBitmapImage(blurredImage));
         return result;
     }
 }

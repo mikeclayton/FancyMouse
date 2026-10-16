@@ -1,4 +1,4 @@
-namespace FancyMouse.Common.Telemetry;
+namespace FancyMouse.Telemetry;
 
 /// <summary>
 /// Accumulates every <see cref="TelemetryRecord"/> it's given in memory instead of writing it

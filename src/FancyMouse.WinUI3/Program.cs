@@ -1,4 +1,4 @@
-﻿using FancyMouse.Common.Telemetry;
+﻿using FancyMouse.Telemetry;
 
 using Microsoft.UI.Dispatching;
 using Microsoft.Windows.AppLifecycle;
@@ -13,6 +13,9 @@ public static class Program
     {
         var logger = LogManager.CreateNullLogger();
 
+        // telemetry is automatically stopped and flushed on dispose
+        using var telemetry = new TelemetryContext(nameof(FancyMouse));
+
         WinRT.ComWrappersSupport.InitializeComWrappers();
 
         var instanceKey = AppInstance.FindOrRegisterForKey("FancyMouse_Instance");
@@ -22,20 +25,13 @@ public static class Program
             {
                 var context = new DispatcherQueueSynchronizationContext(DispatcherQueue.GetForCurrentThread());
                 SynchronizationContext.SetSynchronizationContext(context);
-                _ = new App();
+                _ = new App(telemetry);
             });
         }
         else
         {
             logger.Warn("another instance is running. exiting");
         }
-
-        // Application.Start blocks until the message loop actually ends (e.g. the tray icon's
-        // Exit command calling App.Current.Exit()), so this is the one place a graceful shutdown
-        // reliably runs - unlike stopping the debugger, which kills the process outright and
-        // can't be flushed around. Stop() drains whatever's still queued and flushes/disposes
-        // the underlying writer (see TelemetryAdapter.Dispose).
-        Telemetry.Current.Stop();
 
         return;
     }

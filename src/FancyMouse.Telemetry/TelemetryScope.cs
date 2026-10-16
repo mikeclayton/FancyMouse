@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-namespace FancyMouse.Common.Telemetry;
+namespace FancyMouse.Telemetry;
 
 /// <summary>
 /// A pure ambient-context scope opened via <see cref="TelemetryContext.BeginScope"/> - carries
