@@ -109,4 +109,33 @@ public static class StyleHelper
             screenStyle: previewStyle.ScreenStyle,
             extraColors: previewStyle.ExtraColors);
     }
+
+    /// <summary>
+    /// The equivalent of PowerToys' own <c>SettingsHelper.GetActivePreviewStyle</c> - derives the
+    /// *visual* representation to render from a *settings* representation
+    /// (<paramref name="previewStyle"/>/<paramref name="previewType"/>, e.g. FancyMouse's own
+    /// <c>AppSettings.PreviewStyle</c>/<c>AppSettings.PreviewType</c>): copies
+    /// <paramref name="previewStyle"/>'s canvas size onto whichever of
+    /// <see cref="CompactPreviewStyle"/>/<see cref="BezelledPreviewStyle"/> is selected, or returns
+    /// <paramref name="previewStyle"/> itself unchanged for Custom. Never mutates
+    /// <paramref name="previewStyle"/> - call this at the point of rendering, not when
+    /// parsing/loading settings, so the settings representation it derives from is never itself
+    /// overwritten by a preset's values.
+    /// </summary>
+    /// <remarks>
+    /// Lives here, next to the presets it chooses between, rather than with any one app's settings
+    /// format - it only takes the shared <see cref="PreviewStyle"/>/<see cref="PreviewType"/> types,
+    /// so each app's settings code resolves to those and calls this, without the settings code
+    /// itself needing to depend on this assembly.
+    /// </remarks>
+    public static PreviewStyle GetActivePreviewStyle(PreviewStyle previewStyle, PreviewType previewType)
+    {
+        return previewType switch
+        {
+            PreviewType.Compact => StyleHelper.CompactPreviewStyle.WithCanvasSize(previewStyle.CanvasSize),
+            PreviewType.Bezelled => StyleHelper.BezelledPreviewStyle.WithCanvasSize(previewStyle.CanvasSize),
+            PreviewType.Custom => previewStyle,
+            _ => throw new InvalidOperationException($"Unhandled {nameof(PreviewType)} '{previewType}'"),
+        };
+    }
 }

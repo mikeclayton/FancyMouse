@@ -6,6 +6,7 @@ using FancyMouse.Common.Helpers;
 using FancyMouse.Models.Display;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Layout;
+using FancyMouse.Models.Styles;
 using FancyMouse.Settings.V2;
 using FancyMouse.Telemetry;
 using FancyMouse.WinUI3.Internal.Helpers;
@@ -62,7 +63,7 @@ internal sealed partial class PreviewWindow
         // style settings regardless of PreviewType ("compact", "bezzelled", "custom") so
         // we need to derive the visual representation to use whwn renderig - e.g. expand out
         // the "compact" or "bezelled" style, or clone the "custom" style settings.
-        var previewStyle = SettingsConverterV2.GetActivePreviewStyle(appSettings.PreviewStyle, appSettings.PreviewType);
+        var previewStyle = StyleHelper.GetActivePreviewStyle(appSettings.PreviewStyle, appSettings.PreviewType);
         PreviewLayout previewLayout;
         using (this.Telemetry.BeginTimer(new { }, "GetPreviewLayout"))
         {

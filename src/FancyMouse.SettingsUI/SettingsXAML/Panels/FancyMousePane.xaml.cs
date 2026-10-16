@@ -15,6 +15,7 @@ using CommunityToolkit.WinUI;
 using CommunityToolkit.WinUI.Controls;
 
 using FancyMouse.Common.Helpers;
+using FancyMouse.Models.Styles;
 using FancyMouse.Settings.V2;
 using FancyMouse.SettingsUI.Models;
 using FancyMouse.SettingsUI.ViewModels;

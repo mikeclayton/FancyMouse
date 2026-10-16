@@ -18,7 +18,7 @@ namespace FancyMouse.Settings;
 /// always carries the user's own custom style, in full, regardless of <see cref="PreviewType"/> -
 /// it's what a settings UI would write back to config. Deriving what to actually render (copying
 /// this and overlaying a built-in preset when <see cref="PreviewType"/> selects one) is a separate
-/// step - see <see cref="V2.SettingsConverterV2.GetActivePreviewStyle"/> - performed at the point
+/// step - see <c>StyleHelper.GetActivePreviewStyle</c> - performed at the point
 /// of rendering, not baked in here, so this representation is never itself overwritten by a
 /// preset's values.
 /// </remarks>
@@ -103,8 +103,8 @@ public sealed class AppSettings
 
     /// <summary>
     /// Gets which style should actually be rendered - one of the built-in presets, or
-    /// <see cref="PreviewStyle"/> itself for <see cref="V2.PreviewType.Custom"/>. See
-    /// <see cref="V2.SettingsConverterV2.GetActivePreviewStyle"/> for deriving the one to render.
+    /// <see cref="PreviewStyle"/> itself for <see cref="PreviewType.Custom"/>. See
+    /// <c>StyleHelper.GetActivePreviewStyle</c> for deriving the one to render.
     /// </summary>
     public PreviewType PreviewType
     {

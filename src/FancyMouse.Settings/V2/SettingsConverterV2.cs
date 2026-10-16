@@ -1,7 +1,6 @@
 ﻿using System.Drawing;
 using System.Text.Json;
 
-using FancyMouse.Common.Helpers;
 using FancyMouse.Models.Styles;
 using FancyMouse.Settings.V1;
 
@@ -45,29 +44,6 @@ public static class SettingsConverterV2
         return Enum.TryParse<PreviewType>(typeName, ignoreCase: true, out var parsed)
             ? parsed
             : PreviewType.Bezelled;
-    }
-
-    /// <summary>
-    /// The equivalent of PowerToys' own <c>SettingsHelper.GetActivePreviewStyle</c> - derives the
-    /// *visual* representation to render from a *settings* representation
-    /// (<paramref name="previewStyle"/>/<paramref name="previewType"/>, e.g.
-    /// <see cref="AppSettings.PreviewStyle"/>/<see cref="AppSettings.PreviewType"/>): copies
-    /// <paramref name="previewStyle"/>'s canvas size onto whichever of
-    /// <see cref="StyleHelper.CompactPreviewStyle"/>/<see cref="StyleHelper.BezelledPreviewStyle"/>
-    /// is selected, or returns <paramref name="previewStyle"/> itself unchanged for Custom. Never
-    /// mutates <paramref name="previewStyle"/> - call this at the point of rendering, not when
-    /// parsing/loading settings, so the settings representation it derives from is never itself
-    /// overwritten by a preset's values.
-    /// </summary>
-    public static PreviewStyle GetActivePreviewStyle(PreviewStyle previewStyle, PreviewType previewType)
-    {
-        return previewType switch
-        {
-            PreviewType.Compact => StyleHelper.CompactPreviewStyle.WithCanvasSize(previewStyle.CanvasSize),
-            PreviewType.Bezelled => StyleHelper.BezelledPreviewStyle.WithCanvasSize(previewStyle.CanvasSize),
-            PreviewType.Custom => previewStyle,
-            _ => throw new InvalidOperationException($"Unhandled {nameof(PreviewType)} '{previewType}'"),
-        };
     }
 
     public static PreviewStyle MergePreviewStyles(PreviewStyleSettings? previewStyle, PreviewStyle defaultStyle)

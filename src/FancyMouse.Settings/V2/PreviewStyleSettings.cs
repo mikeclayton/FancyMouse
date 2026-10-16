@@ -1,5 +1,7 @@
 ﻿using System.Text.Json.Serialization;
 
+using FancyMouse.Models.Styles;
+
 namespace FancyMouse.Settings.V2;
 
 public sealed class PreviewStyleSettings
@@ -20,7 +22,7 @@ public sealed class PreviewStyleSettings
     /// Gets the raw <see cref="PreviewType"/> name - a plain string, same as <c>MouseJumpProperties</c>
     /// stores its own "preview_type" ("Custom"/"Compact"/"Bezelled"), not the enum itself, so an
     /// unrecognised or missing value degrades gracefully (see
-    /// <see cref="SettingsConverterV2.GetActivePreviewStyle"/>) rather than failing to
+    /// <c>StyleHelper.GetActivePreviewStyle</c>) rather than failing to
     /// deserialize the whole file.
     /// </summary>
     [JsonPropertyName("type")]
