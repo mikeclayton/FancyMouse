@@ -2,9 +2,9 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 
-using static FancyMouse.Common.Bezels.BezelPrimitives;
+using static FancyMouse.Drawing.Bezels.BezelPrimitives;
 
-namespace FancyMouse.Common.Bezels;
+namespace FancyMouse.Drawing.Bezels;
 
 internal static class CornerTemplates
 {

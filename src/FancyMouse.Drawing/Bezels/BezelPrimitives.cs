@@ -1,6 +1,6 @@
 ﻿using System.Drawing;
 
-namespace FancyMouse.Common.Bezels;
+namespace FancyMouse.Drawing.Bezels;
 
 internal static class BezelPrimitives
 {

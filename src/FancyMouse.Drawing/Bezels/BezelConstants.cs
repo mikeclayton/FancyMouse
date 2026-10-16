@@ -1,4 +1,4 @@
-namespace FancyMouse.Common.Bezels;
+namespace FancyMouse.Drawing.Bezels;
 
 /// <summary>
 /// Rendering constants for corner and edge lighting effects.

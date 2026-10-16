@@ -1,4 +1,4 @@
-namespace FancyMouse.Common.Bezels;
+namespace FancyMouse.Drawing.Bezels;
 
 /// <summary>
 /// Defines the cross-sectional surface geometry of a screen bezel.

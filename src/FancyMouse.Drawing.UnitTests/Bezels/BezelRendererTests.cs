@@ -1,10 +1,10 @@
 using System.Drawing;
 using System.Drawing.Imaging;
 
-using FancyMouse.Common.Bezels;
+using FancyMouse.Drawing.Bezels;
 using FancyMouse.Models.Styles;
 
-namespace FancyMouse.Common.UnitTests.Bezels;
+namespace FancyMouse.Drawing.UnitTests.Bezels;
 
 public static class BezelRendererTests
 {

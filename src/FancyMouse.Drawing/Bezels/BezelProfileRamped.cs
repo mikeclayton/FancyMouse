@@ -1,4 +1,4 @@
-namespace FancyMouse.Common.Bezels;
+namespace FancyMouse.Drawing.Bezels;
 
 /// <summary>
 /// Models the cross-sectional surface geometry of a bezel ring, mapping a

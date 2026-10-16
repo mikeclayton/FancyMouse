@@ -2,7 +2,7 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 
-using FancyMouse.Common.Bezels;
+using FancyMouse.Drawing.Bezels;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Styles;
 

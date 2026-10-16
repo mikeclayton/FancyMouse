@@ -1,6 +1,6 @@
 using System.Drawing;
 
-namespace FancyMouse.Common.Bezels;
+namespace FancyMouse.Drawing.Bezels;
 
 /// <summary>
 /// Lighting effect helpers shared by all <see cref="IBezelProfile"/>

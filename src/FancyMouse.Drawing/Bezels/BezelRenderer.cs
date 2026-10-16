@@ -3,7 +3,7 @@ using System.Drawing.Drawing2D;
 
 using FancyMouse.Models.Styles;
 
-namespace FancyMouse.Common.Bezels;
+namespace FancyMouse.Drawing.Bezels;
 
 /// <summary>
 /// A drawing utility that can draw borders and bezels using a
@@ -13,9 +13,9 @@ namespace FancyMouse.Common.Bezels;
 /// with a different style, construct a separate BezelRenderer
 /// instance.
 /// </summary>
-internal sealed class BezelRenderer : IDisposable
+public sealed class BezelRenderer : IDisposable
 {
-    internal BezelRenderer(BorderStyle bezelStyle)
+    public BezelRenderer(BorderStyle bezelStyle)
     {
         this.BezelStyle = BezelRenderer.ClampDepth(bezelStyle ?? throw new ArgumentNullException(nameof(bezelStyle)));
         this.BezelProfile = new BezelProfileCurved((int)this.BezelStyle.Left, (int)this.BezelStyle.Depth);
@@ -92,7 +92,7 @@ internal sealed class BezelRenderer : IDisposable
     ///   BL — shadow (bottom) meets highlight (left), both fade at 45°
     ///   Inner arc effects are reversed; BR inner highlight is halved.
     /// </summary>
-    internal void DrawBezel(Graphics g, int x, int y, int width, int height)
+    public void DrawBezel(Graphics g, int x, int y, int width, int height)
     {
         var bezelWidth = (int)this.BezelStyle.Left;
 

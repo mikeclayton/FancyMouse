@@ -1,6 +1,6 @@
-using FancyMouse.Common.Bezels;
+using FancyMouse.Drawing.Bezels;
 
-namespace FancyMouse.Common.UnitTests.Bezels;
+namespace FancyMouse.Drawing.UnitTests.Bezels;
 
 public static class BezelProfileTests
 {
