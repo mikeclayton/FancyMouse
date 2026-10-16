@@ -126,9 +126,9 @@ namespace FancyMouse.SettingsUI.Panels
             var selectedPreviewType = this.GetSelectedPreviewType();
             var selectedPreviewStyle = selectedPreviewType switch
             {
-                PreviewType.Compact => StyleHelper.CompactPreviewStyle,
-                PreviewType.Bezelled => StyleHelper.BezelledPreviewStyle,
-                PreviewType.Custom => StyleHelper.BezelledPreviewStyle,
+                PreviewType.Compact => PreviewStyles.Compact,
+                PreviewType.Bezelled => PreviewStyles.Bezelled,
+                PreviewType.Custom => PreviewStyles.Bezelled,
                 _ => throw new InvalidOperationException(),
             };
 

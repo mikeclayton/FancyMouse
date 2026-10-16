@@ -38,4 +38,17 @@ public sealed class PreviewStyle
     {
         get;
     }
+
+    /// <summary>
+    /// Returns a copy of this style with a different <see cref="CanvasSize"/>.
+    /// </summary>
+    public PreviewStyle WithCanvasSize(SizeInfo canvasSize)
+    {
+        ArgumentNullException.ThrowIfNull(canvasSize);
+        return new PreviewStyle(
+            canvasSize: canvasSize,
+            canvasStyle: this.CanvasStyle,
+            screenStyle: this.ScreenStyle,
+            extraColors: this.ExtraColors);
+    }
 }

@@ -1,7 +1,6 @@
 ﻿using System.Drawing;
 using System.Drawing.Imaging;
 
-using FancyMouse.Common.Helpers;
 using FancyMouse.Drawing.Capture;
 using FancyMouse.Drawing.Helpers;
 using FancyMouse.Models.Display;
@@ -45,7 +44,7 @@ public static class DrawingHelperTests
             // colors like "SystemColors.Highlight" can change between versions of windows,
             // so we'll use hard-coded colors instead to reduce false test failures
             var systemHighlight = Color.FromArgb(0, 120, 215);
-            var previewStyle = StyleHelper.BezelledPreviewStyle;
+            var previewStyle = PreviewStyles.Bezelled;
             previewStyle = new(
                 canvasSize: previewStyle.CanvasSize,
                 canvasStyle: new(

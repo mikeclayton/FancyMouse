@@ -170,8 +170,8 @@ namespace FancyMouse.SettingsUI.ViewModels
 
                 var previewStyle = previewType switch
                 {
-                    PreviewType.Compact => StyleHelper.CompactPreviewStyle.WithCanvasSize(canvasSize),
-                    PreviewType.Bezelled => StyleHelper.BezelledPreviewStyle.WithCanvasSize(canvasSize),
+                    PreviewType.Compact => PreviewStyles.Compact.WithCanvasSize(canvasSize),
+                    PreviewType.Bezelled => PreviewStyles.Bezelled.WithCanvasSize(canvasSize),
                     PreviewType.Custom => this.ToPreviewStyle(extraColors: []).WithCanvasSize(canvasSize),
                     _ => this.ToPreviewStyle(extraColors: []).WithCanvasSize(canvasSize),
                 };
