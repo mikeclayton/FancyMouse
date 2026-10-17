@@ -1,14 +1,14 @@
 using System.Drawing;
 using System.Runtime.InteropServices.WindowsRuntime;
 
-using FancyMouse.Common.Helpers;
 using FancyMouse.Drawing.Capture;
 using FancyMouse.Drawing.Helpers;
-using FancyMouse.Drawing.Windows.Capture;
 using FancyMouse.Models.Display;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Layout;
 using FancyMouse.Settings;
+using FancyMouse.Windows.Capture;
+using FancyMouse.Windows.Helpers;
 
 using Microsoft.UI.Windowing;
 using Windows.Graphics;

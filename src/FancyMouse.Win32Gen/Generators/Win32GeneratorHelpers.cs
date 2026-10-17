@@ -28,7 +28,7 @@ internal static class Win32GeneratorHelpers
         // the fragment's own using directives go *above* the namespace declaration, the same
         // as BuildClassSource's - a using placed after a file-scoped namespace is resolved
         // relative to that namespace, so in a project whose namespace has a "Windows" segment
-        // (e.g. FancyMouse.Drawing.Windows) "using Windows.Win32.Foundation;" would bind to the
+        // (e.g. FancyMouse.Windows) "using Windows.Win32.Foundation;" would bind to the
         // project's own namespace instead of CsWin32's Windows.Win32, and fail to compile
         Win32GeneratorHelpers.SplitLeadingUsings(fragment, out var usings, out var body);
         var usingsBlock = (usings.Length == 0) ? string.Empty : usings + "\n\n";

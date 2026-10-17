@@ -1,7 +1,7 @@
 ﻿using System.Globalization;
 
-using FancyMouse.Common.Helpers;
 using FancyMouse.Telemetry;
+using FancyMouse.Windows.Helpers;
 using FancyMouse.WinUI3.Internal.Helpers;
 using FancyMouse.WinUI3.UI;
 

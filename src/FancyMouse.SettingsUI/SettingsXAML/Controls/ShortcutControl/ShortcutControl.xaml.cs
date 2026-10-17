@@ -11,9 +11,9 @@
 // Substantially modified for FancyMouse.
 // See THIRD-PARTY-NOTICES.md for attribution details.
 
-using FancyMouse.HotKeys;
 using FancyMouse.Models.Keyboard;
 using FancyMouse.SettingsUI;
+using FancyMouse.Windows.HotKeys;
 
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;

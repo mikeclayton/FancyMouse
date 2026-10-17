@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <Import Project="..\Common.Dotnet.Analyzers.props" />
+    <Import Project="..\Common.Dotnet.props" />
+
+    <PropertyGroup>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <Platforms>x64</Platforms>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.3.0" />
+        <PackageReference Include="MSTest.TestAdapter" Version="4.1.0" />
+        <PackageReference Include="MSTest.TestFramework" Version="4.1.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\FancyMouse.Windows\FancyMouse.Windows.csproj" />
+        <ProjectReference Include="..\FancyMouse.Drawing\FancyMouse.Drawing.csproj" />
+        <ProjectReference Include="..\FancyMouse.Settings\FancyMouse.Settings.csproj" />
+    </ItemGroup>
+
+</Project>
