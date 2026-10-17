@@ -141,11 +141,7 @@ namespace FancyMouse.SettingsUI.ViewModels
                         ]),
                 ]);
 
-                var desktopSize = LayoutHelper.GetCombinedScreenBounds(
-                        displayInfo.Devices[0].Screens
-                            .Select(screen => screen.DisplayArea)
-                            .ToList())
-                    .Size;
+                var desktopSize = displayInfo.Devices[0].GetCombinedDisplayArea().Size;
 
                 /*
                     magic number 283 is the content height left in the settings card after removing the top and bottom chrome:

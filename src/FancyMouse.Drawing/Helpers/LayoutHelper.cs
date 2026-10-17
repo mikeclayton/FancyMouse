@@ -80,22 +80,6 @@ public static class LayoutHelper
 
     */
 
-    /// <summary>
-    /// Returns the smallest rectangle that contains all of the specified screen bounds.
-    /// </summary>
-    public static RectangleInfo GetCombinedScreenBounds(List<RectangleInfo> screenBounds)
-    {
-        // we can't simply start with (0,0,0,0) and expand to encompass all screen bounds because
-        // (0,0,0,0) might not actually exist in the combined region - for example if
-        // "screenBounds = [(100, 100, 100, 100)]" we'd end up (incorrectly) with (0, 0, 200, 200).
-        // our actual approach is:
-        // * if the input is a single bounds we'll just return that
-        // * otherwise we use the *first* bounds as the seed for combining the remaining bounds
-        return screenBounds.Skip(1).Aggregate(
-            seed: screenBounds.First(),
-            (combined, screenBounds) => combined.Union(screenBounds));
-    }
-
     /// <param name="maximumSize">
     /// An optional upper bound on the layout's size.
     /// If specified, device and screen dimensions will be scaled down as required in order for the final layout to fit inside the bounds.

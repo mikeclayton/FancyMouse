@@ -7,29 +7,11 @@ using FancyMouse.Models.Drawing;
 using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.Graphics.Gdi;
-using Windows.Win32.UI.WindowsAndMessaging;
 
 namespace FancyMouse.Common.Helpers;
 
 internal static class ScreenHelper
 {
-    /// <summary>
-    /// Duplicates functionality available in System.Windows.Forms.SystemInformation
-    /// to reduce the dependency on WinForms
-    /// </summary>
-    private static RectangleInfo GetVirtualScreen()
-    {
-        // SM_XVIRTUALSCREEN/SM_YVIRTUALSCREEN can legitimately be zero (e.g. a
-        // single monitor at the origin), so a zero result there isn't treated
-        // as a failure - but SM_CXVIRTUALSCREEN/SM_CYVIRTUALSCREEN should
-        // never legitimately be zero, so those are.
-        return new(
-            User32.GetSystemMetrics(SYSTEM_METRICS_INDEX.SM_XVIRTUALSCREEN).IgnoreFailure().GetValue(),
-            User32.GetSystemMetrics(SYSTEM_METRICS_INDEX.SM_YVIRTUALSCREEN).IgnoreFailure().GetValue(),
-            User32.GetSystemMetrics(SYSTEM_METRICS_INDEX.SM_CXVIRTUALSCREEN).ThrowIfFailed().GetValue(),
-            User32.GetSystemMetrics(SYSTEM_METRICS_INDEX.SM_CYVIRTUALSCREEN).ThrowIfFailed().GetValue());
-    }
-
     public static IEnumerable<ScreenInfo> GetAllScreens()
     {
         // enumerate the monitors attached to the system
