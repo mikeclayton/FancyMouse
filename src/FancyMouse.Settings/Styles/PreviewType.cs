@@ -1,4 +1,4 @@
-namespace FancyMouse.Models.Styles;
+namespace FancyMouse.Settings.Styles;
 
 public enum PreviewType
 {

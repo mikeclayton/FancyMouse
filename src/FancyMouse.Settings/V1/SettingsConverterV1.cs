@@ -5,6 +5,7 @@ using System.Text.Json.Serialization;
 
 using FancyMouse.Models.Keyboard;
 using FancyMouse.Models.Styles;
+using FancyMouse.Settings.Styles;
 using FancyMouse.Settings.V2;
 
 namespace FancyMouse.Settings.V1;

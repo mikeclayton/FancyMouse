@@ -1,6 +1,8 @@
 ﻿using System.Drawing;
 
-namespace FancyMouse.Models.Styles;
+using FancyMouse.Models.Styles;
+
+namespace FancyMouse.Settings.Styles;
 
 /// <summary>
 /// The predefined preview styles - the shared data behind the "Compact" and "Bezelled"

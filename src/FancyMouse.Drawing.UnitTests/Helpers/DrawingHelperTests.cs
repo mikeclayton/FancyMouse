@@ -41,21 +41,52 @@ public static class DrawingHelperTests
 
         public static IEnumerable<object[]> GetTestCases()
         {
-            // colors like "SystemColors.Highlight" can change between versions of windows,
-            // so we'll use hard-coded colors instead to reduce false test failures
+            // an explicit style rather than the app's "Bezelled" preset so the reference images
+            // don't silently depend on the preset's values - and colors like "SystemColors.Highlight"
+            // can change between versions of windows, so we use hard-coded colors throughout to
+            // reduce false test failures
             var systemHighlight = Color.FromArgb(0, 120, 215);
-            var previewStyle = PreviewStyles.Bezelled;
-            previewStyle = new(
-                canvasSize: previewStyle.CanvasSize,
-                canvasStyle: new(
-                    marginStyle: previewStyle.CanvasStyle.MarginStyle,
-                    borderStyle: previewStyle.CanvasStyle.BorderStyle.WithColor(systemHighlight),
-                    paddingStyle: previewStyle.CanvasStyle.PaddingStyle,
-                    backgroundStyle: previewStyle.CanvasStyle.BackgroundStyle
+            var previewStyle = new PreviewStyle(
+                canvasSize: new(
+                    width: 1600,
+                    height: 1200
                 ),
-                screenStyle: previewStyle.ScreenStyle,
-                extraColors: previewStyle.ExtraColors
-            );
+                canvasStyle: new(
+                    marginStyle: MarginStyle.Empty,
+                    borderStyle: new(
+                        color: systemHighlight,
+                        all: 6,
+                        depth: 0
+                    ),
+                    paddingStyle: new(
+                        all: 4
+                    ),
+                    backgroundStyle: new(
+                        color1: Color.FromArgb(0xFF, 0x0D, 0x57, 0xD2),
+                        color2: Color.FromArgb(0xFF, 0x03, 0x44, 0xC0)
+                    )
+                ),
+                screenStyle: new(
+                    marginStyle: new(
+                        all: 4
+                    ),
+                    borderStyle: new(
+                        color: Color.FromArgb(0xFF, 0x22, 0x22, 0x22),
+                        all: 15,
+                        depth: 3
+                    ),
+                    paddingStyle: PaddingStyle.Empty,
+                    backgroundStyle: new(
+                        color1: Color.MidnightBlue,
+                        color2: Color.MidnightBlue
+                    )
+                ),
+                extraColors: new[]
+                {
+                    Color.Red,
+                    Color.Blue,
+                    Color.Green,
+                });
 
             // 4-grid
             var displayInfo = new DisplayInfo(

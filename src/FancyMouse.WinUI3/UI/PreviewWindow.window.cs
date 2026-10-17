@@ -8,10 +8,7 @@ using FancyMouse.Drawing.Windows.Capture;
 using FancyMouse.Models.Display;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Layout;
-using FancyMouse.Models.Styles;
-using FancyMouse.Settings.V2;
-using FancyMouse.Telemetry;
-using FancyMouse.WinUI3.Internal.Helpers;
+using FancyMouse.Settings;
 
 using Microsoft.UI.Windowing;
 using Windows.Graphics;
@@ -69,10 +66,10 @@ internal sealed partial class PreviewWindow
         }
 
         // appSettings.PreviewStyle is a raw settings file representation - it contains the custom
-        // style settings regardless of PreviewType ("compact", "bezzelled", "custom") so
-        // we need to derive the visual representation to use whwn renderig - e.g. expand out
+        // style settings regardless of PreviewType ("compact", "bezelled", "custom") so
+        // we need to derive the visual representation to use whwn rendering - e.g. expand out
         // the "compact" or "bezelled" style, or clone the "custom" style settings.
-        var previewStyle = StyleHelper.GetActivePreviewStyle(appSettings.PreviewStyle, appSettings.PreviewType);
+        var previewStyle = appSettings.GetStyleForRendering();
         PreviewLayout previewLayout;
         using (this.Telemetry.BeginTimer(new { }, "GetPreviewLayout"))
         {

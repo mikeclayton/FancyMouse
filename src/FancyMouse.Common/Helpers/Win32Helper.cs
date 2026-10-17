@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 
 using FancyMouse.Common.Interop;
 using FancyMouse.Common.Win32Gen;

@@ -25,6 +25,7 @@ using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Keyboard;
 using FancyMouse.Models.Styles;
 using FancyMouse.Settings.Helpers;
+using FancyMouse.Settings.Styles;
 using FancyMouse.Settings.V2;
 using FancyMouse.SettingsUI.Helpers;
 using FancyMouse.SettingsUI.Models;

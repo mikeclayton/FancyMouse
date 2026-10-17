@@ -2,7 +2,7 @@
 
 using FancyMouse.Models.Keyboard;
 using FancyMouse.Models.Styles;
-using FancyMouse.Settings.V2;
+using FancyMouse.Settings.Styles;
 
 using Keys = FancyMouse.Models.Keyboard.Keys;
 
@@ -18,7 +18,7 @@ namespace FancyMouse.Settings;
 /// always carries the user's own custom style, in full, regardless of <see cref="PreviewType"/> -
 /// it's what a settings UI would write back to config. Deriving what to actually render (copying
 /// this and overlaying a built-in preset when <see cref="PreviewType"/> selects one) is a separate
-/// step - see <c>StyleHelper.GetActivePreviewStyle</c> - performed at the point
+/// step - see <see cref="GetStyleForRendering"/> - performed at the point
 /// of rendering, not baked in here, so this representation is never itself overwritten by a
 /// preset's values.
 /// </remarks>
@@ -93,8 +93,9 @@ public sealed class AppSettings
     }
 
     /// <summary>
-    /// Gets the user's own custom style, in full - see this class's own remarks for why this must
-    /// never be a preset-overlaid value, regardless of <see cref="PreviewType"/>.
+    /// Gets the user's currently defined "Custom" preview style, as shown on the
+    /// Custom tab in the Settings UI and stored in the config file. This may need
+    /// "null" values to be replaced with defaults before it can be used for rendering.
     /// </summary>
     public PreviewStyle PreviewStyle
     {
@@ -104,7 +105,7 @@ public sealed class AppSettings
     /// <summary>
     /// Gets which style should actually be rendered - one of the built-in presets, or
     /// <see cref="PreviewStyle"/> itself for <see cref="PreviewType.Custom"/>. See
-    /// <c>StyleHelper.GetActivePreviewStyle</c> for deriving the one to render.
+    /// <see cref="GetStyleForRendering"/> for deriving the one to render.
     /// </summary>
     public PreviewType PreviewType
     {
@@ -117,5 +118,23 @@ public sealed class AppSettings
     public bool TelemetryEnabled
     {
         get;
+    }
+
+    /// <summary>
+    /// Determines the preview style that should be used for rendering based on the
+    /// currently selected PreviewType and, if appropriate, the user-defined custom
+    /// style settings.
+    /// </summary>
+    public PreviewStyle GetStyleForRendering()
+    {
+        ArgumentNullException.ThrowIfNull(this.PreviewStyle);
+
+        return this.PreviewType switch
+        {
+            PreviewType.Compact => PreviewStyles.Compact.WithCanvasSize(this.PreviewStyle.CanvasSize),
+            PreviewType.Bezelled => PreviewStyles.Bezelled.WithCanvasSize(this.PreviewStyle.CanvasSize),
+            PreviewType.Custom => this.PreviewStyle,
+            _ => throw new InvalidOperationException($"Unhandled {nameof(PreviewType)} '{this.PreviewStyle}'"),
+        };
     }
 }
