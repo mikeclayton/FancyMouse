@@ -30,6 +30,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\FancyMouse.WinUI3.Controls\FancyMouse.WinUI3.Controls.csproj" />
         <ProjectReference Include="..\FancyMouse.Windows\FancyMouse.Windows.csproj" />
         <ProjectReference Include="..\FancyMouse.Drawing\FancyMouse.Drawing.csproj" />
         <ProjectReference Include="..\FancyMouse.Models\FancyMouse.Models.csproj" />
@@ -57,8 +58,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Compile Update="UI\PreviewPane.*.cs">
-            <DependentUpon>PreviewPane.xaml</DependentUpon>
+        <Compile Update="App/App.*.cs">
+            <DependentUpon>App.xaml</DependentUpon>
         </Compile>
         <Compile Update="UI\PreviewWindow.*.cs">
             <DependentUpon>PreviewWindow.xaml</DependentUpon>

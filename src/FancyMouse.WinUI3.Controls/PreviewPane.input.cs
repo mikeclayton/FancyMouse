@@ -6,9 +6,9 @@ using Microsoft.UI.Xaml.Input;
 
 using Windows.System;
 
-namespace FancyMouse.WinUI3.UI;
+namespace FancyMouse.WinUI3.Controls;
 
-internal sealed partial class PreviewPane
+public sealed partial class PreviewPane
 {
     private void PreviewPane_PointerPressed(object sender, PointerRoutedEventArgs e)
     {

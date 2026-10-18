@@ -1,4 +1,5 @@
 using FancyMouse.Windows.Helpers;
+using FancyMouse.WinUI3.Controls;
 
 using Microsoft.UI.Xaml;
 

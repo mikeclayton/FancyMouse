@@ -2,7 +2,7 @@ using System.Drawing;
 
 using FancyMouse.Models.Display;
 using FancyMouse.Models.Layout;
-using FancyMouse.WinUI3.Internal.Helpers;
+using FancyMouse.WinUI3.Controls.Helpers;
 
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -12,7 +12,7 @@ using Microsoft.UI.Xaml.Media.Imaging;
 
 using Image = Microsoft.UI.Xaml.Controls.Image;
 
-namespace FancyMouse.WinUI3.UI;
+namespace FancyMouse.WinUI3.Controls;
 
 /// <summary>
 /// The half of <see cref="PreviewPane"/> concerned with a screen's actual pixel content -
@@ -22,7 +22,7 @@ namespace FancyMouse.WinUI3.UI;
 /// <c>PreviewPane.layout.cs</c>'s concern of building/positioning the bezel and placeholder
 /// shapes those images sit inside.
 /// </summary>
-internal sealed partial class PreviewPane
+public sealed partial class PreviewPane
 {
     /// <summary>
     /// Applies the real screenshot for a single screen, replacing any placeholder fill

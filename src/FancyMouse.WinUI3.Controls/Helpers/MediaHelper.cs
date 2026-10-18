@@ -5,7 +5,7 @@ using System.Runtime.InteropServices.WindowsRuntime;
 
 using Microsoft.UI.Xaml.Media.Imaging;
 
-namespace FancyMouse.WinUI3.Internal.Helpers;
+namespace FancyMouse.WinUI3.Controls.Helpers;
 
 internal static class MediaHelper
 {

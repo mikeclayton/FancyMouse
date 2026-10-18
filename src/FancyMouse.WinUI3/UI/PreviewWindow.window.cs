@@ -6,9 +6,9 @@ using FancyMouse.Drawing.Helpers;
 using FancyMouse.Models.Display;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Layout;
-using FancyMouse.Settings;
 using FancyMouse.Windows.Capture;
 using FancyMouse.Windows.Helpers;
+using FancyMouse.WinUI3.Controls;
 
 using Microsoft.UI.Windowing;
 using Windows.Graphics;
@@ -119,7 +119,7 @@ internal sealed partial class PreviewWindow
         var cancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         this.activationCancellation = cancellation;
 
-        var pipeline = new ScreenshotCapturePipeline(new PreviewPaneScreenshotSink(this), cancellation.Token);
+        var pipeline = new ScreenshotCapturePipeline(new PreviewPaneScreenshotSink(this.PreviewPane), cancellation.Token);
 
         // create one capture provider per device - see IScreenshotCaptureProvider/
         // DesktopScreenshotCaptureProvider remarks for why a single instance is safe (and

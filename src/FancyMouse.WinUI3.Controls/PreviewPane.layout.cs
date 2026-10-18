@@ -4,7 +4,7 @@ using FancyMouse.Drawing.Helpers;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Layout;
 using FancyMouse.Models.Styles;
-using FancyMouse.WinUI3.Internal.Helpers;
+using FancyMouse.WinUI3.Controls.Helpers;
 
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -12,9 +12,9 @@ using Microsoft.UI.Xaml.Media;
 
 using Image = Microsoft.UI.Xaml.Controls.Image;
 
-namespace FancyMouse.WinUI3.UI;
+namespace FancyMouse.WinUI3.Controls;
 
-internal sealed partial class PreviewPane
+public sealed partial class PreviewPane
 {
     private static void OnLayoutChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
         => ((PreviewPane)sender).ApplyLayout((PreviewLayout?)e.NewValue);

@@ -1,6 +1,7 @@
 using FancyMouse.Drawing.Capture;
 using FancyMouse.Models.Display;
 using FancyMouse.Models.Layout;
+using FancyMouse.WinUI3.Controls.Helpers;
 using FancyMouse.WinUI3.Win32Gen;
 
 using Microsoft.UI.Xaml;
@@ -31,43 +32,8 @@ internal sealed partial class PreviewWindow
         }
     }
 
-    internal async Task InvokeOnUiThreadAsync(Action action)
-    {
-        ArgumentNullException.ThrowIfNull(action);
-
-        // already on the ui thread - just run it
-        if (this.DispatcherQueue.HasThreadAccess)
-        {
-            action();
-            return;
-        }
-
-        // the action might be called from a task that we're awaiting
-        // so we need to make sure we use the UI thread
-        var tcs = new TaskCompletionSource<bool>(
-            TaskCreationOptions.RunContinuationsAsynchronously);
-
-        if (!this.DispatcherQueue.TryEnqueue(
-            () =>
-            {
-                try
-                {
-                    action();
-                    tcs.SetResult(true);
-                }
-                catch (Exception ex)
-                {
-                    tcs.SetException(ex);
-                }
-            }))
-        {
-            tcs.SetException(
-                new InvalidOperationException("DispatcherQueue is not accepting work items."));
-        }
-
-        // wait for the task to complete
-        await tcs.Task.ConfigureAwait(false);
-    }
+    private Task InvokeOnUiThreadAsync(Action action)
+        => this.DispatcherQueue.InvokeAsync(action);
 
     /// <summary>
     /// Sets this window to be the operating system's foreground window.

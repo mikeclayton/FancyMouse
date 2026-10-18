@@ -2,7 +2,7 @@ using FancyMouse.Models.Layout;
 
 using Image = Microsoft.UI.Xaml.Controls.Image;
 
-namespace FancyMouse.WinUI3.UI;
+namespace FancyMouse.WinUI3.Controls;
 
 /// <summary>
 /// The UI elements <see cref="PreviewPane"/> maintains for one screen within the current layout.

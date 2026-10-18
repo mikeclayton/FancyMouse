@@ -6,9 +6,9 @@ using FancyMouse.Telemetry;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 
-namespace FancyMouse.WinUI3.UI;
+namespace FancyMouse.WinUI3.Controls;
 
-internal sealed partial class PreviewPane : UserControl
+public sealed partial class PreviewPane : UserControl
 {
     public static readonly DependencyProperty LayoutProperty = DependencyProperty.Register(
         nameof(PreviewPane.Layout),

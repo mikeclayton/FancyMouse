@@ -1,12 +1,12 @@
 using FancyMouse.Models.Display;
 using FancyMouse.Models.Drawing;
 
-namespace FancyMouse.WinUI3.UI;
+namespace FancyMouse.WinUI3.Controls;
 
 /// <summary>
-/// Implements the NavigateTo event that is used by the PreviewWindow to signal
+/// Implements the NavigateTo event that is used by the PreviewPane to signal
 /// to the hosting application that the user wants to move the cursor to a specific
-/// location. Can be raised as the result of a mouse click on the preview window,
+/// location. Can be raised as the result of a mouse click on the preview,
 /// or a keyboard shortcut that means the same thing (e.g. 1-9, arrow keys, P, Home, End)
 /// </summary>
 public sealed class NavigateToEventArgs : EventArgs
