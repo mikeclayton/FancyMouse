@@ -9,7 +9,7 @@ using FancyMouse.Models.Styles;
 namespace FancyMouse.Drawing.Helpers;
 
 /// <summary>
-/// Composes a <see cref="PreviewStyle"/> into a single flattened bitmap - border, background,
+/// Composes a <see cref="PreviewStyle"/> into a single flattened bitmap - outer border, background,
 /// and per-screen bezels/screenshots all baked into one image, with each screen's content
 /// supplied by <paramref name="captureProvider"/> (see <see cref="DrawPreviewAsync"/>). This is a
 /// fallback for contexts that can't render the layout as native, separately-composited UI
@@ -41,32 +41,24 @@ public static class PreviewHelper
         var previewLayout = LayoutHelper.GetPreviewLayout(previewStyle, displayInfo, maximumSize);
         var canvasLayout = previewLayout.CanvasLayout;
 
-        // in the WinUI PreviewWindow, the entire visualisation is composed of the outer border
-        // and an inner PreviewPane which contains the main background, bezel and screenshots.
-        // the outer "window style" bounds need to be anchored to the top left corner of the
-        // rendered image
-        var previewWindowStyle = LayoutHelper.GetPreviewWindowStyle(previewStyle.CanvasStyle);
-        var windowBounds = LayoutHelper.GetPreviewWindowBounds(new RectangleInfo(previewLayout.PreviewSize), previewWindowStyle)
-            .MoveTo(new PointInfo(0, 0));
-
-        // windowBounds is already (0,0)-normalized (see MoveTo above), so the inner ContentBounds
-        // coordinates are the absolute position for the background, bezels and screenshots
-        var paneOffsetX = windowBounds.ContentBounds.X;
-        var paneOffsetY = windowBounds.ContentBounds.Y;
-
-        var bounds = windowBounds.OuterBounds.ToRectangle();
+        // in the WinUI PreviewWindow, the entire visualisation is a PreviewPane (which contains
+        // the outer margin and border, main background, bezels and screenshots), and the pane's
+        // layout is relative to its own top-left corner - so its coordinates are the absolute
+        // position in the rendered image, and the outer margin is left transparent
+        var bounds = new RectangleInfo(previewLayout.PreviewSize).ToRectangle();
         var previewImage = new Bitmap(bounds.Width, bounds.Height, PixelFormat.Format32bppPArgb);
         using var graphics = Graphics.FromImage(previewImage);
         graphics.Clear(Color.Transparent);
 
-        using (var border = DrawingHelper.RenderBorder(windowBounds.BorderBounds.Size, previewWindowStyle.BorderStyle))
+        var canvasBounds = canvasLayout.CanvasBounds;
+        using (var border = DrawingHelper.RenderBorder(canvasBounds.BorderBounds.Size, canvasLayout.CanvasStyle.BorderStyle))
         {
-            graphics.DrawImageUnscaled(border, (int)windowBounds.BorderBounds.X, (int)windowBounds.BorderBounds.Y);
+            graphics.DrawImageUnscaled(border, (int)canvasBounds.BorderBounds.X, (int)canvasBounds.BorderBounds.Y);
         }
 
-        using (var background = DrawingHelper.RenderBackground(canvasLayout.CanvasBounds.OuterBounds.Size, canvasLayout.CanvasStyle.BackgroundStyle))
+        using (var background = DrawingHelper.RenderBackground(canvasBounds.PaddingBounds.Size, canvasLayout.CanvasStyle.BackgroundStyle))
         {
-            graphics.DrawImageUnscaled(background, (int)paneOffsetX, (int)paneOffsetY);
+            graphics.DrawImageUnscaled(background, (int)canvasBounds.PaddingBounds.X, (int)canvasBounds.PaddingBounds.Y);
         }
 
         foreach (var screenLayout in canvasLayout.DeviceLayouts.SelectMany(deviceLayout => deviceLayout.ScreenLayouts))
@@ -75,7 +67,7 @@ public static class PreviewHelper
 
             using (var bezel = DrawingHelper.RenderBorder(screenBounds.BorderBounds.Size, screenLayout.ScreenStyle.BorderStyle))
             {
-                graphics.DrawImageUnscaled(bezel, (int)(screenBounds.BorderBounds.X + paneOffsetX), (int)(screenBounds.BorderBounds.Y + paneOffsetY));
+                graphics.DrawImageUnscaled(bezel, (int)screenBounds.BorderBounds.X, (int)screenBounds.BorderBounds.Y);
             }
 
             // the capture provider owns anti-bleed/interpolation settings for its own thumbnail
@@ -88,8 +80,8 @@ public static class PreviewHelper
                 cancellationToken).ConfigureAwait(false);
             graphics.DrawImageUnscaled(
                 screenshotImage,
-                (int)(paneOffsetX + screenBounds.ContentBounds.X),
-                (int)(paneOffsetY + screenBounds.ContentBounds.Y));
+                (int)screenBounds.ContentBounds.X,
+                (int)screenBounds.ContentBounds.Y);
         }
 
         return previewImage;

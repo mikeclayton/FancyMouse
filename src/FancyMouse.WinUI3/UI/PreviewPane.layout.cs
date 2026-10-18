@@ -27,17 +27,34 @@ internal sealed partial class PreviewPane
             this.screenSlots = [];
             this.Width = 0;
             this.Height = 0;
+            this.BorderImage.Source = null;
             this.BackgroundImage.Source = null;
             return;
         }
 
         var scale = this.GetRasterizationScale();
-        var bounds = layout.CanvasLayout.CanvasBounds.OuterBounds;
-        this.Width = (double)bounds.Width / scale;
-        this.Height = (double)bounds.Height / scale;
+        var canvasBounds = layout.CanvasLayout.CanvasBounds;
+        var canvasStyle = layout.CanvasLayout.CanvasStyle;
+        this.Width = (double)canvasBounds.OuterBounds.Width / scale;
+        this.Height = (double)canvasBounds.OuterBounds.Height / scale;
 
-        using var backgroundBitmap = DrawingHelper.RenderBackground(bounds.Size, layout.CanvasLayout.CanvasStyle.BackgroundStyle);
-        this.BackgroundImage.Source = MediaHelper.ToBitmapImage(backgroundBitmap);
+        // the outer border ring and the background inside it don't overlap - the background
+        // fills the border's inner edge exactly (see BoxBounds) - so paint order between them
+        // doesn't matter. a host that doesn't want a border sets its thickness to zero, which
+        // renders an empty ring.
+        using (var borderBitmap = DrawingHelper.RenderBorder(canvasBounds.BorderBounds.Size, canvasStyle.BorderStyle))
+        {
+            this.BorderImage.Source = MediaHelper.ToBitmapImage(borderBitmap);
+        }
+
+        PreviewPane.PositionInGrid(this.BorderImage, canvasBounds.BorderBounds, scale);
+
+        using (var backgroundBitmap = DrawingHelper.RenderBackground(canvasBounds.PaddingBounds.Size, canvasStyle.BackgroundStyle))
+        {
+            this.BackgroundImage.Source = MediaHelper.ToBitmapImage(backgroundBitmap);
+        }
+
+        PreviewPane.PositionInGrid(this.BackgroundImage, canvasBounds.PaddingBounds, scale);
 
         var newScreenLayouts = layout.CanvasLayout.DeviceLayouts
             .SelectMany(deviceLayout => deviceLayout.ScreenLayouts)
@@ -156,8 +173,8 @@ internal sealed partial class PreviewPane
     }
 
     /// <summary>
-    /// Creates the visual elements for a single screen - a bezel (rendered the same way as the
-    /// host's own outer border, see <see cref="DrawingHelper.RenderBorder"/>), a placeholder
+    /// Creates the visual elements for a single screen - a bezel (rendered the same way as this
+    /// pane's own outer border, see <see cref="DrawingHelper.RenderBorder"/>), a placeholder
     /// fill shown until the real screenshot arrives, and a content <see cref="Image"/> that
     /// starts either blank or showing this screen's last real screenshot, blurred (see
     /// <see cref="GetBlurredPlaceholder"/>), until it's populated for real via
@@ -214,6 +231,18 @@ internal sealed partial class PreviewPane
         element.Height = (double)bounds.Height / scale;
         Canvas.SetLeft(element, (double)bounds.X / scale);
         Canvas.SetTop(element, (double)bounds.Y / scale);
+    }
+
+    /// <summary>
+    /// The <see cref="Grid"/> equivalent of <see cref="PositionElement"/> - for the
+    /// top-left-aligned elements in the root grid rather than children of
+    /// <c>ScreensCanvas</c>, so the offset is applied as a margin.
+    /// </summary>
+    private static void PositionInGrid(FrameworkElement element, RectangleInfo bounds, double scale)
+    {
+        element.Width = (double)bounds.Width / scale;
+        element.Height = (double)bounds.Height / scale;
+        element.Margin = new Thickness((double)bounds.X / scale, (double)bounds.Y / scale, 0, 0);
     }
 
     private static global::Windows.UI.Color ToWindowsColor(Color color)

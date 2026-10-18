@@ -10,16 +10,23 @@
     IsTabStop="True"
     UseSystemFocusVisuals="False">
     <!--
-        BackgroundImage fills this control exactly (see PreviewPane.xaml.cs). ScreensCanvas is
-        layered on top and populated in code-behind with one bezel/placeholder/content element
-        per screen, each positioned absolutely to match its ScreenLayout bounds.
+        BorderImage is the outer border ring, and BackgroundImage fills the hole inside it -
+        both are sized and positioned in code-behind to match the canvas layout's own border
+        and padding bounds (see PreviewPane.layout.cs). ScreensCanvas is layered on top and
+        populated in code-behind with one bezel/placeholder/content element per screen, each
+        positioned absolutely to match its ScreenLayout bounds.
     -->
     <Grid>
         <Image
+            x:Name="BorderImage"
+            Stretch="Fill"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Top" />
+        <Image
             x:Name="BackgroundImage"
             Stretch="Fill"
-            HorizontalAlignment="Stretch"
-            VerticalAlignment="Stretch" />
+            HorizontalAlignment="Left"
+            VerticalAlignment="Top" />
         <Canvas
             x:Name="ScreensCanvas" />
     </Grid>

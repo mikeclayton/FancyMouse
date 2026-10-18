@@ -79,14 +79,12 @@ internal sealed partial class PreviewWindow
                 maximumSize: activatedScreen.DisplayArea.Size);
         }
 
-        // the outer border is this window's own responsibility, not the preview pane's -
-        // see LayoutHelper.GetPreviewWindowStyle. PreviewLayout itself has no desktop position
-        // (only a size - see PreviewLayout), so positioning the window on the desktop -
-        // centered on the activated location, clamped to the activated screen - is entirely
-        // this window's own job too.
-        var previewWindowStyle = LayoutHelper.GetPreviewWindowStyle(previewStyle.CanvasStyle);
-        var hostBounds = LayoutHelper.GetPreviewWindowBounds(new RectangleInfo(previewLayout.PreviewSize), previewWindowStyle);
-        var positionedHostOuterBounds = LayoutHelper.PositionOnScreen(hostBounds.OuterBounds, activatedScreen, activatedLocation);
+        // the preview pane draws the whole canvas style itself (margin and outer border
+        // included), so this window is exactly the pane's size. PreviewLayout itself has no
+        // desktop position (only a size - see PreviewLayout), so positioning the window on the
+        // desktop - centered on the activated location, clamped to the activated screen - is
+        // entirely this window's own job.
+        var positionedHostOuterBounds = LayoutHelper.PositionOnScreen(new RectangleInfo(previewLayout.PreviewSize), activatedScreen, activatedLocation);
 
         // a newer activation superseding this one is the common, expected case under rapid
         // repeat activation - check here, before paying for the border render below, rather
@@ -99,12 +97,7 @@ internal sealed partial class PreviewWindow
                 .ConfigureAwait(false);
         }
 
-        (int Width, int Height, int CornerRadius) windowRegion;
-        using (this.Telemetry.BeginTimer(new { }, "RenderBorderAsync"))
-        {
-            windowRegion = await this.RenderBorderAsync(previewLayout, previewWindowStyle)
-                .ConfigureAwait(false);
-        }
+        var windowRegion = PreviewWindow.GetWindowRegion(previewLayout);
 
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -173,7 +166,7 @@ internal sealed partial class PreviewWindow
 
             using (this.Telemetry.BeginTimer(new { }, "ShowWindowAsync"))
             {
-                await this.ShowWindowAsync(windowRegion.Width, windowRegion.Height, windowRegion.CornerRadius, cancellation.Token)
+                await this.ShowWindowAsync(windowRegion.X, windowRegion.Y, windowRegion.Width, windowRegion.Height, windowRegion.CornerRadius, cancellation.Token)
                     .ConfigureAwait(false);
             }
         }
@@ -207,12 +200,11 @@ internal sealed partial class PreviewWindow
         this.activationCancellation?.Dispose();
         this.activationCancellation = null;
 
-        if ((this.BorderImage.Source is null) && (this.PreviewPane.Layout is null))
+        if (this.PreviewPane.Layout is null)
         {
             return;
         }
 
-        this.BorderImage.Source = null;
         this.PreviewPane.Layout = null;
         this.PreviewPane.ActiveScreen = null;
     }
@@ -235,9 +227,10 @@ internal sealed partial class PreviewWindow
 
     /// <summary>
     /// Shows the window by swapping its clip region from empty (see <see cref="HideWindow"/>) to
-    /// <paramref name="width"/> x <paramref name="height"/> with a curved corner mask.
+    /// <paramref name="width"/> x <paramref name="height"/> at (<paramref name="x"/>, <paramref name="y"/>)
+    /// with a curved corner mask.
     /// </summary>
-    private async Task ShowWindowAsync(int width, int height, int cornerRadius, CancellationToken cancellationToken)
+    private async Task ShowWindowAsync(int x, int y, int width, int height, int cornerRadius, CancellationToken cancellationToken)
     {
         await this.InvokeOnUiThreadAsync(
             () =>
@@ -264,7 +257,7 @@ internal sealed partial class PreviewWindow
                     presenter.IsAlwaysOnTop = true;
                 }
 
-                this.ApplyRoundRectRegion(width, height, cornerRadius);
+                this.ApplyRoundRectRegion(x, y, width, height, cornerRadius);
 
                 // we have to activate the window to make sure the deactivate event fires
                 this.Activate();

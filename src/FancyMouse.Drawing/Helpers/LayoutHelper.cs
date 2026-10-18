@@ -16,67 +16,72 @@ public static class LayoutHelper
         to calculate sizes and positions of individual ui components. the diagram below shows the
         logical organisation of components:
 
-        * the overall PreviewWindow - a container for all of the ui components. this directly
-          hosts the outer preview border control, a child PreviewPane and a status bar control
+        * the overall PreviewWindow - positions itself on the desktop and directly hosts a
+          child PreviewPane, sized to match it exactly. the whole canvas style belongs to the
+          pane, including the outer *margin* (transparent space around the outer border), so
+          the only thing the window has to coordinate with the pane is clipping itself to the
+          pane's outer border to give it rounded corners (see PreviewWindow)
 
-          +--------[preview window]--------+
-          |▒▒▒▒▒▒▒▒▒[outer border]▒▒▒▒▒▒▒▒▒|
-          |▒▒+------[preview pane]------+▒▒|
-          |▒▒|                          |▒▒|
-          |▒▒|                          |▒▒|
-          |▒▒|                          |▒▒|
-          |▒▒+--------------------------+▒▒|
-          |▒▒+-------[status bar]-------+▒▒|
-          |▒▒|░░░░░░░░░░░░░░░░░░░░░░░░░░|▒▒|
-          |▒▒+--------------------------+▒▒|
-          |▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒|
-          +--------------------------------+
+          +----------[preview window]----------+
+          |+----------[preview pane]----------+|
+          ||░░░░░░░░░░░░░[margin]░░░░░░░░░░░░░||
+          ||░░+---------[see below]--------+░░||
+          ||░░|                            |░░||
+          ||░░|                            |░░||
+          ||░░+----------------------------+░░||
+          ||░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░||
+          |+----------------------------------+|
+          +------------------------------------+
 
-        * the child PreviewPane - this contains the preview background, the padding from the
-          outer border, the screen bezels and screenshot images. the "device grid" in the diagram
-          is a logical grid - it doesn't exist in the layout or control hierarchy, and only
-          exists as a set of temporary bounds during the actual layout calculation.
+        * the child PreviewPane - this contains the outer margin, the outer border, the preview
+          background, the padding inside the outer border, the screen bezels and screenshot
+          images. the diagram below starts at the outer border - the margin, if there is one,
+          is transparent space around it within the pane's own bounds. the "device grid" in the
+          diagram is a logical grid - it doesn't exist in the layout or control hierarchy, and
+          only exists as a set of temporary bounds during the actual layout calculation.
 
-          +---------------------------[preview pane]----------------------------+
-          |+---------------------------[background]----------------------------+|
-          ||░░░░░░░░░░░░░░░░░░░░░░░░░░░░░[padding]░░░░░░░░░░░░░░░░░░░░░░░░░░░░░||
-          ||▒▒+------------------------[device grid]-+----------------------+▒▒||
-          ||▒▒|                                      |▓▓▓▓▓▓[device 2]▓▓▓▓▓▓|▒▒||
-          ||▒▒|                                      |▓▓░░░░[screen 1]░░░░▓▓|▒▒||
-          ||▒▒|▓▓▓▓▓▓▓▓▓▓▓▓▓▓[device 1]▓▓▓▓▓▓▓▓▓▓▓▓▓▓|▓▓░░              ░░▓▓|▒▒||
-          ||▒▒|▓▓░░░░[screen 1]░░░░░░[screen 2]░░░░▓▓|▓▓░░              ░░▓▓|▒▒||
-          ||▒▒|▓▓░░              ░░              ░░▓▓|▓▓░░              ░░▓▓|▒▒||
-          ||▒▒|▓▓░░              ░░              ░░▓▓|▓▓░░░░░░░░░░░░░░░░░░▓▓|▒▒||
-          ||▒▒|▓▓░░              ░░              ░░▓▓|▓▓░░░░[screen 2]░░░░▓▓|▒▒||
-          ||▒▒|▓▓░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░▓▓|▓▓░░              ░░▓▓|▒▒||
-          ||▒▒|▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓|▓▓░░              ░░▓▓|▒▒||
-          ||▒▒|                                      |▓▓░░              ░░▓▓|▒▒||
-          ||▒▒|                                      |▓▓░░░░░░░░░░░░░░░░░░▓▓|▒▒||
-          ||▒▒|                                      |▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓|▒▒||
-          ||▒▒+--------------------------------------+----------------------+▒▒||
-          ||▒▒|        ▓▓▓▓▓▓[device 3]▓▓▓▓▓▓        |                      |▒▒||
-          ||▒▒|        ▓▓░░░░[screen 1]░░░░▓▓        |                      |▒▒||
-          ||▒▒|        ▓▓░░              ░░▓▓        |                      |▒▒||
-          ||▒▒|        ▓▓░░              ░░▓▓        |   ▓▓▓[device 4]▓▓▓   |▒▒||
-          ||▒▒|        ▓▓░░              ░░▓▓        |   ▓▓░[screen 1]░▓▓   |▒▒||
-          ||▒▒|        ▓▓░░░░░░░░░░░░░░░░░░▓▓        |   ▓▓░░        ░░▓▓   |▒▒||
-          ||▒▒|        ▓▓░░░░[screen 2]░░░░▓▓        |   ▓▓░░        ░░▓▓   |▒▒||
-          ||▒▒|        ▓▓░░              ░░▓▓        |   ▓▓░░░░░░░░░░░░▓▓   |▒▒||
-          ||▒▒|        ▓▓░░              ░░▓▓        |   ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓   |▒▒||
-          ||▒▒|        ▓▓░░              ░░▓▓        |                      |▒▒||
-          ||▒▒|        ▓▓░░░░░░░░░░░░░░░░░░▓▓        |                      |▒▒||
-          ||▒▒|        ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓        |                      |▒▒||
-          ||▒▒+-------------------------------------------------------------+▒▒||
-          ||▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒||
-          |+-------------------------------------------------------------------+|
-          +---------------------------------------------------------------------+
+          +-----------------------------[preview pane]------------------------------+
+          |█████████████████████████████[outer border]██████████████████████████████|
+          |██+---------------------------[background]----------------------------+██|
+          |██|░░░░░░░░░░░░░░░░░░░░░░░░░░░░░[padding]░░░░░░░░░░░░░░░░░░░░░░░░░░░░░|██|
+          |██|▒▒+------------------------[device grid]-+----------------------+▒▒|██|
+          |██|▒▒|                                      |▓▓▓▓▓▓[device 2]▓▓▓▓▓▓|▒▒|██|
+          |██|▒▒|                                      |▓▓░░░░[screen 1]░░░░▓▓|▒▒|██|
+          |██|▒▒|▓▓▓▓▓▓▓▓▓▓▓▓▓▓[device 1]▓▓▓▓▓▓▓▓▓▓▓▓▓▓|▓▓░░              ░░▓▓|▒▒|██|
+          |██|▒▒|▓▓░░░░[screen 1]░░░░░░[screen 2]░░░░▓▓|▓▓░░              ░░▓▓|▒▒|██|
+          |██|▒▒|▓▓░░              ░░              ░░▓▓|▓▓░░              ░░▓▓|▒▒|██|
+          |██|▒▒|▓▓░░              ░░              ░░▓▓|▓▓░░░░░░░░░░░░░░░░░░▓▓|▒▒|██|
+          |██|▒▒|▓▓░░              ░░              ░░▓▓|▓▓░░░░[screen 2]░░░░▓▓|▒▒|██|
+          |██|▒▒|▓▓░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░▓▓|▓▓░░              ░░▓▓|▒▒|██|
+          |██|▒▒|▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓|▓▓░░              ░░▓▓|▒▒|██|
+          |██|▒▒|                                      |▓▓░░              ░░▓▓|▒▒|██|
+          |██|▒▒|                                      |▓▓░░░░░░░░░░░░░░░░░░▓▓|▒▒|██|
+          |██|▒▒|                                      |▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓|▒▒|██|
+          |██|▒▒+--------------------------------------+----------------------+▒▒|██|
+          |██|▒▒|        ▓▓▓▓▓▓[device 3]▓▓▓▓▓▓        |                      |▒▒|██|
+          |██|▒▒|        ▓▓░░░░[screen 1]░░░░▓▓        |                      |▒▒|██|
+          |██|▒▒|        ▓▓░░              ░░▓▓        |                      |▒▒|██|
+          |██|▒▒|        ▓▓░░              ░░▓▓        |   ▓▓▓[device 4]▓▓▓   |▒▒|██|
+          |██|▒▒|        ▓▓░░              ░░▓▓        |   ▓▓░[screen 1]░▓▓   |▒▒|██|
+          |██|▒▒|        ▓▓░░░░░░░░░░░░░░░░░░▓▓        |   ▓▓░░        ░░▓▓   |▒▒|██|
+          |██|▒▒|        ▓▓░░░░[screen 2]░░░░▓▓        |   ▓▓░░        ░░▓▓   |▒▒|██|
+          |██|▒▒|        ▓▓░░              ░░▓▓        |   ▓▓░░░░░░░░░░░░▓▓   |▒▒|██|
+          |██|▒▒|        ▓▓░░              ░░▓▓        |   ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓   |▒▒|██|
+          |██|▒▒|        ▓▓░░              ░░▓▓        |                      |▒▒|██|
+          |██|▒▒|        ▓▓░░░░░░░░░░░░░░░░░░▓▓        |                      |▒▒|██|
+          |██|▒▒|        ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓        |                      |▒▒|██|
+          |██|▒▒+-------------------------------------------------------------+▒▒|██|
+          |██|▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒|██|
+          |██+-------------------------------------------------------------------+██|
+          |█████████████████████████████████████████████████████████████████████████|
+          +-------------------------------------------------------------------------+
 
-        note that the style settings in the config file get chopped up into two
-        different layouts - the outer border's *margin* and *thickness* belong
-        in the PreviewWindow but the outer *padding* is converted into an inner
-        padding inside the PreviewPane so the background can belong inside the
-        PreviewPane and be the correct size, rather than owned by the outer
-        PreviewWindow.
+        note that the canvas style settings in the config file map entirely onto the
+        PreviewPane - its *margin*, *border*, *padding* and *background* - so any host renders
+        the same preview from the same style. a host that doesn't want an outer border at all
+        just sets the border thickness and padding to zero. (the canvas *margin* is part of the
+        preview's own style, not the control's xaml Margin - a host can still set the latter
+        separately if it wants extra space around the whole preview.)
 
     */
 
@@ -91,11 +96,8 @@ public static class LayoutHelper
         ArgumentNullException.ThrowIfNull(previewStyle);
         ArgumentNullException.ThrowIfNull(displayInfo);
 
-        var previewWindowStyle = LayoutHelper.GetPreviewWindowStyle(previewStyle.CanvasStyle);
-        var previewPaneStyle = LayoutHelper.GetPreviewPaneStyle(previewStyle.CanvasStyle);
-
         // arrange the preview, canvas, devices and screens
-        var previewLayout = LayoutHelper.CreateInitialPreviewLayout(previewStyle, previewWindowStyle, previewPaneStyle, maximumSize);
+        var previewLayout = LayoutHelper.CreateInitialPreviewLayout(previewStyle, maximumSize);
         LayoutHelper.AddDeviceAndScreenStyles(previewLayout, previewStyle, displayInfo);
         LayoutHelper.ArrangeAndScaleDeviceLayouts(previewLayout);
         LayoutHelper.ArrangeAndScaleScreenLayouts(previewLayout);
@@ -125,89 +127,26 @@ public static class LayoutHelper
     }
 
     /// <summary>
-    /// Derives the box style a hosting window uses to wrap a <see cref="PreviewLayout"/> -
-    /// margin and border only (the actual rendered border ring around the preview), with
-    /// zero padding since there's no gap between the border's inner edge and the preview
-    /// pane's own content - the preview pane's background fills right up to its own edge.
-    /// </summary>
-    public static BoxStyle GetPreviewWindowStyle(BoxStyle canvasStyle)
-    {
-        ArgumentNullException.ThrowIfNull(canvasStyle);
-        return new BoxStyle(
-            marginStyle: canvasStyle.MarginStyle,
-            borderStyle: canvasStyle.BorderStyle,
-            paddingStyle: PaddingStyle.Empty,
-            backgroundStyle: BackgroundStyle.Empty);
-    }
-
-    /// <summary>
-    /// Derives the box style a <see cref="PreviewLayout"/> uses for its own content - zero
-    /// margin and border (both are now the hosting window's job, see
-    /// <see cref="GetPreviewWindowStyle"/>) and the padding/background the preview pane renders
-    /// itself, inset from its own bounds.
-    /// </summary>
-    internal static BoxStyle GetPreviewPaneStyle(BoxStyle canvasStyle)
-    {
-        ArgumentNullException.ThrowIfNull(canvasStyle);
-        return new BoxStyle(
-            marginStyle: MarginStyle.Empty,
-            borderStyle: BorderStyle.Empty,
-            paddingStyle: canvasStyle.PaddingStyle,
-            backgroundStyle: canvasStyle.BackgroundStyle);
-    }
-
-    /// <summary>
-    /// Takes the size of a PreviewPane's layout and uses it as the baseline for calculating the
-    /// containing PreviewWindow's size. Effectively adds the outer border and margin onto the
-    /// PreviewPane size.
-    /// </summary>
-    public static BoxBounds GetPreviewWindowBounds(SizeInfo previewSize, BoxStyle previewWindowStyle)
-    {
-        ArgumentNullException.ThrowIfNull(previewSize);
-        ArgumentNullException.ThrowIfNull(previewWindowStyle);
-        var contentBounds = new RectangleInfo(0, 0, previewSize.Width, previewSize.Height);
-        return LayoutHelper.GetPreviewWindowBounds(contentBounds, previewWindowStyle);
-    }
-
-    /// <summary>
-    /// Takes the bounds of a PreviewPane's layout and uses it as the baseline
-    /// for calculating the containing PreviewWindow's size. Effectively adds
-    /// the outer border and margin onto the PreviewPane size and includes room
-    /// for a status bar of given height.
-    /// </summary>
-    public static BoxBounds GetPreviewWindowBounds(RectangleInfo previewBounds, BoxStyle previewWindowStyle)
-    {
-        ArgumentNullException.ThrowIfNull(previewBounds);
-        ArgumentNullException.ThrowIfNull(previewWindowStyle);
-        return BoxBounds.CreateFromContentBounds(
-            contentBounds: previewBounds,
-            boxStyle: previewWindowStyle);
-    }
-
-    /// <summary>
-    /// Works out the maximum window and pane sizes for the given constraints, and returns a
+    /// Works out the maximum pane size for the given constraints, and returns a
     /// <see cref="PreviewLayout.Builder"/> seeded with just <see cref="PreviewLayout.Builder.PreviewSize"/>
     /// and the canvas's own bounds/style - no devices yet, see <see cref="AddDeviceAndScreenStyles"/>.
+    /// The canvas uses the whole canvas style as-is, so the preview pane renders its own margin
+    /// and outer border, and its padding and background inside it, without any help from its host.
     /// </summary>
     private static PreviewLayout.Builder CreateInitialPreviewLayout(
-        PreviewStyle previewStyle, BoxStyle previewWindowStyle, BoxStyle previewPaneStyle, SizeInfo? maximumSize = null)
+        PreviewStyle previewStyle, SizeInfo? maximumSize = null)
     {
         ArgumentNullException.ThrowIfNull(previewStyle);
 
-        // work out the maximum allowed size of the *window's* outer footprint:
+        // work out the maximum allowed size of the preview pane's footprint (margin included) -
+        // pure size arithmetic, since PreviewLayout deliberately has no position, only a size
+        // (see PreviewLayout):
         // * can't be bigger than maximumSize, if the caller gave one (e.g. the activated screen,
         //   for a caller rendering a real on-screen window)
         // * can't be bigger than the configured canvas size
-        var windowMaxSize = (maximumSize is not null)
+        var paneMaxSize = (maximumSize is not null)
             ? previewStyle.CanvasSize.Clamp(maximumSize)
             : previewStyle.CanvasSize;
-
-        // the preview pane's own maximum size is whatever's left of that footprint once the
-        // window's margin/border allowance has been subtracted from it - pure size arithmetic,
-        // since PreviewLayout deliberately has no position, only a size (see PreviewLayout).
-        var paneMaxSize = windowMaxSize
-            .Shrink(previewWindowStyle.MarginStyle)
-            .Shrink(previewWindowStyle.BorderStyle);
         var paneMaxBounds = new RectangleInfo(paneMaxSize);
 
         // this is the root of a nested structure of mutable "builder" objects that can be used
@@ -219,8 +158,8 @@ public static class LayoutHelper
             {
                 CanvasBounds = BoxBounds.CreateFromOuterBounds(
                     outerBounds: paneMaxBounds,
-                    boxStyle: previewPaneStyle),
-                CanvasStyle = previewPaneStyle,
+                    boxStyle: previewStyle.CanvasStyle),
+                CanvasStyle = previewStyle.CanvasStyle,
             },
         };
     }
