@@ -134,7 +134,7 @@ public sealed class AppSettings
             PreviewType.Compact => PreviewStyles.Compact.WithCanvasSize(this.PreviewStyle.CanvasSize),
             PreviewType.Bezelled => PreviewStyles.Bezelled.WithCanvasSize(this.PreviewStyle.CanvasSize),
             PreviewType.Custom => this.PreviewStyle,
-            _ => throw new InvalidOperationException($"Unhandled {nameof(PreviewType)} '{this.PreviewStyle}'"),
+            _ => throw new InvalidOperationException($"Unhandled {nameof(PreviewType)} '{this.PreviewType}'"),
         };
     }
 }
