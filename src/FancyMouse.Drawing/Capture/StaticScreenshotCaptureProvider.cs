@@ -1,8 +1,7 @@
-using System.Drawing;
-using System.Drawing.Drawing2D;
-using System.Drawing.Imaging;
-
+using FancyMouse.Drawing.Helpers;
 using FancyMouse.Models.Drawing;
+
+using SkiaSharp;
 
 namespace FancyMouse.Drawing.Capture;
 
@@ -13,17 +12,17 @@ namespace FancyMouse.Drawing.Capture;
 /// </summary>
 public sealed class StaticScreenshotCaptureProvider : IScreenshotCaptureProvider
 {
-    public StaticScreenshotCaptureProvider(Image sourceImage)
+    public StaticScreenshotCaptureProvider(SKBitmap sourceImage)
     {
         this.SourceImage = sourceImage ?? throw new ArgumentNullException(nameof(sourceImage));
     }
 
-    private Image SourceImage
+    private SKBitmap SourceImage
     {
         get;
     }
 
-    public Task<Bitmap> CaptureAsync(
+    public Task<SKBitmap> CaptureAsync(
         RectangleInfo sourceArea,
         SizeInfo thumbnailSize,
         CancellationToken cancellationToken = default)
@@ -31,19 +30,18 @@ public sealed class StaticScreenshotCaptureProvider : IScreenshotCaptureProvider
         cancellationToken.ThrowIfCancellationRequested();
 
         var target = thumbnailSize.Round().ToSize();
-        var thumbnailImage = new Bitmap(target.Width, target.Height, PixelFormat.Format32bppPArgb);
-        using (var thumbnailGraphics = Graphics.FromImage(thumbnailImage))
+        var thumbnailImage = SkiaHelper.CreateBitmap(target.Width, target.Height, SKAlphaType.Premul);
+        using (var thumbnailCanvas = new SKCanvas(thumbnailImage))
+        using (var sourceImage = SkiaHelper.AsImage(this.SourceImage))
         {
-            // prevent the background bleeding through into screen images
+            // prevent the background bleeding through into screen images by sampling
+            // the nearest source pixel rather than blending neighbouring ones
             // (see https://github.com/mikeclayton/FancyMouse/issues/44)
-            thumbnailGraphics.PixelOffsetMode = PixelOffsetMode.Half;
-            thumbnailGraphics.InterpolationMode = InterpolationMode.NearestNeighbor;
-
-            thumbnailGraphics.DrawImage(
-                image: this.SourceImage,
-                destRect: new Rectangle(0, 0, target.Width, target.Height),
-                srcRect: sourceArea.ToRectangle(),
-                srcUnit: GraphicsUnit.Pixel);
+            thumbnailCanvas.DrawImage(
+                sourceImage,
+                sourceArea.ToRectangle().ToSKRect(),
+                SKRect.Create(0, 0, target.Width, target.Height),
+                new SKSamplingOptions(SKFilterMode.Nearest));
         }
 
         return Task.FromResult(thumbnailImage);

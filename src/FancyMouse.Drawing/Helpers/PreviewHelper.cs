@@ -1,10 +1,11 @@
 using System.Drawing;
-using System.Drawing.Imaging;
 
 using FancyMouse.Drawing.Capture;
 using FancyMouse.Models.Display;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Styles;
+
+using SkiaSharp;
 
 namespace FancyMouse.Drawing.Helpers;
 
@@ -27,7 +28,7 @@ public static class PreviewHelper
     /// PreviewWindow form's controls, and can be used as the "live preview" in the SettingsUI
     /// and in tests to confirm the visual components all draw correctly compared to a reference image.
     /// </summary>
-    public static async Task<Bitmap> DrawPreviewAsync(
+    public static async Task<SKBitmap> DrawPreviewAsync(
         PreviewStyle previewStyle,
         IScreenshotCaptureProvider captureProvider,
         DisplayInfo displayInfo,
@@ -46,19 +47,19 @@ public static class PreviewHelper
         // layout is relative to its own top-left corner - so its coordinates are the absolute
         // position in the rendered image, and the outer margin is left transparent
         var bounds = new RectangleInfo(previewLayout.PreviewSize).ToRectangle();
-        var previewImage = new Bitmap(bounds.Width, bounds.Height, PixelFormat.Format32bppPArgb);
-        using var graphics = Graphics.FromImage(previewImage);
-        graphics.Clear(Color.Transparent);
+        var previewImage = SkiaHelper.CreateBitmap(bounds.Width, bounds.Height, SKAlphaType.Premul);
+        using var canvas = new SKCanvas(previewImage);
+        canvas.Clear(Color.Transparent.ToSKColor());
 
         var canvasBounds = canvasLayout.CanvasBounds;
         using (var border = DrawingHelper.RenderBorder(canvasBounds.BorderBounds.Size, canvasLayout.CanvasStyle.BorderStyle))
         {
-            graphics.DrawImageUnscaled(border, (int)canvasBounds.BorderBounds.X, (int)canvasBounds.BorderBounds.Y);
+            canvas.DrawBitmap(border, (int)canvasBounds.BorderBounds.X, (int)canvasBounds.BorderBounds.Y);
         }
 
         using (var background = DrawingHelper.RenderBackground(canvasBounds.PaddingBounds.Size, canvasLayout.CanvasStyle.BackgroundStyle))
         {
-            graphics.DrawImageUnscaled(background, (int)canvasBounds.PaddingBounds.X, (int)canvasBounds.PaddingBounds.Y);
+            canvas.DrawBitmap(background, (int)canvasBounds.PaddingBounds.X, (int)canvasBounds.PaddingBounds.Y);
         }
 
         foreach (var screenLayout in canvasLayout.DeviceLayouts.SelectMany(deviceLayout => deviceLayout.ScreenLayouts))
@@ -67,7 +68,7 @@ public static class PreviewHelper
 
             using (var bezel = DrawingHelper.RenderBorder(screenBounds.BorderBounds.Size, screenLayout.ScreenStyle.BorderStyle))
             {
-                graphics.DrawImageUnscaled(bezel, (int)screenBounds.BorderBounds.X, (int)screenBounds.BorderBounds.Y);
+                canvas.DrawBitmap(bezel, (int)screenBounds.BorderBounds.X, (int)screenBounds.BorderBounds.Y);
             }
 
             // the capture provider owns anti-bleed/interpolation settings for its own thumbnail
@@ -78,7 +79,7 @@ public static class PreviewHelper
                 screenLayout.ScreenInfo.DisplayArea,
                 screenBounds.ContentBounds.Size,
                 cancellationToken).ConfigureAwait(false);
-            graphics.DrawImageUnscaled(
+            canvas.DrawBitmap(
                 screenshotImage,
                 (int)screenBounds.ContentBounds.X,
                 (int)screenBounds.ContentBounds.Y);

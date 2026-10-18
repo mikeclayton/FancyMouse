@@ -1,6 +1,6 @@
-using System.Drawing;
-
 using FancyMouse.Models.Layout;
+
+using SkiaSharp;
 
 namespace FancyMouse.Drawing.Capture;
 
@@ -43,7 +43,7 @@ public sealed class ScreenshotCapturePipeline : IAsyncDisposable
     /// Starts one capture per screen on <paramref name="deviceLayout"/> using
     /// <paramref name="provider"/>, and returns each screen paired with its own capture task.
     /// </summary>
-    public IReadOnlyList<(ScreenLayout ScreenLayout, Task<Bitmap> CaptureTask)> AddCaptureTasks(
+    public IReadOnlyList<(ScreenLayout ScreenLayout, Task<SKBitmap> CaptureTask)> AddCaptureTasks(
         DeviceLayout deviceLayout, IScreenshotCaptureProvider provider)
     {
         ArgumentNullException.ThrowIfNull(deviceLayout);
@@ -51,7 +51,7 @@ public sealed class ScreenshotCapturePipeline : IAsyncDisposable
 
         this.providers.Add(provider);
 
-        var results = new List<(ScreenLayout, Task<Bitmap>)>();
+        var results = new List<(ScreenLayout, Task<SKBitmap>)>();
         foreach (var screenLayout in deviceLayout.ScreenLayouts)
         {
             var captureTask = provider.CaptureAsync(
@@ -130,9 +130,9 @@ public sealed class ScreenshotCapturePipeline : IAsyncDisposable
         }
     }
 
-    private async Task ApplyWhenReadyAsync(ScreenLayout screenLayout, Task<Bitmap> captureTask)
+    private async Task ApplyWhenReadyAsync(ScreenLayout screenLayout, Task<SKBitmap> captureTask)
     {
-        Bitmap bitmap;
+        SKBitmap bitmap;
         try
         {
             bitmap = await captureTask.ConfigureAwait(false);

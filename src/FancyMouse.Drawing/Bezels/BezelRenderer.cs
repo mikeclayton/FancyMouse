@@ -1,7 +1,9 @@
 using System.Drawing;
-using System.Drawing.Drawing2D;
 
+using FancyMouse.Drawing.Helpers;
 using FancyMouse.Models.Styles;
+
+using SkiaSharp;
 
 namespace FancyMouse.Drawing.Bezels;
 
@@ -45,7 +47,7 @@ public sealed partial class BezelRenderer : IDisposable
     /// Gets a 2N×2N sprite sheet with pre-rendered corners and baked-in 3-D effects.
     /// Layout: TL=(0,0)  TR=(N,0)  BL=(0,N)  BR=(N,N)  where N=Thickness.
     /// </summary>
-    private Bitmap CornerAtlas
+    private SKImage CornerAtlas
     {
         get;
     }
@@ -76,7 +78,7 @@ public sealed partial class BezelRenderer : IDisposable
     ///   BL — shadow (bottom) meets highlight (left), both fade at 45°
     ///   Inner arc effects are reversed; BR inner highlight is halved.
     /// </summary>
-    public void DrawBezel(Graphics g, int x, int y, int width, int height)
+    public void DrawBezel(SKCanvas canvas, int x, int y, int width, int height)
     {
         var bezelWidth = (int)this.BezelStyle.Left;
 
@@ -84,7 +86,7 @@ public sealed partial class BezelRenderer : IDisposable
         // Fills all four strips with flat BezelColor then overlays highlight /
         // shadow gradient effects on the outer and inner depth layers.
         BezelRenderer.DrawBezelEdges(
-            g,
+            canvas,
             x,
             y,
             width,
@@ -97,11 +99,11 @@ public sealed partial class BezelRenderer : IDisposable
         // Drawn last so the antialiased outer-edge pixels composite correctly
         // over whatever was drawn in the edge strips above.
         //
-        // NearestNeighbor + PixelOffsetMode.Half ensures an exact 1:1 pixel copy.
-        // With Half mode the sample point for dest pixel i lands at exactly i,
-        // so NearestNeighbor snaps to the correct source pixel without bilinear
-        // blurring. Default bilinear samples at i+0.5, shifting the arc edge ~0.5 px
-        // inward and creating a visible gap between the corner arc and the edge strips.
+        // Nearest-neighbour sampling ensures an exact 1:1 pixel copy - each
+        // destination pixel's centre maps onto exactly one source pixel's centre,
+        // so it snaps to the correct source pixel without bilinear blurring, which
+        // would soften the arc edge and leave a visible seam between the corner
+        // arc and the edge strips.
         var n = bezelWidth;
         var corners = new[]
         {
@@ -112,19 +114,11 @@ public sealed partial class BezelRenderer : IDisposable
             (src: new Rectangle(n, n, n, n), dest: new Rectangle(x + width - n, y + height - n, n, n)),  // BR
         };
 
-        var savedInterpolation = g.InterpolationMode;
-        var savedPixelOffset = g.PixelOffsetMode;
-
-        g.InterpolationMode = InterpolationMode.NearestNeighbor;
-        g.PixelOffsetMode = PixelOffsetMode.Half;
-
+        var sampling = new SKSamplingOptions(SKFilterMode.Nearest);
         foreach (var (src, dest) in corners)
         {
-            g.DrawImage(this.CornerAtlas, dest, src, GraphicsUnit.Pixel);
+            canvas.DrawImage(this.CornerAtlas, src.ToSKRect(), dest.ToSKRect(), sampling);
         }
-
-        g.InterpolationMode = savedInterpolation;
-        g.PixelOffsetMode = savedPixelOffset;
     }
 
     public void Dispose()

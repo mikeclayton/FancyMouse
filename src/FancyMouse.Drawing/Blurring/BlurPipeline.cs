@@ -1,7 +1,7 @@
-using System.Drawing;
-
 using FancyMouse.Models.Display;
 using FancyMouse.Telemetry;
+
+using SkiaSharp;
 
 namespace FancyMouse.Drawing.Blurring;
 
@@ -78,7 +78,7 @@ public sealed class BlurPipeline
     /// released) so it can deterministically hold a blur "in progress" while it submits more
     /// screenshots or changes the active screens.
     /// </remarks>
-    internal BlurPipeline(TelemetryContext telemetry, TimeProvider? timeProvider, Func<Bitmap, Bitmap> blur)
+    internal BlurPipeline(TelemetryContext telemetry, TimeProvider? timeProvider, Func<SKBitmap, SKBitmap> blur)
     {
         this.Telemetry = telemetry ?? throw new ArgumentNullException(nameof(telemetry));
         this.TimeProvider = timeProvider ?? TimeProvider.System;
@@ -100,7 +100,7 @@ public sealed class BlurPipeline
     /// Gets the function that produces a blurred copy of a screenshot - always
     /// <see cref="CreateBlurredCopy"/> in production.
     /// </summary>
-    private Func<Bitmap, Bitmap> Blur
+    private Func<SKBitmap, SKBitmap> Blur
     {
         get;
     }
@@ -166,7 +166,7 @@ public sealed class BlurPipeline
     /// screen's "todo" - replacing, and disposing, whatever was previously queued, since only
     /// the latest matters.
     /// </summary>
-    public void SetScreenshot(ScreenInfo screenInfo, Bitmap screenshotImage)
+    public void SetScreenshot(ScreenInfo screenInfo, SKBitmap screenshotImage)
     {
         ArgumentNullException.ThrowIfNull(screenInfo);
         ArgumentNullException.ThrowIfNull(screenshotImage);
@@ -201,7 +201,7 @@ public sealed class BlurPipeline
     /// invoking <paramref name="use"/>. TryGet locks pipeline and passes the screen's bitmap
     /// directly (no cloning) to the <paramref name="use"/> Action synchronously while this
     /// pipeline's own lock is still held. The <paramref name="use"/> Action must not retain
-    /// the <see cref="Bitmap"/> passed to it beyond the call, since the pipeline is free to
+    /// the <see cref="SKBitmap"/> passed to it beyond the call, since the pipeline is free to
     /// dispose it the moment <paramref name="use"/> returns.
     /// </summary>
     /// <remarks>
@@ -210,7 +210,7 @@ public sealed class BlurPipeline
     /// just not ready yet), or "not found" (nothing tracked for this screen at all) - to
     /// make the caching behaviour directly observable in telemetry (where enabled).
     /// </remarks>
-    public bool TryGet(ScreenInfo screenInfo, Action<Bitmap> use)
+    public bool TryGet(ScreenInfo screenInfo, Action<SKBitmap> use)
     {
         ArgumentNullException.ThrowIfNull(screenInfo);
         ArgumentNullException.ThrowIfNull(use);
@@ -255,9 +255,9 @@ public sealed class BlurPipeline
     /// once it has been read from - including if blurring it fails, in which case "done" is left
     /// untouched but the screen is still released for its next "todo" as normal.
     /// </remarks>
-    private void RunBlur(ScreenInfo screenInfo, Bitmap image)
+    private void RunBlur(ScreenInfo screenInfo, SKBitmap image)
     {
-        Bitmap? blurredImage = null;
+        SKBitmap? blurredImage = null;
         try
         {
             using (this.Telemetry.BeginTimer(new { }, "CreateBlurredCopy"))
@@ -311,7 +311,7 @@ public sealed class BlurPipeline
         }
     }
 
-    private static Bitmap CreateBlurredCopy(Bitmap image)
+    private static SKBitmap CreateBlurredCopy(SKBitmap image)
         => BlurHelper.CreateBlurredCopy(
             image, BlurPipeline.BlurIntensity, BlurPipeline.BlurSaturation, BlurPipeline.BlurBrightness);
 }

@@ -1,10 +1,10 @@
-using System.Drawing;
-
 using FancyMouse.Drawing.Capture;
 using FancyMouse.Models.Display;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Layout;
 using FancyMouse.Models.Styles;
+
+using SkiaSharp;
 
 namespace FancyMouse.Drawing.UnitTests.Capture;
 
@@ -21,8 +21,8 @@ public sealed class ScreenshotCapturePipelineTests
         };
         var deviceLayout = ScreenshotCapturePipelineTests.CreateDeviceLayout(screenLayouts);
 
-        using var bitmap1 = new Bitmap(1, 1);
-        using var bitmap2 = new Bitmap(1, 1);
+        using var bitmap1 = new SKBitmap(1, 1);
+        using var bitmap2 = new SKBitmap(1, 1);
         var provider = new FakeScreenshotCaptureProvider(
             _ => Task.FromResult(bitmap1),
             _ => Task.FromResult(bitmap2));
@@ -38,8 +38,8 @@ public sealed class ScreenshotCapturePipelineTests
             screenLayouts,
             sink.Received.Select(entry => entry.ScreenLayout).ToList());
         CollectionAssert.AreEquivalent(
-            new Bitmap[] { bitmap1, bitmap2 },
-            sink.Received.Select(entry => entry.Bitmap).ToList());
+            new SKBitmap[] { bitmap1, bitmap2 },
+            sink.Received.Select(entry => entry.SKBitmap).ToList());
     }
 
     [TestMethod]
@@ -52,10 +52,10 @@ public sealed class ScreenshotCapturePipelineTests
         };
         var deviceLayout = ScreenshotCapturePipelineTests.CreateDeviceLayout(screenLayouts);
 
-        using var bitmap1 = new Bitmap(1, 1);
+        using var bitmap1 = new SKBitmap(1, 1);
         var provider = new FakeScreenshotCaptureProvider(
             _ => Task.FromResult(bitmap1),
-            _ => Task.FromException<Bitmap>(new InvalidOperationException("capture failed")));
+            _ => Task.FromException<SKBitmap>(new InvalidOperationException("capture failed")));
 
         var sink = new FakeScreenshotCaptureSink();
         await using var pipeline = new ScreenshotCapturePipeline(sink);
@@ -82,10 +82,10 @@ public sealed class ScreenshotCapturePipelineTests
         };
         var deviceLayout = ScreenshotCapturePipelineTests.CreateDeviceLayout(screenLayouts);
 
-        using var bitmap1 = new Bitmap(1, 1);
+        using var bitmap1 = new SKBitmap(1, 1);
         var provider = new FakeScreenshotCaptureProvider(
             _ => Task.FromResult(bitmap1),
-            _ => Task.FromCanceled<Bitmap>(new CancellationToken(canceled: true)));
+            _ => Task.FromCanceled<SKBitmap>(new CancellationToken(canceled: true)));
 
         var sink = new FakeScreenshotCaptureSink();
         await using var pipeline = new ScreenshotCapturePipeline(sink);
@@ -110,7 +110,7 @@ public sealed class ScreenshotCapturePipelineTests
         var deviceLayout = ScreenshotCapturePipelineTests.CreateDeviceLayout(screenLayouts);
 
         var provider = new FakeScreenshotCaptureProvider(
-            _ => Task.FromException<Bitmap>(new InvalidOperationException("capture failed")));
+            _ => Task.FromException<SKBitmap>(new InvalidOperationException("capture failed")));
 
         var sink = new FakeScreenshotCaptureSink();
         var pipeline = new ScreenshotCapturePipeline(sink);
@@ -142,9 +142,9 @@ public sealed class ScreenshotCapturePipelineTests
 
     private sealed class FakeScreenshotCaptureProvider : IScreenshotCaptureProvider, IDisposable
     {
-        private readonly Queue<Func<CancellationToken, Task<Bitmap>>> results;
+        private readonly Queue<Func<CancellationToken, Task<SKBitmap>>> results;
 
-        public FakeScreenshotCaptureProvider(params Func<CancellationToken, Task<Bitmap>>[] results)
+        public FakeScreenshotCaptureProvider(params Func<CancellationToken, Task<SKBitmap>>[] results)
         {
             this.results = new(results);
         }
@@ -155,7 +155,7 @@ public sealed class ScreenshotCapturePipelineTests
             private set;
         }
 
-        public Task<Bitmap> CaptureAsync(
+        public Task<SKBitmap> CaptureAsync(
             RectangleInfo sourceArea, SizeInfo thumbnailSize, CancellationToken cancellationToken = default)
             => this.results.Dequeue()(cancellationToken);
 
@@ -167,15 +167,15 @@ public sealed class ScreenshotCapturePipelineTests
     {
         public FakeScreenshotCaptureSink()
         {
-            this.Received = new List<(ScreenLayout ScreenLayout, Bitmap Bitmap)>();
+            this.Received = new List<(ScreenLayout ScreenLayout, SKBitmap SKBitmap)>();
         }
 
-        public List<(ScreenLayout ScreenLayout, Bitmap Bitmap)> Received
+        public List<(ScreenLayout ScreenLayout, SKBitmap SKBitmap)> Received
         {
             get;
         }
 
-        public Task SetScreenshotAsync(ScreenLayout screenLayout, Bitmap bitmap)
+        public Task SetScreenshotAsync(ScreenLayout screenLayout, SKBitmap bitmap)
         {
             this.Received.Add((screenLayout, bitmap));
             return Task.CompletedTask;

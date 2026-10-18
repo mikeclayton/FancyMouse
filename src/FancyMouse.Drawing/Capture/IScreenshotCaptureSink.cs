@@ -1,6 +1,6 @@
-using System.Drawing;
-
 using FancyMouse.Models.Layout;
+
+using SkiaSharp;
 
 namespace FancyMouse.Drawing.Capture;
 
@@ -17,5 +17,5 @@ public interface IScreenshotCaptureSink
     /// is free to keep holding onto it (e.g. to read from on a background thread) well after
     /// this returns, and is responsible for disposing it once actually done.
     /// </summary>
-    Task SetScreenshotAsync(ScreenLayout screenLayout, Bitmap bitmap);
+    Task SetScreenshotAsync(ScreenLayout screenLayout, SKBitmap bitmap);
 }

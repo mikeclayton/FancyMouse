@@ -1,4 +1,3 @@
-using System.Drawing;
 using System.Runtime.InteropServices.WindowsRuntime;
 
 using FancyMouse.Drawing.Capture;
@@ -11,6 +10,9 @@ using FancyMouse.Windows.Helpers;
 using FancyMouse.WinUI3.Controls;
 
 using Microsoft.UI.Windowing;
+
+using SkiaSharp;
+
 using Windows.Graphics;
 
 namespace FancyMouse.WinUI3.UI;
@@ -125,7 +127,7 @@ internal sealed partial class PreviewWindow
         // DesktopScreenshotCaptureProvider remarks for why a single instance is safe (and
         // necessary) to share across all of that device's screens. Ownership of each provider
         // transfers to the pipeline - see ScreenshotCapturePipeline.DisposeAsync.
-        var captureTasks = new List<(ScreenLayout ScreenLayout, Task<Bitmap> CaptureTask)>();
+        var captureTasks = new List<(ScreenLayout ScreenLayout, Task<SKBitmap> CaptureTask)>();
         using (this.Telemetry.BeginTimer(new { }, "kickOffCaptureRequests"))
         {
             foreach (var deviceLayout in previewLayout.CanvasLayout.DeviceLayouts)

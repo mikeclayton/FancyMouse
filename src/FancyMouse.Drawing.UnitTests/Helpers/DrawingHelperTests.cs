@@ -1,11 +1,12 @@
 ﻿using System.Drawing;
-using System.Drawing.Imaging;
 
 using FancyMouse.Drawing.Capture;
 using FancyMouse.Drawing.Helpers;
 using FancyMouse.Models.Display;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Styles;
+
+using SkiaSharp;
 
 namespace FancyMouse.Drawing.UnitTests.Helpers;
 
@@ -198,7 +199,7 @@ public static class DrawingHelperTests
             var actualFilename = Path.Combine(
                 currentDirectory,
                 Path.GetFileNameWithoutExtension(data.ExpectedImageFilename) + "_actual" + Path.GetExtension(data.ExpectedImageFilename));
-            actual.Save(actualFilename, ImageFormat.Png);
+            GetPreviewLayoutTests.SaveImage(actual, actualFilename);
 
             // load the expected image
             var expected = GetPreviewLayoutTests.LoadImageResource(data.ExpectedImageFilename);
@@ -207,13 +208,20 @@ public static class DrawingHelperTests
             var expectedFilename = Path.Combine(
                 currentDirectory,
                 Path.GetFileNameWithoutExtension(data.ExpectedImageFilename) + "_expected" + Path.GetExtension(data.ExpectedImageFilename));
-            expected.Save(expectedFilename, ImageFormat.Png);
+            GetPreviewLayoutTests.SaveImage(expected, expectedFilename);
 
             // compare the images
             AssertImagesEqual(expected, actual);
         }
 
-        private static Bitmap LoadImageResource(string filename)
+        private static void SaveImage(SKBitmap image, string filename)
+        {
+            using var pngData = image.Encode(SKEncodedImageFormat.Png, 100);
+            using var pngFile = File.Create(filename);
+            pngData.SaveTo(pngFile);
+        }
+
+        private static SKBitmap LoadImageResource(string filename)
         {
             var referenceType = typeof(DrawingHelperTests);
             var resourceAssembly = referenceType.Assembly;
@@ -234,16 +242,17 @@ public static class DrawingHelperTests
                 throw new InvalidOperationException(message);
             }
 
-            var stream = resourceAssembly.GetManifestResourceStream(resourceName)
+            using var stream = resourceAssembly.GetManifestResourceStream(resourceName)
                 ?? throw new InvalidOperationException();
-            var image = (Bitmap)Image.FromStream(stream);
+            var image = SKBitmap.Decode(stream)
+                ?? throw new InvalidOperationException($"Embedded resource '{resourceName}' could not be decoded as an image.");
             return image;
         }
 
         /// <summary>
         /// Naive / brute force image comparison - we can optimize this later :-)
         /// </summary>
-        private static void AssertImagesEqual(Bitmap expected, Bitmap actual)
+        private static void AssertImagesEqual(SKBitmap expected, SKBitmap actual)
         {
             Assert.AreEqual(
                 expected.Width,
@@ -260,12 +269,12 @@ public static class DrawingHelperTests
                     var expectedPixel = expected.GetPixel(x, y);
                     var actualPixel = actual.GetPixel(x, y);
 
-                    // allow a 1-level-per-channel tolerance for residual GDI+ rasterization rounding.
+                    // allow a 1-level-per-channel tolerance for residual rasterization rounding.
                     Assert.IsTrue(
-                        (Math.Abs(expectedPixel.A - actualPixel.A) <= 1) &&
-                        (Math.Abs(expectedPixel.R - actualPixel.R) <= 1) &&
-                        (Math.Abs(expectedPixel.G - actualPixel.G) <= 1) &&
-                        (Math.Abs(expectedPixel.B - actualPixel.B) <= 1),
+                        (Math.Abs(expectedPixel.Alpha - actualPixel.Alpha) <= 1) &&
+                        (Math.Abs(expectedPixel.Red - actualPixel.Red) <= 1) &&
+                        (Math.Abs(expectedPixel.Green - actualPixel.Green) <= 1) &&
+                        (Math.Abs(expectedPixel.Blue - actualPixel.Blue) <= 1),
                         $"images differ at pixel ({x}, {y}) - expected: {expectedPixel}, actual: {actualPixel}");
                 }
             }

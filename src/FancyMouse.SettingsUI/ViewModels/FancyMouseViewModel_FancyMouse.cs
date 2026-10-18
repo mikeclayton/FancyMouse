@@ -14,7 +14,6 @@
 #nullable disable
 
 using System.Drawing;
-using System.Drawing.Imaging;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
@@ -32,6 +31,8 @@ using FancyMouse.SettingsUI.Models;
 
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
+
+using SkiaSharp;
 
 namespace FancyMouse.SettingsUI.ViewModels
 {
@@ -83,7 +84,7 @@ namespace FancyMouse.SettingsUI.ViewModels
             }
         }
 
-        private static Bitmap LoadImageResource(string filename)
+        private static SKBitmap LoadImageResource(string filename)
         {
             var assembly = Assembly.GetExecutingAssembly();
             var assemblyName = new AssemblyName(assembly.FullName ?? throw new InvalidOperationException());
@@ -101,14 +102,15 @@ namespace FancyMouse.SettingsUI.ViewModels
                 throw new InvalidOperationException($"Embedded resource '{resourceName}' (case-insensitive) does not exist.");
             }
 
-            var stream = assembly.GetManifestResourceStream(actualResourceName)
+            using var stream = assembly.GetManifestResourceStream(actualResourceName)
                 ?? throw new InvalidOperationException();
-            var image = (Bitmap)Image.FromStream(stream);
+            var image = SKBitmap.Decode(stream)
+                ?? throw new InvalidOperationException($"Embedded resource '{actualResourceName}' could not be decoded as an image.");
             return image;
         }
 
 #pragma warning disable SA1306 // Field should begin with lower-case letter
-        private static Lazy<Bitmap> FancyMouseDesktopImage = new(
+        private static Lazy<SKBitmap> FancyMouseDesktopImage = new(
             () => FancyMouseViewModel.LoadImageResource("Assets/PreviewDesktop.png"));
 #pragma warning restore SA1306
 
@@ -181,7 +183,11 @@ namespace FancyMouse.SettingsUI.ViewModels
 
                 // save the image to a memory stream
                 using var stream = new MemoryStream();
-                previewBitmap.Save(stream, ImageFormat.Png);
+                using (var pngData = previewBitmap.Encode(SKEncodedImageFormat.Png, 100))
+                {
+                    pngData.SaveTo(stream);
+                }
+
                 stream.Position = 0;
 
                 // load the memory stream into a bitmap image

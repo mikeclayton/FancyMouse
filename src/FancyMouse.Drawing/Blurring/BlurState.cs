@@ -1,4 +1,4 @@
-using System.Drawing;
+using SkiaSharp;
 
 namespace FancyMouse.Drawing.Blurring;
 
@@ -15,13 +15,13 @@ internal sealed class BlurState
         set;
     }
 
-    public Bitmap? Todo
+    public SKBitmap? Todo
     {
         get;
         set;
     }
 
-    public Bitmap? Done
+    public SKBitmap? Done
     {
         get;
         set;

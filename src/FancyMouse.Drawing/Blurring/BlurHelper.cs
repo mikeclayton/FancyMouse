@@ -1,5 +1,6 @@
-using System.Drawing;
-using System.Drawing.Imaging;
+using FancyMouse.Drawing.Helpers;
+
+using SkiaSharp;
 
 namespace FancyMouse.Drawing.Blurring;
 
@@ -37,16 +38,11 @@ internal static class BlurHelper
     /// </summary>
     private const int BoxBlurPasses = 3;
 
-    // the alpha and translation rows of a colour matrix - always left unchanged here, so these
-    // are the same on every call rather than freshly allocated each time
-    private static readonly float[] UnchangedAlphaRow = { 0f, 0f, 0f, 1f, 0f };
-    private static readonly float[] UnchangedTranslationRow = { 0f, 0f, 0f, 0f, 1f };
-
     /// <summary>
     /// Returns a new bitmap, the same size as <paramref name="source"/>, desaturated and
     /// darkened, then blurred.
     /// </summary>
-    public static Bitmap CreateBlurredCopy(Bitmap source, decimal blurIntensity, double saturation = 1.0, double brightness = 1.0)
+    public static SKBitmap CreateBlurredCopy(SKBitmap source, decimal blurIntensity, double saturation = 1.0, double brightness = 1.0)
     {
         ArgumentNullException.ThrowIfNull(source);
         if (blurIntensity is <= 0 or > 1)
@@ -55,21 +51,15 @@ internal static class BlurHelper
                 nameof(blurIntensity), blurIntensity, "Value must be greater than 0 and less than or equal to 1.");
         }
 
-        var mutedImage = new Bitmap(source.Width, source.Height, PixelFormat.Format32bppPArgb);
+        var mutedImage = SkiaHelper.CreateBitmap(source.Width, source.Height, SKAlphaType.Premul);
         try
         {
-            using var graphics = Graphics.FromImage(mutedImage);
-            using var imageAttributes = new ImageAttributes();
-            imageAttributes.SetColorMatrix(BlurHelper.GetMuteColorMatrix(saturation, brightness));
-            graphics.DrawImage(
-                source,
-                new Rectangle(0, 0, source.Width, source.Height),
-                0,
-                0,
-                source.Width,
-                source.Height,
-                GraphicsUnit.Pixel,
-                imageAttributes);
+            using (var canvas = new SKCanvas(mutedImage))
+            using (var colorFilter = SKColorFilter.CreateColorMatrix(BlurHelper.GetMuteColorMatrix(saturation, brightness)))
+            using (var mutePaint = new SKPaint { ColorFilter = colorFilter })
+            {
+                canvas.DrawBitmap(source, 0, 0, mutePaint);
+            }
 
             var radius = Math.Max(1, (int)((1 - blurIntensity) * BlurHelper.MaxBlurRadius));
             BlurHelper.ApplyBoxBlur(mutedImage, radius);
@@ -89,53 +79,55 @@ internal static class BlurHelper
     /// <paramref name="saturation"/> (0 = fully grey, 1 = unchanged), then scales the result by
     /// <paramref name="brightness"/> (0 = black, 1 = unchanged).
     /// </summary>
-    private static ColorMatrix GetMuteColorMatrix(double saturation, double brightness)
+    private static float[] GetMuteColorMatrix(double saturation, double brightness)
     {
         const double lumaR = 0.30;
         const double lumaG = 0.59;
         const double lumaB = 0.11;
 
-        // GDI+ applies a ColorMatrix as (output = input-as-a-row-vector x matrix), so a matrix
-        // row represents one *input* channel's contribution to every output channel - not the
-        // more usual "output row built from input columns" convention. cell(row, column) below
-        // is written for that: "row" contributes its own luma weight to every output column
-        // (the desaturated part), plus its own identity weight on the matching diagonal cell
+        // skia applies a colour matrix the usual "output row built from input columns" way
+        // (output = matrix x input-as-a-column-vector) - the transpose of GDI+'s ColorMatrix
+        // convention - so a matrix row is one *output* channel and a column is one *input*
+        // channel's contribution to it. cell(input, output) below is written in terms of the
+        // input channel: it contributes its own luma weight to every output channel (the
+        // desaturated part), plus its own identity weight to its matching output channel
         // (the unmuted part).
-        double Cell(int row, int column, double rowLuma)
-            => brightness * (((1 - saturation) * rowLuma) + (saturation * (row == column ? 1 : 0)));
+        double Cell(int input, int output, double inputLuma)
+            => brightness * (((1 - saturation) * inputLuma) + (saturation * (input == output ? 1 : 0)));
 
-        return new ColorMatrix(new[]
-        {
-            new[] { (float)Cell(0, 0, lumaR), (float)Cell(0, 1, lumaR), (float)Cell(0, 2, lumaR), 0f, 0f },
-            new[] { (float)Cell(1, 0, lumaG), (float)Cell(1, 1, lumaG), (float)Cell(1, 2, lumaG), 0f, 0f },
-            new[] { (float)Cell(2, 0, lumaB), (float)Cell(2, 1, lumaB), (float)Cell(2, 2, lumaB), 0f, 0f },
-            BlurHelper.UnchangedAlphaRow,
-            BlurHelper.UnchangedTranslationRow,
-        });
+        // a 4x5 matrix, row by row - R, G, B and A outputs, each from (R, G, B, A, translation)
+        // inputs - with alpha left unchanged and no translation
+        return
+        [
+            (float)Cell(0, 0, lumaR), (float)Cell(1, 0, lumaG), (float)Cell(2, 0, lumaB), 0f, 0f,
+            (float)Cell(0, 1, lumaR), (float)Cell(1, 1, lumaG), (float)Cell(2, 1, lumaB), 0f, 0f,
+            (float)Cell(0, 2, lumaR), (float)Cell(1, 2, lumaG), (float)Cell(2, 2, lumaB), 0f, 0f,
+            0f, 0f, 0f, 1f, 0f,
+        ];
     }
 
     /// <summary>
     /// Runs <see cref="BoxBlurPasses"/> rounds of (horizontal then vertical) box blur directly
     /// over <paramref name="bitmap"/>'s own pixels, each round with the same <paramref name="radius"/>.
     /// </summary>
-    private static unsafe void ApplyBoxBlur(Bitmap bitmap, int radius)
+    private static unsafe void ApplyBoxBlur(SKBitmap bitmap, int radius)
     {
-        var bounds = new Rectangle(0, 0, bitmap.Width, bitmap.Height);
-        var data = bitmap.LockBits(bounds, ImageLockMode.ReadWrite, PixelFormat.Format32bppPArgb);
         try
         {
-            var scan0 = (byte*)data.Scan0;
+            var scan0 = (byte*)bitmap.GetPixels();
             var lineBuffer = new byte[Math.Max(bitmap.Width, bitmap.Height) * 4];
 
             for (var pass = 0; pass < BlurHelper.BoxBlurPasses; pass++)
             {
-                BlurHelper.BoxBlurHorizontal(scan0, bitmap.Width, bitmap.Height, data.Stride, radius, lineBuffer);
-                BlurHelper.BoxBlurVertical(scan0, bitmap.Width, bitmap.Height, data.Stride, radius, lineBuffer);
+                BlurHelper.BoxBlurHorizontal(scan0, bitmap.Width, bitmap.Height, bitmap.RowBytes, radius, lineBuffer);
+                BlurHelper.BoxBlurVertical(scan0, bitmap.Width, bitmap.Height, bitmap.RowBytes, radius, lineBuffer);
             }
         }
         finally
         {
-            bitmap.UnlockBits(data);
+            // the pixels were written directly through a pointer, so tell skia they've
+            // changed in case it's cached anything derived from them
+            bitmap.NotifyPixelsChanged();
         }
     }
 

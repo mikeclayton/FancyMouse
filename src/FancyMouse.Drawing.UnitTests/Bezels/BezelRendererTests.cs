@@ -1,8 +1,10 @@
 using System.Drawing;
-using System.Drawing.Imaging;
 
 using FancyMouse.Drawing.Bezels;
+using FancyMouse.Drawing.Helpers;
 using FancyMouse.Models.Styles;
+
+using SkiaSharp;
 
 namespace FancyMouse.Drawing.UnitTests.Bezels;
 
@@ -141,7 +143,7 @@ public static class BezelRendererTests
             // not a filled rectangle - so it must still be the fully-transparent pixel the
             // bitmap started with
             var interior = bitmap.GetPixel(ImageSize / 2, ImageSize / 2);
-            Assert.AreEqual(Color.FromArgb(0, 0, 0, 0), interior);
+            Assert.AreEqual(new SKColor(0, 0, 0, 0), interior);
         }
 
         [TestMethod]
@@ -153,7 +155,7 @@ public static class BezelRendererTests
             // lighting effect - well clear of both corners (x is mid-edge), so this pixel
             // should be exactly the plain, unlit border colour
             var flatZonePixel = bitmap.GetPixel(ImageSize / 2, 6);
-            Assert.AreEqual(borderColor, flatZonePixel);
+            Assert.AreEqual(borderColor.ToSKColor(), flatZonePixel);
         }
 
         [TestMethod]
@@ -165,7 +167,7 @@ public static class BezelRendererTests
             // top-left (see DrawBezel's own doc), so this should be lightened, not darkened
             var highlightPixel = bitmap.GetPixel(20, 0);
             Assert.IsTrue(
-                highlightPixel.R > borderColor.R && highlightPixel.G > borderColor.G && highlightPixel.B > borderColor.B,
+                highlightPixel.Red > borderColor.R && highlightPixel.Green > borderColor.G && highlightPixel.Blue > borderColor.B,
                 $"expected a pixel lighter than {borderColor}, got {highlightPixel}");
         }
 
@@ -179,20 +181,20 @@ public static class BezelRendererTests
             // top-left light source, so this should be darkened, not lightened
             var shadowPixel = bitmap.GetPixel(40, ImageSize - 1);
             Assert.IsTrue(
-                shadowPixel.R < borderColor.R && shadowPixel.G < borderColor.G && shadowPixel.B < borderColor.B,
+                shadowPixel.Red < borderColor.R && shadowPixel.Green < borderColor.G && shadowPixel.Blue < borderColor.B,
                 $"expected a pixel darker than {borderColor}, got {shadowPixel}");
         }
 
-        private static Bitmap RenderBezel(out Color borderColor)
+        private static SKBitmap RenderBezel(out Color borderColor)
         {
             borderColor = Color.FromArgb(255, 100, 100, 100); // mid-grey - room to lighten or darken either way
             var borderStyle = new BorderStyle(borderColor, all: Thickness, depth: Depth);
             using var renderer = new BezelRenderer(borderStyle);
 
-            var bitmap = new Bitmap(ImageSize, ImageSize, PixelFormat.Format32bppArgb);
-            using var g = Graphics.FromImage(bitmap);
-            g.Clear(Color.Transparent);
-            renderer.DrawBezel(g, 0, 0, ImageSize, ImageSize);
+            var bitmap = SkiaHelper.CreateBitmap(ImageSize, ImageSize, SKAlphaType.Unpremul);
+            using var canvas = new SKCanvas(bitmap);
+            canvas.Clear(Color.Transparent.ToSKColor());
+            renderer.DrawBezel(canvas, 0, 0, ImageSize, ImageSize);
             return bitmap;
         }
     }

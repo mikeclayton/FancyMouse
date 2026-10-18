@@ -1,6 +1,6 @@
-using System.Drawing;
-
 using FancyMouse.Models.Drawing;
+
+using SkiaSharp;
 
 namespace FancyMouse.Drawing.Capture;
 
@@ -21,7 +21,7 @@ public interface IScreenshotCaptureProvider
     /// <paramref name="thumbnailSize"/>. If <paramref name="cancellationToken"/> is already
     /// cancelled before this request starts, it's abandoned without ever running.
     /// </summary>
-    Task<Bitmap> CaptureAsync(
+    Task<SKBitmap> CaptureAsync(
         RectangleInfo sourceArea,
         SizeInfo thumbnailSize,
         CancellationToken cancellationToken = default);

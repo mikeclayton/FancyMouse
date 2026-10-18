@@ -5,6 +5,8 @@ using FancyMouse.Drawing.Capture;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Windows.Win32Gen;
 
+using SkiaSharp;
+
 using Windows.Win32.Foundation;
 using Windows.Win32.Graphics.Gdi;
 
@@ -33,7 +35,7 @@ public sealed class DesktopScreenshotCaptureProvider : IScreenshotCaptureProvide
         // nothing to release
     }
 
-    public async Task<Bitmap> CaptureAsync(
+    public async Task<SKBitmap> CaptureAsync(
         RectangleInfo sourceArea,
         SizeInfo thumbnailSize,
         CancellationToken cancellationToken = default)
@@ -41,11 +43,54 @@ public sealed class DesktopScreenshotCaptureProvider : IScreenshotCaptureProvide
         cancellationToken.ThrowIfCancellationRequested();
 
         var result = await Task.Run(
-            () => DesktopScreenshotCaptureProvider.Capture(sourceArea, thumbnailSize),
+            () =>
+            {
+                using var thumbnailImage = DesktopScreenshotCaptureProvider.Capture(sourceArea, thumbnailSize);
+                return DesktopScreenshotCaptureProvider.ToSKBitmap(thumbnailImage);
+            },
             cancellationToken)
             .ConfigureAwait(false);
 
         return result;
+    }
+
+    /// <summary>
+    /// Copies a GDI+ <see cref="PixelFormat.Format32bppPArgb"/> bitmap's pixels into a new
+    /// <see cref="SKBitmap"/> - the two have the same byte layout (BGRA, premultiplied), so it's
+    /// a straight row-by-row copy. The capture itself still uses GDI+ for <c>StretchBlt</c>, but
+    /// everything downstream of it works with <see cref="SKBitmap"/>.
+    /// </summary>
+    private static unsafe SKBitmap ToSKBitmap(Bitmap bitmap)
+    {
+        var result = new SKBitmap(new SKImageInfo(bitmap.Width, bitmap.Height, SKColorType.Bgra8888, SKAlphaType.Premul));
+        try
+        {
+            var bitmapData = bitmap.LockBits(
+                new Rectangle(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppPArgb);
+            try
+            {
+                var source = (byte*)bitmapData.Scan0;
+                var target = (byte*)result.GetPixels();
+                var rowLength = bitmap.Width * 4;
+                for (var y = 0; y < bitmap.Height; y++)
+                {
+                    Buffer.MemoryCopy(source + (y * bitmapData.Stride), target + (y * result.RowBytes), result.RowBytes, rowLength);
+                }
+            }
+            finally
+            {
+                bitmap.UnlockBits(bitmapData);
+            }
+
+            result.NotifyPixelsChanged();
+            return result;
+        }
+        catch
+        {
+            // nobody else is going to receive or dispose the result if the copy fails
+            result.Dispose();
+            throw;
+        }
     }
 
     private static Bitmap Capture(

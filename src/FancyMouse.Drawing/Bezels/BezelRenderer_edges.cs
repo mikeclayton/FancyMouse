@@ -1,5 +1,8 @@
 using System.Drawing;
-using System.Drawing.Drawing2D;
+
+using FancyMouse.Drawing.Helpers;
+
+using SkiaSharp;
 
 namespace FancyMouse.Drawing.Bezels;
 
@@ -29,7 +32,7 @@ public sealed partial class BezelRenderer
     /// (i.e. 0 ≤ <paramref name="transitionStart"/> ≤ <paramref name="transitionEnd"/> ≤ 1).
     /// </exception>
     private static void DrawBezelEdgeLine(
-        Graphics g,
+        SKCanvas canvas,
         int x1,
         int y1,
         int x2,
@@ -48,8 +51,8 @@ public sealed partial class BezelRenderer
         }
 
         // the transition points must be in order within 0-1 (equal values are fine - e.g.
-        // start == end gives a hard step instead of a fade) - checked here, before g is
-        // modified below, so an invalid call can't leave g half-reconfigured
+        // start == end gives a hard step instead of a fade) - checked here, before anything
+        // is drawn below
         if (!((transitionStart >= 0f) && (transitionStart <= transitionEnd) && (transitionEnd <= 1f)))
         {
             throw new ArgumentOutOfRangeException(
@@ -60,47 +63,35 @@ public sealed partial class BezelRenderer
         // the gradient's direction is controlled by the brush, not the drawing
         // bounds, so we'll normalise the coordinates here
         var edgeBounds = (y1 == y2)
-            ? new RectangleF(Math.Min(x1, x2), y1, Math.Abs(x2 - x1), 1f)
-            : new RectangleF(x1, Math.Min(y1, y2), 1f, Math.Abs(y2 - y1));
+            ? SKRect.Create(Math.Min(x1, x2), y1, Math.Abs(x2 - x1), 1f)
+            : SKRect.Create(x1, Math.Min(y1, y2), 1f, Math.Abs(y2 - y1));
 
-        var savedMode = g.SmoothingMode;
-        var savedPixelOffset = g.PixelOffsetMode;
-
-        g.SmoothingMode = SmoothingMode.None;
-        g.PixelOffsetMode = PixelOffsetMode.None;
-
-        // the constructor needs a 2-stop gradient, which is replaced with the full 4-stop
-        // gradient below (note the coordinates are directional to ensure the gradient
-        // blends the right way)
-        using var brush = new LinearGradientBrush(
-            new Point(x1, y1), new Point(x2, y2), startColor, endColor);
-
-        // for gradient fills, the default WrapMode.Tile fills the gradient region as
-        // a series of tiles and it antialiases the edge where they join - this means
-        // the *start* color of the gradient from the neighbouring tile can bleed into
-        // the *end* color of the adjoining tile:
+        // for gradient fills, a repeating tile mode fills the gradient region as a series
+        // of tiles, and any smoothing where they join means the *start* color of the
+        // gradient from the neighbouring tile can bleed into the *end* color of the
+        // adjoining tile:
         //
         //     |▓▓▓▓▒▒▒▒░░░░   ▒|▓▓▓▓▒▒▒▒░░░░   ▒|▓▓▓▓▒▒▒▒░░░░   ▒|▓▓▓▓▒▒▒▒░░░░   ▒|
         //                     ^
-        //                     WrapMode.Tile simply repeats the gradient brush,
-        //                     and anti-aliasing of a high contrast pixel in the
+        //                     a repeating tile mode simply repeats the gradient,
+        //                     and smoothing of a high contrast pixel in the
         //                     next (off-screen) tile bleeds back over into the
         //                     previous tile
         //
         // in our case it means the *start* color for the neighbouring (off-screen) tile
         // can bleed into the *end* color of our edge region, causing a 1-pixel wide
-        // rendering artifact on the resulting image.
+        // rendering artifact on the resulting image (this was a real problem with GDI+'s
+        // default WrapMode.Tile).
         //
-        // to prevent this, TileFlipXY *mirrors* the gradient at both ends so antialiasing
-        // with the neighboring tile uses the same colour at the join and there's no
-        // rendering artifact.
+        // to prevent this, SKShaderTileMode.Mirror (the same as GDI+'s WrapMode.TileFlipXY)
+        // *mirrors* the gradient at both ends so any smoothing with the neighboring tile uses
+        // the same colour at the join and there's no rendering artifact.
         //
         //     |▓▓▓▓▒▒▒▒░░░░    |    ░░░░▒▒▒▒▓▓▓▓|▓▓▓▓▒▒▒▒░░░░    |    ░░░░▒▒▒▒▓▓▓▓|
         //                     ^
-        //                     WrapMode.TileFlipXy *mirrors* the gradient brush
-        //                     so anti-aliasing blends two pixels of the same color
+        //                     SKShaderTileMode.Mirror *mirrors* the gradient
+        //                     so smoothing blends two pixels of the same color
         //                     and there's no visible bleed effect between tiles
-        brush.WrapMode = WrapMode.TileFlipXY;
 
         // overall, the shape of the resulting gradient is 3 stages,
         // transitioning at transitionStart and transitionEnd:
@@ -122,16 +113,17 @@ public sealed partial class BezelRenderer
         //
         //     * the final solid color is held flat at endColor for the rest
         //       of the edge
-        brush.InterpolationColors = new ColorBlend(4)
-        {
-            Colors = [startColor, startColor, endColor, endColor],
-            Positions = [0f, transitionStart, transitionEnd, 1f],
-        };
+        //
+        // (note the coordinates are directional to ensure the gradient blends the right way)
+        using var shader = SKShader.CreateLinearGradient(
+            new SKPoint(x1, y1),
+            new SKPoint(x2, y2),
+            [startColor.ToSKColor(), startColor.ToSKColor(), endColor.ToSKColor(), endColor.ToSKColor()],
+            [0f, transitionStart, transitionEnd, 1f],
+            SKShaderTileMode.Mirror);
+        using var paint = new SKPaint { Shader = shader, IsAntialias = false };
 
-        g.FillRectangle(brush, edgeBounds);
-
-        g.SmoothingMode = savedMode;
-        g.PixelOffsetMode = savedPixelOffset;
+        canvas.DrawRect(edgeBounds, paint);
     }
 
     /// <summary>
@@ -140,7 +132,7 @@ public sealed partial class BezelRenderer
     /// with highlight and shadow effect according to the bezel profile.
     /// </summary>
     private static void DrawBezelEdges(
-        Graphics g,
+        SKCanvas canvas,
         int x,
         int y,
         int width,
@@ -152,20 +144,13 @@ public sealed partial class BezelRenderer
         var n = bezelWidth;
 
         // draw the four straight edge strips with the flat border color first
-        var savedMode = g.SmoothingMode;
-        var savedPixelOffset = g.PixelOffsetMode;
-        g.SmoothingMode = SmoothingMode.None;
-        g.PixelOffsetMode = PixelOffsetMode.None;
-        using (var flatBrush = new SolidBrush(bezelColor))
+        using (var flatPaint = new SKPaint { Color = bezelColor.ToSKColor(), IsAntialias = false })
         {
-            g.FillRectangle(flatBrush, x + n,         y,              width - (2 * n), n);                // top
-            g.FillRectangle(flatBrush, x + n,         y + height - n, width - (2 * n), n);                // bottom
-            g.FillRectangle(flatBrush, x,             y + n,          n,               height - (2 * n)); // left
-            g.FillRectangle(flatBrush, x + width - n, y + n,          n,               height - (2 * n)); // right
+            canvas.DrawRect(SKRect.Create(x + n,         y,              width - (2 * n), n),                flatPaint); // top
+            canvas.DrawRect(SKRect.Create(x + n,         y + height - n, width - (2 * n), n),                flatPaint); // bottom
+            canvas.DrawRect(SKRect.Create(x,             y + n,          n,               height - (2 * n)), flatPaint); // left
+            canvas.DrawRect(SKRect.Create(x + width - n, y + n,          n,               height - (2 * n)), flatPaint); // right
         }
-
-        g.SmoothingMode = savedMode;
-        g.PixelOffsetMode = savedPixelOffset;
 
         // pre-compute the vertical and horizontal endpoints for the edge lines
         var horizontalEdgeX1 = x + n;         // left   end of top  / bottom horizontal segments
@@ -216,7 +201,7 @@ public sealed partial class BezelRenderer
             if (forwardMagnitude >= flatEdgeThreshold)
             {
                 BezelRenderer.DrawBezelEdgeLine(
-                    g: g,
+                    canvas: canvas,
                     x1: horizontalEdgeX1,
                     y1: topLineY,
                     x2: horizontalEdgeX2,
@@ -231,7 +216,7 @@ public sealed partial class BezelRenderer
             if (reverseMagnitude >= flatEdgeThreshold)
             {
                 BezelRenderer.DrawBezelEdgeLine(
-                    g: g,
+                    canvas: canvas,
                     x1: rightLineX,
                     y1: verticalEdgeY2,
                     x2: rightLineX,
@@ -246,7 +231,7 @@ public sealed partial class BezelRenderer
             if (reverseMagnitude >= flatEdgeThreshold)
             {
                 BezelRenderer.DrawBezelEdgeLine(
-                    g: g,
+                    canvas: canvas,
                     x1: horizontalEdgeX2,
                     y1: bottomLineY,
                     x2: horizontalEdgeX1,
@@ -261,7 +246,7 @@ public sealed partial class BezelRenderer
             if (forwardMagnitude >= flatEdgeThreshold)
             {
                 BezelRenderer.DrawBezelEdgeLine(
-                    g: g,
+                    canvas: canvas,
                     x1: leftLineX,
                     y1: verticalEdgeY1,
                     x2: leftLineX,

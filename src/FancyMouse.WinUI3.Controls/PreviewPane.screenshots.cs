@@ -1,5 +1,3 @@
-using System.Drawing;
-
 using FancyMouse.Models.Display;
 using FancyMouse.Models.Layout;
 using FancyMouse.WinUI3.Controls.Helpers;
@@ -9,6 +7,8 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Media.Imaging;
+
+using SkiaSharp;
 
 using Image = Microsoft.UI.Xaml.Controls.Image;
 
@@ -39,7 +39,7 @@ public sealed partial class PreviewPane
     /// generates a blurred placeholder that can be used during the next activation if the
     /// capture isn't complete by the time the form is displayed.
     /// </remarks>
-    public void SetScreenshot(ScreenLayout screenLayout, Bitmap image)
+    public void SetScreenshot(ScreenLayout screenLayout, SKBitmap image)
     {
         ArgumentNullException.ThrowIfNull(screenLayout);
         ArgumentNullException.ThrowIfNull(image);

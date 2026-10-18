@@ -1,12 +1,15 @@
 using System.Drawing;
-using System.Drawing.Drawing2D;
+
+using FancyMouse.Drawing.Helpers;
+
+using SkiaSharp;
 
 namespace FancyMouse.Drawing.Bezels;
 
 public sealed partial class BezelRenderer
 {
     /// <summary>
-    /// Draws a solid colored bezel "ring" onto <paramref name="g"/> at position (x, y)
+    /// Draws a solid colored bezel "ring" onto <paramref name="canvas"/> at position (x, y)
     /// with size (width × height), filled with <paramref name="bezelColor"/> and no 3-D effect.
     ///
     /// The outer boundary is a rounded rectangle with radius <paramref name="cornerRadius"/>.
@@ -14,7 +17,7 @@ public sealed partial class BezelRenderer
     /// <paramref name="cornerRadius"/> on every side.
     /// </summary>
     private static void DrawFlatBezelRing(
-        Graphics g,
+        SKCanvas canvas,
         int x,
         int y,
         int width,
@@ -47,15 +50,13 @@ public sealed partial class BezelRenderer
         var innerWidth = width - (2 * cornerRadius);
         var innerHeight = height - (2 * cornerRadius);
 
-        BezelRenderer.EnableAntialias(g);
-
         using var outerPath = BezelRenderer.GetRoundedRectanglePath(x, y, width, height, cornerRadius);
-        using var fillBrush = new SolidBrush(bezelColor);
+        using var fillPaint = new SKPaint { Color = bezelColor.ToSKColor(), IsAntialias = true };
 
         // Two-step rendering:
         //
         //   step 1 — fill the entire rounded rectangle (including the central content area rectangle)
-        //   step 2 — erase the inner content area rectangle with SmoothingMode.None
+        //   step 2 — erase the inner content area rectangle without antialiasing
         //
         //     ______________          ______________
         //    /..............\        /..............\
@@ -67,61 +68,51 @@ public sealed partial class BezelRenderer
         //    \--------------/        \--------------/
         //         step 1                  step 2
         //
-        // note - using FillMode.Alternate to draw the "ring" in one gdi call
-        // doesn't work because it leaves antialiased pixels in the corners of
-        // the inner rectangle in GDI+'s PixelOffsetMode.Half coordinate space.
+        // note - using an even-odd fill to draw the "ring" in one call doesn't
+        // work because it leaves antialiased pixels in the corners of the inner
+        // rectangle.
         //
         // The two-pass approach with a regular fill avoids the antialaising by
         // removing the entire rectangle in a separate drawing operation.
-        g.FillPath(fillBrush, outerPath);
+        canvas.DrawPath(outerPath, fillPaint);
 
-        var savedMode = g.SmoothingMode;
-        var savedPixelOffset = g.PixelOffsetMode;
-        var savedCompositing = g.CompositingMode;
+        // SKBlendMode.Src replaces the destination pixels outright (the equivalent of
+        // GDI+'s CompositingMode.SourceCopy) rather than blending the transparent colour
+        // over them, which would leave them unchanged
+        using var clearPaint = new SKPaint
+        {
+            Color = Color.Transparent.ToSKColor(),
+            IsAntialias = false,
+            BlendMode = SKBlendMode.Src,
+        };
 
-        g.SmoothingMode = SmoothingMode.None;
-        g.PixelOffsetMode = PixelOffsetMode.None;
-        g.CompositingMode = CompositingMode.SourceCopy;
-
-        using var clearBrush = new SolidBrush(Color.Transparent);
-
-        g.FillRectangle(clearBrush, x + cornerRadius, y + cornerRadius, innerWidth, innerHeight);
-        g.SmoothingMode = savedMode;
-        g.PixelOffsetMode = savedPixelOffset;
-        g.CompositingMode = savedCompositing;
+        canvas.DrawRect(SKRect.Create(x + cornerRadius, y + cornerRadius, innerWidth, innerHeight), clearPaint);
     }
 
     /// <summary>
-    /// Enables antialiased drawing on <paramref name="g"/>, with pixel offsets
-    /// aligned to whole pixels rather than fractional (0.5, 0.5) coordinates.
-    /// </summary>
-    private static void EnableAntialias(Graphics g)
-    {
-        g.SmoothingMode = SmoothingMode.AntiAlias;
-        g.PixelOffsetMode = PixelOffsetMode.Half;
-    }
-
-    /// <summary>
-    /// Creates a <see cref="GraphicsPath"/> for a rectangle with rounded corners.
+    /// Creates an <see cref="SKPath"/> for a rectangle with rounded corners.
     /// The caller owns the returned path and is responsible for disposing the return value.
     /// </summary>
-    private static GraphicsPath GetRoundedRectanglePath(int x, int y, int width, int height, int cornerRadius)
+    private static SKPath GetRoundedRectanglePath(int x, int y, int width, int height, int cornerRadius)
     {
-        var path = new GraphicsPath();
+        var path = new SKPath();
         if (cornerRadius > 0)
         {
+            // ArcTo (rather than AddArc, which starts a new contour every time) joins each
+            // arc to the end of the previous one with a straight line - the same as GDI+'s
+            // GraphicsPath.AddArc
             var d = 2 * cornerRadius;
-            path.AddArc(x,             y,              d, d, 180, 90); // TL
-            path.AddArc(x + width - d, y,              d, d, 270, 90); // TR
-            path.AddArc(x + width - d, y + height - d, d, d,   0, 90); // BR
-            path.AddArc(x,             y + height - d, d, d,  90, 90); // BL
+            path.ArcTo(SKRect.Create(x,             y,              d, d), 180, 90, forceMoveTo: true);  // TL
+            path.ArcTo(SKRect.Create(x + width - d, y,              d, d), 270, 90, forceMoveTo: false); // TR
+            path.ArcTo(SKRect.Create(x + width - d, y + height - d, d, d),   0, 90, forceMoveTo: false); // BR
+            path.ArcTo(SKRect.Create(x,             y + height - d, d, d),  90, 90, forceMoveTo: false); // BL
         }
         else
         {
-            path.AddRectangle(new Rectangle(x, y, width, height));
+            path.AddRect(SKRect.Create(x, y, width, height));
         }
 
-        path.CloseFigure();
+        path.Close();
         return path;
     }
 }

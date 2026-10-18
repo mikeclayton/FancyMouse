@@ -1,10 +1,10 @@
 using System.Drawing;
-using System.Drawing.Drawing2D;
-using System.Drawing.Imaging;
 
 using FancyMouse.Drawing.Bezels;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Styles;
+
+using SkiaSharp;
 
 namespace FancyMouse.Drawing.Helpers;
 
@@ -15,41 +15,65 @@ public static class DrawingHelper
     /// Can be used to render the main background for the preview pane, and the screen
     /// background image for delayed screenshot capture scenarios.
     /// </summary>
-    public static Bitmap RenderBackground(SizeInfo size, BackgroundStyle backgroundStyle)
+    public static SKBitmap RenderBackground(SizeInfo size, BackgroundStyle backgroundStyle)
     {
         // prepare the bitmap (with a transparent background) to draw the background fill onto
         var backgroundBounds = new RectangleInfo(size).ToRectangle();
-        var image = new Bitmap(backgroundBounds.Width, backgroundBounds.Height, PixelFormat.Format32bppPArgb);
-        using var graphics = Graphics.FromImage(image);
-        graphics.Clear(Color.Transparent);
+        var image = SkiaHelper.CreateBitmap(backgroundBounds.Width, backgroundBounds.Height, SKAlphaType.Premul);
+        using var canvas = new SKCanvas(image);
+        canvas.Clear(Color.Transparent.ToSKColor());
 
-        // pick a brush matching the configured background - a two-colour gradient, a solid fill
+        // pick a shader matching the configured background - a two-colour gradient, a solid fill
         // (whichever single colour is set), or nothing at all if neither colour is configured
-        using var backgroundBrush = backgroundStyle switch
+        using var backgroundShader = backgroundStyle switch
         {
             { Color1: not null, Color2: not null } =>
                 /* draw a gradient fill if both colors are specified */
-                new LinearGradientBrush(
+                DrawingHelper.CreateForwardDiagonalGradient(
                     backgroundBounds,
                     backgroundStyle.Color1.Value,
-                    backgroundStyle.Color2.Value,
-                    LinearGradientMode.ForwardDiagonal),
+                    backgroundStyle.Color2.Value),
             { Color1: not null } =>
                 /* draw a solid fill if only one color is specified */
-                new SolidBrush(backgroundStyle.Color1.Value),
+                SKShader.CreateColor(backgroundStyle.Color1.Value.ToSKColor()),
             { Color2: not null } =>
                 /* draw a solid fill if only one color is specified */
-                new SolidBrush(backgroundStyle.Color2.Value),
-            _ => (Brush?)null,
+                SKShader.CreateColor(backgroundStyle.Color2.Value.ToSKColor()),
+            _ => (SKShader?)null,
         };
 
         // fill the background, if a colour was actually configured
-        if (backgroundBrush is not null)
+        if (backgroundShader is not null)
         {
-            graphics.FillRectangle(backgroundBrush, backgroundBounds);
+            using var backgroundPaint = new SKPaint { Shader = backgroundShader };
+            canvas.DrawRect(backgroundBounds.ToSKRect(), backgroundPaint);
         }
 
         return image;
+    }
+
+    /// <summary>
+    /// The equivalent of GDI+'s <c>LinearGradientMode.ForwardDiagonal</c> - <paramref name="color1"/>
+    /// in the top-left corner of <paramref name="bounds"/>, <paramref name="color2"/> in the
+    /// bottom-right corner, with lines of equal colour running parallel to the *other*
+    /// (bottom-left to top-right) diagonal whatever the aspect ratio.
+    /// </summary>
+    /// <remarks>
+    /// The gradient is built in a unit square, where a (0,0) to (1,1) gradient's lines of equal
+    /// colour are exactly parallel to the bottom-left to top-right diagonal, and then scaled to
+    /// <paramref name="bounds"/> so they stay parallel to that diagonal once it's stretched. A
+    /// plain corner-to-corner gradient in <paramref name="bounds"/> itself would only match
+    /// GDI+ for a square, since its lines of equal colour are perpendicular to the gradient.
+    /// </remarks>
+    private static SKShader CreateForwardDiagonalGradient(Rectangle bounds, Color color1, Color color2)
+    {
+        return SKShader.CreateLinearGradient(
+            new SKPoint(0, 0),
+            new SKPoint(1, 1),
+            [color1.ToSKColor(), color2.ToSKColor()],
+            null,
+            SKShaderTileMode.Clamp,
+            SKMatrix.CreateScaleTranslation(bounds.Width, bounds.Height, bounds.X, bounds.Y));
     }
 
     /// <summary>
@@ -57,13 +81,13 @@ public static class DrawingHelper
     /// Can be used to render the main preview window border, and the individual
     /// screen bezels.
     /// </summary>
-    public static Bitmap RenderBorder(SizeInfo size, BorderStyle borderStyle)
+    public static SKBitmap RenderBorder(SizeInfo size, BorderStyle borderStyle)
     {
         // prepare the bitmap (with a transparent background) to draw the border / bezel onto
         var borderBounds = new RectangleInfo(size).ToRectangle();
-        var image = new Bitmap(borderBounds.Width, borderBounds.Height, PixelFormat.Format32bppPArgb);
-        using var graphics = Graphics.FromImage(image);
-        graphics.Clear(Color.Transparent);
+        var image = SkiaHelper.CreateBitmap(borderBounds.Width, borderBounds.Height, SKAlphaType.Premul);
+        using var canvas = new SKCanvas(image);
+        canvas.Clear(Color.Transparent.ToSKColor());
 
         if ((borderStyle.Horizontal < 1) || (borderStyle.Vertical < 1))
         {
@@ -77,7 +101,7 @@ public static class DrawingHelper
 
         // draw a contoured border (could be an outer border or a bezel)
         using var renderer = new BezelRenderer(borderStyle);
-        renderer.DrawBezel(graphics, borderBounds.X, borderBounds.Y, borderBounds.Width, borderBounds.Height);
+        renderer.DrawBezel(canvas, borderBounds.X, borderBounds.Y, borderBounds.Width, borderBounds.Height);
 
         return image;
     }

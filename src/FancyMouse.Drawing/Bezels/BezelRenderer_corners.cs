@@ -1,6 +1,8 @@
 using System.Drawing;
-using System.Drawing.Drawing2D;
-using System.Drawing.Imaging;
+
+using FancyMouse.Drawing.Helpers;
+
+using SkiaSharp;
 
 using static FancyMouse.Drawing.Bezels.BezelPrimitives;
 
@@ -12,9 +14,10 @@ public sealed partial class BezelRenderer
     /// Returns an image containing a template for the 4 corners of the bezel.
     /// </summary>
     /// <remarks>
-    /// GDI+ doesn't draw perfectly symmetrical or consistent arcs, and rounding
-    /// is sometimes even based on the *coordinates* being drawn to rather than
-    /// the shape of the path, which means we'd need to apply highlight and shadow
+    /// Antialiased arcs aren't guaranteed to be drawn perfectly symmetrically or
+    /// consistently (GDI+, which this was originally written for, even rounded
+    /// differently depending on the *coordinates* being drawn to rather than the
+    /// shape of the path), which means we'd need to apply highlight and shadow
     /// effects to the corners dynamically when every bezel is rendered in order
     /// to ensure a pixel-perfect effect is applied to each corner.
     ///
@@ -44,7 +47,7 @@ public sealed partial class BezelRenderer
     /// The template image needs to be recreated if the color, thickness or 3d effect
     /// depth settings change.
     /// </returns>
-    private static Bitmap GetCornerTemplates(int bezelWidth, Color bezelColor, IBezelProfile bezelProfile)
+    private static SKBitmap GetCornerTemplates(int bezelWidth, Color bezelColor, IBezelProfile bezelProfile)
     {
         // Render at 2× and scale down so GDI+ antialiases the highlight/shadow
         // zone-boundary edges in the corner tiles before they are baked into the atlas.
@@ -82,20 +85,13 @@ public sealed partial class BezelRenderer
         // ── Step 2: apply highlight and shadow effects ─────────────────────────
         double CornerEffectWeight(double theta) => BezelPrimitives.CornerEffectWeight(theta, BezelConstants.CornerGradientStart, BezelConstants.CornerGradientEnd);
 
-        var cornerData = default(BitmapData);
-
         try
         {
-            cornerData = cornerTemplates.LockBits(
-                new Rectangle(0, 0, cornerTemplates.Width, cornerTemplates.Height),
-                ImageLockMode.ReadWrite,
-                PixelFormat.Format32bppArgb);
-
             unsafe
             {
-                byte* cornerScan0 = (byte*)cornerData.Scan0;
-                var cornerStride = cornerData.Stride;
-                const int bytesPerPixel = 4; // PixelFormat.Format32bppArgb
+                byte* cornerScan0 = (byte*)cornerTemplates.GetPixels();
+                var cornerStride = cornerTemplates.RowBytes;
+                const int bytesPerPixel = 4; // SKColorType.Bgra8888
 
                 for (var srcY = 0; srcY < cornerTemplates.Height; srcY++)
                 {
@@ -256,14 +252,14 @@ public sealed partial class BezelRenderer
 
                         // effectMagnitude carries the effect intensity - the sign indicates
                         // whether to apply a highlight or shadow. The flat bezel's pixel
-                        // alpha (from GDI+ arc antialiasing) is left unchanged and handles
+                        // alpha (from arc antialiasing) is left unchanged and handles
                         // outer-edge transparency automatically so the resulting pixel still
                         // blends into the background image behind the bezel.
                         var highlighted = ApplyHighlight(bezelColor, hl * effectMagnitude, BezelConstants.HighlightMax);
                         var newColor = ApplyShadow(highlighted, sh * effectMagnitude, BezelConstants.ShadowMax);
 
                         // note - this is *not* dead code! srcPixelArgb is a raw (unsafe) pointer
-                        // into the locked cornerTemplates bitmap not a normal managed array, so
+                        // into the cornerTemplates bitmap's pixels not a normal managed array, so
                         // the assignments below write directly into the image in-place.
                         srcPixelArgb[0] = newColor.B;
                         srcPixelArgb[1] = newColor.G;
@@ -277,10 +273,9 @@ public sealed partial class BezelRenderer
         }
         finally
         {
-            if (cornerData is not null)
-            {
-                cornerTemplates.UnlockBits(cornerData);
-            }
+            // the pixels were written directly through a pointer, so tell skia they've
+            // changed in case it's cached anything derived from them
+            cornerTemplates.NotifyPixelsChanged();
         }
 
         return BezelRenderer.ScaleHalf(cornerTemplates);
@@ -291,13 +286,30 @@ public sealed partial class BezelRenderer
     /// interpolation, antialiasing any sharp colour transitions in the source.
     /// The caller owns the returned bitmap; the source is not disposed.
     /// </summary>
-    private static Bitmap ScaleHalf(Bitmap source)
+    private static SKBitmap ScaleHalf(SKBitmap source)
     {
-        var result = new Bitmap(source.Width / 2, source.Height / 2, PixelFormat.Format32bppArgb);
-        using var g = Graphics.FromImage(result);
-        g.InterpolationMode = InterpolationMode.HighQualityBicubic;
-        g.PixelOffsetMode = PixelOffsetMode.HighQuality;
-        g.DrawImage(source, 0, 0, result.Width, result.Height);
+        // filter in premultiplied space, the same as GDI+ did - filtering straight (unpremultiplied)
+        // colours blends in the colour of the fully transparent pixels around the arc (black),
+        // darkening its antialiased edge pixels more the more transparent they are. a 1:1
+        // unfiltered copy onto a premultiplied bitmap does the conversion
+        using var premultiplied = SkiaHelper.CreateBitmap(source.Width, source.Height, SKAlphaType.Premul);
+        using (var premultipliedCanvas = new SKCanvas(premultiplied))
+        {
+            premultipliedCanvas.DrawBitmap(source, 0, 0);
+        }
+
+        var result = SkiaHelper.CreateBitmap(source.Width / 2, source.Height / 2, SKAlphaType.Unpremul);
+        using var canvas = new SKCanvas(result);
+        using var sourceImage = SkiaHelper.AsImage(premultiplied);
+
+        // Mitchell is skia's standard "high quality" cubic resampler (what its old
+        // SKFilterQuality.High mapped to) - the nearest equivalent of GDI+'s
+        // InterpolationMode.HighQualityBicubic
+        canvas.DrawImage(
+            sourceImage,
+            SKRect.Create(0, 0, source.Width, source.Height),
+            SKRect.Create(0, 0, result.Width, result.Height),
+            new SKSamplingOptions(SKCubicResampler.Mitchell));
         return result;
     }
 
@@ -308,7 +320,7 @@ public sealed partial class BezelRenderer
     /// <exception cref="ArgumentOutOfRangeException">
     /// <paramref name="cornerRadius"/> is less than 1.
     /// </exception>
-    private static Bitmap DrawCornerRegions(int cornerRadius, Color bezelColor)
+    private static SKBitmap DrawCornerRegions(int cornerRadius, Color bezelColor)
     {
         if (cornerRadius <= 0)
         {
@@ -320,15 +332,15 @@ public sealed partial class BezelRenderer
         var imageHeight = edgeLength + (2 * cornerRadius);
 
         // draw the flat bezel *with* straight edges first so that the
-        // GDI antialiasing smooths the corners into straight edges rather
+        // antialiasing smooths the corners into straight edges rather
         // than into an immediately adjacent corner. it means we have to copy
         // the corners out into a smaller image to remove the straight edges
         // later, but we get a better quality result
-        using var sourceImage = new Bitmap(imageWidth, imageHeight, PixelFormat.Format32bppArgb);
-        using (var g = Graphics.FromImage(sourceImage))
+        using var sourceImage = SkiaHelper.CreateBitmap(imageWidth, imageHeight, SKAlphaType.Unpremul);
+        using (var canvas = new SKCanvas(sourceImage))
         {
             BezelRenderer.DrawFlatBezelRing(
-                g,
+                canvas,
                 x: 0,
                 y: 0,
                 width: imageWidth,
@@ -358,25 +370,27 @@ public sealed partial class BezelRenderer
             (source: new Point(w - z, h - z), target: new Point(c, c)), // BR
         };
 
-        var cornerImages = new Bitmap(2 * cornerRadius, 2 * cornerRadius, PixelFormat.Format32bppArgb);
-        using var cornerGraphics = Graphics.FromImage(cornerImages);
+        var cornerImages = SkiaHelper.CreateBitmap(2 * cornerRadius, 2 * cornerRadius, SKAlphaType.Unpremul);
+        using var cornerCanvas = new SKCanvas(cornerImages);
+        using var sourceSkImage = SkiaHelper.AsImage(sourceImage);
 
-        // Use NearestNeighbor + PixelOffsetMode.Half for an exact 1:1 pixel copy.
-        // With Half mode the sample point for dest pixel i is exactly i (not i+0.5),
-        // so NearestNeighbor snaps to the correct source pixel with no bilinear blurring.
-        // Default Bilinear would sample at i+0.5 — blending adjacent pixels at the arc
-        // boundary — which shifts the visual arc edge ~0.5 px inward and creates a
-        // visible gap between the corner arc and the flat-fill straight edges.
-        cornerGraphics.InterpolationMode = InterpolationMode.NearestNeighbor;
-        cornerGraphics.PixelOffsetMode = PixelOffsetMode.Half;
+        // Use nearest-neighbour sampling for an exact 1:1 pixel copy - each destination
+        // pixel's centre maps onto exactly one source pixel's centre, so it snaps to the
+        // correct source pixel with no bilinear blurring. Bilinear would blend adjacent
+        // pixels at the arc boundary, softening the visual arc edge and creating a visible
+        // gap between the corner arc and the flat-fill straight edges. SKBlendMode.Src
+        // copies each pixel as-is rather than blending it over the (empty) destination.
+        var sampling = new SKSamplingOptions(SKFilterMode.Nearest);
+        using var copyPaint = new SKPaint { BlendMode = SKBlendMode.Src };
 
         foreach (var (source, target) in copyRegions)
         {
-            cornerGraphics.DrawImage(
-                sourceImage,
-                destRect: new Rectangle(target.X, target.Y, cornerRadius, cornerRadius),
-                srcRect: new Rectangle(source.X, source.Y, cornerRadius, cornerRadius),
-                srcUnit: GraphicsUnit.Pixel);
+            cornerCanvas.DrawImage(
+                sourceSkImage,
+                SKRect.Create(source.X, source.Y, cornerRadius, cornerRadius),
+                SKRect.Create(target.X, target.Y, cornerRadius, cornerRadius),
+                sampling,
+                copyPaint);
         }
 
         return cornerImages;
@@ -385,16 +399,19 @@ public sealed partial class BezelRenderer
     /// <summary>
     /// Builds the corner atlas from <see cref="BorderStyle"/>, for use at construction.
     /// </summary>
-    private Bitmap DrawCornerTemplates()
+    private SKImage DrawCornerTemplates()
     {
         var bezelWidth = (int)this.BezelStyle.Left;
 
         // this.BezelProfile is scale-independent, so the same instance used for the
         // 1× edge rendering is valid here too, even though GetCornerTemplates
         // renders its atlas at 2× supersampling internally.
-        return BezelRenderer.GetCornerTemplates(
+        using var cornerTemplates = BezelRenderer.GetCornerTemplates(
             bezelWidth,
             this.BezelStyle.Color ?? Color.Transparent,
             this.BezelProfile);
+
+        // an immutable copy, since the atlas is only ever drawn from after this point
+        return SKImage.FromBitmap(cornerTemplates);
     }
 }

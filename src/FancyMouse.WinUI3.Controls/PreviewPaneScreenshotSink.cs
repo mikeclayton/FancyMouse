@@ -1,8 +1,8 @@
-using System.Drawing;
-
 using FancyMouse.Drawing.Capture;
 using FancyMouse.Models.Layout;
 using FancyMouse.WinUI3.Controls.Helpers;
+
+using SkiaSharp;
 
 namespace FancyMouse.WinUI3.Controls;
 
@@ -23,6 +23,6 @@ public sealed class PreviewPaneScreenshotSink : IScreenshotCaptureSink
         get;
     }
 
-    public Task SetScreenshotAsync(ScreenLayout screenLayout, Bitmap bitmap)
+    public Task SetScreenshotAsync(ScreenLayout screenLayout, SKBitmap bitmap)
         => this.PreviewPane.DispatcherQueue.InvokeAsync(() => this.PreviewPane.SetScreenshot(screenLayout, bitmap));
 }
