@@ -4,6 +4,7 @@
     <Import Project="..\Common.Dotnet.CsWinRT.props" />
 
     <PropertyGroup>
+        <TargetFramework>$(WindowsTargetFramework)</TargetFramework>
         <OutputType>WinExe</OutputType>
         <RootNamespace>FancyMouse.SettingsUI</RootNamespace>
         <ApplicationManifest>app.manifest</ApplicationManifest>

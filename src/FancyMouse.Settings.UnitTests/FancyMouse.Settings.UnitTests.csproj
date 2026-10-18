@@ -3,6 +3,7 @@
     <Import Project="..\Common.Dotnet.props" />
 
     <PropertyGroup>
+        <TargetFramework>$(CoreTargetFramework)</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <Platforms>x64</Platforms>

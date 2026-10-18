@@ -5,6 +5,7 @@
     <Import Project="..\Common.Dotnet.props" />
 
     <PropertyGroup>
+        <TargetFramework>$(WindowsTargetFramework)</TargetFramework>
         <OutputType>WinExe</OutputType>
         <RootNamespace>FancyMouse.WinUI3</RootNamespace>
         <ApplicationManifest>app.manifest</ApplicationManifest>

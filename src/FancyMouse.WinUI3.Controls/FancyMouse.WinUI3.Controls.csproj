@@ -4,6 +4,7 @@
     <Import Project="..\Common.Dotnet.props" />
 
     <PropertyGroup>
+        <TargetFramework>$(WindowsTargetFramework)</TargetFramework>
         <RootNamespace>FancyMouse.WinUI3.Controls</RootNamespace>
         <Platforms>x64</Platforms>
         <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>

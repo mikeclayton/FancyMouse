@@ -4,6 +4,7 @@
     <Import Project="..\Common.Dotnet.props" />
 
     <PropertyGroup>
+        <TargetFramework>$(WindowsTargetFramework)</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
