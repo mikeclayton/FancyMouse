@@ -1,16 +1,17 @@
-using System.Drawing;
 using System.Runtime.InteropServices.WindowsRuntime;
 
-using FancyMouse.Common.Capture;
-using FancyMouse.Common.Helpers;
-using FancyMouse.Common.Telemetry;
+using FancyMouse.Drawing.Capture;
+using FancyMouse.Drawing.Helpers;
 using FancyMouse.Models.Display;
 using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Layout;
-using FancyMouse.Settings.V2;
-using FancyMouse.WinUI3.Internal.Helpers;
+using FancyMouse.Windows.Capture;
+using FancyMouse.Windows.Helpers;
+using FancyMouse.WinUI3.Controls;
 
 using Microsoft.UI.Windowing;
+
+using SkiaSharp;
 
 using Windows.Graphics;
 
@@ -33,13 +34,13 @@ internal sealed partial class PreviewWindow
         // below, rather than later when we actually show the window
         this.SetAsForegroundWindow();
 
-        using var activationTimer = Telemetry.Current.BeginTimer(new { }, nameof(PreviewWindow.ShowPreviewAsync));
+        using var activationTimer = this.Telemetry.BeginTimer(new { }, nameof(PreviewWindow.ShowPreviewAsync));
 
         // hide the form while we redraw it... (also cancels whatever the *previous* activation's
         // own activationCancellation was, via ClearPreview - harmless if the caller already
         // cancelled and awaited it before calling this method, since cancelling an
         // already-cancelled source is a no-op)
-        using (Telemetry.Current.BeginTimer(new { }, "HideWindowAsync"))
+        using (this.Telemetry.BeginTimer(new { }, "HideWindowAsync"))
         {
             await this.HideWindowAsync()
                 .ConfigureAwait(false);
@@ -52,20 +53,27 @@ internal sealed partial class PreviewWindow
         var appSettings = this.ConfigHelper.AppSettings ?? throw new InvalidOperationException();
 
         DisplayInfo displayInfo;
-        using (Telemetry.Current.BeginTimer(new { }, "GetDisplayInfo"))
+        using (this.Telemetry.BeginTimer(new { }, "GetDisplayInfo"))
         {
             displayInfo = DeviceHelper.GetDisplayInfo();
         }
 
-        var activatedScreen = DeviceHelper.GetActivatedScreen(displayInfo.Devices[0], activatedLocation);
+        var activatedScreen = displayInfo.Devices[0].GetScreenFromPoint(activatedLocation);
+        if (activatedScreen is null)
+        {
+            // e.g. the monitor layout changed between reading the cursor and the screens -
+            // there's nowhere to show the preview, so leave the window hidden
+            logger.Warn($"no screen contains the activated location {activatedLocation}");
+            return;
+        }
 
         // appSettings.PreviewStyle is a raw settings file representation - it contains the custom
-        // style settings regardless of PreviewType ("compact", "bezzelled", "custom") so
-        // we need to derive the visual representation to use whwn renderig - e.g. expand out
+        // style settings regardless of PreviewType ("compact", "bezelled", "custom") so
+        // we need to derive the visual representation to use whwn rendering - e.g. expand out
         // the "compact" or "bezelled" style, or clone the "custom" style settings.
-        var previewStyle = SettingsConverterV2.GetActivePreviewStyle(appSettings.PreviewStyle, appSettings.PreviewType);
+        var previewStyle = appSettings.GetStyleForRendering();
         PreviewLayout previewLayout;
-        using (Telemetry.Current.BeginTimer(new { }, "GetPreviewLayout"))
+        using (this.Telemetry.BeginTimer(new { }, "GetPreviewLayout"))
         {
             previewLayout = LayoutHelper.GetPreviewLayout(
                 previewStyle,
@@ -73,38 +81,31 @@ internal sealed partial class PreviewWindow
                 maximumSize: activatedScreen.DisplayArea.Size);
         }
 
-        // the outer border is this window's own responsibility, not the preview pane's -
-        // see LayoutHelper.GetPreviewWindowStyle. PreviewLayout itself has no desktop position
-        // (only a size - see PreviewLayout), so positioning the window on the desktop -
-        // centered on the activated location, clamped to the activated screen - is entirely
-        // this window's own job too.
-        var previewWindowStyle = LayoutHelper.GetPreviewWindowStyle(previewStyle.CanvasStyle);
-        var hostBounds = LayoutHelper.GetPreviewWindowBounds(new RectangleInfo(previewLayout.PreviewSize), previewWindowStyle);
-        var positionedHostOuterBounds = LayoutHelper.PositionOnScreen(hostBounds.OuterBounds, activatedScreen, activatedLocation);
+        // the preview pane draws the whole canvas style itself (margin and outer border
+        // included), so this window is exactly the pane's size. PreviewLayout itself has no
+        // desktop position (only a size - see PreviewLayout), so positioning the window on the
+        // desktop - centered on the activated location, clamped to the activated screen - is
+        // entirely this window's own job.
+        var positionedHostOuterBounds = LayoutHelper.PositionOnScreen(new RectangleInfo(previewLayout.PreviewSize), activatedScreen, activatedLocation);
 
         // a newer activation superseding this one is the common, expected case under rapid
         // repeat activation - check here, before paying for the border render below, rather
         // than only ever noticing via a later awaited call
         cancellationToken.ThrowIfCancellationRequested();
 
-        using (Telemetry.Current.BeginTimer(new { }, "PositionWindowAsync"))
+        using (this.Telemetry.BeginTimer(new { }, "PositionWindowAsync"))
         {
             await this.PositionWindowAsync(positionedHostOuterBounds)
                 .ConfigureAwait(false);
         }
 
-        (int Width, int Height, int CornerRadius) windowRegion;
-        using (Telemetry.Current.BeginTimer(new { }, "RenderBorderAsync"))
-        {
-            windowRegion = await this.RenderBorderAsync(previewLayout, previewWindowStyle)
-                .ConfigureAwait(false);
-        }
+        var windowRegion = PreviewWindow.GetWindowRegion(previewLayout);
 
         cancellationToken.ThrowIfCancellationRequested();
 
         // builds every screen's bezel + placeholder fill immediately, so there's something to
         // show as soon as the window becomes visible - screenshots backfill afterwards
-        using (Telemetry.Current.BeginTimer(new { }, "SetPreviewPaneLayoutAsync"))
+        using (this.Telemetry.BeginTimer(new { }, "SetPreviewPaneLayoutAsync"))
         {
             await this.SetPreviewPaneLayoutAsync(previewLayout, activatedScreen)
                 .ConfigureAwait(false);
@@ -120,14 +121,14 @@ internal sealed partial class PreviewWindow
         var cancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         this.activationCancellation = cancellation;
 
-        var pipeline = new ScreenshotCapturePipeline(new PreviewPaneScreenshotSink(this), cancellation.Token);
+        var pipeline = new ScreenshotCapturePipeline(new PreviewPaneScreenshotSink(this.PreviewPane), cancellation.Token);
 
         // create one capture provider per device - see IScreenshotCaptureProvider/
         // DesktopScreenshotCaptureProvider remarks for why a single instance is safe (and
         // necessary) to share across all of that device's screens. Ownership of each provider
         // transfers to the pipeline - see ScreenshotCapturePipeline.DisposeAsync.
-        var captureTasks = new List<(ScreenLayout ScreenLayout, Task<Bitmap> CaptureTask)>();
-        using (Telemetry.Current.BeginTimer(new { }, "kickOffCaptureRequests"))
+        var captureTasks = new List<(ScreenLayout ScreenLayout, Task<SKBitmap> CaptureTask)>();
+        using (this.Telemetry.BeginTimer(new { }, "kickOffCaptureRequests"))
         {
             foreach (var deviceLayout in previewLayout.CanvasLayout.DeviceLayouts)
             {
@@ -153,21 +154,21 @@ internal sealed partial class PreviewWindow
             // screenshot shown instead until the capture is ready, at which point the screen's
             // image is automatically updated.
             var allCaptureTasks = captureTasks.Select(entry => entry.CaptureTask).ToArray();
-            using (Telemetry.Current.BeginTimer(new { }, "gracePeriodRace"))
+            using (this.Telemetry.BeginTimer(new { }, "gracePeriodRace"))
             {
                 await Task.WhenAny(Task.WhenAll(allCaptureTasks), Task.Delay(PreviewWindow.ScreenshotGracePeriod, cancellation.Token))
                     .ConfigureAwait(false);
             }
 
-            using (Telemetry.Current.BeginTimer(new { }, "activatedScreenCapture"))
+            using (this.Telemetry.BeginTimer(new { }, "activatedScreenCapture"))
             {
                 await activatedCaptureTask
                     .ConfigureAwait(false);
             }
 
-            using (Telemetry.Current.BeginTimer(new { }, "ShowWindowAsync"))
+            using (this.Telemetry.BeginTimer(new { }, "ShowWindowAsync"))
             {
-                await this.ShowWindowAsync(windowRegion.Width, windowRegion.Height, windowRegion.CornerRadius, cancellation.Token)
+                await this.ShowWindowAsync(windowRegion.X, windowRegion.Y, windowRegion.Width, windowRegion.Height, windowRegion.CornerRadius, cancellation.Token)
                     .ConfigureAwait(false);
             }
         }
@@ -201,12 +202,11 @@ internal sealed partial class PreviewWindow
         this.activationCancellation?.Dispose();
         this.activationCancellation = null;
 
-        if ((this.BorderImage.Source is null) && (this.PreviewPane.Layout is null))
+        if (this.PreviewPane.Layout is null)
         {
             return;
         }
 
-        this.BorderImage.Source = null;
         this.PreviewPane.Layout = null;
         this.PreviewPane.ActiveScreen = null;
     }
@@ -229,9 +229,10 @@ internal sealed partial class PreviewWindow
 
     /// <summary>
     /// Shows the window by swapping its clip region from empty (see <see cref="HideWindow"/>) to
-    /// <paramref name="width"/> x <paramref name="height"/> with a curved corner mask.
+    /// <paramref name="width"/> x <paramref name="height"/> at (<paramref name="x"/>, <paramref name="y"/>)
+    /// with a curved corner mask.
     /// </summary>
-    private async Task ShowWindowAsync(int width, int height, int cornerRadius, CancellationToken cancellationToken)
+    private async Task ShowWindowAsync(int x, int y, int width, int height, int cornerRadius, CancellationToken cancellationToken)
     {
         await this.InvokeOnUiThreadAsync(
             () =>
@@ -258,7 +259,7 @@ internal sealed partial class PreviewWindow
                     presenter.IsAlwaysOnTop = true;
                 }
 
-                this.ApplyRoundRectRegion(width, height, cornerRadius);
+                this.ApplyRoundRectRegion(x, y, width, height, cornerRadius);
 
                 // we have to activate the window to make sure the deactivate event fires
                 this.Activate();

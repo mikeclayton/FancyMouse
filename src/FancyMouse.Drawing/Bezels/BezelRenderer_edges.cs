@@ -1,0 +1,261 @@
+using System.Drawing;
+
+using FancyMouse.Drawing.Helpers;
+
+using SkiaSharp;
+
+namespace FancyMouse.Drawing.Bezels;
+
+public sealed partial class BezelRenderer
+{
+    /// <summary>
+    /// Draws a 1-pixel thick, 3-stage gradient line as part of a bezel's edge.
+    /// </summary>
+    /// <remarks>
+    /// The line starts at (x1, y1) and is drawn using <paramref name="startColor"/> up to
+    /// <paramref name="transitionStart"/>, then fades to <paramref name="endColor"/> by
+    /// <paramref name="transitionEnd"/>, and stays at <paramref name="endColor"/> up to (x2, y2).
+    /// </remarks>
+    /// <param name="startColor">The colour at the (x1, y1) end of the line.</param>
+    /// <param name="transitionStart">
+    /// Fraction of the line's length (0-1) from (x1, y1) at which the fade from
+    /// <paramref name="startColor"/> begins.
+    /// </param>
+    /// <param name="transitionEnd">
+    /// Fraction of the line's length (0-1) from (x1, y1) at which the fade to
+    /// <paramref name="endColor"/> is complete.
+    /// </param>
+    /// <param name="endColor">The colour at the (x2, y2) end of the line.</param>
+    /// <exception cref="ArgumentException">The coordinates aren't a horizontal or vertical line.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// The transition points aren't in order within 0 to 1
+    /// (i.e. 0 ≤ <paramref name="transitionStart"/> ≤ <paramref name="transitionEnd"/> ≤ 1).
+    /// </exception>
+    private static void DrawBezelEdgeLine(
+        SKCanvas canvas,
+        int x1,
+        int y1,
+        int x2,
+        int y2,
+        Color startColor,
+        float transitionStart,
+        float transitionEnd,
+        Color endColor)
+    {
+        // make sure the coordinates represent a vertical or horizontal line,
+        // not an arbitrary rectangle - each pixel row (or column) of the bezel
+        // edge needs to be rendered separately to account for the bezel profile.
+        if ((x1 != x2) && (y1 != y2))
+        {
+            throw new ArgumentException("Coordinates must represent a single-pixel line, not a rectangle - i.e. x1 == x2 or y1 == y2.");
+        }
+
+        // the transition points must be in order within 0-1 (equal values are fine - e.g.
+        // start == end gives a hard step instead of a fade) - checked here, before anything
+        // is drawn below
+        if (!((transitionStart >= 0f) && (transitionStart <= transitionEnd) && (transitionEnd <= 1f)))
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(transitionStart),
+                $"Transition points must satisfy 0 <= {nameof(transitionStart)} ({transitionStart}) <= {nameof(transitionEnd)} ({transitionEnd}) <= 1.");
+        }
+
+        // the gradient's direction is controlled by the brush, not the drawing
+        // bounds, so we'll normalise the coordinates here
+        var edgeBounds = (y1 == y2)
+            ? SKRect.Create(Math.Min(x1, x2), y1, Math.Abs(x2 - x1), 1f)
+            : SKRect.Create(x1, Math.Min(y1, y2), 1f, Math.Abs(y2 - y1));
+
+        // for gradient fills, a repeating tile mode fills the gradient region as a series
+        // of tiles, and any smoothing where they join means the *start* color of the
+        // gradient from the neighbouring tile can bleed into the *end* color of the
+        // adjoining tile:
+        //
+        //     |▓▓▓▓▒▒▒▒░░░░   ▒|▓▓▓▓▒▒▒▒░░░░   ▒|▓▓▓▓▒▒▒▒░░░░   ▒|▓▓▓▓▒▒▒▒░░░░   ▒|
+        //                     ^
+        //                     a repeating tile mode simply repeats the gradient,
+        //                     and smoothing of a high contrast pixel in the
+        //                     next (off-screen) tile bleeds back over into the
+        //                     previous tile
+        //
+        // in our case it means the *start* color for the neighbouring (off-screen) tile
+        // can bleed into the *end* color of our edge region, causing a 1-pixel wide
+        // rendering artifact on the resulting image (this was a real problem with GDI+'s
+        // default WrapMode.Tile).
+        //
+        // to prevent this, SKShaderTileMode.Mirror (the same as GDI+'s WrapMode.TileFlipXY)
+        // *mirrors* the gradient at both ends so any smoothing with the neighboring tile uses
+        // the same colour at the join and there's no rendering artifact.
+        //
+        //     |▓▓▓▓▒▒▒▒░░░░    |    ░░░░▒▒▒▒▓▓▓▓|▓▓▓▓▒▒▒▒░░░░    |    ░░░░▒▒▒▒▓▓▓▓|
+        //                     ^
+        //                     SKShaderTileMode.Mirror *mirrors* the gradient
+        //                     so smoothing blends two pixels of the same color
+        //                     and there's no visible bleed effect between tiles
+
+        // overall, the shape of the resulting gradient is 3 stages,
+        // transitioning at transitionStart and transitionEnd:
+        //
+        //     * stage 1 - solid:    startColor
+        //     * stage 2 - gradient: startColor -> endColor
+        //     * stage 3 - solid:    endColor
+        //
+        //     |solid|            gradient             |  solid  |
+        //     |▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▒▒▒▒▒▒▒▒▒▒▒▒░░░░░░░░░░░░---------|
+        //     0     ^                                 ^         1.0
+        //           |                                 |
+        //           transitionStart                   transitionEnd
+        //
+        //     * the first solid color is held flat at startColor to avoid a
+        //       visually jarring gradient starting straight away
+        //
+        //     * the gradient fades from startColor to endColor
+        //
+        //     * the final solid color is held flat at endColor for the rest
+        //       of the edge
+        //
+        // (note the coordinates are directional to ensure the gradient blends the right way)
+        using var shader = SKShader.CreateLinearGradient(
+            new SKPoint(x1, y1),
+            new SKPoint(x2, y2),
+            [startColor.ToSKColor(), startColor.ToSKColor(), endColor.ToSKColor(), endColor.ToSKColor()],
+            [0f, transitionStart, transitionEnd, 1f],
+            SKShaderTileMode.Mirror);
+        using var paint = new SKPaint { Shader = shader, IsAntialias = false };
+
+        canvas.DrawRect(edgeBounds, paint);
+    }
+
+    /// <summary>
+    /// Draws the straight edge rectangles for a bezel ring.
+    /// Each edge is drawn as a series of 1-pixel thick lines
+    /// with highlight and shadow effect according to the bezel profile.
+    /// </summary>
+    private static void DrawBezelEdges(
+        SKCanvas canvas,
+        int x,
+        int y,
+        int width,
+        int height,
+        int bezelWidth,
+        Color bezelColor,
+        IBezelProfile bezelProfile)
+    {
+        var n = bezelWidth;
+
+        // draw the four straight edge strips with the flat border color first
+        using (var flatPaint = new SKPaint { Color = bezelColor.ToSKColor(), IsAntialias = false })
+        {
+            canvas.DrawRect(SKRect.Create(x + n,         y,              width - (2 * n), n),                flatPaint); // top
+            canvas.DrawRect(SKRect.Create(x + n,         y + height - n, width - (2 * n), n),                flatPaint); // bottom
+            canvas.DrawRect(SKRect.Create(x,             y + n,          n,               height - (2 * n)), flatPaint); // left
+            canvas.DrawRect(SKRect.Create(x + width - n, y + n,          n,               height - (2 * n)), flatPaint); // right
+        }
+
+        // pre-compute the vertical and horizontal endpoints for the edge lines
+        var horizontalEdgeX1 = x + n;         // left   end of top  / bottom horizontal segments
+        var horizontalEdgeX2 = x + width - n; // right  end of top  / bottom horizontal segments
+        var verticalEdgeY1 = y + n;           // top    end of left / right  vertical  segments
+        var verticalEdgeY2 = y + height - n;  // bottom end of left / right  vertical  segments
+
+        Color GetHighlightColor(double strength, double magnitude) => BezelPrimitives.ApplyHighlight(bezelColor, strength * magnitude, BezelConstants.HighlightMax);
+
+        Color GetShadowColor(double strength, double magnitude) => BezelPrimitives.ApplyShadow(bezelColor, strength * magnitude, BezelConstants.ShadowMax);
+
+        // positions with a magnitude below this are in the flat zone - already
+        // covered by the flat fill above, so no line is drawn for them at all.
+        const double flatEdgeThreshold = 1e-10;
+
+        // iterate across the thickness of the border one pixel at a time and draw
+        // a layer of the bezel "ring" at each position. we work from the outside
+        // in on all four sides - the bezel profile faces "outward" on each side
+        // so the top and left edges face *toward* the light source while the
+        // bottom and right edges face *away* from it (i.e. they're reversed).
+        // as a result we need to calculate two sets of profile values ("forward"
+        // and "reverse") for each iteration.
+        for (var pos = 0; pos < n; pos++)
+        {
+            // calculate the normal, intensity and magnitude for the Top and Left edges
+            // (the edge of these borders at 0 on the profile function faces upward / leftward)
+            var forwardNormal = bezelProfile.GetEdgeNormal(n, pos);
+            var forwardIntensity = FancyMouse.Drawing.Bezels.BezelProfile.GetLightingEffectIntensity(forwardNormal);
+            var frontFacingLight = forwardIntensity > 0.0;
+            var forwardMagnitude = Math.Abs(forwardIntensity);
+
+            // calculate the normal, intensity and magnitude for the Bottom and Right edges
+            // (the edge of these borders at 0 on the profile function faces downward / rightward
+            // so the normal is reversed 180 degrees (or Math.PI radians) from the Top and Left edges above)
+            var reverseNormal = Math.PI - forwardNormal;
+            var reverseIntensity = FancyMouse.Drawing.Bezels.BezelProfile.GetLightingEffectIntensity(reverseNormal);
+            var backFacingLight = reverseIntensity > 0.0;
+            var reverseMagnitude = Math.Abs(reverseIntensity);
+
+            // calculate the coordinates for the individual lines of the border edges
+            // that we're drawing in this iteration
+            var topLineY = y + pos;
+            var bottomLineY = y + height - pos - 1;
+            var leftLineX = x + pos;
+            var rightLineX = x + width - pos - 1;
+
+            // Top:    HL when facing light, SH when facing away (left→right)
+            if (forwardMagnitude >= flatEdgeThreshold)
+            {
+                BezelRenderer.DrawBezelEdgeLine(
+                    canvas: canvas,
+                    x1: horizontalEdgeX1,
+                    y1: topLineY,
+                    x2: horizontalEdgeX2,
+                    y2: topLineY,
+                    startColor: frontFacingLight ? GetHighlightColor(BezelConstants.EdgeForwardHighlightStrong, forwardMagnitude) : GetShadowColor(BezelConstants.EdgeForwardShadowStrong, forwardMagnitude),
+                    transitionStart: BezelConstants.EdgeGradientStart,
+                    transitionEnd: BezelConstants.EdgeGradientEnd,
+                    endColor: frontFacingLight ? GetHighlightColor(BezelConstants.EdgeForwardHighlightFade, forwardMagnitude) : GetShadowColor(BezelConstants.EdgeForwardShadowFade, forwardMagnitude));
+            }
+
+            // Right:  HL when facing light, SH when facing away (bottom→top)
+            if (reverseMagnitude >= flatEdgeThreshold)
+            {
+                BezelRenderer.DrawBezelEdgeLine(
+                    canvas: canvas,
+                    x1: rightLineX,
+                    y1: verticalEdgeY2,
+                    x2: rightLineX,
+                    y2: verticalEdgeY1,
+                    startColor: backFacingLight ? GetHighlightColor(BezelConstants.EdgeReverseHighlightStrong, reverseMagnitude) : GetShadowColor(BezelConstants.EdgeReverseShadowStrong, reverseMagnitude),
+                    transitionStart: BezelConstants.EdgeGradientStart,
+                    transitionEnd: BezelConstants.EdgeGradientEnd,
+                    endColor: backFacingLight ? GetHighlightColor(BezelConstants.EdgeReverseHighlightFade, reverseMagnitude) : GetShadowColor(BezelConstants.EdgeReverseShadowFade, reverseMagnitude));
+            }
+
+            // Bottom: HL when facing light, SH when facing away (right→left)
+            if (reverseMagnitude >= flatEdgeThreshold)
+            {
+                BezelRenderer.DrawBezelEdgeLine(
+                    canvas: canvas,
+                    x1: horizontalEdgeX2,
+                    y1: bottomLineY,
+                    x2: horizontalEdgeX1,
+                    y2: bottomLineY,
+                    startColor: backFacingLight ? GetHighlightColor(BezelConstants.EdgeReverseHighlightStrong, reverseMagnitude) : GetShadowColor(BezelConstants.EdgeReverseShadowStrong, reverseMagnitude),
+                    transitionStart: BezelConstants.EdgeGradientStart,
+                    transitionEnd: BezelConstants.EdgeGradientEnd,
+                    endColor: backFacingLight ? GetHighlightColor(BezelConstants.EdgeReverseHighlightFade, reverseMagnitude) : GetShadowColor(BezelConstants.EdgeReverseShadowFade, reverseMagnitude));
+            }
+
+            // Left:   HL when facing light, SH when facing away (top→bottom)
+            if (forwardMagnitude >= flatEdgeThreshold)
+            {
+                BezelRenderer.DrawBezelEdgeLine(
+                    canvas: canvas,
+                    x1: leftLineX,
+                    y1: verticalEdgeY1,
+                    x2: leftLineX,
+                    y2: verticalEdgeY2,
+                    startColor: frontFacingLight ? GetHighlightColor(BezelConstants.EdgeForwardHighlightStrong, forwardMagnitude) : GetShadowColor(BezelConstants.EdgeForwardShadowStrong, forwardMagnitude),
+                    transitionStart: BezelConstants.EdgeGradientStart,
+                    transitionEnd: BezelConstants.EdgeGradientEnd,
+                    endColor: frontFacingLight ? GetHighlightColor(BezelConstants.EdgeForwardHighlightFade, forwardMagnitude) : GetShadowColor(BezelConstants.EdgeForwardShadowFade, forwardMagnitude));
+            }
+        }
+    }
+}

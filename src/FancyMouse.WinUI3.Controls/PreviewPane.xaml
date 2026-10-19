@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="FancyMouse.WinUI3.Controls.PreviewPane"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:FancyMouse.WinUI3.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    IsTabStop="True"
+    UseSystemFocusVisuals="False">
+    <!--
+        BorderImage is the outer border ring, and BackgroundImage fills the hole inside it -
+        both are sized and positioned in code-behind to match the canvas layout's own border
+        and padding bounds (see PreviewPane.layout.cs). ScreensCanvas is layered on top and
+        populated in code-behind with one bezel/placeholder/content element per screen, each
+        positioned absolutely to match its ScreenLayout bounds.
+    -->
+    <Grid>
+        <Image
+            x:Name="BorderImage"
+            Stretch="Fill"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Top" />
+        <Image
+            x:Name="BackgroundImage"
+            Stretch="Fill"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Top" />
+        <Canvas
+            x:Name="ScreensCanvas" />
+    </Grid>
+</UserControl>

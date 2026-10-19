@@ -5,6 +5,7 @@
     <Import Project="..\Common.Dotnet.props" />
 
     <PropertyGroup>
+        <TargetFramework>$(WindowsTargetFramework)</TargetFramework>
         <OutputType>WinExe</OutputType>
         <RootNamespace>FancyMouse.WinUI3</RootNamespace>
         <ApplicationManifest>app.manifest</ApplicationManifest>
@@ -30,9 +31,12 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\FancyMouse.Common\FancyMouse.Common.csproj" />
+        <ProjectReference Include="..\FancyMouse.WinUI3.Controls\FancyMouse.WinUI3.Controls.csproj" />
+        <ProjectReference Include="..\FancyMouse.Windows\FancyMouse.Windows.csproj" />
+        <ProjectReference Include="..\FancyMouse.Drawing\FancyMouse.Drawing.csproj" />
         <ProjectReference Include="..\FancyMouse.Models\FancyMouse.Models.csproj" />
         <ProjectReference Include="..\FancyMouse.Settings\FancyMouse.Settings.csproj" />
+        <ProjectReference Include="..\FancyMouse.Telemetry\FancyMouse.Telemetry.csproj" />
     </ItemGroup>
 
     <!-- Publish Properties -->
@@ -55,8 +59,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Compile Update="UI\PreviewPane.*.cs">
-            <DependentUpon>PreviewPane.xaml</DependentUpon>
+        <Compile Update="App/App.*.cs">
+            <DependentUpon>App.xaml</DependentUpon>
         </Compile>
         <Compile Update="UI\PreviewWindow.*.cs">
             <DependentUpon>PreviewWindow.xaml</DependentUpon>

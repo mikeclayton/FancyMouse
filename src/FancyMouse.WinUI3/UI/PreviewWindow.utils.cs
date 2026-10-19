@@ -1,15 +1,11 @@
-using FancyMouse.Common.Capture;
-using FancyMouse.Common.Helpers;
+using FancyMouse.Drawing.Capture;
 using FancyMouse.Models.Display;
-using FancyMouse.Models.Drawing;
 using FancyMouse.Models.Layout;
-using FancyMouse.Models.Styles;
-using FancyMouse.WinUI3.Internal.Helpers;
+using FancyMouse.WinUI3.Controls.Helpers;
 using FancyMouse.WinUI3.Win32Gen;
 
 using Microsoft.UI.Xaml;
 
-using Windows.Win32;
 using Windows.Win32.Foundation;
 
 namespace FancyMouse.WinUI3.UI;
@@ -36,56 +32,8 @@ internal sealed partial class PreviewWindow
         }
     }
 
-    /// <summary>
-    /// Calculates the high-dpi scaling ratio based on the current monitor's display settings.
-    /// </summary>
-    private double GetHighDpiScalingRatio()
-    {
-        var hWnd = (HWND)WinRT.Interop.WindowNative.GetWindowHandle(this);
-        var windowDpi = User32.GetDpiForWindow(hWnd)
-            .ThrowIfFailed()
-            .GetValue();
-        var scalingRatio = (double)PInvoke.USER_DEFAULT_SCREEN_DPI / windowDpi;
-        return scalingRatio;
-    }
-
-    internal async Task InvokeOnUiThreadAsync(Action action)
-    {
-        ArgumentNullException.ThrowIfNull(action);
-
-        // already on the ui thread - just run it
-        if (this.DispatcherQueue.HasThreadAccess)
-        {
-            action();
-            return;
-        }
-
-        // the action might be called from a task that we're awaiting
-        // so we need to make sure we use the UI thread
-        var tcs = new TaskCompletionSource<bool>(
-            TaskCreationOptions.RunContinuationsAsynchronously);
-
-        if (!this.DispatcherQueue.TryEnqueue(
-            () =>
-            {
-                try
-                {
-                    action();
-                    tcs.SetResult(true);
-                }
-                catch (Exception ex)
-                {
-                    tcs.SetException(ex);
-                }
-            }))
-        {
-            tcs.SetException(
-                new InvalidOperationException("DispatcherQueue is not accepting work items."));
-        }
-
-        // wait for the task to complete
-        await tcs.Task.ConfigureAwait(false);
-    }
+    private Task InvokeOnUiThreadAsync(Action action)
+        => this.DispatcherQueue.InvokeAsync(action);
 
     /// <summary>
     /// Sets this window to be the operating system's foreground window.
@@ -124,47 +72,21 @@ internal sealed partial class PreviewWindow
     }
 
     /// <summary>
-    /// Renders this window's own border image and assigns it to <see cref="BorderImage"/>.
-    /// This is rendered directly by the host rather than the pane, since the border is
-    /// deliberately not one of the PreviewPane's concerns.
+    /// Gets the window-region bounds (see <see cref="ApplyRoundRectRegion"/>) that match the
+    /// preview pane's own outer border - the pane fills this window exactly (see
+    /// PreviewWindow.xaml), so the region is the pane's border box (inset by its margin, which
+    /// is clipped away), with its corners rounded to match the border's thickness.
     /// </summary>
-    /// <returns>
-    /// The window-region dimensions (see <see cref="ApplyRoundRectRegion"/>) that match the
-    /// rendered border - deliberately *not* applied here, so the window's clip region only ever
-    /// changes once <see cref="ShowWindowAsync"/> reveals fully-built content, not partway
-    /// through rendering it. The caller passes these straight back into
-    /// <see cref="ShowWindowAsync"/>.
-    /// </returns>
-    private async Task<(int Width, int Height, int CornerRadius)> RenderBorderAsync(PreviewLayout previewLayout, BoxStyle previewWindowStyle)
+    /// <remarks>
+    /// Deliberately *not* applied here, so the window's clip region only ever changes once
+    /// <see cref="ShowWindowAsync"/> reveals fully-built content, not partway through building
+    /// it. The caller passes these straight into <see cref="ShowWindowAsync"/>.
+    /// </remarks>
+    private static (int X, int Y, int Width, int Height, int CornerRadius) GetWindowRegion(PreviewLayout previewLayout)
     {
-        // render against a zero-based host box - a border image is its own bitmap, so its
-        // pixel coordinates need to start at (0,0) regardless of where the (possibly
-        // negative, once enlarged outward from a zero-based content box) host bounds would
-        // otherwise place it.
-        var localHostBounds = LayoutHelper.GetPreviewWindowBounds(previewLayout.CanvasLayout.CanvasBounds.OuterBounds, previewWindowStyle)
-            .MoveTo(new PointInfo(0, 0));
-
-        using var borderBitmap = DrawingHelper.RenderBorder(localHostBounds.BorderBounds.Size, previewWindowStyle.BorderStyle);
-
-        await this.InvokeOnUiThreadAsync(
-            () =>
-            {
-                var highDpiScalingRatio = this.GetHighDpiScalingRatio();
-                this.BorderImage.Width = borderBitmap.Width * highDpiScalingRatio;
-                this.BorderImage.Height = borderBitmap.Height * highDpiScalingRatio;
-                this.BorderImage.Source = MediaHelper.ToBitmapImage(borderBitmap);
-
-                // position PreviewPane so it lines up exactly with the transparent hole in
-                // the middle of the border image - the offset is always the host box's own
-                // border+padding thickness (margin is excluded - RenderBorder's bitmap starts
-                // at the border's own outer edge, not the margin's), regardless of where
-                // localHostBounds itself sits.
-                var offsetX = (localHostBounds.ContentBounds.X - localHostBounds.BorderBounds.X) * (decimal)highDpiScalingRatio;
-                var offsetY = (localHostBounds.ContentBounds.Y - localHostBounds.BorderBounds.Y) * (decimal)highDpiScalingRatio;
-                this.PreviewPane.Margin = new Thickness((double)offsetX, (double)offsetY, 0, 0);
-            }).ConfigureAwait(false);
-
-        return (borderBitmap.Width, borderBitmap.Height, (int)previewWindowStyle.BorderStyle.Left);
+        var canvasLayout = previewLayout.CanvasLayout;
+        var borderBounds = canvasLayout.CanvasBounds.BorderBounds;
+        return ((int)borderBounds.X, (int)borderBounds.Y, (int)borderBounds.Width, (int)borderBounds.Height, (int)canvasLayout.CanvasStyle.BorderStyle.Left);
     }
 
     private async Task SetPreviewPaneLayoutAsync(PreviewLayout previewLayout, ScreenInfo activatedScreen)

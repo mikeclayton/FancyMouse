@@ -71,4 +71,22 @@ internal sealed class CsWin32Methods
         nativeMethod = this.GetMethodsByName(methodName).FirstOrDefault(method => method.IsNativeMethod);
         return nativeMethod is not null;
     }
+
+    /// <summary>
+    /// Every CsWin32-generated type referenced by any overload of <paramref name="methodName"/>
+    /// (see <see cref="CsWin32Method.GetWin32TypeNames"/>), ordered for stable output.
+    /// </summary>
+    /// <remarks>
+    /// Collected across *all* overloads rather than just the one a wrapper template happens to
+    /// call - an extra type nobody uses is harmless, whereas guessing the wrong overload would
+    /// leave out a type the template does need. In practice the friendly overloads only swap
+    /// in BCL types (<c>SafeHandle</c>, <c>string</c>, <c>Span&lt;T&gt;</c>, ...), so this is
+    /// almost always just the native overload's own types anyway.
+    /// </remarks>
+    public IReadOnlyList<string> GetWin32TypeNames(string methodName)
+        => this.GetMethodsByName(methodName)
+            .SelectMany(method => method.GetWin32TypeNames())
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToList();
 }

@@ -1,0 +1,37 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <Import Project="..\Common.Dotnet.Analyzers.props" />
+    <Import Project="..\Common.Dotnet.props" />
+
+    <PropertyGroup>
+        <TargetFramework>$(CoreTargetFramework)</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <Platforms>x64</Platforms>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Remove="Helpers\_test-4grid-desktop.png" />
+        <None Remove="Helpers\_test-4grid-expected.png" />
+        <None Remove="Helpers\_test-win11-desktop.png" />
+        <None Remove="Helpers\_test-win11-expected.png" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Include="Helpers\_test-4grid-desktop.png" />
+        <EmbeddedResource Include="Helpers\_test-4grid-expected.png" />
+        <EmbeddedResource Include="Helpers\_test-win11-desktop.png" />
+        <EmbeddedResource Include="Helpers\_test-win11-expected.png" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.3.0" />
+        <PackageReference Include="MSTest.TestAdapter" Version="4.1.0" />
+        <PackageReference Include="MSTest.TestFramework" Version="4.1.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\FancyMouse.Drawing\FancyMouse.Drawing.csproj" />
+        <ProjectReference Include="..\FancyMouse.Models\FancyMouse.Models.csproj" />
+    </ItemGroup>
+
+</Project>

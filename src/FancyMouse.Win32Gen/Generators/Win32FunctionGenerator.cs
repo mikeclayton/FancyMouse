@@ -91,9 +91,35 @@ public sealed class Win32FunctionGenerator : IIncrementalGenerator
             parts.Add(win32genWrapper.MethodSource);
             var methodSource = string.Join("\n", parts);
 
-            var source = Win32GeneratorHelpers.BuildClassSource(rootNamespace, win32genWrapper.ClassName, new[] { win32genWrapper with { MethodSource = methodSource } });
+            var win32TypeNames = Win32FunctionGenerator.GetAliasableTypeNames(context, cswin32MethodName, cswin32Methods.GetWin32TypeNames(cswin32MethodName));
+            var source = Win32GeneratorHelpers.BuildClassSource(rootNamespace, win32genWrapper.ClassName, new[] { win32genWrapper with { MethodSource = methodSource } }, win32TypeNames);
             context.AddSource($"{Win32FunctionGenerator.OutputFolder}/{win32genWrapper.ClassName}_{cswin32MethodName}.g.cs", SourceText.From(source, Encoding.UTF8));
         }
+    }
+
+    // every type gets aliased by its simple name, so two types that share one (from different
+    // namespaces) can't both be - report that rather than silently pick one, and leave both
+    // out so a template that uses the name fails to compile instead of binding to the wrong type.
+    private static IReadOnlyList<string> GetAliasableTypeNames(
+        SourceProductionContext context,
+        string apiName,
+        IReadOnlyList<string> win32TypeNames)
+    {
+        var aliasable = new List<string>();
+        foreach (var group in win32TypeNames.GroupBy(Win32GeneratorHelpers.GetSimpleTypeName, StringComparer.Ordinal))
+        {
+            var fullNames = group.ToList();
+            if (fullNames.Count == 1)
+            {
+                aliasable.Add(fullNames[0]);
+            }
+            else
+            {
+                context.ReportDiagnostic(Diagnostic.Create(Win32ApiGeneratorDiagnostics.TypeAliasCollision, Location.None, apiName, group.Key, string.Join(", ", fullNames)));
+            }
+        }
+
+        return aliasable;
     }
 
     // apiName comes from CsWin32's own resolved PInvoke class now, not a

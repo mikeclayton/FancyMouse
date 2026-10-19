@@ -330,6 +330,15 @@ public sealed class RectangleInfo
 
     public static RectangleInfo Union(IEnumerable<RectangleInfo> rects)
     {
+        // we can't simply start with an aggregation seed of (0,0,0,0) and expand to
+        // encompass all regions because (0,0,0,0) might not actually exist in the
+        // combined region - for example if "rects= [(100, 100, 100, 100)]" we'd end
+        // up (incorrectly) with (0, 0, 200, 200).
+        //
+        // so, our actual approach is:
+        //
+        // * if the input is a single bounds we'll just return that
+        // * otherwise we use the *first* bounds as the seed for combining the remaining bounds
         var list = rects.ToList();
         return (list.Count == 0)
             ? RectangleInfo.Empty

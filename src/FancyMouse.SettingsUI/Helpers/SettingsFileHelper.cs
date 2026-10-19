@@ -1,8 +1,8 @@
 using System.Text.Json;
 
-using FancyMouse.Common.Helpers;
 using FancyMouse.Models.Styles;
 using FancyMouse.Settings;
+using FancyMouse.Settings.Helpers;
 using FancyMouse.Settings.V2;
 using FancyMouse.SettingsUI.Models;
 
@@ -78,27 +78,27 @@ internal static class SettingsFileHelper
                 height: (int)previewStyle.CanvasSize.Height),
             canvasStyle: new CanvasStyleSettings(
                 borderStyle: new BorderStyleSettings(
-                    color: ColorHelper.SerializeToConfigColorString(
+                    color: ColorHelper.ToColorString(
                         ColorHelper.ToUnnamedColor(canvasStyle.BorderStyle.Color)),
                     width: canvasStyle.BorderStyle.Top,
                     depth: canvasStyle.BorderStyle.Depth),
                 paddingStyle: new PaddingStyleSettings((int)canvasStyle.PaddingStyle.Top),
                 backgroundStyle: new BackgroundStyleSettings(
-                    color1: ColorHelper.SerializeToConfigColorString(
+                    color1: ColorHelper.ToColorString(
                         ColorHelper.ToUnnamedColor(canvasStyle.BackgroundStyle.Color1)),
-                    color2: ColorHelper.SerializeToConfigColorString(
+                    color2: ColorHelper.ToColorString(
                         ColorHelper.ToUnnamedColor(canvasStyle.BackgroundStyle.Color2)))),
             screenStyle: new ScreenStyleSettings(
                 marginStyle: new MarginStyleSettings((int)screenStyle.MarginStyle.Top),
                 borderStyle: new BorderStyleSettings(
-                    color: ColorHelper.SerializeToConfigColorString(
+                    color: ColorHelper.ToColorString(
                         ColorHelper.ToUnnamedColor(screenStyle.BorderStyle.Color)),
                     width: screenStyle.BorderStyle.Top,
                     depth: screenStyle.BorderStyle.Depth),
                 backgroundStyle: new BackgroundStyleSettings(
-                    color1: ColorHelper.SerializeToConfigColorString(
+                    color1: ColorHelper.ToColorString(
                         ColorHelper.ToUnnamedColor(screenStyle.BackgroundStyle.Color1)),
-                    color2: ColorHelper.SerializeToConfigColorString(
+                    color2: ColorHelper.ToColorString(
                         ColorHelper.ToUnnamedColor(screenStyle.BackgroundStyle.Color2)))));
     }
 }

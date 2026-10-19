@@ -1,4 +1,4 @@
-using FancyMouse.Common.Capture;
+using FancyMouse.Telemetry;
 using FancyMouse.WinUI3.Internal.Helpers;
 
 using Microsoft.UI.Xaml;
@@ -12,15 +12,29 @@ namespace FancyMouse.WinUI3.UI;
 /// </summary>
 internal sealed partial class PreviewWindow : Window
 {
-    internal PreviewWindow(NLog.ILogger logger, ConfigHelper configHelper)
+    internal PreviewWindow(NLog.ILogger logger, TelemetryContext telemetry, ConfigHelper configHelper)
     {
         this.Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        this.Telemetry = telemetry ?? throw new ArgumentNullException(nameof(telemetry));
         this.ConfigHelper = configHelper ?? throw new ArgumentNullException(nameof(configHelper));
         this.InitializeComponent();
+        this.InitializePreviewPane();
         this.InitializeWindow();
     }
 
+    private void InitializePreviewPane()
+    {
+        // PreviewPane is created by XAML, so it can't take this in its constructor - it has to
+        // be set here, before the pane is first used (see PreviewPane.Telemetry)
+        this.PreviewPane.Telemetry = this.Telemetry;
+    }
+
     private NLog.ILogger Logger
+    {
+        get;
+    }
+
+    private TelemetryContext Telemetry
     {
         get;
     }

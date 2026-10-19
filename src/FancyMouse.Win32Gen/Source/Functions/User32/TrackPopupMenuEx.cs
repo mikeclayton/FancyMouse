@@ -12,7 +12,11 @@ internal static Win32Result<BOOL> TrackPopupMenuEx(SafeHandle hMenu, uint uFlags
     // or "an error occurred" - the docs don't say GetLastError can tell those
     // apart, so it isn't captured here, to avoid reporting a stale or
     // misleading error code for what may just be a cancelled selection.
-    if ((uFlags & (uint)TRACK_POPUP_MENU_FLAGS.TPM_RETURNCMD) == 0)
+    //
+    // (fully qualified because CsWin32 types uFlags as a plain uint, so
+    // TRACK_POPUP_MENU_FLAGS isn't in any of its signatures and doesn't get
+    // a generated alias - see Win32GeneratorHelpers.BuildClassSource)
+    if ((uFlags & (uint)global::Windows.Win32.UI.WindowsAndMessaging.TRACK_POPUP_MENU_FLAGS.TPM_RETURNCMD) == 0)
     {
         result = result.WithLastError();
     }

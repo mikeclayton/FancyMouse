@@ -14,22 +14,25 @@
 #nullable disable
 
 using System.Drawing;
-using System.Drawing.Imaging;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
-using FancyMouse.Common.Capture;
-using FancyMouse.Common.Helpers;
-using FancyMouse.HotKeys;
+using FancyMouse.Drawing.Capture;
+using FancyMouse.Drawing.Helpers;
 using FancyMouse.Models.Display;
 using FancyMouse.Models.Drawing;
+using FancyMouse.Models.Keyboard;
 using FancyMouse.Models.Styles;
+using FancyMouse.Settings.Helpers;
+using FancyMouse.Settings.Styles;
 using FancyMouse.Settings.V2;
 using FancyMouse.SettingsUI.Helpers;
 using FancyMouse.SettingsUI.Models;
 
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
+
+using SkiaSharp;
 
 namespace FancyMouse.SettingsUI.ViewModels
 {
@@ -81,7 +84,7 @@ namespace FancyMouse.SettingsUI.ViewModels
             }
         }
 
-        private static Bitmap LoadImageResource(string filename)
+        private static SKBitmap LoadImageResource(string filename)
         {
             var assembly = Assembly.GetExecutingAssembly();
             var assemblyName = new AssemblyName(assembly.FullName ?? throw new InvalidOperationException());
@@ -99,14 +102,15 @@ namespace FancyMouse.SettingsUI.ViewModels
                 throw new InvalidOperationException($"Embedded resource '{resourceName}' (case-insensitive) does not exist.");
             }
 
-            var stream = assembly.GetManifestResourceStream(actualResourceName)
+            using var stream = assembly.GetManifestResourceStream(actualResourceName)
                 ?? throw new InvalidOperationException();
-            var image = (Bitmap)Image.FromStream(stream);
+            var image = SKBitmap.Decode(stream)
+                ?? throw new InvalidOperationException($"Embedded resource '{actualResourceName}' could not be decoded as an image.");
             return image;
         }
 
 #pragma warning disable SA1306 // Field should begin with lower-case letter
-        private static Lazy<Bitmap> FancyMouseDesktopImage = new(
+        private static Lazy<SKBitmap> FancyMouseDesktopImage = new(
             () => FancyMouseViewModel.LoadImageResource("Assets/PreviewDesktop.png"));
 #pragma warning restore SA1306
 
@@ -140,11 +144,7 @@ namespace FancyMouse.SettingsUI.ViewModels
                         ]),
                 ]);
 
-                var desktopSize = LayoutHelper.GetCombinedScreenBounds(
-                        displayInfo.Devices[0].Screens
-                            .Select(screen => screen.DisplayArea)
-                            .ToList())
-                    .Size;
+                var desktopSize = displayInfo.Devices[0].GetCombinedDisplayArea().Size;
 
                 /*
                     magic number 283 is the content height left in the settings card after removing the top and bottom chrome:
@@ -169,8 +169,8 @@ namespace FancyMouse.SettingsUI.ViewModels
 
                 var previewStyle = previewType switch
                 {
-                    PreviewType.Compact => StyleHelper.CompactPreviewStyle.WithCanvasSize(canvasSize),
-                    PreviewType.Bezelled => StyleHelper.BezelledPreviewStyle.WithCanvasSize(canvasSize),
+                    PreviewType.Compact => PreviewStyles.Compact.WithCanvasSize(canvasSize),
+                    PreviewType.Bezelled => PreviewStyles.Bezelled.WithCanvasSize(canvasSize),
                     PreviewType.Custom => this.ToPreviewStyle(extraColors: []).WithCanvasSize(canvasSize),
                     _ => this.ToPreviewStyle(extraColors: []).WithCanvasSize(canvasSize),
                 };
@@ -179,11 +179,15 @@ namespace FancyMouse.SettingsUI.ViewModels
                 // an in-memory Bitmap), so blocking on it here is safe - this getter is a
                 // synchronous XAML binding and has no natural async path of its own.
                 var captureProvider = new StaticScreenshotCaptureProvider(FancyMouseViewModel.FancyMouseDesktopImage.Value);
-                using var previewBitmap = PreviewHelper.ComposePreviewAsync(previewStyle, captureProvider, displayInfo).GetAwaiter().GetResult();
+                using var previewBitmap = PreviewHelper.DrawPreviewAsync(previewStyle, captureProvider, displayInfo).GetAwaiter().GetResult();
 
                 // save the image to a memory stream
                 using var stream = new MemoryStream();
-                previewBitmap.Save(stream, ImageFormat.Png);
+                using (var pngData = previewBitmap.Encode(SKEncodedImageFormat.Png, 100))
+                {
+                    pngData.SaveTo(stream);
+                }
+
                 stream.Position = 0;
 
                 // load the memory stream into a bitmap image
@@ -210,23 +214,23 @@ namespace FancyMouse.SettingsUI.ViewModels
                 canvasStyle: new BoxStyle(
                     marginStyle: MarginStyle.Empty,
                     borderStyle: new BorderStyle(
-                        color: ColorHelper.DeserializeFromConfigColorString(this.FancyMouseBorderColor),
+                        color: ColorHelper.FromColorString(this.FancyMouseBorderColor),
                         all: (decimal)this.FancyMouseBorderThickness,
                         depth: (decimal)this.FancyMouseBorder3dDepth),
                     paddingStyle: new PaddingStyle(all: (decimal)this.FancyMouseBorderPadding),
                     backgroundStyle: new BackgroundStyle(
-                        color1: ColorHelper.DeserializeFromConfigColorString(this.FancyMouseBackgroundColor1),
-                        color2: ColorHelper.DeserializeFromConfigColorString(this.FancyMouseBackgroundColor2))),
+                        color1: ColorHelper.FromColorString(this.FancyMouseBackgroundColor1),
+                        color2: ColorHelper.FromColorString(this.FancyMouseBackgroundColor2))),
                 screenStyle: new BoxStyle(
                     marginStyle: new MarginStyle(all: (decimal)this.FancyMouseScreenMargin),
                     borderStyle: new BorderStyle(
-                        color: ColorHelper.DeserializeFromConfigColorString(this.FancyMouseBezelColor),
+                        color: ColorHelper.FromColorString(this.FancyMouseBezelColor),
                         all: (decimal)this.FancyMouseBezelThickness,
                         depth: (decimal)this.FancyMouseBezel3dDepth),
                     paddingStyle: PaddingStyle.Empty,
                     backgroundStyle: new BackgroundStyle(
-                        color1: ColorHelper.DeserializeFromConfigColorString(this.FancyMouseScreenColor1),
-                        color2: ColorHelper.DeserializeFromConfigColorString(this.FancyMouseScreenColor2))),
+                        color1: ColorHelper.FromColorString(this.FancyMouseScreenColor1),
+                        color2: ColorHelper.FromColorString(this.FancyMouseScreenColor2))),
                 extraColors: extraColors);
         }
 

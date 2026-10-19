@@ -14,7 +14,9 @@
 using CommunityToolkit.WinUI;
 using CommunityToolkit.WinUI.Controls;
 
-using FancyMouse.Common.Helpers;
+using FancyMouse.Models.Styles;
+using FancyMouse.Settings.Helpers;
+using FancyMouse.Settings.Styles;
 using FancyMouse.Settings.V2;
 using FancyMouse.SettingsUI.Models;
 using FancyMouse.SettingsUI.ViewModels;
@@ -125,9 +127,9 @@ namespace FancyMouse.SettingsUI.Panels
             var selectedPreviewType = this.GetSelectedPreviewType();
             var selectedPreviewStyle = selectedPreviewType switch
             {
-                PreviewType.Compact => StyleHelper.CompactPreviewStyle,
-                PreviewType.Bezelled => StyleHelper.BezelledPreviewStyle,
-                PreviewType.Custom => StyleHelper.BezelledPreviewStyle,
+                PreviewType.Compact => PreviewStyles.Compact,
+                PreviewType.Bezelled => PreviewStyles.Bezelled,
+                PreviewType.Custom => PreviewStyles.Bezelled,
                 _ => throw new InvalidOperationException(),
             };
 
@@ -135,23 +137,23 @@ namespace FancyMouse.SettingsUI.Panels
             // note that we have to replace Named and System colors with their ARGB equivalents
             // so that serialization returns an ARGB string rather than the Named or System color *name*.
             this.ViewModel!.FancyMousePreviewType = selectedPreviewType.ToString();
-            this.ViewModel!.FancyMouseBackgroundColor1 = ColorHelper.SerializeToConfigColorString(
+            this.ViewModel!.FancyMouseBackgroundColor1 = ColorHelper.ToColorString(
                 ColorHelper.ToUnnamedColor(selectedPreviewStyle.CanvasStyle.BackgroundStyle.Color1));
-            this.ViewModel!.FancyMouseBackgroundColor2 = ColorHelper.SerializeToConfigColorString(
+            this.ViewModel!.FancyMouseBackgroundColor2 = ColorHelper.ToColorString(
                 ColorHelper.ToUnnamedColor(selectedPreviewStyle.CanvasStyle.BackgroundStyle.Color2));
             this.ViewModel!.FancyMouseBorderThickness = (double)selectedPreviewStyle.CanvasStyle.BorderStyle.Top;
-            this.ViewModel!.FancyMouseBorderColor = ColorHelper.SerializeToConfigColorString(
+            this.ViewModel!.FancyMouseBorderColor = ColorHelper.ToColorString(
                 ColorHelper.ToUnnamedColor(selectedPreviewStyle.CanvasStyle.BorderStyle.Color));
             this.ViewModel!.FancyMouseBorder3dDepth = (double)selectedPreviewStyle.CanvasStyle.BorderStyle.Depth;
             this.ViewModel!.FancyMouseBorderPadding = (double)selectedPreviewStyle.CanvasStyle.PaddingStyle.Top;
             this.ViewModel!.FancyMouseBezelThickness = (double)selectedPreviewStyle.ScreenStyle.BorderStyle.Top;
-            this.ViewModel!.FancyMouseBezelColor = ColorHelper.SerializeToConfigColorString(
+            this.ViewModel!.FancyMouseBezelColor = ColorHelper.ToColorString(
                 ColorHelper.ToUnnamedColor(selectedPreviewStyle.ScreenStyle.BorderStyle.Color));
             this.ViewModel!.FancyMouseBezel3dDepth = (double)selectedPreviewStyle.ScreenStyle.BorderStyle.Depth;
             this.ViewModel!.FancyMouseScreenMargin = (double)selectedPreviewStyle.ScreenStyle.MarginStyle.Top;
-            this.ViewModel!.FancyMouseScreenColor1 = ColorHelper.SerializeToConfigColorString(
+            this.ViewModel!.FancyMouseScreenColor1 = ColorHelper.ToColorString(
                 ColorHelper.ToUnnamedColor(selectedPreviewStyle.ScreenStyle.BackgroundStyle.Color1));
-            this.ViewModel!.FancyMouseScreenColor2 = ColorHelper.SerializeToConfigColorString(
+            this.ViewModel!.FancyMouseScreenColor2 = ColorHelper.ToColorString(
                 ColorHelper.ToUnnamedColor(selectedPreviewStyle.ScreenStyle.BackgroundStyle.Color2));
         }
 

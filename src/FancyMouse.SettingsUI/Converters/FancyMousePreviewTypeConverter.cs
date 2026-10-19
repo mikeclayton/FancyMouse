@@ -11,6 +11,7 @@
 // Substantially modified for FancyMouse.
 // See THIRD-PARTY-NOTICES.md for attribution details.
 
+using FancyMouse.Settings.Styles;
 using FancyMouse.Settings.V2;
 
 using Microsoft.UI.Xaml.Data;

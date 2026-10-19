@@ -3,24 +3,19 @@ using FancyMouse.Models.Drawing;
 namespace FancyMouse.Models.Layout;
 
 /// <summary>
-/// Defines the size of the preview pane's own content - the background/canvas grid only, not
-/// the outer border and not a position on the desktop. Deliberately excludes the border:
-/// that's a hosting-window concern (drawn by whatever hosts the preview pane, wrapping around
-/// <see cref="PreviewSize"/> with its own margin/border box - see
-/// <c>LayoutHelper.GetPreviewWindowStyle</c>), not something the preview pane's own layout needs to
-/// know about. Deliberately excludes desktop position too - every bounds in
-/// <see cref="CanvasLayout"/> (and everything nested under it) is relative to this content's
-/// own top-left corner as the origin; deciding where that origin actually lands on the
-/// desktop - centering on the activated location, clamping to the activated screen,
-/// accounting for the host's own margin/border - is entirely the hosting window's job (see
-/// <c>LayoutHelper.PositionOnScreen</c>).
+/// Defines everything the preview pane draws - its outer margin, outer border, background and
+/// the canvas grid of devices and screens inside it - but not a position on the desktop. Every
+/// bounds in <see cref="CanvasLayout"/> (and everything nested under it) is relative to the
+/// pane's own top-left corner as the origin; deciding where that origin actually lands on the
+/// desktop - centering on the activated location, clamping to the activated screen - is
+/// entirely the hosting window's job (see <c>LayoutHelper.PositionOnScreen</c>).
 /// </summary>
 public sealed class PreviewLayout
 {
     public sealed class Builder
     {
         /// <summary>
-        /// Gets or sets the size of the preview pane's own content.
+        /// Gets or sets the preview pane's overall size, margin included.
         /// </summary>
         public SizeInfo? PreviewSize
         {
@@ -52,7 +47,7 @@ public sealed class PreviewLayout
     }
 
     /// <summary>
-    /// Gets the size of the preview pane's own content.
+    /// Gets the preview pane's overall size, margin included.
     /// </summary>
     public SizeInfo PreviewSize
     {

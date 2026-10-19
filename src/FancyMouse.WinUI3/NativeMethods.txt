@@ -3,9 +3,6 @@ WINDOW_STYLE
 GetWindowLong
 SetWindowLong
 
-USER_DEFAULT_SCREEN_DPI
-GetDpiForWindow
-
 SetForegroundWindow
 SetWindowRgn
 ShowWindow

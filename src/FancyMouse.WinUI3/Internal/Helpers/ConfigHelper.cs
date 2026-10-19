@@ -1,7 +1,7 @@
 using System.Text.Json;
 
-using FancyMouse.HotKeys;
 using FancyMouse.Settings;
+using FancyMouse.Windows.HotKeys;
 
 namespace FancyMouse.WinUI3.Internal.Helpers;
 

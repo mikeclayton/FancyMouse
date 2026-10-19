@@ -67,9 +67,9 @@ internal sealed partial class PreviewWindow
 
     /// <summary>
     /// Clips the window (not just its content) to a rounded-rectangle region
-    /// sized <paramref name="width"/> x <paramref name="height"/> with corner
-    /// radius <paramref name="cornerRadius"/>, matching the rendered border image's
-    /// outer bezel shape.
+    /// sized <paramref name="width"/> x <paramref name="height"/> at
+    /// (<paramref name="x"/>, <paramref name="y"/>) with corner radius
+    /// <paramref name="cornerRadius"/>, matching the preview pane's outer border shape.
     /// </summary>
     /// <remarks>
     /// Pixels outside the region are clipped by the operating system and are never
@@ -78,14 +78,14 @@ internal sealed partial class PreviewWindow
     /// ownership of it on success, and deleting it afterwards would be a use-after-free from
     /// the OS's perspective.
     /// </remarks>
-    private void ApplyRoundRectRegion(int width, int height, int cornerRadius)
+    private void ApplyRoundRectRegion(int x, int y, int width, int height, int cornerRadius)
     {
         // CreateRoundRectRgn's bottom-right point is exclusive - the non-clipped region
         // includes columns x1 to (x2-1) and rows y1 to (y2-1), confirmed by experimentation.
-        // Using x2=width and y2=height would clip away the last row/column of the rendered
+        // Using x2=x+width and y2=y+height would clip away the last row/column of the rendered
         // region, so we add 1 to both to ensure the region *displays* the full width x height
-        // instead of columns 0 to (width-1) and rows 0 to (height-1).
-        var region = Gdi32.CreateRoundRectRgn(0, 0, width + 1, height + 1, cornerRadius * 2, cornerRadius * 2)
+        // instead of columns x to (x+width-1) and rows y to (y+height-1).
+        var region = Gdi32.CreateRoundRectRgn(x, y, x + width + 1, y + height + 1, cornerRadius * 2, cornerRadius * 2)
             .ThrowIfFailed()
             .GetValue();
         this.SetWindowRegion(region);
