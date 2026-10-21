@@ -60,11 +60,19 @@ internal sealed class ConfigHelper : IDisposable
 
     public void LoadAppSettings()
     {
-        _hotKeyManager.SetHotKey(null);
-        _appSettings = AppSettingsReader.ReadFile(this.AppSettingsPath
+        // read and validate the file completely *before* changing anything - if it can't be
+        // read or parsed (e.g. the settings app is part-way through rewriting it, which happens
+        // on every change now settings are auto-saved), this throws with the previous settings
+        // and hotkey still in place, rather than leaving the hotkey unregistered until the next
+        // successful load. SetHotKey unregisters the previous hotkey itself before registering
+        // the new one.
+        var appSettings = AppSettingsReader.ReadFile(this.AppSettingsPath
             ?? throw new InvalidOperationException("AppSettings cannot be null"));
-        _hotKeyManager.SetHotKey(_appSettings.Hotkey
-            ?? throw new InvalidOperationException($"{nameof(_appSettings.Hotkey)} cannot be null"));
+        var hotkey = appSettings.Hotkey
+            ?? throw new InvalidOperationException($"{nameof(appSettings.Hotkey)} cannot be null");
+
+        _hotKeyManager.SetHotKey(hotkey);
+        _appSettings = appSettings;
     }
 
     public void StartAppSettingsWatcher()

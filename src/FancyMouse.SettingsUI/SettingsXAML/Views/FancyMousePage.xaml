@@ -22,20 +22,11 @@
         that (its root is its SettingsGroup directly), so the ScrollViewer belongs here instead,
         as the nearest equivalent to that hosting layer.
 
-        The Save button lives here too, not on FancyMousePane - MouseJumpPanel has no Save button
-        of its own (PowerToys auto-saves on every property change instead), so keeping the button
-        off FancyMousePane is what let its own root match MouseJumpPanel's exactly. This is the
-        other half of that: a fixed action row below the scrollable editor, same visual position
-        the button always had, just owned one level up now - see FancyMousePane.xaml.cs's remarks
-        for the code-behind side of the split.
+        There's no Save button - like PowerToys, settings are saved automatically whenever a
+        property changes (see FancyMouseViewModel.NotifyFancyMousePropertyChanged).
     -->
-    <Grid Padding="24" RowSpacing="16">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
-        </Grid.RowDefinitions>
-
-        <ScrollViewer Grid.Row="0">
+    <Grid Padding="24">
+        <ScrollViewer>
             <StackPanel Spacing="16">
                 <Image
                     HorizontalAlignment="Center"
@@ -45,17 +36,5 @@
                 <panels:FancyMousePane x:Name="fancyMousePane" />
             </StackPanel>
         </ScrollViewer>
-
-        <StackPanel
-            Grid.Row="1"
-            HorizontalAlignment="Right"
-            Orientation="Horizontal"
-            Spacing="12">
-            <TextBlock
-                x:Name="StatusText"
-                VerticalAlignment="Center"
-                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-            <Button x:Name="FancyMouse_Save" x:Uid="FancyMouse_Save" Click="SaveButton_Click" Style="{StaticResource AccentButtonStyle}" />
-        </StackPanel>
     </Grid>
 </Page>

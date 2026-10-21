@@ -494,6 +494,20 @@ namespace FancyMouse.SettingsUI.ViewModels
         public void NotifyFancyMousePropertyChanged([CallerMemberName] string propertyName = null)
         {
             OnPropertyChanged(propertyName);
+
+            // PowerToys' NotifyMouseJumpPropertyChanged also sends the new settings to the module
+            // over IPC here (SendConfigMSG) - FancyMouse.WinUI3 watches the settings file instead
+            // and reloads it whenever it changes, so saving the file is all that's needed.
+            //
+            // ToPreviewStyle always returns the "custom" style settings, even if the active preview
+            // type is "compact" or "bezelled", so they're preserved and can be restored if the
+            // preview type is changed back to "custom".
+            SettingsUtils.SaveSettings(
+                SettingsFileHelper.ToJsonString(
+                    FancyMouseSettingsConfig.AppConfig,
+                    ToPreviewStyle(extraColors: []),
+                    FancyMouseActivationShortcut?.ToString(),
+                    FancyMousePreviewType));
         }
     }
 }

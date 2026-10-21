@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Some items may be set in Directory.Build.props in root -->
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <!--
+        FancyMouse.WinUI3 and FancyMouse.SettingsUI build into the same folder, so the
+        settings app finds the same .\appSettings.json the main app reads (and watches
+        for live reloads) without needing a path on its command line.
+
+        Only import this into the app projects - libraries and test projects keep their
+        own output folders.
+
+        Note - anything both apps write to the same relative path will collide, so avoid
+        e.g. a project-root App.xaml in both (each would write its own App.xbf to the
+        same place), or same-named files under Assets\.
+    -->
+    <PropertyGroup>
+        <OutputPath>$(MSBuildThisFileDirectory)..\bin\$(Platform)\$(Configuration)\</OutputPath>
+    </PropertyGroup>
+</Project>
