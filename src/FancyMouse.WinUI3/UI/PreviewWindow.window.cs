@@ -251,13 +251,17 @@ internal sealed partial class PreviewWindow
 
                 var presenter = this.AppWindow.Presenter as OverlappedPresenter
                     ?? throw new InvalidOperationException();
-                if (!this.Visible)
-                {
-                    // we seem to need to turn off topmost and then re-enable it again
-                    // when we show the form - otherwise it doesn't always get shown topmost...
-                    presenter.IsAlwaysOnTop = false;
-                    presenter.IsAlwaysOnTop = true;
-                }
+
+                // we seem to need to turn off topmost and then re-enable it again
+                // when we show the form - otherwise it doesn't always get shown topmost...
+                //
+                // note - do this on *every* reveal, not just when the window isn't visible: the
+                // window is never actually hidden (see HideWindow - it's clipped to an empty region
+                // instead), so this.Visible is always true after startup. other topmost windows
+                // (e.g. the taskbar) can be raised above it in the meantime, and this is what puts
+                // it back on top of them.
+                presenter.IsAlwaysOnTop = false;
+                presenter.IsAlwaysOnTop = true;
 
                 this.ApplyRoundRectRegion(x, y, width, height, cornerRadius);
 
