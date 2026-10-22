@@ -200,7 +200,19 @@ public sealed class TrayIcon
                         this.OnSettingsCommandClicked(EventArgs.Empty);
                         break;
                     default:
-                        throw new InvalidOperationException();
+                        // a command id we didn't create - any process at the same integrity
+                        // level can post WM_COMMAND to this window, and shell / accessibility
+                        // tools send messages we don't expect. an exception thrown here would
+                        // unwind through the native window procedure and take the whole process
+                        // down, so release builds silently ignore it (deliberately without
+                        // logging, so an unexpected high-volume message can't flood the log).
+                        // debug builds still throw, so a genuine mistake in our own menu ids
+                        // shows up during development.
+#if DEBUG
+                        throw new InvalidOperationException($"Unexpected WM_COMMAND id {commandIndex}.");
+#else
+                        break;
+#endif
                 }
 
                 break;
