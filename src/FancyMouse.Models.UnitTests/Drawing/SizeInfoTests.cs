@@ -53,6 +53,16 @@ public static class SizeInfoTests
             Assert.AreEqual(expected.Height, actual.Height);
             Assert.AreEqual(scalingRatio, data.ScalingRatio);
         }
+
+        [TestMethod]
+        [DataRow(0, 384)]
+        [DataRow(512, 0)]
+        [DataRow(0, 0)]
+        public void ZeroSizedSourceThrows(int width, int height)
+        {
+            var source = new SizeInfo(width, height);
+            Assert.ThrowsExactly<InvalidOperationException>(() => source.ScaleToFit(new SizeInfo(1024, 768), out _));
+        }
     }
 
     [TestClass]
@@ -98,6 +108,26 @@ public static class SizeInfoTests
             var actual = data.Obj.ScaleToFitRatio(data.Bounds);
             var expected = data.ExpectedResult;
             Assert.AreEqual(expected, actual);
+        }
+
+        [TestMethod]
+        [DataRow(0, 384)]
+        [DataRow(512, 0)]
+        [DataRow(0, 0)]
+        public void ZeroSizedSourceThrows(int width, int height)
+        {
+            var source = new SizeInfo(width, height);
+            Assert.ThrowsExactly<InvalidOperationException>(() => source.ScaleToFitRatio(new SizeInfo(1024, 768)));
+        }
+
+        [TestMethod]
+        [DataRow(0, 768)]
+        [DataRow(1024, 0)]
+        [DataRow(0, 0)]
+        public void ZeroSizedBoundsThrows(int width, int height)
+        {
+            var source = new SizeInfo(512, 384);
+            Assert.ThrowsExactly<ArgumentException>(() => source.ScaleToFitRatio(new SizeInfo(width, height)));
         }
     }
 }

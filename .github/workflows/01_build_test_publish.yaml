@@ -34,13 +34,13 @@ jobs:
       RUNTIME_NAME:     win-x64
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           # needed for gitversion to work
           fetch-depth: 0
 
       - name: setup
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
 
@@ -169,7 +169,7 @@ jobs:
       #    dotnet tool run jb inspectcode "./FancyMouse.sln" -output="../.build/out/jb-inspectcode.xml" --no-build
 
       #- name: upload jb-inspectcode.xml
-      #  uses: actions/upload-artifact@v3
+      #  uses: actions/upload-artifact@v7
       #  with:
       #    name: jb-inspectcode.xml
       #    path: .build/out/jb-inspectcode.xml
