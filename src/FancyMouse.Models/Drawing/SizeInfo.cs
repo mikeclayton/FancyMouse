@@ -131,11 +131,19 @@ public sealed class SizeInfo
     /// <returns>A new <see cref="SizeInfo"/> instance representing the scaled size.</returns>
     public SizeInfo ScaleToFit(SizeInfo bounds, out decimal scalingFactor)
     {
+        // guard against a divide by zero exception
+        if (this.Width == 0 || this.Height == 0)
+        {
+            throw new InvalidOperationException($"{nameof(this.Width)} or {nameof(this.Height)} cannot be zero");
+        }
+
         var widthRatio = bounds.Width / this.Width;
         var heightRatio = bounds.Height / this.Height;
         switch (widthRatio.CompareTo(heightRatio))
         {
             case < 0:
+                // "wide" aspect ration
+                // (constrain ourselves to the width of the bounds and scale our height)
                 scalingFactor = widthRatio;
                 return new(bounds.Width, this.Height * widthRatio);
             case 0:
@@ -143,6 +151,8 @@ public sealed class SizeInfo
                 scalingFactor = widthRatio;
                 return bounds;
             case > 0:
+                // "tall" aspect ratio
+                // (constrain ourselves to the height of the bounds and scale our width)
                 scalingFactor = heightRatio;
                 return new(this.Width * heightRatio, bounds.Height);
         }
@@ -159,6 +169,12 @@ public sealed class SizeInfo
         if (bounds.Width == 0 || bounds.Height == 0)
         {
             throw new ArgumentException($"{nameof(bounds.Width)} or {nameof(bounds.Height)} cannot be zero", nameof(bounds));
+        }
+
+        // guard against a divide by zero exception
+        if (this.Width == 0 || this.Height == 0)
+        {
+            throw new InvalidOperationException($"{nameof(this.Width)} or {nameof(this.Height)} cannot be zero");
         }
 
         var widthRatio = bounds.Width / this.Width;
