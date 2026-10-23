@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "FancyMouse.Editor": {
+      "commandName": "Project"
+    },
+    "FancyMouse.Editor (demo screens)": {
+      "commandName": "Project",
+      "commandLineArgs": "--demo"
+    }
+  }
+}

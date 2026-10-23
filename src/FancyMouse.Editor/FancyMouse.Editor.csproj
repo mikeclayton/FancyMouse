@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <Import Project="..\Common.Dotnet.Analyzers.props" />
+    <Import Project="..\Common.Dotnet.props" />
+    <Import Project="..\Common.Dotnet.CsWinRT.props" />
+
+    <!--
+        Proof-of-concept screen layout editor (see https://github.com/mikeclayton/FancyMouse/issues/116).
+        Deliberately doesn't import Common.AppOutput.props - its root App.xaml would compile to
+        the same App.xbf path as FancyMouse.SettingsUI's in the shared output folder.
+    -->
+    <PropertyGroup>
+        <TargetFramework>$(WindowsTargetFramework)</TargetFramework>
+        <OutputType>WinExe</OutputType>
+        <RootNamespace>FancyMouse.Editor</RootNamespace>
+        <ApplicationManifest>app.manifest</ApplicationManifest>
+        <Platforms>x64</Platforms>
+        <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+        <UseWinUI>true</UseWinUI>
+        <EnablePreviewMsixTooling>true</EnablePreviewMsixTooling>
+        <WindowsPackageType>None</WindowsPackageType>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <DefineConstants>DISABLE_XAML_GENERATED_MAIN</DefineConstants>
+        <DefaultLanguage>en-US</DefaultLanguage>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Manifest Include="$(ApplicationManifest)" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.260317003" />
+        <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.7705" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\FancyMouse.Models\FancyMouse.Models.csproj" />
+        <ProjectReference Include="..\FancyMouse.Windows\FancyMouse.Windows.csproj" />
+        <ProjectReference Include="..\FancyMouse.WinUI3.Controls\FancyMouse.WinUI3.Controls.csproj" />
+    </ItemGroup>
+</Project>

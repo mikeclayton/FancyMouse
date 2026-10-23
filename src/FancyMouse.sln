@@ -56,6 +56,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FancyMouse.Drawing", "Fancy
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FancyMouse.WinUI3.Controls", "FancyMouse.WinUI3.Controls\FancyMouse.WinUI3.Controls.csproj", "{8C846B6D-2BE0-4E14-AE98-64533E0B986A}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FancyMouse.Editor", "FancyMouse.Editor\FancyMouse.Editor.csproj", "{7665000C-9C38-4FB0-8EDA-B221E404DE18}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -166,6 +168,12 @@ Global
 		{8C846B6D-2BE0-4E14-AE98-64533E0B986A}.Release|x64.Build.0 = Release|x64
 		{8C846B6D-2BE0-4E14-AE98-64533E0B986A}.Release|x86.ActiveCfg = Release|x64
 		{8C846B6D-2BE0-4E14-AE98-64533E0B986A}.Release|x86.Build.0 = Release|x64
+		{7665000C-9C38-4FB0-8EDA-B221E404DE18}.Debug|x64.ActiveCfg = Debug|x64
+		{7665000C-9C38-4FB0-8EDA-B221E404DE18}.Debug|x64.Build.0 = Debug|x64
+		{7665000C-9C38-4FB0-8EDA-B221E404DE18}.Debug|x86.ActiveCfg = Debug|x64
+		{7665000C-9C38-4FB0-8EDA-B221E404DE18}.Release|x64.ActiveCfg = Release|x64
+		{7665000C-9C38-4FB0-8EDA-B221E404DE18}.Release|x64.Build.0 = Release|x64
+		{7665000C-9C38-4FB0-8EDA-B221E404DE18}.Release|x86.ActiveCfg = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

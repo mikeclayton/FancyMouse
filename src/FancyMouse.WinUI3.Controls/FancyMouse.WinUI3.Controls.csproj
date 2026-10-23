@@ -30,5 +30,8 @@
         <Compile Update="PreviewPane.*.cs">
             <DependentUpon>PreviewPane.xaml</DependentUpon>
         </Compile>
+        <Compile Update="Editor\ScreenLayoutEditor.*.cs">
+            <DependentUpon>ScreenLayoutEditor.xaml</DependentUpon>
+        </Compile>
     </ItemGroup>
 </Project>

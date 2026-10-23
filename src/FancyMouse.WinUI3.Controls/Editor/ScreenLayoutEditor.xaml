@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="FancyMouse.WinUI3.Controls.Editor.ScreenLayoutEditor"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    IsTabStop="False">
+    <!--
+        All colours come from theme resources, so the editor follows light / dark mode and the
+        user's accent colour the same way Windows' own Display Settings does. The per-screen
+        elements are created in code-behind, and pick these styles up from the resources below.
+    -->
+    <UserControl.Resources>
+        <Style x:Key="ScreenFillStyle" TargetType="Rectangle">
+            <Setter Property="Fill" Value="{ThemeResource ControlStrongFillColorDefaultBrush}" />
+            <Setter Property="IsHitTestVisible" Value="False" />
+        </Style>
+        <Style x:Key="SelectedScreenFillStyle" TargetType="Rectangle">
+            <Setter Property="Fill" Value="{ThemeResource AccentFillColorDefaultBrush}" />
+            <Setter Property="IsHitTestVisible" Value="False" />
+        </Style>
+        <Style x:Key="ScreenNumberStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="28" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="Foreground" Value="{ThemeResource TextFillColorPrimaryBrush}" />
+        </Style>
+        <Style x:Key="SelectedScreenNumberStyle" TargetType="TextBlock" BasedOn="{StaticResource ScreenNumberStyle}">
+            <Setter Property="Foreground" Value="{ThemeResource TextOnAccentFillColorPrimaryBrush}" />
+        </Style>
+        <Style x:Key="ScreenCaptionStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondaryBrush}" />
+        </Style>
+        <Style x:Key="SelectedScreenCaptionStyle" TargetType="TextBlock" BasedOn="{StaticResource ScreenCaptionStyle}">
+            <Setter Property="Foreground" Value="{ThemeResource TextOnAccentFillColorSecondaryBrush}" />
+        </Style>
+        <Style x:Key="ResizeHandleStyle" TargetType="Rectangle">
+            <Setter Property="Fill" Value="{ThemeResource SolidBackgroundFillColorBaseBrush}" />
+            <Setter Property="Stroke" Value="{ThemeResource AccentFillColorDefaultBrush}" />
+            <Setter Property="StrokeThickness" Value="2" />
+            <Setter Property="RadiusX" Value="2" />
+            <Setter Property="RadiusY" Value="2" />
+        </Style>
+    </UserControl.Resources>
+
+    <!--
+        RootGrid has a transparent background so clicking empty space is hit-testable (it clears
+        the selection). ScreensCanvas holds one element per screen, layered by z-order, and
+        AdornerCanvas sits above all of them with the selection outline and resize handles, so
+        the handles are never hidden behind an overlapping screen.
+    -->
+    <Grid x:Name="RootGrid" Background="Transparent">
+        <Canvas x:Name="ScreensCanvas" />
+        <Canvas x:Name="AdornerCanvas">
+            <Rectangle
+                x:Name="SelectionOutline"
+                Stroke="{ThemeResource AccentFillColorDefaultBrush}"
+                StrokeThickness="2"
+                IsHitTestVisible="False"
+                Visibility="Collapsed" />
+        </Canvas>
+    </Grid>
+</UserControl>

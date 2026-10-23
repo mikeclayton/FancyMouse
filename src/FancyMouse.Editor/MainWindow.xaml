@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window
+    x:Class="FancyMouse.Editor.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:editor="using:FancyMouse.WinUI3.Controls.Editor"
+    mc:Ignorable="d"
+    Title="FancyMouse Editor">
+    <Window.SystemBackdrop>
+        <MicaBackdrop />
+    </Window.SystemBackdrop>
+
+    <!--
+        Laid out like a Windows Settings page - title, description, then the editor in a card with
+        its commands underneath, the same arrangement as Display Settings' monitor diagram and its
+        Identify button - so the editor can later drop into FancyMouse.SettingsUI unchanged.
+    -->
+    <Grid Padding="40,32,40,32" RowSpacing="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Screen layout" Style="{StaticResource TitleTextBlockStyle}" />
+
+        <TextBlock
+            Grid.Row="1"
+            TextWrapping="Wrap"
+            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+            Text="Drag a screen to move it, or drag one of its corners to resize it. Where screens overlap, use the layer buttons to choose which one is in front. Changes aren't saved." />
+
+        <Border
+            Grid.Row="2"
+            Padding="8"
+            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+            BorderThickness="1"
+            CornerRadius="8">
+            <editor:ScreenLayoutEditor x:Name="LayoutEditor" />
+        </Border>
+
+        <Grid Grid.Row="3" ColumnSpacing="8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
+                <Button x:Name="BringToFrontButton" Content="Bring to front" Click="BringToFrontButton_Click" />
+                <Button x:Name="BringForwardButton" Content="Bring forward" Click="BringForwardButton_Click" />
+                <Button x:Name="SendBackwardButton" Content="Send backward" Click="SendBackwardButton_Click" />
+                <Button x:Name="SendToBackButton" Content="Send to back" Click="SendToBackButton_Click" />
+            </StackPanel>
+
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
+                <Button x:Name="ResetScreenButton" Content="Use system position" Click="ResetScreenButton_Click" />
+                <Button x:Name="ResetAllButton" Content="Reset all" Click="ResetAllButton_Click" />
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>
