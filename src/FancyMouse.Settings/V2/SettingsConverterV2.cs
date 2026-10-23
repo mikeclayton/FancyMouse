@@ -61,12 +61,12 @@ public static class SettingsConverterV2
                     value: previewStyle.CanvasSize?.Width,
                     defaultValue: defaultStyle.CanvasSize?.Width,
                     min: 50,
-                    max: 99999),
+                    max: 9999),
                 height: SettingsConverterV2.Clamp(
                     value: previewStyle.CanvasSize?.Height,
                     defaultValue: defaultStyle.CanvasSize?.Height,
                     min: 50,
-                    max: 99999)
+                    max: 9999)
             ),
             canvasStyle: new(
                 marginStyle: new(

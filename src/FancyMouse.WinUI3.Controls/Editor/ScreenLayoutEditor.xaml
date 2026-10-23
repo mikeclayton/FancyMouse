@@ -8,60 +8,153 @@
     mc:Ignorable="d"
     IsTabStop="False">
     <!--
-        All colours come from theme resources, so the editor follows light / dark mode and the
-        user's accent colour the same way Windows' own Display Settings does. The per-screen
-        elements are created in code-behind, and pick these styles up from the resources below.
+        The preview itself (frame, screen bezels and screen backgrounds) is drawn in the colours
+        of the PreviewStyle the editor is given, so it looks like the real popup. Everything else
+        - the canvas around it, the selection outline and handles, the tool strip - comes from
+        theme resources, so it follows light / dark mode and the user's accent colour. The
+        per-screen elements are created in code-behind, and pick these styles up from below.
     -->
     <UserControl.Resources>
-        <Style x:Key="ScreenFillStyle" TargetType="Rectangle">
-            <Setter Property="Fill" Value="{ThemeResource ControlStrongFillColorDefaultBrush}" />
-            <Setter Property="IsHitTestVisible" Value="False" />
-        </Style>
-        <Style x:Key="SelectedScreenFillStyle" TargetType="Rectangle">
-            <Setter Property="Fill" Value="{ThemeResource AccentFillColorDefaultBrush}" />
-            <Setter Property="IsHitTestVisible" Value="False" />
-        </Style>
-        <Style x:Key="ScreenNumberStyle" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="28" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="HorizontalAlignment" Value="Center" />
-            <Setter Property="Foreground" Value="{ThemeResource TextFillColorPrimaryBrush}" />
-        </Style>
-        <Style x:Key="SelectedScreenNumberStyle" TargetType="TextBlock" BasedOn="{StaticResource ScreenNumberStyle}">
-            <Setter Property="Foreground" Value="{ThemeResource TextOnAccentFillColorPrimaryBrush}" />
-        </Style>
-        <Style x:Key="ScreenCaptionStyle" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="12" />
-            <Setter Property="HorizontalAlignment" Value="Center" />
-            <Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondaryBrush}" />
-        </Style>
-        <Style x:Key="SelectedScreenCaptionStyle" TargetType="TextBlock" BasedOn="{StaticResource ScreenCaptionStyle}">
-            <Setter Property="Foreground" Value="{ThemeResource TextOnAccentFillColorSecondaryBrush}" />
-        </Style>
-        <Style x:Key="ResizeHandleStyle" TargetType="Rectangle">
-            <Setter Property="Fill" Value="{ThemeResource SolidBackgroundFillColorBaseBrush}" />
-            <Setter Property="Stroke" Value="{ThemeResource AccentFillColorDefaultBrush}" />
-            <Setter Property="StrokeThickness" Value="2" />
-            <Setter Property="RadiusX" Value="2" />
-            <Setter Property="RadiusY" Value="2" />
-        </Style>
+        <ResourceDictionary>
+            <!--
+                for a style with no screen background colour - opaque, unlike the theme's own
+                control fills, since the preview draws screens as solid screenshots, so an
+                overlapped screen mustn't show through the one in front of it
+            -->
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="ScreenFillBrush" Color="#FF8A8A8A" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="ScreenFillBrush" Color="#FF5C5C5C" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="HighContrast">
+                    <SolidColorBrush x:Key="ScreenFillBrush" Color="{ThemeResource SystemColorButtonFaceColor}" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+            <!-- the label colours are picked in code to contrast with each screen's background -->
+            <Style x:Key="ScreenNumberStyle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="28" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="HorizontalAlignment" Value="Center" />
+            </Style>
+            <Style x:Key="ScreenCaptionStyle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="12" />
+                <Setter Property="HorizontalAlignment" Value="Center" />
+                <Setter Property="Opacity" Value="0.8" />
+            </Style>
+            <Style x:Key="ResizeHandleStyle" TargetType="Rectangle">
+                <Setter Property="Fill" Value="{ThemeResource SolidBackgroundFillColorBaseBrush}" />
+                <Setter Property="Stroke" Value="{ThemeResource AccentFillColorDefaultBrush}" />
+                <Setter Property="StrokeThickness" Value="2" />
+                <Setter Property="RadiusX" Value="2" />
+                <Setter Property="RadiusY" Value="2" />
+            </Style>
+        </ResourceDictionary>
     </UserControl.Resources>
 
     <!--
-        RootGrid has a transparent background so clicking empty space is hit-testable (it clears
-        the selection). ScreensCanvas holds one element per screen, layered by z-order, and
-        AdornerCanvas sits above all of them with the selection outline and resize handles, so
-        the handles are never hidden behind an overlapping screen.
+        RootGrid has a transparent background so empty space is hit-testable - dragging it pans,
+        clicking it clears the selection, and the wheel zooms anywhere. ChromeCanvas draws what
+        isn't editable (and isn't hit-testable): the virtual canvas the camera can roam over, the
+        preview window's frame - its background and border, rubber-banded around the
+        screens as the real window will be - and a dotted outline of the configured preview size,
+        which the frame can grow to but not past. ScreensCanvas holds one element
+        per screen, layered by z-order, and AdornerCanvas sits above all of them with the
+        selection outline and resize handles, so the handles are never hidden behind a screen.
+        The tool strip above it holds the editor's commands, so a host only needs to place the
+        control - icon-only, with the names in tooltips, like a drawing app's toolbar.
     -->
-    <Grid x:Name="RootGrid" Background="Transparent">
-        <Canvas x:Name="ScreensCanvas" />
-        <Canvas x:Name="AdornerCanvas">
-            <Rectangle
-                x:Name="SelectionOutline"
-                Stroke="{ThemeResource AccentFillColorDefaultBrush}"
-                StrokeThickness="2"
-                IsHitTestVisible="False"
-                Visibility="Collapsed" />
-        </Canvas>
+    <Grid RowSpacing="4">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <CommandBar
+            Grid.Row="0"
+            HorizontalAlignment="Left"
+            DefaultLabelPosition="Collapsed"
+            OverflowButtonVisibility="Collapsed">
+            <AppBarButton x:Name="SendToBackButton" Label="Send to back" ToolTipService.ToolTip="Send to back" Click="SendToBackButton_Click">
+                <AppBarButton.Icon>
+                    <FontIcon Glyph="&#xE896;" />
+                </AppBarButton.Icon>
+            </AppBarButton>
+            <AppBarButton x:Name="SendBackwardButton" Label="Send backward" ToolTipService.ToolTip="Send backward" Click="SendBackwardButton_Click">
+                <AppBarButton.Icon>
+                    <FontIcon Glyph="&#xE74B;" />
+                </AppBarButton.Icon>
+            </AppBarButton>
+            <AppBarButton x:Name="BringForwardButton" Label="Bring forward" ToolTipService.ToolTip="Bring forward" Click="BringForwardButton_Click">
+                <AppBarButton.Icon>
+                    <FontIcon Glyph="&#xE74A;" />
+                </AppBarButton.Icon>
+            </AppBarButton>
+            <AppBarButton x:Name="BringToFrontButton" Label="Bring to front" ToolTipService.ToolTip="Bring to front" Click="BringToFrontButton_Click">
+                <AppBarButton.Icon>
+                    <FontIcon Glyph="&#xE898;" />
+                </AppBarButton.Icon>
+            </AppBarButton>
+            <AppBarSeparator />
+            <AppBarButton Label="Zoom in" ToolTipService.ToolTip="Zoom in" Click="ZoomInButton_Click">
+                <AppBarButton.Icon>
+                    <FontIcon Glyph="&#xE8A3;" />
+                </AppBarButton.Icon>
+            </AppBarButton>
+            <AppBarButton Label="Zoom out" ToolTipService.ToolTip="Zoom out" Click="ZoomOutButton_Click">
+                <AppBarButton.Icon>
+                    <FontIcon Glyph="&#xE71F;" />
+                </AppBarButton.Icon>
+            </AppBarButton>
+            <AppBarButton Label="Actual size (100%)" ToolTipService.ToolTip="Actual size (100%)" Click="ZoomActualSizeButton_Click">
+                <AppBarButton.Icon>
+                    <FontIcon FontFamily="Segoe UI" FontSize="12" Glyph="1:1" />
+                </AppBarButton.Icon>
+            </AppBarButton>
+            <AppBarButton Label="Zoom to fit" ToolTipService.ToolTip="Zoom to fit" Click="ZoomToFitButton_Click">
+                <AppBarButton.Icon>
+                    <FontIcon Glyph="&#xE9A6;" />
+                </AppBarButton.Icon>
+            </AppBarButton>
+            <AppBarSeparator />
+            <AppBarButton x:Name="ResetScreenButton" Label="Use system position" ToolTipService.ToolTip="Use system position" Click="ResetScreenButton_Click">
+                <AppBarButton.Icon>
+                    <FontIcon Glyph="&#xE7A7;" />
+                </AppBarButton.Icon>
+            </AppBarButton>
+            <AppBarButton Label="Reset all" ToolTipService.ToolTip="Reset all" Click="ResetAllButton_Click">
+                <AppBarButton.Icon>
+                    <FontIcon Glyph="&#xE72C;" />
+                </AppBarButton.Icon>
+            </AppBarButton>
+        </CommandBar>
+
+        <Grid x:Name="RootGrid" Grid.Row="1" Background="Transparent">
+            <Canvas x:Name="ChromeCanvas" IsHitTestVisible="False">
+                <Rectangle
+                    x:Name="VirtualCanvasRect"
+                    Fill="{ThemeResource SubtleFillColorSecondaryBrush}"
+                    Stroke="{ThemeResource ControlStrokeColorDefaultBrush}"
+                    StrokeThickness="1" />
+                <Rectangle x:Name="FrameUnderlayRect" />
+                <Image x:Name="FrameBackgroundImage" Stretch="Fill" />
+                <Image x:Name="FrameBorderImage" Stretch="Fill" />
+                <Rectangle
+                    x:Name="PreviewSizeRect"
+                    Stroke="{ThemeResource TextFillColorSecondaryBrush}"
+                    StrokeThickness="1"
+                    StrokeDashArray="1,3" />
+            </Canvas>
+            <Canvas x:Name="ScreensCanvas" />
+            <Canvas x:Name="AdornerCanvas">
+                <Rectangle
+                    x:Name="SelectionOutline"
+                    Stroke="{ThemeResource AccentFillColorDefaultBrush}"
+                    StrokeThickness="2"
+                    IsHitTestVisible="False"
+                    Visibility="Collapsed" />
+            </Canvas>
+        </Grid>
     </Grid>
 </UserControl>

@@ -1,5 +1,6 @@
 using FancyMouse.Drawing.Helpers;
 using FancyMouse.Models.Drawing;
+using FancyMouse.Models.Editor;
 using FancyMouse.Models.Styles;
 using FancyMouse.WinUI3.Controls.Helpers;
 
@@ -7,6 +8,9 @@ using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Imaging;
+
+using Windows.Foundation;
 
 using Color = System.Drawing.Color;
 using Image = Microsoft.UI.Xaml.Controls.Image;
@@ -17,97 +21,177 @@ namespace FancyMouse.WinUI3.Controls.Editor;
 public sealed partial class ScreenLayoutEditor
 {
     /// <summary>
-    /// Space, in DIPs, kept clear around the screens when fitting them into the editor.
+    /// The largest bitmap, in pixels along its longest side, a border is rendered at - a preview
+    /// can be up to 9999 x 9999, and a full-size bitmap of that would be ~400MB. Larger borders
+    /// are rendered proportionally smaller and stretched, which looks the same on screen.
     /// </summary>
-    private const double ViewPadding = 24;
-
-    /// <summary>
-    /// The bezel's thickness and 3-D depth, in DIPs - constant on screen whatever the screen's
-    /// size, the same way Display Settings draws its monitor outlines.
-    /// </summary>
-    private const double BezelThickness = 6;
-
-    private const double BezelDepth = 2;
+    private const double MaximumRenderSize = 4096;
 
     private const double ResizeHandleSize = 12;
 
-    private static readonly Color BezelColor = Color.FromArgb(0xFF, 0x20, 0x20, 0x20);
+    /// <summary>
+    /// The sizes, in preview pixels, <see cref="FrameBorderImage"/> and <see cref="FrameBackgroundImage"/>
+    /// were last rendered at.
+    /// </summary>
+    private (int Width, int Height) renderedFrameBorderSize;
+
+    private (int Width, int Height) renderedFrameBackgroundSize;
 
     /// <summary>
-    /// Gets the mapping from desktop pixels to the editor's DIPs - a uniform scale plus an
-    /// offset, recalculated by <see cref="FitToView"/>.
+    /// Redraws everything from the designer's current state - called after every input and command.
     /// </summary>
-    private (double Scale, double OffsetX, double OffsetY) view = (1, 0, 0);
-
-    /// <summary>
-    /// The <see cref="XamlRoot"/> whose <see cref="XamlRoot.Changed"/> event the editor is
-    /// listening to for DPI changes, if any - see <see cref="ScreenLayoutEditor_Loaded"/>.
-    /// </summary>
-    private XamlRoot? subscribedXamlRoot;
-
-    /// <summary>
-    /// Scales and centres the screens so they all fit in the editor - recalculated after every
-    /// edit (and when the editor resizes), the same way Display Settings re-fits its monitors
-    /// once you let go of one. Not called *during* a drag, so the screen being dragged stays
-    /// under the pointer.
-    /// </summary>
-    public void FitToView()
+    private void Render()
     {
-        if ((this.zOrder.Count == 0) || (this.ActualWidth <= 0) || (this.ActualHeight <= 0))
+        if (this.designer is null)
         {
             return;
         }
 
-        var screens = this.zOrder.Select(visual => visual.Screen).ToList();
-        var left = screens.Min(screen => screen.X);
-        var top = screens.Min(screen => screen.Y);
-        var right = screens.Max(screen => screen.X + screen.Width);
-        var bottom = screens.Max(screen => screen.Y + screen.Height);
+        var camera = this.designer.Camera;
+        var design = this.designer.Design;
 
-        var availableWidth = Math.Max(1, this.ActualWidth - (2 * ScreenLayoutEditor.ViewPadding));
-        var availableHeight = Math.Max(1, this.ActualHeight - (2 * ScreenLayoutEditor.ViewPadding));
-        var scale = Math.Min(availableWidth / (right - left), availableHeight / (bottom - top));
+        var frame = design.FrameBounds;
+        ScreenLayoutEditor.SetBounds(this.VirtualCanvasRect, camera.ToView(camera.CanvasBounds));
 
-        this.view = (
-            scale,
-            ScreenLayoutEditor.ViewPadding + ((availableWidth - ((right - left) * scale)) / 2) - (left * scale),
-            ScreenLayoutEditor.ViewPadding + ((availableHeight - ((bottom - top) * scale)) / 2) - (top * scale));
+        // the background gradient fills the padding box, as the real preview draws it - with a
+        // solid underlay reaching half-way under the border ring, since if the two just met their
+        // anti-aliased edges would leave a hairline seam that the window backdrop shows through
+        // (half-way keeps the underlay clear of the ring's rounded outer corners)
+        var padding = frame.PaddingBounds;
+        var border = design.PreviewStyle.CanvasStyle.BorderStyle;
+        ScreenLayoutEditor.SetBounds(this.FrameUnderlayRect, camera.ToView(
+            (double)(padding.X - (border.Left / 2)),
+            (double)(padding.Y - (border.Top / 2)),
+            (double)(padding.Width + (border.Horizontal / 2)),
+            (double)(padding.Height + (border.Vertical / 2))));
+        ScreenLayoutEditor.SetBounds(this.FrameBackgroundImage, camera.ToView(padding));
+        ScreenLayoutEditor.SetBounds(this.FrameBorderImage, camera.ToView(frame.BorderBounds));
+        ScreenLayoutEditor.SetBounds(this.PreviewSizeRect, camera.ToView(design.PreviewBounds.OuterBounds));
+        this.RenderFrame(frame, design.PreviewStyle.CanvasStyle);
 
-        foreach (var visual in this.zOrder)
+        for (var index = 0; index < design.Screens.Count; index++)
         {
-            this.PositionScreenVisual(visual);
+            var visual = this.visuals[design.Screens[index]];
+            Canvas.SetZIndex(visual.Container, index);
+            this.PositionScreenVisual(visual, camera, design.ScreenStyle);
         }
 
-        this.UpdateAdorner();
+        this.UpdateAdorner(camera, design.SelectedScreen);
+    }
+
+    private static void SetBounds(FrameworkElement element, ViewRect bounds)
+    {
+        Canvas.SetLeft(element, bounds.X);
+        Canvas.SetTop(element, bounds.Y);
+        element.Width = bounds.Width;
+        element.Height = bounds.Height;
     }
 
     /// <summary>
-    /// Gets <paramref name="screen"/>'s bounds in the editor's DIPs.
+    /// Gets insets in preview pixels as a <see cref="Thickness"/> in the editor's DIPs.
     /// </summary>
-    private RectangleInfo ToView(EditableScreen screen)
+    private static Thickness ToViewThickness(EditorCamera camera, decimal left, decimal top, decimal right, decimal bottom)
         => new(
-            (decimal)(this.view.OffsetX + (screen.X * this.view.Scale)),
-            (decimal)(this.view.OffsetY + (screen.Y * this.view.Scale)),
-            (decimal)(screen.Width * this.view.Scale),
-            (decimal)(screen.Height * this.view.Scale));
+            (double)left * camera.Zoom,
+            (double)top * camera.Zoom,
+            (double)right * camera.Zoom,
+            (double)bottom * camera.Zoom);
 
-    private ScreenVisual CreateScreenVisual(EditableScreen screen)
+    /// <summary>
+    /// Gets ready to draw a newly loaded <paramref name="previewStyle"/> - forgets the frame's
+    /// rendered bitmaps (a new style can need different ones at the same size), and sets the
+    /// underlay to the style's background colour.
+    /// </summary>
+    private void ApplyPreviewStyle(PreviewStyle previewStyle)
+    {
+        this.renderedFrameBorderSize = default;
+        this.renderedFrameBackgroundSize = default;
+        var background = previewStyle.CanvasStyle.BackgroundStyle;
+        this.FrameUnderlayRect.Fill = ((background.Color1 ?? background.Color2) is { } color)
+            ? new SolidColorBrush(ScreenLayoutEditor.ToWindowsColor(color))
+            : null;
+    }
+
+    /// <summary>
+    /// Renders the preview window's border ring and background at their real sizes in preview
+    /// pixels, in the style's own colours - only when a size has changed, since the frame follows
+    /// the screens around as they're edited.
+    /// </summary>
+    private void RenderFrame(BoxBounds frame, BoxStyle canvasStyle)
+    {
+        var borderSize = ScreenLayoutEditor.ToPixelSize(frame.BorderBounds.Size);
+        if (borderSize != this.renderedFrameBorderSize)
+        {
+            this.renderedFrameBorderSize = borderSize;
+            this.FrameBorderImage.Source = ScreenLayoutEditor.RenderBorderImage(
+                borderSize.Width, borderSize.Height, canvasStyle.BorderStyle);
+        }
+
+        var backgroundSize = ScreenLayoutEditor.ToPixelSize(frame.PaddingBounds.Size);
+        if (backgroundSize != this.renderedFrameBackgroundSize)
+        {
+            this.renderedFrameBackgroundSize = backgroundSize;
+            this.FrameBackgroundImage.Source = ScreenLayoutEditor.RenderBackgroundImage(
+                backgroundSize.Width, backgroundSize.Height, canvasStyle.BackgroundStyle);
+        }
+    }
+
+    private static (int Width, int Height) ToPixelSize(SizeInfo size)
+        => ((int)Math.Round(size.Width), (int)Math.Round(size.Height));
+
+    private static Windows.UI.Color ToWindowsColor(Color color)
+        => Windows.UI.Color.FromArgb(color.A, color.R, color.G, color.B);
+
+    /// <summary>
+    /// Gets black or white, whichever reads better on <paramref name="background"/>.
+    /// </summary>
+    private static SolidColorBrush GetContrastingTextBrush(Color background)
+    {
+        // perceived brightness - near enough for choosing between black and white
+        var brightness = ((0.299 * background.R) + (0.587 * background.G) + (0.114 * background.B)) / 255;
+        return new SolidColorBrush((brightness > 0.5) ? Microsoft.UI.Colors.Black : Microsoft.UI.Colors.White);
+    }
+
+    private ScreenVisual CreateScreenVisual(EditableScreen screen, BoxStyle screenStyle)
     {
         var container = new CursorGrid(InputSystemCursorShape.SizeAll)
         {
             // a fully transparent background still makes the whole screen hit-testable,
-            // including the bezel ring's transparent corners
+            // including its margin and the bezel ring's transparent corners
             Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
+            ContextFlyout = this.screenContextMenu,
         };
 
         var bezelImage = new Image { Stretch = Stretch.Fill, IsHitTestVisible = false };
-        var fill = new Rectangle { Margin = new Thickness(ScreenLayoutEditor.BezelThickness) };
+
+        // the same solid placeholder the real preview shows until a screenshot arrives - the
+        // style's first background colour - or a neutral grey if the style doesn't set one
+        var placeholderColor = screenStyle.BackgroundStyle.Color1;
+        var fill = new Rectangle
+        {
+            Fill = (placeholderColor is { } color)
+                ? new SolidColorBrush(ScreenLayoutEditor.ToWindowsColor(color))
+                : (Brush)this.Resources["ScreenFillBrush"],
+            IsHitTestVisible = false,
+        };
+
         var culture = System.Globalization.CultureInfo.CurrentCulture;
-        var number = new TextBlock { Text = screen.Number.ToString(culture) };
+        var number = new TextBlock
+        {
+            Text = screen.Number.ToString(culture),
+            Style = (Style)this.Resources["ScreenNumberStyle"],
+        };
         var caption = new TextBlock
         {
             Text = string.Create(culture, $"{screen.NativeWidth} × {screen.NativeHeight}"),
+            Style = (Style)this.Resources["ScreenCaptionStyle"],
         };
+        if (placeholderColor is { } textBackground)
+        {
+            number.Foreground = ScreenLayoutEditor.GetContrastingTextBrush(textBackground);
+            caption.Foreground = number.Foreground;
+        }
+
         var labels = new StackPanel
         {
             HorizontalAlignment = HorizontalAlignment.Center,
@@ -125,132 +209,139 @@ public sealed partial class ScreenLayoutEditor
         container.PointerReleased += this.Element_PointerReleased;
         container.PointerCaptureLost += this.Element_PointerCaptureLost;
 
-        var visual = new ScreenVisual(screen, container, bezelImage, fill, number, caption);
+        var visual = new ScreenVisual(screen, container, bezelImage, fill);
         container.Tag = visual;
-        visual.SetSelected(false, this.Resources);
         return visual;
     }
 
-    private void PositionScreenVisual(ScreenVisual visual)
+    /// <summary>
+    /// Positions <paramref name="visual"/> and lays out its box model the way the real preview
+    /// does - the margin is left empty, the bezel fills the border box, and the placeholder fill
+    /// covers the padding box - all at their real size in preview pixels, scaled by the camera's zoom.
+    /// </summary>
+    private void PositionScreenVisual(ScreenVisual visual, EditorCamera camera, BoxStyle screenStyle)
     {
-        var bounds = this.ToView(visual.Screen);
-        Canvas.SetLeft(visual.Container, (double)bounds.X);
-        Canvas.SetTop(visual.Container, (double)bounds.Y);
-        visual.Container.Width = (double)bounds.Width;
-        visual.Container.Height = (double)bounds.Height;
-        this.RenderBezel(visual, (double)bounds.Width, (double)bounds.Height);
+        var margin = screenStyle.MarginStyle;
+        var border = screenStyle.BorderStyle;
+
+        ScreenLayoutEditor.SetBounds(visual.Container, camera.ToView(visual.Screen));
+        visual.BezelImage.Margin = ScreenLayoutEditor.ToViewThickness(camera, margin.Left, margin.Top, margin.Right, margin.Bottom);
+        visual.Fill.Margin = ScreenLayoutEditor.ToViewThickness(
+            camera,
+            margin.Left + border.Left,
+            margin.Top + border.Top,
+            margin.Right + border.Right,
+            margin.Bottom + border.Bottom);
+        ScreenLayoutEditor.RenderBezel(visual, margin, border);
     }
 
     /// <summary>
-    /// Renders <paramref name="visual"/>'s rounded bezel ring with the shared drawing library, at
-    /// the physical pixel size it's shown at so it stays crisp - only when that size has changed.
+    /// Renders <paramref name="visual"/>'s bezel ring at the size it will actually be drawn in the
+    /// preview - so its thickness is exactly what the user will see, however far they've zoomed -
+    /// only when that size has changed.
     /// </summary>
-    private void RenderBezel(ScreenVisual visual, double width, double height)
+    private static void RenderBezel(ScreenVisual visual, MarginStyle margin, BorderStyle border)
     {
-        var rasterizationScale = this.XamlRoot?.RasterizationScale ?? 1.0;
-        var pixelWidth = (int)Math.Round(width * rasterizationScale);
-        var pixelHeight = (int)Math.Round(height * rasterizationScale);
-        if ((pixelWidth, pixelHeight) == visual.RenderedBezelSize)
+        var width = (int)Math.Round(visual.Screen.Width - (double)margin.Horizontal);
+        var height = (int)Math.Round(visual.Screen.Height - (double)margin.Vertical);
+        if ((width, height) == visual.RenderedBezelSize)
         {
             return;
         }
 
-        visual.RenderedBezelSize = (pixelWidth, pixelHeight);
+        visual.RenderedBezelSize = (width, height);
+        visual.BezelImage.Source = ScreenLayoutEditor.RenderBorderImage(width, height, border);
+    }
 
-        // a screen shrunk smaller than its own bezel has no room left to draw one
-        var thickness = (int)Math.Round(ScreenLayoutEditor.BezelThickness * rasterizationScale);
-        if ((pixelWidth < 4 * thickness) || (pixelHeight < 4 * thickness))
+    /// <summary>
+    /// Renders a border ring for a box <paramref name="width"/> x <paramref name="height"/> preview
+    /// pixels in size with the shared drawing library, or returns null if there's nothing to draw.
+    /// </summary>
+    private static WriteableBitmap? RenderBorderImage(double width, double height, BorderStyle borderStyle)
+    {
+        // a box shrunk smaller than its own border has no room left to draw one
+        if ((borderStyle.Horizontal < 1) || (borderStyle.Vertical < 1)
+            || (width < 2 * (double)borderStyle.Horizontal) || (height < 2 * (double)borderStyle.Vertical))
         {
-            visual.BezelImage.Source = null;
-            return;
+            return null;
         }
 
-        var borderStyle = new BorderStyle(
-            ScreenLayoutEditor.BezelColor,
-            all: thickness,
-            depth: (int)Math.Round(ScreenLayoutEditor.BezelDepth * rasterizationScale));
-        using var bezelBitmap = DrawingHelper.RenderBorder(new SizeInfo(pixelWidth, pixelHeight), borderStyle);
-        visual.BezelImage.Source = MediaHelper.ToBitmapImage(bezelBitmap);
+        var scale = (decimal)Math.Min(1, ScreenLayoutEditor.MaximumRenderSize / Math.Max(width, height));
+        var scaledStyle = new BorderStyle(
+            borderStyle.Color,
+            borderStyle.Left * scale,
+            borderStyle.Top * scale,
+            borderStyle.Right * scale,
+            borderStyle.Bottom * scale,
+            borderStyle.Depth * scale);
+        var size = new SizeInfo(Math.Round((decimal)width * scale), Math.Round((decimal)height * scale));
+        using var bitmap = DrawingHelper.RenderBorder(size, scaledStyle);
+        return MediaHelper.ToBitmapImage(bitmap);
+    }
+
+    /// <summary>
+    /// Renders the background fill for a box <paramref name="width"/> x <paramref name="height"/>
+    /// preview pixels in size with the shared drawing library, or returns null if it's empty.
+    /// </summary>
+    private static WriteableBitmap? RenderBackgroundImage(double width, double height, BackgroundStyle backgroundStyle)
+    {
+        if ((width < 1) || (height < 1))
+        {
+            return null;
+        }
+
+        // a gradient scaled down and stretched back up looks the same, so cap it like the borders
+        var scale = Math.Min(1, ScreenLayoutEditor.MaximumRenderSize / Math.Max(width, height));
+        var size = new SizeInfo(Math.Max(1, Math.Round((decimal)(width * scale))), Math.Max(1, Math.Round((decimal)(height * scale))));
+        using var bitmap = DrawingHelper.RenderBackground(size, backgroundStyle);
+        return MediaHelper.ToBitmapImage(bitmap);
     }
 
     /// <summary>
     /// Positions the selection outline and corner resize handles around the selected screen, or
     /// hides them if nothing is selected.
     /// </summary>
-    private void UpdateAdorner()
+    private void UpdateAdorner(EditorCamera camera, EditableScreen? selected)
     {
-        var visibility = (this.selected is null) ? Visibility.Collapsed : Visibility.Visible;
+        var visibility = (selected is null) ? Visibility.Collapsed : Visibility.Visible;
         this.SelectionOutline.Visibility = visibility;
         foreach (var handle in this.resizeHandles)
         {
             handle.Visibility = visibility;
         }
 
-        if (this.selected is null)
+        if (selected is null)
         {
             return;
         }
 
-        var bounds = this.ToView(this.selected.Screen);
-        var left = (double)bounds.X;
-        var top = (double)bounds.Y;
-        var right = (double)(bounds.X + bounds.Width);
-        var bottom = (double)(bounds.Y + bounds.Height);
-
-        Canvas.SetLeft(this.SelectionOutline, left - 2);
-        Canvas.SetTop(this.SelectionOutline, top - 2);
-        this.SelectionOutline.Width = (right - left) + 4;
-        this.SelectionOutline.Height = (bottom - top) + 4;
+        var bounds = camera.ToView(selected);
+        Canvas.SetLeft(this.SelectionOutline, bounds.X - 2);
+        Canvas.SetTop(this.SelectionOutline, bounds.Y - 2);
+        this.SelectionOutline.Width = bounds.Width + 4;
+        this.SelectionOutline.Height = bounds.Height + 4;
 
         foreach (var handle in this.resizeHandles)
         {
             var (x, y) = (ResizeCorner)handle.Tag switch
             {
-                ResizeCorner.TopLeft => (left, top),
-                ResizeCorner.TopRight => (right, top),
-                ResizeCorner.BottomLeft => (left, bottom),
-                _ => (right, bottom),
+                ResizeCorner.TopLeft => (bounds.X, bounds.Y),
+                ResizeCorner.TopRight => (bounds.Right, bounds.Y),
+                ResizeCorner.BottomLeft => (bounds.X, bounds.Bottom),
+                _ => (bounds.Right, bounds.Bottom),
             };
             Canvas.SetLeft(handle, x - (ScreenLayoutEditor.ResizeHandleSize / 2));
             Canvas.SetTop(handle, y - (ScreenLayoutEditor.ResizeHandleSize / 2));
         }
     }
 
-    private void ScreenLayoutEditor_SizeChanged(object sender, SizeChangedEventArgs e)
+    private void RootGrid_SizeChanged(object sender, SizeChangedEventArgs e)
     {
-        if (this.drag is null)
-        {
-            this.FitToView();
-        }
-    }
+        // canvases don't clip their children, so without this a zoomed-in preview would draw
+        // right over the rest of the window
+        this.RootGrid.Clip = new RectangleGeometry { Rect = new Rect(0, 0, e.NewSize.Width, e.NewSize.Height) };
 
-    private void ScreenLayoutEditor_Loaded(object sender, RoutedEventArgs e)
-    {
-        // re-render the bezels at the new physical size if the window moves to a monitor with a
-        // different DPI scaling setting
-        this.subscribedXamlRoot = this.XamlRoot;
-        if (this.subscribedXamlRoot is not null)
-        {
-            this.subscribedXamlRoot.Changed += this.XamlRoot_Changed;
-        }
-
-        this.FitToView();
-    }
-
-    private void ScreenLayoutEditor_Unloaded(object sender, RoutedEventArgs e)
-    {
-        if (this.subscribedXamlRoot is not null)
-        {
-            this.subscribedXamlRoot.Changed -= this.XamlRoot_Changed;
-            this.subscribedXamlRoot = null;
-        }
-    }
-
-    private void XamlRoot_Changed(XamlRoot sender, XamlRootChangedEventArgs args)
-    {
-        if (this.drag is null)
-        {
-            this.FitToView();
-        }
+        this.designer?.Camera.SetViewportSize(e.NewSize.Width, e.NewSize.Height);
+        this.Render();
     }
 }

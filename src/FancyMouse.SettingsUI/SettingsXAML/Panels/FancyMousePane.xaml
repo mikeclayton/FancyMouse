@@ -79,12 +79,14 @@
                                 <NumberBox
                                     x:Uid="FancyMouse_ThumbnailSize_Edit_Width"
                                     Width="140"
+                                    Maximum="9999"
                                     Minimum="160"
                                     SpinButtonPlacementMode="Compact"
                                     Value="{x:Bind ViewModel.FancyMouseThumbnailSize.Width, Mode=TwoWay}" />
                                 <NumberBox
                                     x:Uid="FancyMouse_ThumbnailSize_Edit_Height"
                                     Width="140"
+                                    Maximum="9999"
                                     Minimum="120"
                                     SpinButtonPlacementMode="Compact"
                                     Value="{x:Bind ViewModel.FancyMouseThumbnailSize.Height, Mode=TwoWay}" />

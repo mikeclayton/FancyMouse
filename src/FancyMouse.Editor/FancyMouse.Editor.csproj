@@ -35,6 +35,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\FancyMouse.Models\FancyMouse.Models.csproj" />
+        <ProjectReference Include="..\FancyMouse.Settings\FancyMouse.Settings.csproj" />
         <ProjectReference Include="..\FancyMouse.Windows\FancyMouse.Windows.csproj" />
         <ProjectReference Include="..\FancyMouse.WinUI3.Controls\FancyMouse.WinUI3.Controls.csproj" />
     </ItemGroup>
